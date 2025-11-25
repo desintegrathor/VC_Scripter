@@ -1,0 +1,35 @@
+// IR Dump
+// enter_ip: 0x-e70
+// data words: 1665
+// code instructions: 6184
+// xfn entries: 57
+
+function main() {
+  B0:
+    DLD 0 0  // 0
+
+  B1:
+    // preds: B0
+    LCP 2 0  // 1
+
+  B2:
+    // preds: B1
+    RET 0 0  // 2
+
+  B3:
+    // preds: B2
+    EQU 4 0  // 3
+
+  B4:
+    // preds: B3, B6
+    LCP 3 0  // 4
+
+  B5:
+    // preds: B4
+    RET 0 0  // 5
+
+  B6:
+    // preds: B5
+    JMP 4 0  // 6
+
+}

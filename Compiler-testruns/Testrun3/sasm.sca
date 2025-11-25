@@ -1,0 +1,1146 @@
+; This script assembler code was produced from
+; script C source code by using 'scc.exe' script ANSI C compiler.
+
+
+
+
+
+
+
+
+
+XFN "sprintf(*char,*constchar,...)int" -1 1 4 0
+$extern0000=0
+
+XFN "swprintf(*unsignedshort,*unsignedshort,...)int" -1 1 4 0
+$extern0001=1
+
+XFN "rand(void)int" 0 1 4 0
+$extern0002=2
+
+XFN "frnd(float)float" 1 1 4 1
+$extern0003=3
+
+XFN "sqrt(float)float" 1 1 4 1
+$extern0004=4
+
+XFN "fmod(float,float)float" 2 1 4 1
+$extern0005=5
+
+XFN "sin(float)float" 1 1 4 1
+$extern0006=6
+
+XFN "cos(float)float" 1 1 4 1
+$extern0007=7
+
+XFN "atan2(float,float)float" 2 1 4 1
+$extern0008=8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XFN "SC_sgi(unsignedlong,int)void" 2 0 0 0
+$extern0009=9
+
+XFN "SC_ggi(unsignedlong)int" 1 1 4 0
+$extern0010=10
+
+XFN "SC_sgf(unsignedlong,float)void" 2 0 0 0
+$extern0011=11
+
+XFN "SC_ggf(unsignedlong)float" 1 1 4 1
+$extern0012=12
+
+XFN "SC_MP_Gvar_SetSynchro(unsignedlong)void" 1 0 0 0
+$extern0013=13
+
+XFN "SC_ZeroMem(*void,unsignedlong)void" 2 0 0 0
+$extern0014=14
+
+XFN "SC_GetLineDist(*c_Vector3,*c_Vector3,*c_Vector3)float" 3 1 4 1
+$extern0015=15
+
+XFN "SC_GetLineDistXY(*c_Vector3,*c_Vector3,*c_Vector3)float" 3 1 4 1
+$extern0016=16
+
+XFN "SC_IsNear2D(*c_Vector3,*c_Vector3,float)int" 3 1 4 0
+$extern0017=17
+
+XFN "SC_IsNear3D(*c_Vector3,*c_Vector3,float)int" 3 1 4 0
+$extern0018=18
+
+XFN "SC_2VectorsDist(*c_Vector3,*c_Vector3)float" 2 1 4 1
+$extern0019=19
+
+XFN "SC_VectorLen(*c_Vector3)float" 1 1 4 1
+$extern0020=20
+
+XFN "SC_VectorLen2(*c_Vector3)float" 1 1 4 1
+$extern0021=21
+
+XFN "SC_message(*char,...)void" -1 0 0 0
+$extern0022=22
+
+XFN "SC_Log(unsignedlong,*char,...)void" -1 0 0 0
+$extern0023=23
+
+XFN "SC_Osi(*char,...)void" -1 0 0 0
+$extern0024=24
+
+XFN "SC_StringSame(*char,*char)int" 2 1 4 0
+$extern0025=25
+
+XFN "SC_KeyJustPressed(unsignedlong)int" 1 1 4 0
+$extern0026=26
+
+XFN "SC_KeyPressed(unsignedlong)int" 1 1 4 0
+$extern0027=27
+
+XFN "SC_EventImpuls(*char)void" 1 0 0 0
+$extern0028=28
+
+XFN "SC_EventEnable(*char,int)void" 2 0 0 0
+$extern0029=29
+
+XFN "SC_MissionCompleted(void)void" 0 0 0 0
+$extern0030=30
+
+XFN "SC_MissionFailed(void)void" 0 0 0 0
+$extern0031=31
+
+XFN "SC_MissionFailedEx(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0032=32
+
+XFN "SC_MissionDone(void)void" 0 0 0 0
+$extern0033=33
+
+XFN "SC_SetMissileTrace(unsignedlong,float)void" 2 0 0 0
+$extern0034=34
+
+XFN "SC_CreatePtc(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0035=35
+
+XFN "SC_CreatePtc_Ext(unsignedlong,*void,float,float,float,float)void" 6 0 0 0
+$extern0036=36
+
+XFN "SC_CreatePtcVec_Ext(unsignedlong,*c_Vector3,float,float,float,float)void" 6 0 0 0
+$extern0037=37
+
+XFN "SC_CreatePtcInNodSpace_Ext(unsignedlong,*void,float,float,float,float)void" 6 0 0 0
+$extern0038=38
+
+XFN "SC_AnsiToUni(*char,*unsignedshort)*unsignedshort" 2 1 4 0
+$extern0039=39
+
+XFN "SC_Fnt_Write(float,float,*char,float,unsignedlong)void" 5 0 0 0
+$extern0040=40
+
+XFN "SC_Fnt_GetWidth(*char,float)float" 2 1 4 1
+$extern0041=41
+
+XFN "SC_Fnt_WriteW(float,float,*unsignedshort,float,unsignedlong)void" 5 0 0 0
+$extern0042=42
+
+XFN "SC_Fnt_GetWidthW(*unsignedshort,float)float" 2 1 4 1
+$extern0043=43
+
+XFN "SC_GetScreenRes(*float,*float)void" 2 0 0 0
+$extern0044=44
+
+XFN "SC_SpeechSet3Dto3Dincamera(int)void" 1 0 0 0
+$extern0045=45
+
+XFN "SC_DoExplosion(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0046=46
+
+XFN "SC_MWP_Create(*s_SC_MWP_Create)unsignedlong" 1 1 4 0
+$extern0047=47
+
+XFN "SC_SetObjectScript(*char,*char)void" 2 0 0 0
+$extern0048=48
+
+XFN "SC_GetPos_VecRz(*void,*c_Vector3,*float)void" 3 0 0 0
+$extern0049=49
+
+XFN "SC_PreloadBES(unsignedlong,*char)void" 2 0 0 0
+$extern0050=50
+
+XFN "SC_PreloadWeapon(unsignedlong,int)void" 2 0 0 0
+$extern0051=51
+
+XFN "SC_FadeTo(int,float)void" 2 0 0 0
+$extern0052=52
+
+XFN "SC_PreloadSound(unsignedlong,int)void" 2 0 0 0
+$extern0053=53
+
+XFN "SC_FadeSoundPlayer(unsignedlong,float,float)void" 3 0 0 0
+$extern0054=54
+
+XFN "SC_Wtxt(unsignedlong)*unsignedshort" 1 1 4 0
+$extern0055=55
+
+XFN "SC_GetNearestPlayer(*c_Vector3,*float)unsignedlong" 2 1 4 0
+$extern0056=56
+
+XFN "SC_SetMovieBorders(int)void" 1 0 0 0
+$extern0057=57
+
+XFN "SC_CreateLight(*s_SC_light)void" 1 0 0 0
+$extern0058=58
+
+XFN "SC_GetCameraPos(*c_Vector3)void" 1 0 0 0
+$extern0059=59
+
+XFN "SC_Fauna_DoSoundAlert(*c_Vector3)void" 1 0 0 0
+$extern0060=60
+
+XFN "SC_Fauna_KillThemAll(*s_sphere)void" 1 0 0 0
+$extern0061=61
+
+XFN "SC_PC_GetPos(*c_Vector3)int" 1 1 4 0
+$extern0062=62
+
+XFN "SC_PC_Get(void)unsignedlong" 0 1 4 0
+$extern0063=63
+
+XFN "SC_PC_SetControl(int)void" 1 0 0 0
+$extern0064=64
+
+XFN "SC_PC_EnableMovementAndLooking(int)void" 1 0 0 0
+$extern0065=65
+
+XFN "SC_PC_EnableMovement(int)void" 1 0 0 0
+$extern0066=66
+
+XFN "SC_PC_EnablePronePosition(int)void" 1 0 0 0
+$extern0067=67
+
+XFN "SC_PC_EnableWeaponsUsing(int)void" 1 0 0 0
+$extern0068=68
+
+XFN "SC_P_Create(*s_SC_P_Create)unsignedlong" 1 1 4 0
+$extern0069=69
+
+XFN "SC_P_IsReady(unsignedlong)int" 1 1 4 0
+$extern0070=70
+
+XFN "SC_P_GetName(unsignedlong)*char" 1 1 4 0
+$extern0071=71
+
+XFN "SC_P_GetPos(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0072=72
+
+XFN "SC_P_GetRot(unsignedlong)float" 1 1 4 1
+$extern0073=73
+
+XFN "SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void" 2 0 0 0
+$extern0074=74
+
+XFN "SC_P_GetBySideGroupMember(unsignedlong,unsignedlong,unsignedlong)unsignedlong" 3 1 4 0
+$extern0075=75
+
+XFN "SC_P_ScriptMessage(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0076=76
+
+XFN "SC_P_SetFaceStatus(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0077=77
+
+XFN "SC_P_SetHandVariation(unsignedlong,unsignedlong,unsignedlong,float)void" 4 0 0 0
+$extern0078=78
+
+XFN "SC_P_GetDistance(unsignedlong,unsignedlong)float" 2 1 4 1
+$extern0079=79
+
+XFN "SC_P_Ai_SetMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0080=80
+
+XFN "SC_P_Ai_GetMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0081=81
+
+XFN "SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0082=82
+
+XFN "SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void" 3 0 0 0
+$extern0083=83
+
+XFN "SC_P_Ai_GetBattleMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0084=84
+
+XFN "SC_P_Ai_SetPeaceMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0085=85
+
+XFN "SC_P_Ai_GetPeaceMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0086=86
+
+XFN "SC_P_Ai_GetSpecTask(unsignedlong)unsignedlong" 1 1 4 0
+$extern0087=87
+
+XFN "SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0088=88
+
+XFN "SC_P_Ai_SetMovePos(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0089=89
+
+XFN "SC_P_Ai_EnableShooting(unsignedlong,int)void" 2 0 0 0
+$extern0090=90
+
+XFN "SC_P_Ai_Go(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0091=91
+
+XFN "SC_P_Ai_Stop(unsignedlong)void" 1 0 0 0
+$extern0092=92
+
+XFN "SC_P_Ai_GetProps(unsignedlong,*s_SC_P_AI_props)void" 2 0 0 0
+$extern0093=93
+
+XFN "SC_P_Ai_SetProps(unsignedlong,*s_SC_P_AI_props)void" 2 0 0 0
+$extern0094=94
+
+XFN "SC_P_Ai_GetGrenateProps(unsignedlong,*s_SC_P_Ai_Grenade)void" 2 0 0 0
+$extern0095=95
+
+XFN "SC_P_Ai_SetGrenateProps(unsignedlong,*s_SC_P_Ai_Grenade)void" 2 0 0 0
+$extern0096=96
+
+XFN "SC_P_Ai_GetEnemies(unsignedlong)unsignedlong" 1 1 4 0
+$extern0097=97
+
+XFN "SC_P_Ai_GetSureEnemies(unsignedlong)unsignedlong" 1 1 4 0
+$extern0098=98
+
+XFN "SC_P_Ai_LookAt(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0099=99
+
+XFN "SC_P_Ai_EnableSituationUpdate(unsignedlong,int)void" 2 0 0 0
+$extern0100=100
+
+XFN "SC_P_Ai_KnowsAboutPl(unsignedlong,unsignedlong)int" 2 1 4 0
+$extern0101=101
+
+XFN "SC_P_Ai_SetBattleProps(unsignedlong,*s_SC_P_Ai_BattleProps)void" 2 0 0 0
+$extern0102=102
+
+XFN "SC_P_Ai_GetShooting(unsignedlong,*unsignedlong)int" 2 1 4 0
+$extern0103=103
+
+XFN "SC_P_Ai_GetDanger(unsignedlong)float" 1 1 4 1
+$extern0104=104
+
+XFN "SC_P_Ai_SetPreferedWeaponSlot(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0105=105
+
+XFN "SC_P_Ai_GetPreferedWeaponSlot(unsignedlong)unsignedlong" 1 1 4 0
+$extern0106=106
+
+XFN "SC_P_Ai_ShootAt(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0107=107
+
+XFN "SC_P_Ai_ForgetEnemies(unsignedlong)void" 1 0 0 0
+$extern0108=108
+
+XFN "SC_P_Ai_HideYourself(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0109=109
+
+XFN "SC_P_Ai_LookingAt(unsignedlong,*c_Vector3)int" 2 1 4 0
+$extern0110=110
+
+XFN "SC_P_Ai_ShouldLookAt(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0111=111
+
+XFN "SC_P_Ai_SetStaticMode(unsignedlong,int)void" 2 0 0 0
+$extern0112=112
+
+XFN "SC_P_Ai_GetStaticMode(unsignedlong)int" 1 1 4 0
+$extern0113=113
+
+XFN "SC_P_Ai_GetNearestEnemyDist(unsignedlong)float" 1 1 4 1
+$extern0114=114
+
+XFN "SC_P_Ai_GetNearestEnemy(unsignedlong)unsignedlong" 1 1 4 0
+$extern0115=115
+
+XFN "SC_P_Ai_Script_WatchPlayer(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0116=116
+
+XFN "SC_P_Ai_UpdateSituation(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0117=117
+
+XFN "SC_P_Ai_GetEnemyShotAround(unsignedlong,float)void" 2 0 0 0
+$extern0118=118
+
+XFN "SC_P_Ai_SetIgnoreFlags(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0119=119
+
+XFN "SC_P_Ai_GetIgnoreFlags(unsignedlong)unsignedlong" 1 1 4 0
+$extern0120=120
+
+XFN "SC_P_Ai_EnableSayTo(unsignedlong,int)void" 2 0 0 0
+$extern0121=121
+
+XFN "SC_P_Ai_SetPointmanBreaks(unsignedlong,float,float)void" 3 0 0 0
+$extern0122=122
+
+XFN "SC_P_Ai_WalkThruAIs(unsignedlong,int)void" 2 0 0 0
+$extern0123=123
+
+XFN "SC_P_Ai_SetMedicIngMaxActiveDist(unsignedlong,float)void" 2 0 0 0
+$extern0124=124
+
+XFN "SC_Ai_SetBattleMode(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0125=125
+
+XFN "SC_Ai_SetBattleModeExt(unsignedlong,unsignedlong,unsignedlong,*c_Vector3)void" 4 0 0 0
+$extern0126=126
+
+XFN "SC_Ai_SetPeaceMode(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0127=127
+
+XFN "SC_Ai_SetPointRuns(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0128=128
+
+XFN "SC_Ai_SetPlFollow(unsignedlong,unsignedlong,unsignedlong,*s_SC_Ai_PlFollow,*unsignedlong,*unsignedlong,unsignedlong)void" 7 0 0 0
+$extern0129=129
+
+XFN "SC_Ai_PointStopDanger(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0130=130
+
+XFN "SC_Ai_StopDanger(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0131=131
+
+XFN "SC_Ai_SetStealthMode(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0132=132
+
+XFN "SC_Ai_SetStealthModeOff(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0133=133
+
+XFN "SC_Ai_GetStealthMode(unsignedlong,unsignedlong)int" 2 1 4 0
+$extern0134=134
+
+XFN "SC_Ai_EnableRelaxWalk(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0135=135
+
+XFN "SC_Ai_Blocker_Add(*s_sphere)unsignedlong" 1 1 4 0
+$extern0136=136
+
+XFN "SC_Ai_Blocker_Remove(unsignedlong)void" 1 0 0 0
+$extern0137=137
+
+XFN "SC_Ai_FakeEnemy_Add(unsignedlong,unsignedlong,*c_Vector3,unsignedlong,*s_sphere)void" 5 0 0 0
+$extern0138=138
+
+XFN "SC_Ai_FakeEnemy_Remove(unsignedlong,unsignedlong,*c_Vector3)void" 3 0 0 0
+$extern0139=139
+
+XFN "SC_Ai_FakeDanger(*s_sphere,float)void" 2 0 0 0
+$extern0140=140
+
+XFN "SC_Ai_SetGroupEnemyUpdate(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0141=141
+
+XFN "SC_Ai_SetPointmanNormalWalking(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0142=142
+
+XFN "SC_P_Ai_CanSeePlayer(unsignedlong,unsignedlong,float,unsignedlong)int" 4 1 4 0
+$extern0143=143
+
+XFN "SC_GetWp(*char,*c_Vector3)int" 2 1 4 0
+$extern0144=144
+
+XFN "SC_SetSideAlly(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0145=145
+
+XFN "SC_InitSide(unsignedlong,*s_SC_initside)void" 2 0 0 0
+$extern0146=146
+
+XFN "SC_InitSideGroup(*s_SC_initgroup)void" 1 0 0 0
+$extern0147=147
+
+XFN "SC_GetGroupPlayers(unsignedlong,unsignedlong)unsignedlong" 2 1 4 0
+$extern0148=148
+
+XFN "SC_Item_Create(unsignedlong,*c_Vector3)unsignedlong" 2 1 4 0
+$extern0149=149
+
+XFN "SC_Item_Create2(unsignedlong,*c_Vector3,*c_Vector3)unsignedlong" 3 1 4 0
+$extern0150=150
+
+XFN "SC_Item_Preload(unsignedlong)void" 1 0 0 0
+$extern0151=151
+
+XFN "SC_Item_GetPos(unsignedlong,*c_Vector3)int" 2 1 4 0
+$extern0152=152
+
+XFN "SC_SRV_Item_Release(unsignedlong)void" 1 0 0 0
+$extern0153=153
+
+XFN "SC_Item_Find(unsignedlong)unsignedlong" 1 1 4 0
+$extern0154=154
+
+XFN "SC_LevScr_Event(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0155=155
+
+XFN "SC_StorySkipEnable(int)void" 1 0 0 0
+$extern0156=156
+
+XFN "SC_NET_FillRecover(*s_SC_MP_Recover,*char)int" 2 1 4 0
+$extern0157=157
+
+XFN "SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void" 3 0 0 0
+$extern0158=158
+
+XFN "SC_GetPlsInLine(*c_Vector3,*c_Vector3,*unsignedlong,*unsignedlong)void" 4 0 0 0
+$extern0159=159
+
+XFN "SC_DisplayBinocular(int)void" 1 0 0 0
+$extern0160=160
+
+XFN "SC_GetScriptHelper(*char,*s_sphere)int" 2 1 4 0
+$extern0161=161
+
+XFN "SC_MissionFailedDeathPlayer(unsignedlong)void" 1 0 0 0
+$extern0162=162
+
+XFN "SC_SND_SetEnvironment(unsignedlong,unsignedlong,float)int" 3 1 4 0
+$extern0163=163
+
+XFN "SC_SND_Ambient_Play(unsignedlong)void" 1 0 0 0
+$extern0164=164
+
+XFN "SC_SND_Ambient_Stop(void)void" 0 0 0 0
+$extern0165=165
+
+XFN "SC_SND_PlaySound3D(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0166=166
+
+XFN "SC_SND_PlaySound3Dex(unsignedlong,*c_Vector3,*float)void" 3 0 0 0
+$extern0167=167
+
+XFN "SC_SND_PlaySound2D(unsignedlong)void" 1 0 0 0
+$extern0168=168
+
+XFN "SC_SND_PlaySound3Dlink(unsignedlong,*void,*float)void" 3 0 0 0
+$extern0169=169
+
+XFN "SC_SND_PlaySound3Dpl(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0170=170
+
+XFN "SC_SND_PlaySound3DSpec(unsignedlong,*c_Vector3,unsignedlong)void" 3 0 0 0
+$extern0171=171
+
+XFN "SC_SND_PlaySound3DexSpec(unsignedlong,*c_Vector3,*float,unsignedlong)void" 4 0 0 0
+$extern0172=172
+
+XFN "SC_SND_PlaySound2DSpec(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0173=173
+
+XFN "SC_SND_SetHearableRatio(float)void" 1 0 0 0
+$extern0174=174
+
+XFN "SC_SND_GetSoundLen(unsignedlong)float" 1 1 4 1
+$extern0175=175
+
+XFN "SC_SND_PlayMusic(unsignedlong)void" 1 0 0 0
+$extern0176=176
+
+XFN "SC_SND_MusicPlay(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0177=177
+
+XFN "SC_SND_MusicStop(unsignedlong)void" 1 0 0 0
+$extern0178=178
+
+XFN "SC_SND_MusicStopFade(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0179=179
+
+XFN "SC_SND_MusicFadeVolume(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0180=180
+
+XFN "SC_AGS_Set(unsignedlong)unsignedlong" 1 1 4 0
+$extern0181=181
+
+XFN "SC_NOD_SetDSTR(*void,*char,*char)void" 3 0 0 0
+$extern0182=182
+
+XFN "SC_NOD_ResetDSTR(*void,*char)void" 2 0 0 0
+$extern0183=183
+
+XFN "SC_NOD_GetName(*void)*char" 1 1 4 0
+$extern0184=184
+
+XFN "SC_NOD_GetPivotWorld(*void,*c_Vector3)void" 2 0 0 0
+$extern0185=185
+
+XFN "SC_NOD_Detach(*void,*char)void" 2 0 0 0
+$extern0186=186
+
+XFN "SC_NOD_AddDynamic(*void,*char,*s_SC_OBJ_dynamic)void" 3 0 0 0
+$extern0187=187
+
+XFN "SC_NOD_GetWorldPos(*void,*c_Vector3)void" 2 0 0 0
+$extern0188=188
+
+XFN "SC_NOD_GetWorldRotZ(*void)float" 1 1 4 1
+$extern0189=189
+
+XFN "SC_NOD_GetCollision(*void,*char,int)int" 3 1 4 0
+$extern0190=190
+
+XFN "SC_NOD_GetCollision2(*void,int)int" 2 1 4 0
+$extern0191=191
+
+XFN "SC_DOBJ_IsBurning(*void,float)int" 2 1 4 0
+$extern0192=192
+
+XFN "SC_DOBJ_IsBurning2(*void)int" 1 1 4 0
+$extern0193=193
+
+XFN "SC_DOBJ_StopBurning(*void,int)void" 2 0 0 0
+$extern0194=194
+
+XFN "SC_NOD_GetDummySph(*void,*char,*s_sphere)void" 3 0 0 0
+$extern0195=195
+
+XFN "SC_DOBJ_ClearDamagedHP(*void)void" 1 0 0 0
+$extern0196=196
+
+XFN "SC_DOBJ_BurnCreateBlockers(*void,*s_sphere,unsignedlong)void" 3 0 0 0
+$extern0197=197
+
+XFN "SC_DOBJ_SetFrozenFlag(*void,int)void" 2 0 0 0
+$extern0198=198
+
+XFN "SC_NOD_Get(*void,*char)*void" 2 1 4 0
+$extern0199=199
+
+XFN "SC_NOD_GetNoMessage(*void,*char)*void" 2 1 4 0
+$extern0200=200
+
+XFN "SC_NOD_GetNoMessage_Entity(*char)*void" 1 1 4 0
+$extern0201=201
+
+XFN "SC_NOD_GetTransform(*void,*s_SC_NOD_transform)void" 2 0 0 0
+$extern0202=202
+
+XFN "SC_NOD_SetTransform(*void,*s_SC_NOD_transform)void" 2 0 0 0
+$extern0203=203
+
+XFN "SC_NOD_Hide(*void,int)void" 2 0 0 0
+$extern0204=204
+
+XFN "SC_NOD_GetPosInOtherSpace(*void,*void,*c_Vector3)void" 3 0 0 0
+$extern0205=205
+
+XFN "SC_DOBJ_CameraLooksAt(*void,float)float" 2 1 4 1
+$extern0206=206
+
+XFN "SC_DOBJ_CameraLooksAtCollision(*void,float)float" 2 1 4 1
+$extern0207=207
+
+XFN "SC_ACTIVE_Add(*void,float,unsignedlong)void" 3 0 0 0
+$extern0208=208
+
+XFN "SC_DUMMY_Set_DoNotRenHier(*char,int)void" 2 0 0 0
+$extern0209=209
+
+XFN "SC_DUMMY_Set_DoNotRenHier2(*void,int)void" 2 0 0 0
+$extern0210=210
+
+XFN "SC_CAR_Create(*void,*s_SC_Car_Init)*void" 2 1 4 0
+$extern0211=211
+
+XFN "SC_CAR_WheelAdd(*void,*void,*s_SC_Car_AddWheel)void" 3 0 0 0
+$extern0212=212
+
+XFN "SC_CAR_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0213=213
+
+XFN "SC_CAR_SetAirResistance(*void,float,float,float)void" 4 0 0 0
+$extern0214=214
+
+XFN "SC_SHIP_Create(*void,*s_SC_Ship_Init,*s_SC_PHS_IWantToFloat)*void" 3 1 4 0
+$extern0215=215
+
+XFN "SC_SHIP_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0216=216
+
+XFN "SC_HELI_Create(*void,*s_SC_Heli_Init)*void" 2 1 4 0
+$extern0217=217
+
+XFN "SC_HELI_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0218=218
+
+XFN "SC_HELI_ChangeEntryStativ(*void,unsignedlong,*char)void" 3 0 0 0
+$extern0219=219
+
+XFN "SC_MP_EnumPlayers(*s_SC_MP_EnumPlayers,*unsignedlong,unsignedlong)int" 3 1 4 0
+$extern0220=220
+
+XFN "SC_MP_RestartMission(void)void" 0 0 0 0
+$extern0221=221
+
+XFN "SC_MP_P_SetRecoverTime(unsignedlong,float)void" 2 0 0 0
+$extern0222=222
+
+XFN "SC_MP_P_GetAfterRecoverSide(unsignedlong)unsignedlong" 1 1 4 0
+$extern0223=223
+
+XFN "SC_MP_P_GetClass(unsignedlong)unsignedlong" 1 1 4 0
+$extern0224=224
+
+XFN "SC_MP_P_GetAfterRecoverClass(unsignedlong)unsignedlong" 1 1 4 0
+$extern0225=225
+
+XFN "SC_MP_AddPlayerScript(*char)void" 1 0 0 0
+$extern0226=226
+
+XFN "SC_MP_SRV_SetForceSide(unsignedlong)void" 1 0 0 0
+$extern0227=227
+
+XFN "SC_MP_SRV_SetClassLimit(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0228=228
+
+XFN "SC_MP_SRV_SetClassLimitsForDM(void)void" 0 0 0 0
+$extern0229=229
+
+XFN "SC_MP_SRV_GetBestDMrecov(*s_SC_MP_Recover,unsignedlong,*float,float)unsignedlong" 4 1 4 0
+$extern0230=230
+
+XFN "SC_MP_SRV_InitWeaponsRecovery(float)void" 1 0 0 0
+$extern0231=231
+
+XFN "SC_MP_HUD_SetTabInfo(*s_SC_MP_hud)void" 1 0 0 0
+$extern0232=232
+
+XFN "SC_MP_HUD_SelectPl(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0233=233
+
+XFN "SC_GameInfo(unsignedlong,*char)void" 2 0 0 0
+$extern0234=234
+
+XFN "SC_GameInfoW(*unsignedshort)void" 1 0 0 0
+$extern0235=235
+
+XFN "SC_P_MP_AddPoints(unsignedlong,int)void" 2 0 0 0
+$extern0236=236
+
+XFN "SC_MP_GetMaxPointsPl(*int)unsignedlong" 1 1 4 0
+$extern0237=237
+
+XFN "SC_MP_GetMaxFragsPl(*int)unsignedlong" 1 1 4 0
+$extern0238=238
+
+XFN "SC_MP_GetHandleofPl(unsignedlong)unsignedlong" 1 1 4 0
+$extern0239=239
+
+XFN "SC_MP_GetPlofHandle(unsignedlong)unsignedlong" 1 1 4 0
+$extern0240=240
+
+XFN "SC_HUD_RadarShowPlayer(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0241=241
+
+XFN "SC_HUD_RadarShowPos(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0242=242
+
+XFN "SC_MP_SetSideStats(unsignedlong,int,int)void" 3 0 0 0
+$extern0243=243
+
+XFN "SC_MP_ScriptMessage(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0244=244
+
+XFN "SC_MP_AllowStPwD(int)void" 1 0 0 0
+$extern0245=245
+
+XFN "SC_MP_AllowFriendlyFireOFF(int)void" 1 0 0 0
+$extern0246=246
+
+XFN "SC_MP_SetIconHUD(*s_SC_HUD_MP_icon,unsignedlong)void" 2 0 0 0
+$extern0247=247
+
+XFN "SC_MP_SetInstantRecovery(int)void" 1 0 0 0
+$extern0248=248
+
+XFN "SC_MP_SetItemsNoDisappear(int)void" 1 0 0 0
+$extern0249=249
+
+XFN "SC_MP_EnableBotsFromScene(int)void" 1 0 0 0
+$extern0250=250
+
+XFN "SC_MP_SetChooseValidSides(unsignedlong)void" 1 0 0 0
+$extern0251=251
+
+XFN "SC_MP_EnableC4weapon(int)void" 1 0 0 0
+$extern0252=252
+
+XFN "SC_MP_LoadNextMap(void)void" 0 0 0 0
+$extern0253=253
+
+XFN "SC_MP_SetTeamGame(int)void" 1 0 0 0
+$extern0254=254
+
+XFN "SC_MP_RecoverAllNoAiPlayers(void)void" 0 0 0 0
+$extern0255=255
+
+XFN "SC_MP_RecoverAllAiPlayers(void)void" 0 0 0 0
+$extern0256=256
+
+XFN "SC_MP_EndRule_SetTimeLeft(float,int)void" 2 0 0 0
+$extern0257=257
+
+XFN "SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void" 1 0 0 0
+$extern0258=258
+
+XFN "SC_MP_SRV_P_SetSideClass(unsignedlong,unsignedlong,unsignedlong)int" 3 1 4 0
+$extern0259=259
+
+XFN "SC_MP_SRV_GetAutoTeamBalance(void)int" 0 1 4 0
+$extern0260=260
+
+XFN "SC_MP_SRV_GetTeamsNrDifference(int)int" 1 1 4 0
+$extern0261=261
+
+XFN "SC_MP_SRV_DoExplosion(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0262=262
+
+XFN "SC_MP_SRV_ClearPlsStats(void)void" 0 0 0 0
+$extern0263=263
+
+XFN "SC_MP_SRV_InitGameAfterInactive(void)void" 0 0 0 0
+$extern0264=264
+
+XFN "SC_MP_GetAmmoBoxesEnabled(void)int" 0 1 4 0
+$extern0265=265
+
+XFN "SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void" 1 0 0 0
+$extern0266=266
+
+XFN "SC_MP_SetSpectatorCameras(char)void" 1 0 0 0
+$extern0267=267
+
+XFN "SC_MP_GetRecovers(unsignedlong,*s_SC_MP_Recover,*unsignedlong)void" 3 0 0 0
+$extern0268=268
+
+XFN "SC_MP_RecoverPlayer(unsignedlong)void" 1 0 0 0
+$extern0269=269
+
+XFN "SC_MP_FpvMapSign_Load(*char)unsignedlong" 1 1 4 0
+$extern0270=270
+
+XFN "SC_MP_FpvMapSign_Unload(unsignedlong)int" 1 1 4 0
+$extern0271=271
+
+XFN "SC_MP_FpvMapSign_Set(unsignedlong,*s_SC_FpvMapSign)void" 2 0 0 0
+$extern0272=272
+
+
+@ScriptMain				; function 'ScriptMain'
+
+		IN 0
+		OUT 0
+		$temp0000=-3		; return variable
+		$var0000=-4		; parameter 'info'
+
+					; { 0
+
+					; code of next node
+
+					; StackAdress: 0
+
+@debug0000				; source_line(NT_SWITCH): 14
+
+
+
+					; 'switch' begin   0
+		$temp0001=0
+		LADR var0000
+		DADR 0
+		DCP 4
+		JMP label0000		; jump to first 'case'
+					; { 1
+		JMP label0002		; jump to body of next 'case'
+
+	@label0000			; 'case'
+
+		LCP temp0001
+		$const0000=0
+		?0x3i			; (3)
+		GCP const0000
+		EQU
+		JZ label0003
+
+
+	@label0002			; 'case' body
+
+					; StackAdress: 1
+
+@debug0001				; source_line(NT_RET): 17
+
+
+
+					; 'return'
+		$const0001=1
+		?0x1i			; (1)
+		GCP const0001
+		LLD temp0000
+					; StackAdress: 1
+
+@debug0002				; source_line(NT_FUNEXIT): -1
+
+
+
+		RET 1
+		JMP label0004		; jump to body of next 'case'
+
+	@label0003			; 'case'
+
+		LCP temp0001
+		$const0002=2
+		?0x7i			; (7)
+		GCP const0002
+		EQU
+		JZ label0005
+
+
+	@label0004			; 'case' body
+
+					; StackAdress: 1
+
+@debug0003				; source_line(NT_BREAK): 21
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0006		; jump to body of next 'case'
+
+	@label0005			; 'case'
+
+		LCP temp0001
+		$const0003=3
+		?0x5i			; (5)
+		GCP const0003
+		EQU
+		JZ label0007
+
+
+	@label0006			; 'case' body
+
+					; StackAdress: 1
+
+@debug0004				; source_line(NT_BREAK): 24
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0008		; jump to body of next 'case'
+
+	@label0007			; 'case'
+
+		LCP temp0001
+		$const0004=4
+		?0x1i			; (1)
+		GCP const0004
+		EQU
+		JZ label0009
+
+
+	@label0008			; 'case' body
+
+					; StackAdress: 1
+
+@debug0005				; source_line(NT_CALL): 27
+
+
+
+					; function call
+		$const0005=5
+		?0x34i			; (52)
+		GCP const0005
+		LADR var0000
+		DADR 4
+		DCP 4
+		XCALL extern0155
+		SSP 2
+
+					; StackAdress: 1
+
+@debug0006				; source_line(NT_BREAK): 28
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0010		; jump to body of next 'case'
+
+	@label0009			; 'case'
+
+		LCP temp0001
+		$const0006=6
+		?0x4i			; (4)
+		GCP const0006
+		EQU
+		JZ label0011
+
+
+	@label0010			; 'case' body
+
+					; StackAdress: 1
+
+@debug0007				; source_line(NT_BREAK): 31
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0012		; jump to body of next 'case'
+
+	@label0011			; 'case'
+
+		LCP temp0001
+		$const0007=7
+		?0x6i			; (6)
+		GCP const0007
+		EQU
+		JZ label0013
+
+
+	@label0012			; 'case' body
+
+					; StackAdress: 1
+
+@debug0008				; source_line(NT_BREAK): 34
+
+
+
+					; 'break' 1,1
+		JMP label0001
+					; StackAdress: 1
+
+@debug0009				; source_line(IT_BLOCK_END): 36
+
+
+
+					; } 1 -> 1
+
+	@label0013			; no 'case' match 'switch' condition
+
+
+	@label0001			; 'case' was finished by 'break'
+
+					; 'switch' end   1
+		SSP 1
+
+					; code of next node
+
+					; StackAdress: 0
+
+@debug0010				; source_line(NT_RET): 39
+
+
+
+					; 'return'
+		$const0008=8
+		?0x0i			; (0)
+		GCP const0008
+		LLD temp0000
+					; StackAdress: 0
+
+@debug0011				; source_line(NT_FUNEXIT): -1
+
+
+
+		RET 0
+
+
+
+							; } 0 -> 0
+

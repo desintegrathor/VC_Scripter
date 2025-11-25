@@ -1,0 +1,7254 @@
+ 0 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+lineno==0
+parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+
+
+
+
+
+
+
+ 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"
+lineno==0
+parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"'
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+													
+													
+													
+													
+												
+												
+												
+
+												
+												
+												
+
+
+
+
+
+												
+												
+
+
+
+
+
+
+
+
+
+
+												
+
+
+
+
+												
+												
+														
+
+
+
+
+
+												
+												
+
+
+
+												
+												
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+											
+											
+												
+
+
+
+
+
+
+											
+											
+
+
+												
+												
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	typedef unsigned int dword;	
+
+	typedef unsigned short ushort;	
+
+
+	typedef int BOOL;
+	
+	typedef struct {
+		float x,y,z;
+	}c_Vector3;
+	
+	typedef struct{
+		c_Vector3 pos;
+		float rad;
+	}s_sphere;
+
+
+	extern int sprintf(char *, const char *, ...);
+	extern int swprintf(ushort *, ushort*, ...);
+	extern int rand(void);
+	extern float frnd(float max);
+	extern float sqrt(float val);
+	extern float fmod(float a, float b);
+
+	extern float sin(float a);
+	extern float cos(float a);
+	extern float atan2(float y, float x);
+
+
+	
+
+
+
+typedef struct{
+	dword message,param1,param2;
+	dword pl_id;
+	void *pos;	
+	float elapsed_time;
+	float next_exe_time;
+}s_SC_P_info;
+
+
+typedef struct{	
+	char *bes;
+	char *eqp;
+}s_SC_P_CreateEqp;
+
+
+
+typedef struct{	
+	dword type;
+	dword side;
+	dword group;
+	dword member_id;
+	dword name_nr;
+	dword debrief_group;	
+	char *inifile;
+	void *recover_pos;	
+	char *icon_name;
+
+	dword flags;		
+
+	dword weap_knife;
+	dword weap_pistol;
+	dword weap_main1;
+	dword weap_main2;	
+	dword weap_slot1;	
+
+	dword weap_slot6;
+	dword weap_slot7;
+	dword weap_slot8;
+	dword weap_slot9;
+	dword weap_slot10;	
+
+	dword force_sel_slot;	
+
+	dword eqps;
+	s_SC_P_CreateEqp *eqp;
+
+	dword aeg_valid_head_bes[8];
+	dword aeg_valid_body_bes[8];
+
+}s_SC_P_Create;
+
+
+typedef struct{	
+	dword message,param1,param2,param3;
+	float elapsed_time;
+	float next_exe_time;
+	c_Vector3 param4;
+}s_SC_L_info;
+
+typedef struct{
+
+	float max_vis_distance;				
+	float watchfulness_zerodist;		
+	float watchfulness_maxdistance;		
+	float boldness;						
+	float coveramount;					
+	float shoot_imprecision;			
+	
+	BOOL extend_searchway;				
+										
+	float shortdistance_fight;			
+										
+										
+	float view_angle;					
+	float view_angle_near;				
+
+	float hear_imprecision;				
+	float hear_distance_mult;			
+	float hear_distance_max;			
+
+	float grenade_min_distance;			
+	float grenade_timing_imprecision;	
+	float grenade_throw_imprecision;	
+	float grenade_sure_time;			
+
+	float forget_enemy_mult;			
+	float shoot_damage_mult;			
+
+	BOOL disable_peace_crouch;			
+
+	float peace_fakeenemy_run;			
+	float peace_fakeenemy_phase;		
+
+	float shoot_while_hidding;			
+
+	float reaction_time;				
+	float scout;						
+	float berserk;						
+
+	float aimtime_max;					
+	float aimtime_canshoot;				
+	float aimtime_rotmult;				
+
+	float wounded_start_perc;			
+	float wounded_aimtime_mult_max;		
+	float wounded_shoot_imprec_plus;	
+
+}s_SC_P_AI_props;
+
+
+typedef struct{
+
+	dword MaxHideOutsStatus;			
+	dword MaxGroups;
+
+}s_SC_initside;
+
+typedef struct{
+
+	dword SideId;
+	dword GroupId;
+	dword MaxPlayers;
+
+	float NoHoldFireDistance;			
+	float follow_point_max_distance;
+	
+}s_SC_initgroup;
+
+
+typedef struct{
+
+	float cur_hp,max_hp;
+	dword side;
+	dword group;
+	dword member_id;
+	
+}s_SC_P_getinfo;
+
+typedef struct{
+	
+	float Position;				
+	float Aim;					
+	float Run;					
+	
+}s_SC_P_Ai_BattleProps;
+
+
+
+typedef struct{
+
+	dword event_type;		
+	void *master_nod;
+	void *nod;	
+	float new_hp_obtained;
+	dword hit_by;			
+	c_Vector3 *world_pos;
+	c_Vector3 *world_dir;
+	float time;				
+
+}s_SC_OBJ_info;
+
+
+typedef struct{
+	c_Vector3 velocity;	
+	float rot_speed;
+	c_Vector3 rot_axis;
+}s_SC_OBJ_dynamic;
+
+typedef struct{
+
+	dword event_type;
+	void *obj;
+	void *weap_type;
+	dword anim_id;
+	float anim_time;
+	float prev_time;
+	c_Vector3 pos;
+	dword cur_batch;
+	dword cur_ammo;
+	dword cur_phase;		
+	float param1;			
+							
+	dword cur_bayonet;		
+							
+	dword weap_phase;		
+	
+
+	float step_time;		
+
+
+}s_SC_WEAP_info;
+
+
+typedef struct{
+
+	dword event_type;		
+	void *obj;
+	void *weap_type;
+	dword cur_batch;
+	dword cur_ammo;
+	dword cur_phase;		
+	dword pl_id;			
+	dword cur_bayonet;		
+
+}s_SC_WEAP3pv_info;
+
+
+typedef struct{
+	dword event_type;		
+	s_sphere sph;
+	void *nod;
+	float elapsed_time;
+	float next_exe_time;	
+}s_SC_ScriptHelper_info;
+
+
+
+typedef struct{
+	c_Vector3 loc;
+	c_Vector3 rot;
+	c_Vector3 scale;
+}s_SC_NOD_transform;
+
+
+typedef struct{
+
+	void *master_nod;	
+
+	void *steeringwheel_nod;
+	float steeringwheel_max_rot;	
+
+	float steer_max;
+	float steer_speed;
+	float steer_backspeed;
+	float steer_curse[11];	
+
+	float steer_max_mult_at10mpersec;
+	float steer_speed_mult_at10mpersec;
+	float steer_backspeed_mult_at10mpersec;
+							
+	float eng_max_revs;			
+	float eng_freewheel_revs;	
+	float eng_revs_slowdown;
+	float eng_min_revs;			
+	c_Vector3 eng_sound_pos;
+	
+	float eng_freqmult_1,eng_freqmult_revs1;
+	float eng_freqmult_2,eng_freqmult_revs2;
+
+	dword eng_snd_id;
+
+	dword eng_val_steps;
+	float *eng_Nm;	
+	float *eng_kW;
+	float *eng_sound_volume;
+
+	float trns_delay;
+	dword trns_gears;
+	float *trns_gear;
+
+	float brake_power;
+	
+}s_SC_Car_Init;
+
+
+typedef struct{
+
+	c_Vector3 body_point;		
+	c_Vector3 body_vector;		
+	
+	float spring_tmin;			
+	float spring_tmax;			
+	float spring_t;				
+	float spring_absorber;		
+	float spring_looser;		
+	float spring_rate;			
+	float wheel_radius;			
+	float wheel_friction;		
+
+
+	float wheel_aspd;			
+	BOOL wheel_with_drive;		
+	BOOL steering;
+	BOOL left_side;
+
+	float wheel_fr_min;
+	float wheel_fr_dspd;
+
+	float ptc_v0_mult;
+	float ptc_v1_mult;
+
+}s_SC_Car_AddWheel;
+
+
+typedef struct{
+	dword function;
+	dword entry_name_nr;
+	dword exit_name_nr;	
+	c_Vector3 entry;
+	float entry_dist;
+	c_Vector3 target;
+	c_Vector3 view;
+	float min_rx,max_rx;
+	float min_rz,max_rz;
+
+	float shoot_min_rz,shoot_max_rz;
+	dword switch_3pv_anim_dir;
+	
+	char *stg_dir;
+	BOOL can_shoot;
+	BOOL disabled_for_PC;
+	float rz;
+
+}s_SC_Car_AddEntry;
+
+
+typedef struct{
+
+	dword pl_back_txt,pl_back_snd;		
+	dword ra_back_txt,ra_back_snd;
+
+	dword ra_where_ru_nr;				
+	dword ra_where_ru_txt[5];			
+	dword ra_where_ru_snd[5];
+
+}s_SC_SpeachBreakProps;
+
+
+
+typedef struct{	
+	dword message,param1,param2,param3;
+	float elapsed_time;	
+	float fval1;
+}s_SC_NET_info;
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+typedef struct{
+	
+	dword valid_uses;					
+	float use_interval;					
+	float cur_interval;					
+	
+}s_SC_P_Ai_Grenade;
+
+
+
+typedef struct{	
+	float min_dist,max_dist;
+	c_Vector3 follow_change;	
+}s_SC_Ai_PlFollow;
+
+
+
+typedef struct{	
+
+	void *master_nod;	
+
+	float steer_max;
+	float steer_speed;
+	float steer_backspeed;	
+							
+	float eng_max_revs;			
+	float eng_freewheel_revs;	
+	float eng_revs_slowdown;
+	
+	c_Vector3 eng_sound_pos;
+	c_Vector3 drive_pos;
+	
+	float eng_freqmult_1,eng_freqmult_revs1;
+	float eng_freqmult_2,eng_freqmult_revs2;
+
+	dword eng_snd_id;
+
+	float power_front,power_back;
+
+}s_SC_Ship_Init;
+
+
+
+typedef struct{
+	
+	c_Vector3 _env_normal;	
+	c_Vector3 _hydI;	
+	c_Vector3 _hydJ;	
+	c_Vector3 _hydK;	
+	float _CI;	
+	float _CJ;	
+	float _CK;	
+	float _QR;	
+	float _QI;	
+	float _QJ;	
+	float _QIJ;	
+	float _FK;
+
+}s_SC_PHS_IWantToFloat;
+
+typedef struct{
+	dword savename_id;
+	dword description_id;
+	BOOL disable_info;		
+}s_SC_MissionSave;
+
+
+
+typedef struct{
+	c_Vector3 camera_pos;
+	c_Vector3 camera_dir;
+}s_SC_RC_info;
+
+
+typedef struct{
+
+	dword id;
+	dword side;
+	dword status;	
+	char *name;
+
+}s_SC_MP_EnumPlayers;
+
+
+
+typedef struct{
+	c_Vector3 pos;
+	float rz;
+}s_SC_MP_Recover;
+
+
+typedef struct{	
+
+	void *master_nod;	
+	dword eng_snd_id;
+	dword snd2_id;
+	float snd2_turndown_dist;
+	float snd2_zerodist_volume;	
+	dword flags;		
+
+}s_SC_Heli_Init;
+
+
+
+typedef struct{	
+	dword weap_type;			
+
+	dword use_info_txt_id;		
+	dword exit_info_txt_id;		
+
+	void *master_nod;			
+	void *nod_base;				
+	void *nod_rotate_x;			
+	void *nod_rotate_z;			
+	void *nod_rotate_last;		
+	void *nod_fpv_camera;		
+	void *nod_active_pos;		
+	void *nod_muzzle;
+	void *nod_entry;			
+		
+
+	float active_rad;			
+	float active_dist;			
+
+	float rotate_zmin,rotate_zmax;		
+	float rotate_xmin,rotate_xmax;		
+	float rotate_speed;					
+
+	float flash_rot_step;		
+
+	
+	dword link_at;				
+	void *link_ptr;				
+	dword link_entry_index;		
+
+	char *anim_dir;
+
+}s_SC_MWP_Create;
+
+
+
+typedef struct{
+
+	char *sa[5];	
+							
+
+}s_SC_P_SpecAnims;
+
+
+typedef struct{
+	void *weap_type;			
+	void *from;					
+	c_Vector3 dir;				
+	c_Vector3 add_rot;			
+}s_SC_FlyOffCartridge;
+
+
+typedef struct{
+	dword text_id;
+	dword status;		
+}s_SC_Objective;
+
+
+
+typedef struct{
+
+	float	missionTime;				
+	dword	difficulty;
+	dword	missionStatus;
+
+	
+	dword	SF;							
+	dword	LLDB;
+	dword	CIDG;
+	dword	Heli;						
+	dword	Jeep;
+
+	
+	dword	VC;							
+	dword	Gaz;						
+	dword	Boobytrap;					
+	dword	Caches;						
+	dword	Tunnels;
+	dword	Facilities;
+	dword	Intelligence;
+
+	
+	dword	Bangs;						
+	dword	Defort;
+	dword	Hornster;
+	dword	Nhut;
+	dword	Bronson;
+	dword	Crocker;
+
+}s_SC_DebriefInfo;
+
+
+typedef struct{
+
+	dword title;
+	BOOL use_sides;
+	BOOL disableUSside;
+	BOOL disableVCside;
+
+	dword side_name[2];
+	dword side_color[2];
+
+	dword pl_mask;
+	dword side_mask;
+	dword sort_by[5];
+
+}s_SC_MP_hud;
+
+
+
+
+
+
+
+typedef struct{
+	dword icon_id;  
+	dword type;     
+	int value;	    
+	dword color;	
+}s_SC_HUD_MP_icon;
+
+
+typedef struct{
+	dword message;		
+}s_SC_SOUND_info;
+
+
+typedef struct{
+	dword coop_respawn_time;
+	dword coop_respawn_limit;
+	dword dm_weap_resp_time;
+	dword atg_class_limit[6];
+}s_SC_MP_SRV_settings;
+
+
+typedef struct{
+	float ATG_round_time;
+	float tt_respawntime;
+	float tt_timelimit;
+}s_SC_MP_SRV_AtgSettings;
+
+
+
+typedef struct{
+	float r,g,b;
+	float rad;	
+	c_Vector3 pos;
+
+	float time;
+	BOOL decrease_radius;
+}s_SC_light;
+
+
+typedef struct{
+
+	int   musId;			
+	int   musVol;			
+	float musFadeIn;		
+	float musPlayTime;		
+	float musFadeOut;		
+	int   heliVol;			
+	int   gameVol;			
+	int	  natureVol;		
+
+}s_MusicDef;
+
+typedef struct{
+	dword chats[9];
+	dword radistmarks;
+	dword radiomarks;
+}s_SC_BombInfo;
+
+
+typedef struct{
+	dword intel[10];
+}s_SC_P_intel;
+
+typedef struct{
+	int hours;
+	int minutes;
+	int seconds;
+	int msec;	
+}s_SC_systime;
+
+
+
+
+typedef struct{
+	dword id;	
+	dword color;
+	float scale;
+	c_Vector3 pos;
+}s_SC_FpvMapSign;
+
+
+typedef struct{
+    float fade_in_time;
+    float stay_in_time_begin;
+    float stay_in_time_end;
+    float fade_out_time;
+
+    float current_time;
+
+    dword font_id;
+    dword text_id;
+    dword color;
+
+    int alignx;
+    int aligny;
+
+    int max_num_lines;
+    float scale_ratio;
+
+}s_SC_HUD_TextWrite;
+
+
+
+
+
+extern void SC_sgi(dword id, int a);
+extern int SC_ggi(dword id);
+
+
+extern void SC_sgf(dword id, float a);
+extern float SC_ggf(dword id);
+
+extern void SC_MP_Gvar_SetSynchro(dword id);
+
+
+extern void SC_ZeroMem(void *ptr, dword size);
+extern float SC_GetLineDist(c_Vector3 *pos, c_Vector3 *line_a, c_Vector3 *line_b);
+extern float SC_GetLineDistXY(c_Vector3 *pos, c_Vector3 *line_a, c_Vector3 *line_b);
+
+extern BOOL SC_IsNear2D(c_Vector3 *a, c_Vector3 *b, float dist);
+extern BOOL SC_IsNear3D(c_Vector3 *a, c_Vector3 *b, float dist);
+
+extern float SC_2VectorsDist(c_Vector3 *a, c_Vector3 *b);
+
+extern float SC_VectorLen(c_Vector3 *vec);
+extern float SC_VectorLen2(c_Vector3 *vec);
+
+
+extern void SC_message(char *txt,...);				
+extern void SC_Log(dword level, char *txt, ...);	
+extern void SC_Osi(char *txt,...);					
+
+extern BOOL SC_StringSame(char *a, char *b);
+
+extern BOOL SC_KeyJustPressed(dword id);			
+extern BOOL SC_KeyPressed(dword id);				
+
+extern void SC_EventImpuls(char *ev_name);
+extern void SC_EventEnable(char *ev_name, BOOL enable);	
+
+extern void SC_MissionCompleted(void);
+extern void SC_MissionFailed(void);
+extern void SC_MissionFailedEx(dword music_id, dword start_volume);
+extern void SC_MissionDone(void);	
+
+
+extern void SC_SetMissileTrace(dword color, float alpha);
+
+extern void SC_CreatePtc(dword id, c_Vector3 *vec);
+extern void SC_CreatePtc_Ext(dword id, void *nod, float time, float interval, float scale, float time_mult);
+					
+extern void SC_CreatePtcVec_Ext(dword id, c_Vector3 *vec, float time, float interval, float scale, float time_mult);
+extern void SC_CreatePtcInNodSpace_Ext(dword id, void *nod, float time, float interval, float scale, float time_mult);
+					
+						
+						
+						
+						
+						
+
+extern ushort *SC_AnsiToUni(char *src, ushort *dest);
+
+extern void SC_Fnt_Write(float x, float y, char *txt, float scale, dword color);
+extern float SC_Fnt_GetWidth(char *txt, float scale);
+
+extern void SC_Fnt_WriteW(float x, float y, ushort *txt, float scale, dword color);
+extern float SC_Fnt_GetWidthW(ushort *txt, float scale);
+
+
+extern void SC_GetScreenRes(float *width, float *height);
+
+extern void SC_SpeechSet3Dto3Dincamera(BOOL incamera3D);
+											
+											
+
+extern void SC_DoExplosion(c_Vector3 *pos, dword type);	
+														
+
+extern dword SC_MWP_Create(s_SC_MWP_Create *info);
+
+extern void SC_SetObjectScript(char *obj_name, char *script_name);
+
+extern void SC_GetPos_VecRz(void *cpos, c_Vector3 *pos, float *rz);	
+
+extern void SC_PreloadBES(dword id, char *bes_name);	
+
+extern void SC_PreloadWeapon(dword type, BOOL fpv_to);
+extern void SC_FadeTo(BOOL black, float time);	
+
+					
+extern void SC_PreloadSound(dword snd_id, BOOL is3D);	
+extern void SC_FadeSoundPlayer(dword snd_player_id, float final_volume, float fade_time);
+
+extern ushort* SC_Wtxt(dword val);				
+
+extern dword SC_GetNearestPlayer(c_Vector3 *vec, float *dist);
+
+extern void SC_SetMovieBorders(BOOL set_on);
+
+extern void SC_CreateLight(s_SC_light *info);
+
+extern void SC_GetCameraPos(c_Vector3 *vec);
+
+extern void SC_Fauna_DoSoundAlert(c_Vector3 *pos);
+extern void SC_Fauna_KillThemAll(s_sphere *sph);
+
+
+
+extern BOOL SC_PC_GetPos(c_Vector3 *pos);
+extern dword SC_PC_Get(void);
+
+extern void SC_PC_SetControl(BOOL user_control);				
+extern void SC_PC_EnableMovementAndLooking(BOOL enable);	
+extern void SC_PC_EnableMovement(BOOL enable);				
+extern void SC_PC_EnablePronePosition(BOOL enable);			
+
+extern void SC_PC_EnableWeaponsUsing(BOOL enable);			
+
+
+
+extern dword SC_P_Create(s_SC_P_Create *info);	
+extern BOOL SC_P_IsReady(dword pl_id);					
+extern char *SC_P_GetName(dword pl_id);
+
+extern void SC_P_GetPos(dword pl_id, c_Vector3 *pos);
+extern float SC_P_GetRot(dword pl_id);
+extern void SC_P_GetInfo(dword pl_id, s_SC_P_getinfo *info);
+
+extern dword SC_P_GetBySideGroupMember(dword iside, dword igroup, dword imember);
+
+extern void SC_P_ScriptMessage(dword pl_id, dword param1, dword param2);	
+
+extern void SC_P_SetFaceStatus(dword pl_id, dword face_type, float time);
+												
+extern void SC_P_SetHandVariation(dword pl_id, dword hand_id, dword variation, float time);
+												
+												
+												
+
+extern float SC_P_GetDistance(dword pl_id, dword to_pl_id);
+
+
+
+extern void SC_P_Ai_SetMode(dword pl_id, dword mode);				
+extern dword SC_P_Ai_GetMode(dword pl_id);				
+extern void SC_P_Ai_SetBattleMode(dword pl_id, dword battlemode);	
+																
+extern void SC_P_Ai_SetBattleModeExt(dword pl_id, dword battlemode, c_Vector3 *param);
+																
+extern dword SC_P_Ai_GetBattleMode(dword pl_id);	
+
+extern void SC_P_Ai_SetPeaceMode(dword pl_id, dword peacemode);	
+extern dword SC_P_Ai_GetPeaceMode(dword pl_id);					
+
+extern dword SC_P_Ai_GetSpecTask(dword pl_id);					
+
+
+extern void SC_P_Ai_SetMoveMode(dword pl_id, dword mode);			
+extern void SC_P_Ai_SetMovePos(dword pl_id, dword pos);				
+extern void SC_P_Ai_EnableShooting(dword pl_id, BOOL enable);		
+extern void SC_P_Ai_Go(dword pl_id, c_Vector3 *vec);
+extern void SC_P_Ai_Stop(dword pl_id);
+extern void SC_P_Ai_GetProps(dword pl_id, s_SC_P_AI_props *props);
+extern void SC_P_Ai_SetProps(dword pl_id, s_SC_P_AI_props *props);
+
+extern void SC_P_Ai_GetGrenateProps(dword pl_id, s_SC_P_Ai_Grenade *props);
+extern void SC_P_Ai_SetGrenateProps(dword pl_id, s_SC_P_Ai_Grenade *props);
+
+extern dword SC_P_Ai_GetEnemies(dword pl_id);
+extern dword SC_P_Ai_GetSureEnemies(dword pl_id);
+extern void SC_P_Ai_LookAt(dword pl_id, c_Vector3 *vec);
+extern void SC_P_Ai_EnableSituationUpdate(dword pl_id, BOOL enable);
+
+extern BOOL SC_P_Ai_KnowsAboutPl(dword pl_id, dword target_pl_id);
+
+extern void SC_P_Ai_SetBattleProps(dword pl_id, s_SC_P_Ai_BattleProps *props);	
+
+extern BOOL SC_P_Ai_GetShooting(dword pl_id, dword *target_pl_id);
+extern float SC_P_Ai_GetDanger(dword pl_id);
+
+extern void SC_P_Ai_SetPreferedWeaponSlot(dword pl_id, dword slot);
+extern dword SC_P_Ai_GetPreferedWeaponSlot(dword pl_id);	
+
+extern void SC_P_Ai_ShootAt(dword pl_id, c_Vector3 *pos, float time);	
+extern void SC_P_Ai_ForgetEnemies(dword pl_id);	
+extern void SC_P_Ai_HideYourself(dword pl_id, c_Vector3 *danger_pos, float max_walk_dist);	
+
+extern BOOL SC_P_Ai_LookingAt(dword pl_id, c_Vector3 *pos);
+extern void SC_P_Ai_ShouldLookAt(dword pl_id, c_Vector3 *pos, float time);
+
+extern void SC_P_Ai_SetStaticMode(dword pl_id, BOOL is_static);
+extern BOOL SC_P_Ai_GetStaticMode(dword pl_id);
+
+extern float SC_P_Ai_GetNearestEnemyDist(dword pl_id);			
+extern dword SC_P_Ai_GetNearestEnemy(dword pl_id);				
+
+extern void SC_P_Ai_Script_WatchPlayer(dword pl_id, dword target_pl_id, float time);
+																					
+																					
+extern void SC_P_Ai_UpdateSituation(dword pl_id, dword target_pl_id, BOOL enable_se);
+
+extern void SC_P_Ai_GetEnemyShotAround(dword pl_id, float max_dist);			
+
+extern void SC_P_Ai_SetIgnoreFlags(dword pl_id, dword flags);					
+extern dword SC_P_Ai_GetIgnoreFlags(dword pl_id);
+
+extern void SC_P_Ai_EnableSayTo(dword pl_id, BOOL enable);						
+
+extern void SC_P_Ai_SetPointmanBreaks(dword pl_id, float min_interval, float max_interval); 
+extern void SC_P_Ai_WalkThruAIs(dword pl_id, BOOL enable);		
+
+extern void SC_P_Ai_SetMedicIngMaxActiveDist(dword pl_id, float distance);	
+
+
+extern void SC_Ai_SetBattleMode(dword side, dword group, dword mode);	
+extern void SC_Ai_SetBattleModeExt(dword size, dword group, dword battlemode, c_Vector3 *param);
+																		
+extern void SC_Ai_SetPeaceMode(dword side, dword group, dword mode);	
+extern void SC_Ai_SetPointRuns(dword side, dword group, BOOL runs);
+
+extern void SC_Ai_SetPlFollow(dword side, dword group, dword mode, s_SC_Ai_PlFollow *follow, dword *follow_order, dword *point_order, dword players);	
+extern void SC_Ai_PointStopDanger(dword side, dword group);			
+extern void SC_Ai_StopDanger(dword side, dword group, float stop_time);				
+
+extern void SC_Ai_SetStealthMode(dword side, dword group, BOOL stealth);
+extern void SC_Ai_SetStealthModeOff(dword side, dword group, float agressive_time);
+extern BOOL SC_Ai_GetStealthMode(dword side, dword group);
+
+extern void SC_Ai_EnableRelaxWalk(dword side, dword group, BOOL enable);
+
+extern dword SC_Ai_Blocker_Add(s_sphere *sph);
+extern void SC_Ai_Blocker_Remove(dword blocker_id);
+
+extern void SC_Ai_FakeEnemy_Add(dword side, dword group, c_Vector3 *fake_enemy, dword area_spheres, s_sphere *area_sphere);
+			
+extern void SC_Ai_FakeEnemy_Remove(dword side, dword group, c_Vector3 *fake_enemy);												
+
+extern void SC_Ai_FakeDanger(s_sphere *sph, float time);	
+															
+				
+extern void SC_Ai_SetGroupEnemyUpdate(dword side, dword group, BOOL enable);
+																			
+extern void SC_Ai_SetPointmanNormalWalking(dword side, dword group, BOOL normal);		
+
+extern BOOL SC_P_Ai_CanSeePlayer(dword pl_id, dword target_id, float max_dist, dword need_points);
+															
+															
+															
+															
+
+
+extern BOOL SC_GetWp(char *wpname, c_Vector3 *vec);
+
+extern void SC_SetSideAlly(dword s1, dword s2, float status);	
+extern void SC_InitSide(dword id, s_SC_initside *init);
+extern void SC_InitSideGroup(s_SC_initgroup *info);
+extern dword SC_GetGroupPlayers(dword side, dword group);
+
+extern dword SC_Item_Create(dword id, c_Vector3 *vec);						
+extern dword SC_Item_Create2(dword id, c_Vector3 *vec, c_Vector3 *movdir);	
+extern void SC_Item_Preload(dword id);
+extern BOOL SC_Item_GetPos(dword netid, c_Vector3 *pos);
+extern void SC_SRV_Item_Release(dword netid);
+extern dword SC_Item_Find(dword item_type);			
+
+extern void SC_LevScr_Event(dword param1, dword param2);
+
+extern void SC_StorySkipEnable(BOOL enable);
+
+
+extern BOOL SC_NET_FillRecover(s_SC_MP_Recover *recov, char *wpname);
+
+extern void SC_GetPls(s_sphere *sph, dword *list, dword *items);
+extern void SC_GetPlsInLine(c_Vector3 *pos, c_Vector3 *dir, dword *list, dword *items);
+
+extern void SC_DisplayBinocular(BOOL enable);
+
+extern BOOL SC_GetScriptHelper(char *name, s_sphere *sph);
+extern void SC_MissionFailedDeathPlayer(dword death_plid);
+
+
+extern BOOL SC_SND_SetEnvironment(dword env1_id, dword env2_id, float env_ratio);
+
+extern void SC_SND_Ambient_Play(dword snd_id);
+extern void SC_SND_Ambient_Stop(void);
+
+extern void SC_SND_PlaySound3D(dword snd_id, c_Vector3 *pos);
+extern void SC_SND_PlaySound3Dex(dword snd_id, c_Vector3 *pos, float *timeout);
+extern void SC_SND_PlaySound2D(dword snd_id);
+
+
+extern void SC_SND_PlaySound3Dlink(dword snd_id, void *nod, float *timeout);	
+																				
+																				
+
+
+
+
+extern void SC_SND_PlaySound3Dpl(dword snd_id, dword pl_id, dword flags);
+			
+
+
+extern void SC_SND_PlaySound3DSpec(dword snd_id, c_Vector3 *pos, dword spec_id);
+extern void SC_SND_PlaySound3DexSpec(dword snd_id, c_Vector3 *pos, float *timeout, dword spec_id);
+extern void SC_SND_PlaySound2DSpec(dword snd_id, dword spec_id);
+
+extern void SC_SND_SetHearableRatio(float Ratio);
+
+extern float SC_SND_GetSoundLen(dword snd_id);
+
+extern void SC_SND_PlayMusic(dword music_id);
+extern void SC_SND_MusicPlay(dword MusicID, dword StartVolume );
+extern void SC_SND_MusicStop(dword MusicID );
+extern void SC_SND_MusicStopFade(dword MusicID, dword Time );
+extern void SC_SND_MusicFadeVolume(dword MusicID, dword Volume, dword Time );
+
+extern dword SC_AGS_Set(dword val);
+
+	
+extern void SC_NOD_SetDSTR(void *nod, char *obj_name, char *dstr_name);
+extern void SC_NOD_ResetDSTR(void *nod, char *obj_name);
+extern char *SC_NOD_GetName(void *nod);
+extern void SC_NOD_GetPivotWorld(void *nod,c_Vector3 *vec);
+extern void SC_NOD_Detach(void *nod, char *name);
+extern void SC_NOD_AddDynamic(void *master_nod, char *name, s_SC_OBJ_dynamic *info);
+
+extern void SC_NOD_GetWorldPos(void *nod, c_Vector3 *pos);
+extern float SC_NOD_GetWorldRotZ(void *nod);
+extern BOOL SC_NOD_GetCollision(void *master_nod, char *name, BOOL clear_it);
+extern BOOL SC_NOD_GetCollision2(void *nod, BOOL clear_it);
+
+extern BOOL SC_DOBJ_IsBurning(void *nod, float perc);
+extern BOOL SC_DOBJ_IsBurning2(void *nod);
+extern void SC_DOBJ_StopBurning(void *nod, BOOL enable_future_burning);
+extern void SC_NOD_GetDummySph(void *master_nod, char *dummy_name, s_sphere *sph);
+extern void SC_DOBJ_ClearDamagedHP(void *nod);
+
+extern void SC_DOBJ_BurnCreateBlockers(void *nod, s_sphere *sph, dword items);
+
+extern void SC_DOBJ_SetFrozenFlag(void *nod, BOOL frozen);
+	
+extern void *SC_NOD_Get(void *master_obj, char *obj_name);
+extern void *SC_NOD_GetNoMessage(void *master_obj, char *obj_name);
+extern void *SC_NOD_GetNoMessage_Entity(char *obj_name);
+
+extern void SC_NOD_GetTransform(void *obj,s_SC_NOD_transform *trans);			
+extern void SC_NOD_SetTransform(void *obj,s_SC_NOD_transform *trans);
+extern void SC_NOD_Hide(void *obj, BOOL hide);
+
+extern void SC_NOD_GetPosInOtherSpace(void *other_nod, void *nod, c_Vector3 *vec);
+
+
+extern float SC_DOBJ_CameraLooksAt(void *nod, float max_dist);
+extern float SC_DOBJ_CameraLooksAtCollision(void *nod, float max_dist);
+extern void SC_ACTIVE_Add(void *nod, float cur_dist, dword info_txt);
+
+
+extern void SC_DUMMY_Set_DoNotRenHier(char *dummy_name, BOOL do_not_render_hiearchy);
+extern void SC_DUMMY_Set_DoNotRenHier2(void *nod, BOOL do_not_render_hiearchy);
+
+
+	
+extern void *SC_CAR_Create(void *nod, s_SC_Car_Init *info);
+extern void SC_CAR_WheelAdd(void *car, void *nod, s_SC_Car_AddWheel *info);
+extern void SC_CAR_EntryAdd(void *car, s_SC_Car_AddEntry *info);
+extern void SC_CAR_SetAirResistance(void *car, float a0, float a1, float a2);
+
+
+
+extern void *SC_SHIP_Create(void *nod, s_SC_Ship_Init *info, s_SC_PHS_IWantToFloat *finfo);
+extern void SC_SHIP_EntryAdd(void *ship, s_SC_Car_AddEntry *info);
+
+
+
+
+extern void *SC_HELI_Create(void *nod, s_SC_Heli_Init *info);
+extern void SC_HELI_EntryAdd(void *heli, s_SC_Car_AddEntry *info);
+extern void SC_HELI_ChangeEntryStativ(void *heli, dword entry_index, char *stg_name);	   
+
+
+
+
+
+extern BOOL SC_MP_EnumPlayers(s_SC_MP_EnumPlayers *list, dword *items, dword side);	
+			
+			
+			
+
+extern void SC_MP_RestartMission(void);
+
+extern void SC_MP_P_SetRecoverTime(dword pl_id, float time);
+extern dword SC_MP_P_GetAfterRecoverSide(dword pl_id);	
+
+extern dword SC_MP_P_GetClass(dword pl_id);
+extern dword SC_MP_P_GetAfterRecoverClass(dword pl_id);
+
+extern void SC_MP_AddPlayerScript(char *filename);	
+
+extern void SC_MP_SRV_SetForceSide(dword side);
+extern void SC_MP_SRV_SetClassLimit(dword class_id, dword limit);
+extern void SC_MP_SRV_SetClassLimitsForDM(void);
+
+
+extern dword SC_MP_SRV_GetBestDMrecov(s_SC_MP_Recover *list, dword items, float *no_recov_time, float max_recov_time);
+
+
+extern void SC_MP_SRV_InitWeaponsRecovery(float time);	
+
+extern void SC_MP_HUD_SetTabInfo(s_SC_MP_hud *info);
+extern void SC_MP_HUD_SelectPl(dword pl_id, dword color);
+
+extern void SC_GameInfo(dword text_id, char *text);	
+extern void SC_GameInfoW(ushort *text);
+extern void SC_P_MP_AddPoints(dword pl_id, int val);
+
+extern dword SC_MP_GetMaxPointsPl(int *points);
+extern dword SC_MP_GetMaxFragsPl(int *frags);
+
+extern dword SC_MP_GetHandleofPl(dword pl_id);
+extern dword SC_MP_GetPlofHandle(dword pl_handle);
+
+extern void SC_HUD_RadarShowPlayer(dword pl_id, dword color);
+extern void SC_HUD_RadarShowPos(c_Vector3 *vec, dword color);
+extern void SC_MP_SetSideStats(dword side, int frags, int points);
+extern void SC_MP_ScriptMessage(dword param1, dword param2);	
+extern void SC_MP_AllowStPwD(BOOL enable);		
+extern void SC_MP_AllowFriendlyFireOFF(BOOL enable);		
+extern void SC_MP_SetIconHUD(s_SC_HUD_MP_icon *icon, dword icons);
+extern void SC_MP_SetInstantRecovery(BOOL enable);
+extern void SC_MP_SetItemsNoDisappear(BOOL nodisappear);
+extern void SC_MP_EnableBotsFromScene(BOOL enable);			
+extern void SC_MP_SetChooseValidSides(dword mask);			
+extern void SC_MP_EnableC4weapon(BOOL enable);				
+
+extern void SC_MP_LoadNextMap(void);
+extern void SC_MP_SetTeamGame(BOOL teamgame);
+extern void SC_MP_RecoverAllNoAiPlayers(void);					
+extern void SC_MP_RecoverAllAiPlayers(void);					
+
+extern void SC_MP_EndRule_SetTimeLeft(float val, BOOL counting);				
+extern void SC_MP_GetSRVsettings(s_SC_MP_SRV_settings *info);	
+extern BOOL SC_MP_SRV_P_SetSideClass(dword pl_id, dword side, dword class_id);
+
+extern BOOL SC_MP_SRV_GetAutoTeamBalance(void);
+extern int SC_MP_SRV_GetTeamsNrDifference(BOOL after_respawn);
+extern void SC_MP_SRV_DoExplosion(c_Vector3 *pos, dword type);
+
+extern void SC_MP_SRV_ClearPlsStats(void);
+extern void SC_MP_SRV_InitGameAfterInactive(void);
+
+extern BOOL SC_MP_GetAmmoBoxesEnabled(void);
+extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
+
+
+
+	extern void SC_MP_SetSpectatorCameras(char character);
+	extern void SC_MP_GetRecovers(dword type, s_SC_MP_Recover *list, dword *items);
+
+
+
+	extern void SC_MP_RecoverPlayer(dword pl_id);
+
+
+
+	extern dword SC_MP_FpvMapSign_Load(char *fname);
+	extern BOOL SC_MP_FpvMapSign_Unload(dword id);
+	extern void SC_MP_FpvMapSign_Set(dword signs, s_SC_FpvMapSign *list);	
+
+
+
+
+
+
+
+
+ 7 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+lineno==7
+parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+
+ 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"
+lineno==0
+parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"'
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 8 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+lineno==8
+parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+
+
+
+
+int ScriptMain(s_SC_OBJ_info *info){
+
+	switch(info->event_type){
+		case 3:
+
+			return 1;	
+			
+
+		case 7:
+			break;
+
+		case 5:
+			break;
+
+		case 1:			
+			SC_LevScr_Event(52,(dword)info->master_nod);
+			break;
+
+		case 4:
+			break;
+
+		case 6:
+			break;
+
+	}
+
+
+	return 0;
+
+}
+
+
+Interni forma:
+    [0]
+    SYMBOL:
+        dword
+        SS_TYPE_NAME
+    [1]
+    SYMBOL:
+        ushort
+        SS_TYPE_NAME
+    [2]
+    SYMBOL:
+        BOOL
+        SS_TYPE_NAME
+    [3]
+    SYMBOL:
+        c_Vector3
+        SS_TYPE_NAME
+    [4]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [5]
+    SYMBOL:
+        s_sphere
+        SS_TYPE_NAME
+    [6]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [7]
+    SYMBOL:
+        sprintf
+        SS_FUNCTION
+        FNBODY: -1
+    [8]
+    SYMBOL:
+        swprintf
+        SS_FUNCTION
+        FNBODY: -1
+    [9]
+    SYMBOL:
+        rand
+        SS_FUNCTION
+        FNBODY: -1
+    [10]
+    SYMBOL:
+        frnd
+        SS_FUNCTION
+        FNBODY: -1
+    [11]
+    SYMBOL:
+        sqrt
+        SS_FUNCTION
+        FNBODY: -1
+    [12]
+    SYMBOL:
+        fmod
+        SS_FUNCTION
+        FNBODY: -1
+    [13]
+    SYMBOL:
+        sin
+        SS_FUNCTION
+        FNBODY: -1
+    [14]
+    SYMBOL:
+        cos
+        SS_FUNCTION
+        FNBODY: -1
+    [15]
+    SYMBOL:
+        atan2
+        SS_FUNCTION
+        FNBODY: -1
+    [16]
+    SYMBOL:
+        s_SC_P_info
+        SS_TYPE_NAME
+    [17]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [18]
+    SYMBOL:
+        s_SC_P_CreateEqp
+        SS_TYPE_NAME
+    [19]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [20]
+    SYMBOL:
+        s_SC_P_Create
+        SS_TYPE_NAME
+    [21]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [22]
+    SYMBOL:
+        s_SC_L_info
+        SS_TYPE_NAME
+    [23]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [24]
+    SYMBOL:
+        s_SC_P_AI_props
+        SS_TYPE_NAME
+    [25]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [26]
+    SYMBOL:
+        s_SC_initside
+        SS_TYPE_NAME
+    [27]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [28]
+    SYMBOL:
+        s_SC_initgroup
+        SS_TYPE_NAME
+    [29]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [30]
+    SYMBOL:
+        s_SC_P_getinfo
+        SS_TYPE_NAME
+    [31]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [32]
+    SYMBOL:
+        s_SC_P_Ai_BattleProps
+        SS_TYPE_NAME
+    [33]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [34]
+    SYMBOL:
+        s_SC_OBJ_info
+        SS_TYPE_NAME
+    [35]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [36]
+    SYMBOL:
+        s_SC_OBJ_dynamic
+        SS_TYPE_NAME
+    [37]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [38]
+    SYMBOL:
+        s_SC_WEAP_info
+        SS_TYPE_NAME
+    [39]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [40]
+    SYMBOL:
+        s_SC_WEAP3pv_info
+        SS_TYPE_NAME
+    [41]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [42]
+    SYMBOL:
+        s_SC_ScriptHelper_info
+        SS_TYPE_NAME
+    [43]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [44]
+    SYMBOL:
+        s_SC_NOD_transform
+        SS_TYPE_NAME
+    [45]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [46]
+    SYMBOL:
+        s_SC_Car_Init
+        SS_TYPE_NAME
+    [47]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [48]
+    SYMBOL:
+        s_SC_Car_AddWheel
+        SS_TYPE_NAME
+    [49]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [50]
+    SYMBOL:
+        s_SC_Car_AddEntry
+        SS_TYPE_NAME
+    [51]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [52]
+    SYMBOL:
+        s_SC_SpeachBreakProps
+        SS_TYPE_NAME
+    [53]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [54]
+    SYMBOL:
+        s_SC_NET_info
+        SS_TYPE_NAME
+    [55]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [56]
+    SYMBOL:
+        s_SC_P_Ai_Grenade
+        SS_TYPE_NAME
+    [57]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [58]
+    SYMBOL:
+        s_SC_Ai_PlFollow
+        SS_TYPE_NAME
+    [59]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [60]
+    SYMBOL:
+        s_SC_Ship_Init
+        SS_TYPE_NAME
+    [61]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [62]
+    SYMBOL:
+        s_SC_PHS_IWantToFloat
+        SS_TYPE_NAME
+    [63]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [64]
+    SYMBOL:
+        s_SC_MissionSave
+        SS_TYPE_NAME
+    [65]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [66]
+    SYMBOL:
+        s_SC_RC_info
+        SS_TYPE_NAME
+    [67]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [68]
+    SYMBOL:
+        s_SC_MP_EnumPlayers
+        SS_TYPE_NAME
+    [69]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [70]
+    SYMBOL:
+        s_SC_MP_Recover
+        SS_TYPE_NAME
+    [71]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [72]
+    SYMBOL:
+        s_SC_Heli_Init
+        SS_TYPE_NAME
+    [73]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [74]
+    SYMBOL:
+        s_SC_MWP_Create
+        SS_TYPE_NAME
+    [75]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [76]
+    SYMBOL:
+        s_SC_P_SpecAnims
+        SS_TYPE_NAME
+    [77]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [78]
+    SYMBOL:
+        s_SC_FlyOffCartridge
+        SS_TYPE_NAME
+    [79]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [80]
+    SYMBOL:
+        s_SC_Objective
+        SS_TYPE_NAME
+    [81]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [82]
+    SYMBOL:
+        s_SC_DebriefInfo
+        SS_TYPE_NAME
+    [83]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [84]
+    SYMBOL:
+        s_SC_MP_hud
+        SS_TYPE_NAME
+    [85]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [86]
+    SYMBOL:
+        s_SC_HUD_MP_icon
+        SS_TYPE_NAME
+    [87]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [88]
+    SYMBOL:
+        s_SC_SOUND_info
+        SS_TYPE_NAME
+    [89]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [90]
+    SYMBOL:
+        s_SC_MP_SRV_settings
+        SS_TYPE_NAME
+    [91]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [92]
+    SYMBOL:
+        s_SC_MP_SRV_AtgSettings
+        SS_TYPE_NAME
+    [93]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [94]
+    SYMBOL:
+        s_SC_light
+        SS_TYPE_NAME
+    [95]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [96]
+    SYMBOL:
+        s_MusicDef
+        SS_TYPE_NAME
+    [97]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [98]
+    SYMBOL:
+        s_SC_BombInfo
+        SS_TYPE_NAME
+    [99]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [100]
+    SYMBOL:
+        s_SC_P_intel
+        SS_TYPE_NAME
+    [101]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [102]
+    SYMBOL:
+        s_SC_systime
+        SS_TYPE_NAME
+    [103]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [104]
+    SYMBOL:
+        s_SC_FpvMapSign
+        SS_TYPE_NAME
+    [105]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [106]
+    SYMBOL:
+        s_SC_HUD_TextWrite
+        SS_TYPE_NAME
+    [107]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [108]
+    SYMBOL:
+        SC_sgi
+        SS_FUNCTION
+        FNBODY: -1
+    [109]
+    SYMBOL:
+        SC_ggi
+        SS_FUNCTION
+        FNBODY: -1
+    [110]
+    SYMBOL:
+        SC_sgf
+        SS_FUNCTION
+        FNBODY: -1
+    [111]
+    SYMBOL:
+        SC_ggf
+        SS_FUNCTION
+        FNBODY: -1
+    [112]
+    SYMBOL:
+        SC_MP_Gvar_SetSynchro
+        SS_FUNCTION
+        FNBODY: -1
+    [113]
+    SYMBOL:
+        SC_ZeroMem
+        SS_FUNCTION
+        FNBODY: -1
+    [114]
+    SYMBOL:
+        SC_GetLineDist
+        SS_FUNCTION
+        FNBODY: -1
+    [115]
+    SYMBOL:
+        SC_GetLineDistXY
+        SS_FUNCTION
+        FNBODY: -1
+    [116]
+    SYMBOL:
+        SC_IsNear2D
+        SS_FUNCTION
+        FNBODY: -1
+    [117]
+    SYMBOL:
+        SC_IsNear3D
+        SS_FUNCTION
+        FNBODY: -1
+    [118]
+    SYMBOL:
+        SC_2VectorsDist
+        SS_FUNCTION
+        FNBODY: -1
+    [119]
+    SYMBOL:
+        SC_VectorLen
+        SS_FUNCTION
+        FNBODY: -1
+    [120]
+    SYMBOL:
+        SC_VectorLen2
+        SS_FUNCTION
+        FNBODY: -1
+    [121]
+    SYMBOL:
+        SC_message
+        SS_FUNCTION
+        FNBODY: -1
+    [122]
+    SYMBOL:
+        SC_Log
+        SS_FUNCTION
+        FNBODY: -1
+    [123]
+    SYMBOL:
+        SC_Osi
+        SS_FUNCTION
+        FNBODY: -1
+    [124]
+    SYMBOL:
+        SC_StringSame
+        SS_FUNCTION
+        FNBODY: -1
+    [125]
+    SYMBOL:
+        SC_KeyJustPressed
+        SS_FUNCTION
+        FNBODY: -1
+    [126]
+    SYMBOL:
+        SC_KeyPressed
+        SS_FUNCTION
+        FNBODY: -1
+    [127]
+    SYMBOL:
+        SC_EventImpuls
+        SS_FUNCTION
+        FNBODY: -1
+    [128]
+    SYMBOL:
+        SC_EventEnable
+        SS_FUNCTION
+        FNBODY: -1
+    [129]
+    SYMBOL:
+        SC_MissionCompleted
+        SS_FUNCTION
+        FNBODY: -1
+    [130]
+    SYMBOL:
+        SC_MissionFailed
+        SS_FUNCTION
+        FNBODY: -1
+    [131]
+    SYMBOL:
+        SC_MissionFailedEx
+        SS_FUNCTION
+        FNBODY: -1
+    [132]
+    SYMBOL:
+        SC_MissionDone
+        SS_FUNCTION
+        FNBODY: -1
+    [133]
+    SYMBOL:
+        SC_SetMissileTrace
+        SS_FUNCTION
+        FNBODY: -1
+    [134]
+    SYMBOL:
+        SC_CreatePtc
+        SS_FUNCTION
+        FNBODY: -1
+    [135]
+    SYMBOL:
+        SC_CreatePtc_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [136]
+    SYMBOL:
+        SC_CreatePtcVec_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [137]
+    SYMBOL:
+        SC_CreatePtcInNodSpace_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [138]
+    SYMBOL:
+        SC_AnsiToUni
+        SS_FUNCTION
+        FNBODY: -1
+    [139]
+    SYMBOL:
+        SC_Fnt_Write
+        SS_FUNCTION
+        FNBODY: -1
+    [140]
+    SYMBOL:
+        SC_Fnt_GetWidth
+        SS_FUNCTION
+        FNBODY: -1
+    [141]
+    SYMBOL:
+        SC_Fnt_WriteW
+        SS_FUNCTION
+        FNBODY: -1
+    [142]
+    SYMBOL:
+        SC_Fnt_GetWidthW
+        SS_FUNCTION
+        FNBODY: -1
+    [143]
+    SYMBOL:
+        SC_GetScreenRes
+        SS_FUNCTION
+        FNBODY: -1
+    [144]
+    SYMBOL:
+        SC_SpeechSet3Dto3Dincamera
+        SS_FUNCTION
+        FNBODY: -1
+    [145]
+    SYMBOL:
+        SC_DoExplosion
+        SS_FUNCTION
+        FNBODY: -1
+    [146]
+    SYMBOL:
+        SC_MWP_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [147]
+    SYMBOL:
+        SC_SetObjectScript
+        SS_FUNCTION
+        FNBODY: -1
+    [148]
+    SYMBOL:
+        SC_GetPos_VecRz
+        SS_FUNCTION
+        FNBODY: -1
+    [149]
+    SYMBOL:
+        SC_PreloadBES
+        SS_FUNCTION
+        FNBODY: -1
+    [150]
+    SYMBOL:
+        SC_PreloadWeapon
+        SS_FUNCTION
+        FNBODY: -1
+    [151]
+    SYMBOL:
+        SC_FadeTo
+        SS_FUNCTION
+        FNBODY: -1
+    [152]
+    SYMBOL:
+        SC_PreloadSound
+        SS_FUNCTION
+        FNBODY: -1
+    [153]
+    SYMBOL:
+        SC_FadeSoundPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [154]
+    SYMBOL:
+        SC_Wtxt
+        SS_FUNCTION
+        FNBODY: -1
+    [155]
+    SYMBOL:
+        SC_GetNearestPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [156]
+    SYMBOL:
+        SC_SetMovieBorders
+        SS_FUNCTION
+        FNBODY: -1
+    [157]
+    SYMBOL:
+        SC_CreateLight
+        SS_FUNCTION
+        FNBODY: -1
+    [158]
+    SYMBOL:
+        SC_GetCameraPos
+        SS_FUNCTION
+        FNBODY: -1
+    [159]
+    SYMBOL:
+        SC_Fauna_DoSoundAlert
+        SS_FUNCTION
+        FNBODY: -1
+    [160]
+    SYMBOL:
+        SC_Fauna_KillThemAll
+        SS_FUNCTION
+        FNBODY: -1
+    [161]
+    SYMBOL:
+        SC_PC_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [162]
+    SYMBOL:
+        SC_PC_Get
+        SS_FUNCTION
+        FNBODY: -1
+    [163]
+    SYMBOL:
+        SC_PC_SetControl
+        SS_FUNCTION
+        FNBODY: -1
+    [164]
+    SYMBOL:
+        SC_PC_EnableMovementAndLooking
+        SS_FUNCTION
+        FNBODY: -1
+    [165]
+    SYMBOL:
+        SC_PC_EnableMovement
+        SS_FUNCTION
+        FNBODY: -1
+    [166]
+    SYMBOL:
+        SC_PC_EnablePronePosition
+        SS_FUNCTION
+        FNBODY: -1
+    [167]
+    SYMBOL:
+        SC_PC_EnableWeaponsUsing
+        SS_FUNCTION
+        FNBODY: -1
+    [168]
+    SYMBOL:
+        SC_P_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [169]
+    SYMBOL:
+        SC_P_IsReady
+        SS_FUNCTION
+        FNBODY: -1
+    [170]
+    SYMBOL:
+        SC_P_GetName
+        SS_FUNCTION
+        FNBODY: -1
+    [171]
+    SYMBOL:
+        SC_P_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [172]
+    SYMBOL:
+        SC_P_GetRot
+        SS_FUNCTION
+        FNBODY: -1
+    [173]
+    SYMBOL:
+        SC_P_GetInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [174]
+    SYMBOL:
+        SC_P_GetBySideGroupMember
+        SS_FUNCTION
+        FNBODY: -1
+    [175]
+    SYMBOL:
+        SC_P_ScriptMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [176]
+    SYMBOL:
+        SC_P_SetFaceStatus
+        SS_FUNCTION
+        FNBODY: -1
+    [177]
+    SYMBOL:
+        SC_P_SetHandVariation
+        SS_FUNCTION
+        FNBODY: -1
+    [178]
+    SYMBOL:
+        SC_P_GetDistance
+        SS_FUNCTION
+        FNBODY: -1
+    [179]
+    SYMBOL:
+        SC_P_Ai_SetMode
+        SS_FUNCTION
+        FNBODY: -1
+    [180]
+    SYMBOL:
+        SC_P_Ai_GetMode
+        SS_FUNCTION
+        FNBODY: -1
+    [181]
+    SYMBOL:
+        SC_P_Ai_SetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [182]
+    SYMBOL:
+        SC_P_Ai_SetBattleModeExt
+        SS_FUNCTION
+        FNBODY: -1
+    [183]
+    SYMBOL:
+        SC_P_Ai_GetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [184]
+    SYMBOL:
+        SC_P_Ai_SetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [185]
+    SYMBOL:
+        SC_P_Ai_GetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [186]
+    SYMBOL:
+        SC_P_Ai_GetSpecTask
+        SS_FUNCTION
+        FNBODY: -1
+    [187]
+    SYMBOL:
+        SC_P_Ai_SetMoveMode
+        SS_FUNCTION
+        FNBODY: -1
+    [188]
+    SYMBOL:
+        SC_P_Ai_SetMovePos
+        SS_FUNCTION
+        FNBODY: -1
+    [189]
+    SYMBOL:
+        SC_P_Ai_EnableShooting
+        SS_FUNCTION
+        FNBODY: -1
+    [190]
+    SYMBOL:
+        SC_P_Ai_Go
+        SS_FUNCTION
+        FNBODY: -1
+    [191]
+    SYMBOL:
+        SC_P_Ai_Stop
+        SS_FUNCTION
+        FNBODY: -1
+    [192]
+    SYMBOL:
+        SC_P_Ai_GetProps
+        SS_FUNCTION
+        FNBODY: -1
+    [193]
+    SYMBOL:
+        SC_P_Ai_SetProps
+        SS_FUNCTION
+        FNBODY: -1
+    [194]
+    SYMBOL:
+        SC_P_Ai_GetGrenateProps
+        SS_FUNCTION
+        FNBODY: -1
+    [195]
+    SYMBOL:
+        SC_P_Ai_SetGrenateProps
+        SS_FUNCTION
+        FNBODY: -1
+    [196]
+    SYMBOL:
+        SC_P_Ai_GetEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [197]
+    SYMBOL:
+        SC_P_Ai_GetSureEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [198]
+    SYMBOL:
+        SC_P_Ai_LookAt
+        SS_FUNCTION
+        FNBODY: -1
+    [199]
+    SYMBOL:
+        SC_P_Ai_EnableSituationUpdate
+        SS_FUNCTION
+        FNBODY: -1
+    [200]
+    SYMBOL:
+        SC_P_Ai_KnowsAboutPl
+        SS_FUNCTION
+        FNBODY: -1
+    [201]
+    SYMBOL:
+        SC_P_Ai_SetBattleProps
+        SS_FUNCTION
+        FNBODY: -1
+    [202]
+    SYMBOL:
+        SC_P_Ai_GetShooting
+        SS_FUNCTION
+        FNBODY: -1
+    [203]
+    SYMBOL:
+        SC_P_Ai_GetDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [204]
+    SYMBOL:
+        SC_P_Ai_SetPreferedWeaponSlot
+        SS_FUNCTION
+        FNBODY: -1
+    [205]
+    SYMBOL:
+        SC_P_Ai_GetPreferedWeaponSlot
+        SS_FUNCTION
+        FNBODY: -1
+    [206]
+    SYMBOL:
+        SC_P_Ai_ShootAt
+        SS_FUNCTION
+        FNBODY: -1
+    [207]
+    SYMBOL:
+        SC_P_Ai_ForgetEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [208]
+    SYMBOL:
+        SC_P_Ai_HideYourself
+        SS_FUNCTION
+        FNBODY: -1
+    [209]
+    SYMBOL:
+        SC_P_Ai_LookingAt
+        SS_FUNCTION
+        FNBODY: -1
+    [210]
+    SYMBOL:
+        SC_P_Ai_ShouldLookAt
+        SS_FUNCTION
+        FNBODY: -1
+    [211]
+    SYMBOL:
+        SC_P_Ai_SetStaticMode
+        SS_FUNCTION
+        FNBODY: -1
+    [212]
+    SYMBOL:
+        SC_P_Ai_GetStaticMode
+        SS_FUNCTION
+        FNBODY: -1
+    [213]
+    SYMBOL:
+        SC_P_Ai_GetNearestEnemyDist
+        SS_FUNCTION
+        FNBODY: -1
+    [214]
+    SYMBOL:
+        SC_P_Ai_GetNearestEnemy
+        SS_FUNCTION
+        FNBODY: -1
+    [215]
+    SYMBOL:
+        SC_P_Ai_Script_WatchPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [216]
+    SYMBOL:
+        SC_P_Ai_UpdateSituation
+        SS_FUNCTION
+        FNBODY: -1
+    [217]
+    SYMBOL:
+        SC_P_Ai_GetEnemyShotAround
+        SS_FUNCTION
+        FNBODY: -1
+    [218]
+    SYMBOL:
+        SC_P_Ai_SetIgnoreFlags
+        SS_FUNCTION
+        FNBODY: -1
+    [219]
+    SYMBOL:
+        SC_P_Ai_GetIgnoreFlags
+        SS_FUNCTION
+        FNBODY: -1
+    [220]
+    SYMBOL:
+        SC_P_Ai_EnableSayTo
+        SS_FUNCTION
+        FNBODY: -1
+    [221]
+    SYMBOL:
+        SC_P_Ai_SetPointmanBreaks
+        SS_FUNCTION
+        FNBODY: -1
+    [222]
+    SYMBOL:
+        SC_P_Ai_WalkThruAIs
+        SS_FUNCTION
+        FNBODY: -1
+    [223]
+    SYMBOL:
+        SC_P_Ai_SetMedicIngMaxActiveDist
+        SS_FUNCTION
+        FNBODY: -1
+    [224]
+    SYMBOL:
+        SC_Ai_SetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [225]
+    SYMBOL:
+        SC_Ai_SetBattleModeExt
+        SS_FUNCTION
+        FNBODY: -1
+    [226]
+    SYMBOL:
+        SC_Ai_SetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [227]
+    SYMBOL:
+        SC_Ai_SetPointRuns
+        SS_FUNCTION
+        FNBODY: -1
+    [228]
+    SYMBOL:
+        SC_Ai_SetPlFollow
+        SS_FUNCTION
+        FNBODY: -1
+    [229]
+    SYMBOL:
+        SC_Ai_PointStopDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [230]
+    SYMBOL:
+        SC_Ai_StopDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [231]
+    SYMBOL:
+        SC_Ai_SetStealthMode
+        SS_FUNCTION
+        FNBODY: -1
+    [232]
+    SYMBOL:
+        SC_Ai_SetStealthModeOff
+        SS_FUNCTION
+        FNBODY: -1
+    [233]
+    SYMBOL:
+        SC_Ai_GetStealthMode
+        SS_FUNCTION
+        FNBODY: -1
+    [234]
+    SYMBOL:
+        SC_Ai_EnableRelaxWalk
+        SS_FUNCTION
+        FNBODY: -1
+    [235]
+    SYMBOL:
+        SC_Ai_Blocker_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [236]
+    SYMBOL:
+        SC_Ai_Blocker_Remove
+        SS_FUNCTION
+        FNBODY: -1
+    [237]
+    SYMBOL:
+        SC_Ai_FakeEnemy_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [238]
+    SYMBOL:
+        SC_Ai_FakeEnemy_Remove
+        SS_FUNCTION
+        FNBODY: -1
+    [239]
+    SYMBOL:
+        SC_Ai_FakeDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [240]
+    SYMBOL:
+        SC_Ai_SetGroupEnemyUpdate
+        SS_FUNCTION
+        FNBODY: -1
+    [241]
+    SYMBOL:
+        SC_Ai_SetPointmanNormalWalking
+        SS_FUNCTION
+        FNBODY: -1
+    [242]
+    SYMBOL:
+        SC_P_Ai_CanSeePlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [243]
+    SYMBOL:
+        SC_GetWp
+        SS_FUNCTION
+        FNBODY: -1
+    [244]
+    SYMBOL:
+        SC_SetSideAlly
+        SS_FUNCTION
+        FNBODY: -1
+    [245]
+    SYMBOL:
+        SC_InitSide
+        SS_FUNCTION
+        FNBODY: -1
+    [246]
+    SYMBOL:
+        SC_InitSideGroup
+        SS_FUNCTION
+        FNBODY: -1
+    [247]
+    SYMBOL:
+        SC_GetGroupPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [248]
+    SYMBOL:
+        SC_Item_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [249]
+    SYMBOL:
+        SC_Item_Create2
+        SS_FUNCTION
+        FNBODY: -1
+    [250]
+    SYMBOL:
+        SC_Item_Preload
+        SS_FUNCTION
+        FNBODY: -1
+    [251]
+    SYMBOL:
+        SC_Item_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [252]
+    SYMBOL:
+        SC_SRV_Item_Release
+        SS_FUNCTION
+        FNBODY: -1
+    [253]
+    SYMBOL:
+        SC_Item_Find
+        SS_FUNCTION
+        FNBODY: -1
+    [254]
+    SYMBOL:
+        SC_LevScr_Event
+        SS_FUNCTION
+        FNBODY: -1
+    [255]
+    SYMBOL:
+        SC_StorySkipEnable
+        SS_FUNCTION
+        FNBODY: -1
+    [256]
+    SYMBOL:
+        SC_NET_FillRecover
+        SS_FUNCTION
+        FNBODY: -1
+    [257]
+    SYMBOL:
+        SC_GetPls
+        SS_FUNCTION
+        FNBODY: -1
+    [258]
+    SYMBOL:
+        SC_GetPlsInLine
+        SS_FUNCTION
+        FNBODY: -1
+    [259]
+    SYMBOL:
+        SC_DisplayBinocular
+        SS_FUNCTION
+        FNBODY: -1
+    [260]
+    SYMBOL:
+        SC_GetScriptHelper
+        SS_FUNCTION
+        FNBODY: -1
+    [261]
+    SYMBOL:
+        SC_MissionFailedDeathPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [262]
+    SYMBOL:
+        SC_SND_SetEnvironment
+        SS_FUNCTION
+        FNBODY: -1
+    [263]
+    SYMBOL:
+        SC_SND_Ambient_Play
+        SS_FUNCTION
+        FNBODY: -1
+    [264]
+    SYMBOL:
+        SC_SND_Ambient_Stop
+        SS_FUNCTION
+        FNBODY: -1
+    [265]
+    SYMBOL:
+        SC_SND_PlaySound3D
+        SS_FUNCTION
+        FNBODY: -1
+    [266]
+    SYMBOL:
+        SC_SND_PlaySound3Dex
+        SS_FUNCTION
+        FNBODY: -1
+    [267]
+    SYMBOL:
+        SC_SND_PlaySound2D
+        SS_FUNCTION
+        FNBODY: -1
+    [268]
+    SYMBOL:
+        SC_SND_PlaySound3Dlink
+        SS_FUNCTION
+        FNBODY: -1
+    [269]
+    SYMBOL:
+        SC_SND_PlaySound3Dpl
+        SS_FUNCTION
+        FNBODY: -1
+    [270]
+    SYMBOL:
+        SC_SND_PlaySound3DSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [271]
+    SYMBOL:
+        SC_SND_PlaySound3DexSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [272]
+    SYMBOL:
+        SC_SND_PlaySound2DSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [273]
+    SYMBOL:
+        SC_SND_SetHearableRatio
+        SS_FUNCTION
+        FNBODY: -1
+    [274]
+    SYMBOL:
+        SC_SND_GetSoundLen
+        SS_FUNCTION
+        FNBODY: -1
+    [275]
+    SYMBOL:
+        SC_SND_PlayMusic
+        SS_FUNCTION
+        FNBODY: -1
+    [276]
+    SYMBOL:
+        SC_SND_MusicPlay
+        SS_FUNCTION
+        FNBODY: -1
+    [277]
+    SYMBOL:
+        SC_SND_MusicStop
+        SS_FUNCTION
+        FNBODY: -1
+    [278]
+    SYMBOL:
+        SC_SND_MusicStopFade
+        SS_FUNCTION
+        FNBODY: -1
+    [279]
+    SYMBOL:
+        SC_SND_MusicFadeVolume
+        SS_FUNCTION
+        FNBODY: -1
+    [280]
+    SYMBOL:
+        SC_AGS_Set
+        SS_FUNCTION
+        FNBODY: -1
+    [281]
+    SYMBOL:
+        SC_NOD_SetDSTR
+        SS_FUNCTION
+        FNBODY: -1
+    [282]
+    SYMBOL:
+        SC_NOD_ResetDSTR
+        SS_FUNCTION
+        FNBODY: -1
+    [283]
+    SYMBOL:
+        SC_NOD_GetName
+        SS_FUNCTION
+        FNBODY: -1
+    [284]
+    SYMBOL:
+        SC_NOD_GetPivotWorld
+        SS_FUNCTION
+        FNBODY: -1
+    [285]
+    SYMBOL:
+        SC_NOD_Detach
+        SS_FUNCTION
+        FNBODY: -1
+    [286]
+    SYMBOL:
+        SC_NOD_AddDynamic
+        SS_FUNCTION
+        FNBODY: -1
+    [287]
+    SYMBOL:
+        SC_NOD_GetWorldPos
+        SS_FUNCTION
+        FNBODY: -1
+    [288]
+    SYMBOL:
+        SC_NOD_GetWorldRotZ
+        SS_FUNCTION
+        FNBODY: -1
+    [289]
+    SYMBOL:
+        SC_NOD_GetCollision
+        SS_FUNCTION
+        FNBODY: -1
+    [290]
+    SYMBOL:
+        SC_NOD_GetCollision2
+        SS_FUNCTION
+        FNBODY: -1
+    [291]
+    SYMBOL:
+        SC_DOBJ_IsBurning
+        SS_FUNCTION
+        FNBODY: -1
+    [292]
+    SYMBOL:
+        SC_DOBJ_IsBurning2
+        SS_FUNCTION
+        FNBODY: -1
+    [293]
+    SYMBOL:
+        SC_DOBJ_StopBurning
+        SS_FUNCTION
+        FNBODY: -1
+    [294]
+    SYMBOL:
+        SC_NOD_GetDummySph
+        SS_FUNCTION
+        FNBODY: -1
+    [295]
+    SYMBOL:
+        SC_DOBJ_ClearDamagedHP
+        SS_FUNCTION
+        FNBODY: -1
+    [296]
+    SYMBOL:
+        SC_DOBJ_BurnCreateBlockers
+        SS_FUNCTION
+        FNBODY: -1
+    [297]
+    SYMBOL:
+        SC_DOBJ_SetFrozenFlag
+        SS_FUNCTION
+        FNBODY: -1
+    [298]
+    SYMBOL:
+        SC_NOD_Get
+        SS_FUNCTION
+        FNBODY: -1
+    [299]
+    SYMBOL:
+        SC_NOD_GetNoMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [300]
+    SYMBOL:
+        SC_NOD_GetNoMessage_Entity
+        SS_FUNCTION
+        FNBODY: -1
+    [301]
+    SYMBOL:
+        SC_NOD_GetTransform
+        SS_FUNCTION
+        FNBODY: -1
+    [302]
+    SYMBOL:
+        SC_NOD_SetTransform
+        SS_FUNCTION
+        FNBODY: -1
+    [303]
+    SYMBOL:
+        SC_NOD_Hide
+        SS_FUNCTION
+        FNBODY: -1
+    [304]
+    SYMBOL:
+        SC_NOD_GetPosInOtherSpace
+        SS_FUNCTION
+        FNBODY: -1
+    [305]
+    SYMBOL:
+        SC_DOBJ_CameraLooksAt
+        SS_FUNCTION
+        FNBODY: -1
+    [306]
+    SYMBOL:
+        SC_DOBJ_CameraLooksAtCollision
+        SS_FUNCTION
+        FNBODY: -1
+    [307]
+    SYMBOL:
+        SC_ACTIVE_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [308]
+    SYMBOL:
+        SC_DUMMY_Set_DoNotRenHier
+        SS_FUNCTION
+        FNBODY: -1
+    [309]
+    SYMBOL:
+        SC_DUMMY_Set_DoNotRenHier2
+        SS_FUNCTION
+        FNBODY: -1
+    [310]
+    SYMBOL:
+        SC_CAR_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [311]
+    SYMBOL:
+        SC_CAR_WheelAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [312]
+    SYMBOL:
+        SC_CAR_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [313]
+    SYMBOL:
+        SC_CAR_SetAirResistance
+        SS_FUNCTION
+        FNBODY: -1
+    [314]
+    SYMBOL:
+        SC_SHIP_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [315]
+    SYMBOL:
+        SC_SHIP_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [316]
+    SYMBOL:
+        SC_HELI_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [317]
+    SYMBOL:
+        SC_HELI_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [318]
+    SYMBOL:
+        SC_HELI_ChangeEntryStativ
+        SS_FUNCTION
+        FNBODY: -1
+    [319]
+    SYMBOL:
+        SC_MP_EnumPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [320]
+    SYMBOL:
+        SC_MP_RestartMission
+        SS_FUNCTION
+        FNBODY: -1
+    [321]
+    SYMBOL:
+        SC_MP_P_SetRecoverTime
+        SS_FUNCTION
+        FNBODY: -1
+    [322]
+    SYMBOL:
+        SC_MP_P_GetAfterRecoverSide
+        SS_FUNCTION
+        FNBODY: -1
+    [323]
+    SYMBOL:
+        SC_MP_P_GetClass
+        SS_FUNCTION
+        FNBODY: -1
+    [324]
+    SYMBOL:
+        SC_MP_P_GetAfterRecoverClass
+        SS_FUNCTION
+        FNBODY: -1
+    [325]
+    SYMBOL:
+        SC_MP_AddPlayerScript
+        SS_FUNCTION
+        FNBODY: -1
+    [326]
+    SYMBOL:
+        SC_MP_SRV_SetForceSide
+        SS_FUNCTION
+        FNBODY: -1
+    [327]
+    SYMBOL:
+        SC_MP_SRV_SetClassLimit
+        SS_FUNCTION
+        FNBODY: -1
+    [328]
+    SYMBOL:
+        SC_MP_SRV_SetClassLimitsForDM
+        SS_FUNCTION
+        FNBODY: -1
+    [329]
+    SYMBOL:
+        SC_MP_SRV_GetBestDMrecov
+        SS_FUNCTION
+        FNBODY: -1
+    [330]
+    SYMBOL:
+        SC_MP_SRV_InitWeaponsRecovery
+        SS_FUNCTION
+        FNBODY: -1
+    [331]
+    SYMBOL:
+        SC_MP_HUD_SetTabInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [332]
+    SYMBOL:
+        SC_MP_HUD_SelectPl
+        SS_FUNCTION
+        FNBODY: -1
+    [333]
+    SYMBOL:
+        SC_GameInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [334]
+    SYMBOL:
+        SC_GameInfoW
+        SS_FUNCTION
+        FNBODY: -1
+    [335]
+    SYMBOL:
+        SC_P_MP_AddPoints
+        SS_FUNCTION
+        FNBODY: -1
+    [336]
+    SYMBOL:
+        SC_MP_GetMaxPointsPl
+        SS_FUNCTION
+        FNBODY: -1
+    [337]
+    SYMBOL:
+        SC_MP_GetMaxFragsPl
+        SS_FUNCTION
+        FNBODY: -1
+    [338]
+    SYMBOL:
+        SC_MP_GetHandleofPl
+        SS_FUNCTION
+        FNBODY: -1
+    [339]
+    SYMBOL:
+        SC_MP_GetPlofHandle
+        SS_FUNCTION
+        FNBODY: -1
+    [340]
+    SYMBOL:
+        SC_HUD_RadarShowPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [341]
+    SYMBOL:
+        SC_HUD_RadarShowPos
+        SS_FUNCTION
+        FNBODY: -1
+    [342]
+    SYMBOL:
+        SC_MP_SetSideStats
+        SS_FUNCTION
+        FNBODY: -1
+    [343]
+    SYMBOL:
+        SC_MP_ScriptMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [344]
+    SYMBOL:
+        SC_MP_AllowStPwD
+        SS_FUNCTION
+        FNBODY: -1
+    [345]
+    SYMBOL:
+        SC_MP_AllowFriendlyFireOFF
+        SS_FUNCTION
+        FNBODY: -1
+    [346]
+    SYMBOL:
+        SC_MP_SetIconHUD
+        SS_FUNCTION
+        FNBODY: -1
+    [347]
+    SYMBOL:
+        SC_MP_SetInstantRecovery
+        SS_FUNCTION
+        FNBODY: -1
+    [348]
+    SYMBOL:
+        SC_MP_SetItemsNoDisappear
+        SS_FUNCTION
+        FNBODY: -1
+    [349]
+    SYMBOL:
+        SC_MP_EnableBotsFromScene
+        SS_FUNCTION
+        FNBODY: -1
+    [350]
+    SYMBOL:
+        SC_MP_SetChooseValidSides
+        SS_FUNCTION
+        FNBODY: -1
+    [351]
+    SYMBOL:
+        SC_MP_EnableC4weapon
+        SS_FUNCTION
+        FNBODY: -1
+    [352]
+    SYMBOL:
+        SC_MP_LoadNextMap
+        SS_FUNCTION
+        FNBODY: -1
+    [353]
+    SYMBOL:
+        SC_MP_SetTeamGame
+        SS_FUNCTION
+        FNBODY: -1
+    [354]
+    SYMBOL:
+        SC_MP_RecoverAllNoAiPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [355]
+    SYMBOL:
+        SC_MP_RecoverAllAiPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [356]
+    SYMBOL:
+        SC_MP_EndRule_SetTimeLeft
+        SS_FUNCTION
+        FNBODY: -1
+    [357]
+    SYMBOL:
+        SC_MP_GetSRVsettings
+        SS_FUNCTION
+        FNBODY: -1
+    [358]
+    SYMBOL:
+        SC_MP_SRV_P_SetSideClass
+        SS_FUNCTION
+        FNBODY: -1
+    [359]
+    SYMBOL:
+        SC_MP_SRV_GetAutoTeamBalance
+        SS_FUNCTION
+        FNBODY: -1
+    [360]
+    SYMBOL:
+        SC_MP_SRV_GetTeamsNrDifference
+        SS_FUNCTION
+        FNBODY: -1
+    [361]
+    SYMBOL:
+        SC_MP_SRV_DoExplosion
+        SS_FUNCTION
+        FNBODY: -1
+    [362]
+    SYMBOL:
+        SC_MP_SRV_ClearPlsStats
+        SS_FUNCTION
+        FNBODY: -1
+    [363]
+    SYMBOL:
+        SC_MP_SRV_InitGameAfterInactive
+        SS_FUNCTION
+        FNBODY: -1
+    [364]
+    SYMBOL:
+        SC_MP_GetAmmoBoxesEnabled
+        SS_FUNCTION
+        FNBODY: -1
+    [365]
+    SYMBOL:
+        SC_MP_SRV_GetAtgSettings
+        SS_FUNCTION
+        FNBODY: -1
+    [366]
+    SYMBOL:
+        SC_MP_SetSpectatorCameras
+        SS_FUNCTION
+        FNBODY: -1
+    [367]
+    SYMBOL:
+        SC_MP_GetRecovers
+        SS_FUNCTION
+        FNBODY: -1
+    [368]
+    SYMBOL:
+        SC_MP_RecoverPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [369]
+    SYMBOL:
+        SC_MP_FpvMapSign_Load
+        SS_FUNCTION
+        FNBODY: -1
+    [370]
+    SYMBOL:
+        SC_MP_FpvMapSign_Unload
+        SS_FUNCTION
+        FNBODY: -1
+    [371]
+    SYMBOL:
+        SC_MP_FpvMapSign_Set
+        SS_FUNCTION
+        FNBODY: -1
+    [372]
+    SYMBOL:
+        ScriptMain
+        SS_FUNCTION
+        FNBODY: 373
+    [373]
+    IT_BLOCK_BEGIN (jump: 393)
+    [374]
+    SYMBOL:
+        info
+        SS_VARIABLE
+    [375]
+    NODE: NT_SWITCH
+        CHILD [0]:
+            NODE: NT_ARROW
+                CHILD [0]:
+                    NODE: NT_SYMBOL
+                        SYMBOL [374] <info>
+                CHILD [1]:
+                    NODE: NT_SYMBOL
+                        SYMBOL [-1] <event_type>
+    [376]
+    IT_BLOCK_BEGIN (jump: 391)
+    [377]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                3
+    [378]
+    NODE: NT_RET
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                1
+    [379]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                7
+    [380]
+    NODE: NT_BREAK
+    [381]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                5
+    [382]
+    NODE: NT_BREAK
+    [383]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                1
+    [384]
+    NODE: NT_CALL
+        CHILD [0]:
+            NODE: NT_SYMBOL
+                SYMBOL [254] <SC_LevScr_Event>
+        CHILD [1]:
+            NODE: NT_CONSTANT
+                52
+            NEXTNODE:
+            NODE: NT_CAST
+                RETTYPE:
+                CHILD [0]:
+                    NODE: NT_ARROW
+                        CHILD [0]:
+                            NODE: NT_SYMBOL
+                                SYMBOL [374] <info>
+                        CHILD [1]:
+                            NODE: NT_SYMBOL
+                                SYMBOL [-1] <master_nod>
+    [385]
+    NODE: NT_BREAK
+    [386]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                4
+    [387]
+    NODE: NT_BREAK
+    [388]
+    NODE: NT_CASE
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                6
+    [389]
+    NODE: NT_BREAK
+    [390]
+    IT_BLOCK_END (jump: 375)
+    [391]
+    NODE: NT_RET
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                0
+    [392]
+    IT_BLOCK_END (jump: 372)
+
+
+
+
+
+33223322(NT_CALL) - stackAdress==1
+place for retval - stackAdress==1
+calling local func or extern ellipsis func
+adding param - stackAdress==2
+adding param - stackAdress==3
+place for temp_retval - stackAdress==3
+clear params - stackAdress==1
+
+Interni forma:
+    [0]
+    SYMBOL:
+        dword
+        SS_TYPE_NAME
+    [1]
+    SYMBOL:
+        ushort
+        SS_TYPE_NAME
+    [2]
+    SYMBOL:
+        BOOL
+        SS_TYPE_NAME
+    [3]
+    SYMBOL:
+        c_Vector3
+        SS_TYPE_NAME
+    [4]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [5]
+    SYMBOL:
+        s_sphere
+        SS_TYPE_NAME
+    [6]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [7]
+    SYMBOL:
+        sprintf
+        SS_FUNCTION
+        FNBODY: -1
+    [8]
+    SYMBOL:
+        swprintf
+        SS_FUNCTION
+        FNBODY: -1
+    [9]
+    SYMBOL:
+        rand
+        SS_FUNCTION
+        FNBODY: -1
+    [10]
+    SYMBOL:
+        frnd
+        SS_FUNCTION
+        FNBODY: -1
+    [11]
+    SYMBOL:
+        sqrt
+        SS_FUNCTION
+        FNBODY: -1
+    [12]
+    SYMBOL:
+        fmod
+        SS_FUNCTION
+        FNBODY: -1
+    [13]
+    SYMBOL:
+        sin
+        SS_FUNCTION
+        FNBODY: -1
+    [14]
+    SYMBOL:
+        cos
+        SS_FUNCTION
+        FNBODY: -1
+    [15]
+    SYMBOL:
+        atan2
+        SS_FUNCTION
+        FNBODY: -1
+    [16]
+    SYMBOL:
+        s_SC_P_info
+        SS_TYPE_NAME
+    [17]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [18]
+    SYMBOL:
+        s_SC_P_CreateEqp
+        SS_TYPE_NAME
+    [19]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [20]
+    SYMBOL:
+        s_SC_P_Create
+        SS_TYPE_NAME
+    [21]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [22]
+    SYMBOL:
+        s_SC_L_info
+        SS_TYPE_NAME
+    [23]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [24]
+    SYMBOL:
+        s_SC_P_AI_props
+        SS_TYPE_NAME
+    [25]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [26]
+    SYMBOL:
+        s_SC_initside
+        SS_TYPE_NAME
+    [27]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [28]
+    SYMBOL:
+        s_SC_initgroup
+        SS_TYPE_NAME
+    [29]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [30]
+    SYMBOL:
+        s_SC_P_getinfo
+        SS_TYPE_NAME
+    [31]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [32]
+    SYMBOL:
+        s_SC_P_Ai_BattleProps
+        SS_TYPE_NAME
+    [33]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [34]
+    SYMBOL:
+        s_SC_OBJ_info
+        SS_TYPE_NAME
+    [35]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [36]
+    SYMBOL:
+        s_SC_OBJ_dynamic
+        SS_TYPE_NAME
+    [37]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [38]
+    SYMBOL:
+        s_SC_WEAP_info
+        SS_TYPE_NAME
+    [39]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [40]
+    SYMBOL:
+        s_SC_WEAP3pv_info
+        SS_TYPE_NAME
+    [41]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [42]
+    SYMBOL:
+        s_SC_ScriptHelper_info
+        SS_TYPE_NAME
+    [43]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [44]
+    SYMBOL:
+        s_SC_NOD_transform
+        SS_TYPE_NAME
+    [45]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [46]
+    SYMBOL:
+        s_SC_Car_Init
+        SS_TYPE_NAME
+    [47]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [48]
+    SYMBOL:
+        s_SC_Car_AddWheel
+        SS_TYPE_NAME
+    [49]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [50]
+    SYMBOL:
+        s_SC_Car_AddEntry
+        SS_TYPE_NAME
+    [51]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [52]
+    SYMBOL:
+        s_SC_SpeachBreakProps
+        SS_TYPE_NAME
+    [53]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [54]
+    SYMBOL:
+        s_SC_NET_info
+        SS_TYPE_NAME
+    [55]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [56]
+    SYMBOL:
+        s_SC_P_Ai_Grenade
+        SS_TYPE_NAME
+    [57]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [58]
+    SYMBOL:
+        s_SC_Ai_PlFollow
+        SS_TYPE_NAME
+    [59]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [60]
+    SYMBOL:
+        s_SC_Ship_Init
+        SS_TYPE_NAME
+    [61]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [62]
+    SYMBOL:
+        s_SC_PHS_IWantToFloat
+        SS_TYPE_NAME
+    [63]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [64]
+    SYMBOL:
+        s_SC_MissionSave
+        SS_TYPE_NAME
+    [65]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [66]
+    SYMBOL:
+        s_SC_RC_info
+        SS_TYPE_NAME
+    [67]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [68]
+    SYMBOL:
+        s_SC_MP_EnumPlayers
+        SS_TYPE_NAME
+    [69]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [70]
+    SYMBOL:
+        s_SC_MP_Recover
+        SS_TYPE_NAME
+    [71]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [72]
+    SYMBOL:
+        s_SC_Heli_Init
+        SS_TYPE_NAME
+    [73]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [74]
+    SYMBOL:
+        s_SC_MWP_Create
+        SS_TYPE_NAME
+    [75]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [76]
+    SYMBOL:
+        s_SC_P_SpecAnims
+        SS_TYPE_NAME
+    [77]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [78]
+    SYMBOL:
+        s_SC_FlyOffCartridge
+        SS_TYPE_NAME
+    [79]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [80]
+    SYMBOL:
+        s_SC_Objective
+        SS_TYPE_NAME
+    [81]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [82]
+    SYMBOL:
+        s_SC_DebriefInfo
+        SS_TYPE_NAME
+    [83]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [84]
+    SYMBOL:
+        s_SC_MP_hud
+        SS_TYPE_NAME
+    [85]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [86]
+    SYMBOL:
+        s_SC_HUD_MP_icon
+        SS_TYPE_NAME
+    [87]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [88]
+    SYMBOL:
+        s_SC_SOUND_info
+        SS_TYPE_NAME
+    [89]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [90]
+    SYMBOL:
+        s_SC_MP_SRV_settings
+        SS_TYPE_NAME
+    [91]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [92]
+    SYMBOL:
+        s_SC_MP_SRV_AtgSettings
+        SS_TYPE_NAME
+    [93]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [94]
+    SYMBOL:
+        s_SC_light
+        SS_TYPE_NAME
+    [95]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [96]
+    SYMBOL:
+        s_MusicDef
+        SS_TYPE_NAME
+    [97]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [98]
+    SYMBOL:
+        s_SC_BombInfo
+        SS_TYPE_NAME
+    [99]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [100]
+    SYMBOL:
+        s_SC_P_intel
+        SS_TYPE_NAME
+    [101]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [102]
+    SYMBOL:
+        s_SC_systime
+        SS_TYPE_NAME
+    [103]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [104]
+    SYMBOL:
+        s_SC_FpvMapSign
+        SS_TYPE_NAME
+    [105]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [106]
+    SYMBOL:
+        s_SC_HUD_TextWrite
+        SS_TYPE_NAME
+    [107]
+    SYMBOL:
+        
+        SS_NEW_TYPE
+    [108]
+    SYMBOL:
+        SC_sgi
+        SS_FUNCTION
+        FNBODY: -1
+    [109]
+    SYMBOL:
+        SC_ggi
+        SS_FUNCTION
+        FNBODY: -1
+    [110]
+    SYMBOL:
+        SC_sgf
+        SS_FUNCTION
+        FNBODY: -1
+    [111]
+    SYMBOL:
+        SC_ggf
+        SS_FUNCTION
+        FNBODY: -1
+    [112]
+    SYMBOL:
+        SC_MP_Gvar_SetSynchro
+        SS_FUNCTION
+        FNBODY: -1
+    [113]
+    SYMBOL:
+        SC_ZeroMem
+        SS_FUNCTION
+        FNBODY: -1
+    [114]
+    SYMBOL:
+        SC_GetLineDist
+        SS_FUNCTION
+        FNBODY: -1
+    [115]
+    SYMBOL:
+        SC_GetLineDistXY
+        SS_FUNCTION
+        FNBODY: -1
+    [116]
+    SYMBOL:
+        SC_IsNear2D
+        SS_FUNCTION
+        FNBODY: -1
+    [117]
+    SYMBOL:
+        SC_IsNear3D
+        SS_FUNCTION
+        FNBODY: -1
+    [118]
+    SYMBOL:
+        SC_2VectorsDist
+        SS_FUNCTION
+        FNBODY: -1
+    [119]
+    SYMBOL:
+        SC_VectorLen
+        SS_FUNCTION
+        FNBODY: -1
+    [120]
+    SYMBOL:
+        SC_VectorLen2
+        SS_FUNCTION
+        FNBODY: -1
+    [121]
+    SYMBOL:
+        SC_message
+        SS_FUNCTION
+        FNBODY: -1
+    [122]
+    SYMBOL:
+        SC_Log
+        SS_FUNCTION
+        FNBODY: -1
+    [123]
+    SYMBOL:
+        SC_Osi
+        SS_FUNCTION
+        FNBODY: -1
+    [124]
+    SYMBOL:
+        SC_StringSame
+        SS_FUNCTION
+        FNBODY: -1
+    [125]
+    SYMBOL:
+        SC_KeyJustPressed
+        SS_FUNCTION
+        FNBODY: -1
+    [126]
+    SYMBOL:
+        SC_KeyPressed
+        SS_FUNCTION
+        FNBODY: -1
+    [127]
+    SYMBOL:
+        SC_EventImpuls
+        SS_FUNCTION
+        FNBODY: -1
+    [128]
+    SYMBOL:
+        SC_EventEnable
+        SS_FUNCTION
+        FNBODY: -1
+    [129]
+    SYMBOL:
+        SC_MissionCompleted
+        SS_FUNCTION
+        FNBODY: -1
+    [130]
+    SYMBOL:
+        SC_MissionFailed
+        SS_FUNCTION
+        FNBODY: -1
+    [131]
+    SYMBOL:
+        SC_MissionFailedEx
+        SS_FUNCTION
+        FNBODY: -1
+    [132]
+    SYMBOL:
+        SC_MissionDone
+        SS_FUNCTION
+        FNBODY: -1
+    [133]
+    SYMBOL:
+        SC_SetMissileTrace
+        SS_FUNCTION
+        FNBODY: -1
+    [134]
+    SYMBOL:
+        SC_CreatePtc
+        SS_FUNCTION
+        FNBODY: -1
+    [135]
+    SYMBOL:
+        SC_CreatePtc_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [136]
+    SYMBOL:
+        SC_CreatePtcVec_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [137]
+    SYMBOL:
+        SC_CreatePtcInNodSpace_Ext
+        SS_FUNCTION
+        FNBODY: -1
+    [138]
+    SYMBOL:
+        SC_AnsiToUni
+        SS_FUNCTION
+        FNBODY: -1
+    [139]
+    SYMBOL:
+        SC_Fnt_Write
+        SS_FUNCTION
+        FNBODY: -1
+    [140]
+    SYMBOL:
+        SC_Fnt_GetWidth
+        SS_FUNCTION
+        FNBODY: -1
+    [141]
+    SYMBOL:
+        SC_Fnt_WriteW
+        SS_FUNCTION
+        FNBODY: -1
+    [142]
+    SYMBOL:
+        SC_Fnt_GetWidthW
+        SS_FUNCTION
+        FNBODY: -1
+    [143]
+    SYMBOL:
+        SC_GetScreenRes
+        SS_FUNCTION
+        FNBODY: -1
+    [144]
+    SYMBOL:
+        SC_SpeechSet3Dto3Dincamera
+        SS_FUNCTION
+        FNBODY: -1
+    [145]
+    SYMBOL:
+        SC_DoExplosion
+        SS_FUNCTION
+        FNBODY: -1
+    [146]
+    SYMBOL:
+        SC_MWP_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [147]
+    SYMBOL:
+        SC_SetObjectScript
+        SS_FUNCTION
+        FNBODY: -1
+    [148]
+    SYMBOL:
+        SC_GetPos_VecRz
+        SS_FUNCTION
+        FNBODY: -1
+    [149]
+    SYMBOL:
+        SC_PreloadBES
+        SS_FUNCTION
+        FNBODY: -1
+    [150]
+    SYMBOL:
+        SC_PreloadWeapon
+        SS_FUNCTION
+        FNBODY: -1
+    [151]
+    SYMBOL:
+        SC_FadeTo
+        SS_FUNCTION
+        FNBODY: -1
+    [152]
+    SYMBOL:
+        SC_PreloadSound
+        SS_FUNCTION
+        FNBODY: -1
+    [153]
+    SYMBOL:
+        SC_FadeSoundPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [154]
+    SYMBOL:
+        SC_Wtxt
+        SS_FUNCTION
+        FNBODY: -1
+    [155]
+    SYMBOL:
+        SC_GetNearestPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [156]
+    SYMBOL:
+        SC_SetMovieBorders
+        SS_FUNCTION
+        FNBODY: -1
+    [157]
+    SYMBOL:
+        SC_CreateLight
+        SS_FUNCTION
+        FNBODY: -1
+    [158]
+    SYMBOL:
+        SC_GetCameraPos
+        SS_FUNCTION
+        FNBODY: -1
+    [159]
+    SYMBOL:
+        SC_Fauna_DoSoundAlert
+        SS_FUNCTION
+        FNBODY: -1
+    [160]
+    SYMBOL:
+        SC_Fauna_KillThemAll
+        SS_FUNCTION
+        FNBODY: -1
+    [161]
+    SYMBOL:
+        SC_PC_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [162]
+    SYMBOL:
+        SC_PC_Get
+        SS_FUNCTION
+        FNBODY: -1
+    [163]
+    SYMBOL:
+        SC_PC_SetControl
+        SS_FUNCTION
+        FNBODY: -1
+    [164]
+    SYMBOL:
+        SC_PC_EnableMovementAndLooking
+        SS_FUNCTION
+        FNBODY: -1
+    [165]
+    SYMBOL:
+        SC_PC_EnableMovement
+        SS_FUNCTION
+        FNBODY: -1
+    [166]
+    SYMBOL:
+        SC_PC_EnablePronePosition
+        SS_FUNCTION
+        FNBODY: -1
+    [167]
+    SYMBOL:
+        SC_PC_EnableWeaponsUsing
+        SS_FUNCTION
+        FNBODY: -1
+    [168]
+    SYMBOL:
+        SC_P_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [169]
+    SYMBOL:
+        SC_P_IsReady
+        SS_FUNCTION
+        FNBODY: -1
+    [170]
+    SYMBOL:
+        SC_P_GetName
+        SS_FUNCTION
+        FNBODY: -1
+    [171]
+    SYMBOL:
+        SC_P_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [172]
+    SYMBOL:
+        SC_P_GetRot
+        SS_FUNCTION
+        FNBODY: -1
+    [173]
+    SYMBOL:
+        SC_P_GetInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [174]
+    SYMBOL:
+        SC_P_GetBySideGroupMember
+        SS_FUNCTION
+        FNBODY: -1
+    [175]
+    SYMBOL:
+        SC_P_ScriptMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [176]
+    SYMBOL:
+        SC_P_SetFaceStatus
+        SS_FUNCTION
+        FNBODY: -1
+    [177]
+    SYMBOL:
+        SC_P_SetHandVariation
+        SS_FUNCTION
+        FNBODY: -1
+    [178]
+    SYMBOL:
+        SC_P_GetDistance
+        SS_FUNCTION
+        FNBODY: -1
+    [179]
+    SYMBOL:
+        SC_P_Ai_SetMode
+        SS_FUNCTION
+        FNBODY: -1
+    [180]
+    SYMBOL:
+        SC_P_Ai_GetMode
+        SS_FUNCTION
+        FNBODY: -1
+    [181]
+    SYMBOL:
+        SC_P_Ai_SetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [182]
+    SYMBOL:
+        SC_P_Ai_SetBattleModeExt
+        SS_FUNCTION
+        FNBODY: -1
+    [183]
+    SYMBOL:
+        SC_P_Ai_GetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [184]
+    SYMBOL:
+        SC_P_Ai_SetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [185]
+    SYMBOL:
+        SC_P_Ai_GetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [186]
+    SYMBOL:
+        SC_P_Ai_GetSpecTask
+        SS_FUNCTION
+        FNBODY: -1
+    [187]
+    SYMBOL:
+        SC_P_Ai_SetMoveMode
+        SS_FUNCTION
+        FNBODY: -1
+    [188]
+    SYMBOL:
+        SC_P_Ai_SetMovePos
+        SS_FUNCTION
+        FNBODY: -1
+    [189]
+    SYMBOL:
+        SC_P_Ai_EnableShooting
+        SS_FUNCTION
+        FNBODY: -1
+    [190]
+    SYMBOL:
+        SC_P_Ai_Go
+        SS_FUNCTION
+        FNBODY: -1
+    [191]
+    SYMBOL:
+        SC_P_Ai_Stop
+        SS_FUNCTION
+        FNBODY: -1
+    [192]
+    SYMBOL:
+        SC_P_Ai_GetProps
+        SS_FUNCTION
+        FNBODY: -1
+    [193]
+    SYMBOL:
+        SC_P_Ai_SetProps
+        SS_FUNCTION
+        FNBODY: -1
+    [194]
+    SYMBOL:
+        SC_P_Ai_GetGrenateProps
+        SS_FUNCTION
+        FNBODY: -1
+    [195]
+    SYMBOL:
+        SC_P_Ai_SetGrenateProps
+        SS_FUNCTION
+        FNBODY: -1
+    [196]
+    SYMBOL:
+        SC_P_Ai_GetEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [197]
+    SYMBOL:
+        SC_P_Ai_GetSureEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [198]
+    SYMBOL:
+        SC_P_Ai_LookAt
+        SS_FUNCTION
+        FNBODY: -1
+    [199]
+    SYMBOL:
+        SC_P_Ai_EnableSituationUpdate
+        SS_FUNCTION
+        FNBODY: -1
+    [200]
+    SYMBOL:
+        SC_P_Ai_KnowsAboutPl
+        SS_FUNCTION
+        FNBODY: -1
+    [201]
+    SYMBOL:
+        SC_P_Ai_SetBattleProps
+        SS_FUNCTION
+        FNBODY: -1
+    [202]
+    SYMBOL:
+        SC_P_Ai_GetShooting
+        SS_FUNCTION
+        FNBODY: -1
+    [203]
+    SYMBOL:
+        SC_P_Ai_GetDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [204]
+    SYMBOL:
+        SC_P_Ai_SetPreferedWeaponSlot
+        SS_FUNCTION
+        FNBODY: -1
+    [205]
+    SYMBOL:
+        SC_P_Ai_GetPreferedWeaponSlot
+        SS_FUNCTION
+        FNBODY: -1
+    [206]
+    SYMBOL:
+        SC_P_Ai_ShootAt
+        SS_FUNCTION
+        FNBODY: -1
+    [207]
+    SYMBOL:
+        SC_P_Ai_ForgetEnemies
+        SS_FUNCTION
+        FNBODY: -1
+    [208]
+    SYMBOL:
+        SC_P_Ai_HideYourself
+        SS_FUNCTION
+        FNBODY: -1
+    [209]
+    SYMBOL:
+        SC_P_Ai_LookingAt
+        SS_FUNCTION
+        FNBODY: -1
+    [210]
+    SYMBOL:
+        SC_P_Ai_ShouldLookAt
+        SS_FUNCTION
+        FNBODY: -1
+    [211]
+    SYMBOL:
+        SC_P_Ai_SetStaticMode
+        SS_FUNCTION
+        FNBODY: -1
+    [212]
+    SYMBOL:
+        SC_P_Ai_GetStaticMode
+        SS_FUNCTION
+        FNBODY: -1
+    [213]
+    SYMBOL:
+        SC_P_Ai_GetNearestEnemyDist
+        SS_FUNCTION
+        FNBODY: -1
+    [214]
+    SYMBOL:
+        SC_P_Ai_GetNearestEnemy
+        SS_FUNCTION
+        FNBODY: -1
+    [215]
+    SYMBOL:
+        SC_P_Ai_Script_WatchPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [216]
+    SYMBOL:
+        SC_P_Ai_UpdateSituation
+        SS_FUNCTION
+        FNBODY: -1
+    [217]
+    SYMBOL:
+        SC_P_Ai_GetEnemyShotAround
+        SS_FUNCTION
+        FNBODY: -1
+    [218]
+    SYMBOL:
+        SC_P_Ai_SetIgnoreFlags
+        SS_FUNCTION
+        FNBODY: -1
+    [219]
+    SYMBOL:
+        SC_P_Ai_GetIgnoreFlags
+        SS_FUNCTION
+        FNBODY: -1
+    [220]
+    SYMBOL:
+        SC_P_Ai_EnableSayTo
+        SS_FUNCTION
+        FNBODY: -1
+    [221]
+    SYMBOL:
+        SC_P_Ai_SetPointmanBreaks
+        SS_FUNCTION
+        FNBODY: -1
+    [222]
+    SYMBOL:
+        SC_P_Ai_WalkThruAIs
+        SS_FUNCTION
+        FNBODY: -1
+    [223]
+    SYMBOL:
+        SC_P_Ai_SetMedicIngMaxActiveDist
+        SS_FUNCTION
+        FNBODY: -1
+    [224]
+    SYMBOL:
+        SC_Ai_SetBattleMode
+        SS_FUNCTION
+        FNBODY: -1
+    [225]
+    SYMBOL:
+        SC_Ai_SetBattleModeExt
+        SS_FUNCTION
+        FNBODY: -1
+    [226]
+    SYMBOL:
+        SC_Ai_SetPeaceMode
+        SS_FUNCTION
+        FNBODY: -1
+    [227]
+    SYMBOL:
+        SC_Ai_SetPointRuns
+        SS_FUNCTION
+        FNBODY: -1
+    [228]
+    SYMBOL:
+        SC_Ai_SetPlFollow
+        SS_FUNCTION
+        FNBODY: -1
+    [229]
+    SYMBOL:
+        SC_Ai_PointStopDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [230]
+    SYMBOL:
+        SC_Ai_StopDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [231]
+    SYMBOL:
+        SC_Ai_SetStealthMode
+        SS_FUNCTION
+        FNBODY: -1
+    [232]
+    SYMBOL:
+        SC_Ai_SetStealthModeOff
+        SS_FUNCTION
+        FNBODY: -1
+    [233]
+    SYMBOL:
+        SC_Ai_GetStealthMode
+        SS_FUNCTION
+        FNBODY: -1
+    [234]
+    SYMBOL:
+        SC_Ai_EnableRelaxWalk
+        SS_FUNCTION
+        FNBODY: -1
+    [235]
+    SYMBOL:
+        SC_Ai_Blocker_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [236]
+    SYMBOL:
+        SC_Ai_Blocker_Remove
+        SS_FUNCTION
+        FNBODY: -1
+    [237]
+    SYMBOL:
+        SC_Ai_FakeEnemy_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [238]
+    SYMBOL:
+        SC_Ai_FakeEnemy_Remove
+        SS_FUNCTION
+        FNBODY: -1
+    [239]
+    SYMBOL:
+        SC_Ai_FakeDanger
+        SS_FUNCTION
+        FNBODY: -1
+    [240]
+    SYMBOL:
+        SC_Ai_SetGroupEnemyUpdate
+        SS_FUNCTION
+        FNBODY: -1
+    [241]
+    SYMBOL:
+        SC_Ai_SetPointmanNormalWalking
+        SS_FUNCTION
+        FNBODY: -1
+    [242]
+    SYMBOL:
+        SC_P_Ai_CanSeePlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [243]
+    SYMBOL:
+        SC_GetWp
+        SS_FUNCTION
+        FNBODY: -1
+    [244]
+    SYMBOL:
+        SC_SetSideAlly
+        SS_FUNCTION
+        FNBODY: -1
+    [245]
+    SYMBOL:
+        SC_InitSide
+        SS_FUNCTION
+        FNBODY: -1
+    [246]
+    SYMBOL:
+        SC_InitSideGroup
+        SS_FUNCTION
+        FNBODY: -1
+    [247]
+    SYMBOL:
+        SC_GetGroupPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [248]
+    SYMBOL:
+        SC_Item_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [249]
+    SYMBOL:
+        SC_Item_Create2
+        SS_FUNCTION
+        FNBODY: -1
+    [250]
+    SYMBOL:
+        SC_Item_Preload
+        SS_FUNCTION
+        FNBODY: -1
+    [251]
+    SYMBOL:
+        SC_Item_GetPos
+        SS_FUNCTION
+        FNBODY: -1
+    [252]
+    SYMBOL:
+        SC_SRV_Item_Release
+        SS_FUNCTION
+        FNBODY: -1
+    [253]
+    SYMBOL:
+        SC_Item_Find
+        SS_FUNCTION
+        FNBODY: -1
+    [254]
+    SYMBOL:
+        SC_LevScr_Event
+        SS_FUNCTION
+        FNBODY: -1
+    [255]
+    SYMBOL:
+        SC_StorySkipEnable
+        SS_FUNCTION
+        FNBODY: -1
+    [256]
+    SYMBOL:
+        SC_NET_FillRecover
+        SS_FUNCTION
+        FNBODY: -1
+    [257]
+    SYMBOL:
+        SC_GetPls
+        SS_FUNCTION
+        FNBODY: -1
+    [258]
+    SYMBOL:
+        SC_GetPlsInLine
+        SS_FUNCTION
+        FNBODY: -1
+    [259]
+    SYMBOL:
+        SC_DisplayBinocular
+        SS_FUNCTION
+        FNBODY: -1
+    [260]
+    SYMBOL:
+        SC_GetScriptHelper
+        SS_FUNCTION
+        FNBODY: -1
+    [261]
+    SYMBOL:
+        SC_MissionFailedDeathPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [262]
+    SYMBOL:
+        SC_SND_SetEnvironment
+        SS_FUNCTION
+        FNBODY: -1
+    [263]
+    SYMBOL:
+        SC_SND_Ambient_Play
+        SS_FUNCTION
+        FNBODY: -1
+    [264]
+    SYMBOL:
+        SC_SND_Ambient_Stop
+        SS_FUNCTION
+        FNBODY: -1
+    [265]
+    SYMBOL:
+        SC_SND_PlaySound3D
+        SS_FUNCTION
+        FNBODY: -1
+    [266]
+    SYMBOL:
+        SC_SND_PlaySound3Dex
+        SS_FUNCTION
+        FNBODY: -1
+    [267]
+    SYMBOL:
+        SC_SND_PlaySound2D
+        SS_FUNCTION
+        FNBODY: -1
+    [268]
+    SYMBOL:
+        SC_SND_PlaySound3Dlink
+        SS_FUNCTION
+        FNBODY: -1
+    [269]
+    SYMBOL:
+        SC_SND_PlaySound3Dpl
+        SS_FUNCTION
+        FNBODY: -1
+    [270]
+    SYMBOL:
+        SC_SND_PlaySound3DSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [271]
+    SYMBOL:
+        SC_SND_PlaySound3DexSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [272]
+    SYMBOL:
+        SC_SND_PlaySound2DSpec
+        SS_FUNCTION
+        FNBODY: -1
+    [273]
+    SYMBOL:
+        SC_SND_SetHearableRatio
+        SS_FUNCTION
+        FNBODY: -1
+    [274]
+    SYMBOL:
+        SC_SND_GetSoundLen
+        SS_FUNCTION
+        FNBODY: -1
+    [275]
+    SYMBOL:
+        SC_SND_PlayMusic
+        SS_FUNCTION
+        FNBODY: -1
+    [276]
+    SYMBOL:
+        SC_SND_MusicPlay
+        SS_FUNCTION
+        FNBODY: -1
+    [277]
+    SYMBOL:
+        SC_SND_MusicStop
+        SS_FUNCTION
+        FNBODY: -1
+    [278]
+    SYMBOL:
+        SC_SND_MusicStopFade
+        SS_FUNCTION
+        FNBODY: -1
+    [279]
+    SYMBOL:
+        SC_SND_MusicFadeVolume
+        SS_FUNCTION
+        FNBODY: -1
+    [280]
+    SYMBOL:
+        SC_AGS_Set
+        SS_FUNCTION
+        FNBODY: -1
+    [281]
+    SYMBOL:
+        SC_NOD_SetDSTR
+        SS_FUNCTION
+        FNBODY: -1
+    [282]
+    SYMBOL:
+        SC_NOD_ResetDSTR
+        SS_FUNCTION
+        FNBODY: -1
+    [283]
+    SYMBOL:
+        SC_NOD_GetName
+        SS_FUNCTION
+        FNBODY: -1
+    [284]
+    SYMBOL:
+        SC_NOD_GetPivotWorld
+        SS_FUNCTION
+        FNBODY: -1
+    [285]
+    SYMBOL:
+        SC_NOD_Detach
+        SS_FUNCTION
+        FNBODY: -1
+    [286]
+    SYMBOL:
+        SC_NOD_AddDynamic
+        SS_FUNCTION
+        FNBODY: -1
+    [287]
+    SYMBOL:
+        SC_NOD_GetWorldPos
+        SS_FUNCTION
+        FNBODY: -1
+    [288]
+    SYMBOL:
+        SC_NOD_GetWorldRotZ
+        SS_FUNCTION
+        FNBODY: -1
+    [289]
+    SYMBOL:
+        SC_NOD_GetCollision
+        SS_FUNCTION
+        FNBODY: -1
+    [290]
+    SYMBOL:
+        SC_NOD_GetCollision2
+        SS_FUNCTION
+        FNBODY: -1
+    [291]
+    SYMBOL:
+        SC_DOBJ_IsBurning
+        SS_FUNCTION
+        FNBODY: -1
+    [292]
+    SYMBOL:
+        SC_DOBJ_IsBurning2
+        SS_FUNCTION
+        FNBODY: -1
+    [293]
+    SYMBOL:
+        SC_DOBJ_StopBurning
+        SS_FUNCTION
+        FNBODY: -1
+    [294]
+    SYMBOL:
+        SC_NOD_GetDummySph
+        SS_FUNCTION
+        FNBODY: -1
+    [295]
+    SYMBOL:
+        SC_DOBJ_ClearDamagedHP
+        SS_FUNCTION
+        FNBODY: -1
+    [296]
+    SYMBOL:
+        SC_DOBJ_BurnCreateBlockers
+        SS_FUNCTION
+        FNBODY: -1
+    [297]
+    SYMBOL:
+        SC_DOBJ_SetFrozenFlag
+        SS_FUNCTION
+        FNBODY: -1
+    [298]
+    SYMBOL:
+        SC_NOD_Get
+        SS_FUNCTION
+        FNBODY: -1
+    [299]
+    SYMBOL:
+        SC_NOD_GetNoMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [300]
+    SYMBOL:
+        SC_NOD_GetNoMessage_Entity
+        SS_FUNCTION
+        FNBODY: -1
+    [301]
+    SYMBOL:
+        SC_NOD_GetTransform
+        SS_FUNCTION
+        FNBODY: -1
+    [302]
+    SYMBOL:
+        SC_NOD_SetTransform
+        SS_FUNCTION
+        FNBODY: -1
+    [303]
+    SYMBOL:
+        SC_NOD_Hide
+        SS_FUNCTION
+        FNBODY: -1
+    [304]
+    SYMBOL:
+        SC_NOD_GetPosInOtherSpace
+        SS_FUNCTION
+        FNBODY: -1
+    [305]
+    SYMBOL:
+        SC_DOBJ_CameraLooksAt
+        SS_FUNCTION
+        FNBODY: -1
+    [306]
+    SYMBOL:
+        SC_DOBJ_CameraLooksAtCollision
+        SS_FUNCTION
+        FNBODY: -1
+    [307]
+    SYMBOL:
+        SC_ACTIVE_Add
+        SS_FUNCTION
+        FNBODY: -1
+    [308]
+    SYMBOL:
+        SC_DUMMY_Set_DoNotRenHier
+        SS_FUNCTION
+        FNBODY: -1
+    [309]
+    SYMBOL:
+        SC_DUMMY_Set_DoNotRenHier2
+        SS_FUNCTION
+        FNBODY: -1
+    [310]
+    SYMBOL:
+        SC_CAR_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [311]
+    SYMBOL:
+        SC_CAR_WheelAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [312]
+    SYMBOL:
+        SC_CAR_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [313]
+    SYMBOL:
+        SC_CAR_SetAirResistance
+        SS_FUNCTION
+        FNBODY: -1
+    [314]
+    SYMBOL:
+        SC_SHIP_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [315]
+    SYMBOL:
+        SC_SHIP_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [316]
+    SYMBOL:
+        SC_HELI_Create
+        SS_FUNCTION
+        FNBODY: -1
+    [317]
+    SYMBOL:
+        SC_HELI_EntryAdd
+        SS_FUNCTION
+        FNBODY: -1
+    [318]
+    SYMBOL:
+        SC_HELI_ChangeEntryStativ
+        SS_FUNCTION
+        FNBODY: -1
+    [319]
+    SYMBOL:
+        SC_MP_EnumPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [320]
+    SYMBOL:
+        SC_MP_RestartMission
+        SS_FUNCTION
+        FNBODY: -1
+    [321]
+    SYMBOL:
+        SC_MP_P_SetRecoverTime
+        SS_FUNCTION
+        FNBODY: -1
+    [322]
+    SYMBOL:
+        SC_MP_P_GetAfterRecoverSide
+        SS_FUNCTION
+        FNBODY: -1
+    [323]
+    SYMBOL:
+        SC_MP_P_GetClass
+        SS_FUNCTION
+        FNBODY: -1
+    [324]
+    SYMBOL:
+        SC_MP_P_GetAfterRecoverClass
+        SS_FUNCTION
+        FNBODY: -1
+    [325]
+    SYMBOL:
+        SC_MP_AddPlayerScript
+        SS_FUNCTION
+        FNBODY: -1
+    [326]
+    SYMBOL:
+        SC_MP_SRV_SetForceSide
+        SS_FUNCTION
+        FNBODY: -1
+    [327]
+    SYMBOL:
+        SC_MP_SRV_SetClassLimit
+        SS_FUNCTION
+        FNBODY: -1
+    [328]
+    SYMBOL:
+        SC_MP_SRV_SetClassLimitsForDM
+        SS_FUNCTION
+        FNBODY: -1
+    [329]
+    SYMBOL:
+        SC_MP_SRV_GetBestDMrecov
+        SS_FUNCTION
+        FNBODY: -1
+    [330]
+    SYMBOL:
+        SC_MP_SRV_InitWeaponsRecovery
+        SS_FUNCTION
+        FNBODY: -1
+    [331]
+    SYMBOL:
+        SC_MP_HUD_SetTabInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [332]
+    SYMBOL:
+        SC_MP_HUD_SelectPl
+        SS_FUNCTION
+        FNBODY: -1
+    [333]
+    SYMBOL:
+        SC_GameInfo
+        SS_FUNCTION
+        FNBODY: -1
+    [334]
+    SYMBOL:
+        SC_GameInfoW
+        SS_FUNCTION
+        FNBODY: -1
+    [335]
+    SYMBOL:
+        SC_P_MP_AddPoints
+        SS_FUNCTION
+        FNBODY: -1
+    [336]
+    SYMBOL:
+        SC_MP_GetMaxPointsPl
+        SS_FUNCTION
+        FNBODY: -1
+    [337]
+    SYMBOL:
+        SC_MP_GetMaxFragsPl
+        SS_FUNCTION
+        FNBODY: -1
+    [338]
+    SYMBOL:
+        SC_MP_GetHandleofPl
+        SS_FUNCTION
+        FNBODY: -1
+    [339]
+    SYMBOL:
+        SC_MP_GetPlofHandle
+        SS_FUNCTION
+        FNBODY: -1
+    [340]
+    SYMBOL:
+        SC_HUD_RadarShowPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [341]
+    SYMBOL:
+        SC_HUD_RadarShowPos
+        SS_FUNCTION
+        FNBODY: -1
+    [342]
+    SYMBOL:
+        SC_MP_SetSideStats
+        SS_FUNCTION
+        FNBODY: -1
+    [343]
+    SYMBOL:
+        SC_MP_ScriptMessage
+        SS_FUNCTION
+        FNBODY: -1
+    [344]
+    SYMBOL:
+        SC_MP_AllowStPwD
+        SS_FUNCTION
+        FNBODY: -1
+    [345]
+    SYMBOL:
+        SC_MP_AllowFriendlyFireOFF
+        SS_FUNCTION
+        FNBODY: -1
+    [346]
+    SYMBOL:
+        SC_MP_SetIconHUD
+        SS_FUNCTION
+        FNBODY: -1
+    [347]
+    SYMBOL:
+        SC_MP_SetInstantRecovery
+        SS_FUNCTION
+        FNBODY: -1
+    [348]
+    SYMBOL:
+        SC_MP_SetItemsNoDisappear
+        SS_FUNCTION
+        FNBODY: -1
+    [349]
+    SYMBOL:
+        SC_MP_EnableBotsFromScene
+        SS_FUNCTION
+        FNBODY: -1
+    [350]
+    SYMBOL:
+        SC_MP_SetChooseValidSides
+        SS_FUNCTION
+        FNBODY: -1
+    [351]
+    SYMBOL:
+        SC_MP_EnableC4weapon
+        SS_FUNCTION
+        FNBODY: -1
+    [352]
+    SYMBOL:
+        SC_MP_LoadNextMap
+        SS_FUNCTION
+        FNBODY: -1
+    [353]
+    SYMBOL:
+        SC_MP_SetTeamGame
+        SS_FUNCTION
+        FNBODY: -1
+    [354]
+    SYMBOL:
+        SC_MP_RecoverAllNoAiPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [355]
+    SYMBOL:
+        SC_MP_RecoverAllAiPlayers
+        SS_FUNCTION
+        FNBODY: -1
+    [356]
+    SYMBOL:
+        SC_MP_EndRule_SetTimeLeft
+        SS_FUNCTION
+        FNBODY: -1
+    [357]
+    SYMBOL:
+        SC_MP_GetSRVsettings
+        SS_FUNCTION
+        FNBODY: -1
+    [358]
+    SYMBOL:
+        SC_MP_SRV_P_SetSideClass
+        SS_FUNCTION
+        FNBODY: -1
+    [359]
+    SYMBOL:
+        SC_MP_SRV_GetAutoTeamBalance
+        SS_FUNCTION
+        FNBODY: -1
+    [360]
+    SYMBOL:
+        SC_MP_SRV_GetTeamsNrDifference
+        SS_FUNCTION
+        FNBODY: -1
+    [361]
+    SYMBOL:
+        SC_MP_SRV_DoExplosion
+        SS_FUNCTION
+        FNBODY: -1
+    [362]
+    SYMBOL:
+        SC_MP_SRV_ClearPlsStats
+        SS_FUNCTION
+        FNBODY: -1
+    [363]
+    SYMBOL:
+        SC_MP_SRV_InitGameAfterInactive
+        SS_FUNCTION
+        FNBODY: -1
+    [364]
+    SYMBOL:
+        SC_MP_GetAmmoBoxesEnabled
+        SS_FUNCTION
+        FNBODY: -1
+    [365]
+    SYMBOL:
+        SC_MP_SRV_GetAtgSettings
+        SS_FUNCTION
+        FNBODY: -1
+    [366]
+    SYMBOL:
+        SC_MP_SetSpectatorCameras
+        SS_FUNCTION
+        FNBODY: -1
+    [367]
+    SYMBOL:
+        SC_MP_GetRecovers
+        SS_FUNCTION
+        FNBODY: -1
+    [368]
+    SYMBOL:
+        SC_MP_RecoverPlayer
+        SS_FUNCTION
+        FNBODY: -1
+    [369]
+    SYMBOL:
+        SC_MP_FpvMapSign_Load
+        SS_FUNCTION
+        FNBODY: -1
+    [370]
+    SYMBOL:
+        SC_MP_FpvMapSign_Unload
+        SS_FUNCTION
+        FNBODY: -1
+    [371]
+    SYMBOL:
+        SC_MP_FpvMapSign_Set
+        SS_FUNCTION
+        FNBODY: -1
+    [372]
+    SYMBOL:
+        ScriptMain
+        SS_FUNCTION
+        FNBODY: 373
+    [373]
+    IT_BLOCK_BEGIN (jump: 393)
+    [374]
+    SYMBOL:
+        info
+        SS_VARIABLE
+    [375]
+    NODE: NT_SWITCH
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CAST
+                RETTYPE:
+                CHILD [0]:
+                    NODE: NT_ARROW
+                        RETTYPE:
+                        CHILD [0]:
+                            NODE: NT_SYMBOL
+                                RETTYPE:
+                                SYMBOL [374] <info>
+                        CHILD [1]:
+                            NODE: NT_SYMBOL
+                                RETTYPE:
+                                SYMBOL [-1] <event_type>
+    [376]
+    IT_BLOCK_BEGIN (jump: 391)
+    [377]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                3
+    [378]
+    NODE: NT_RET
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                1
+    [379]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                7
+    [380]
+    NODE: NT_BREAK
+        RETTYPE:
+    [381]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                5
+    [382]
+    NODE: NT_BREAK
+        RETTYPE:
+    [383]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                1
+    [384]
+    NODE: NT_CALL
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_SYMBOL
+                RETTYPE:
+                SYMBOL [254] <SC_LevScr_Event>
+        CHILD [1]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                52
+            NEXTNODE:
+            NODE: NT_CAST
+                RETTYPE:
+                CHILD [0]:
+                    NODE: NT_ARROW
+                        RETTYPE:
+                        CHILD [0]:
+                            NODE: NT_SYMBOL
+                                RETTYPE:
+                                SYMBOL [374] <info>
+                        CHILD [1]:
+                            NODE: NT_SYMBOL
+                                RETTYPE:
+                                SYMBOL [-1] <master_nod>
+    [385]
+    NODE: NT_BREAK
+        RETTYPE:
+    [386]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                4
+    [387]
+    NODE: NT_BREAK
+        RETTYPE:
+    [388]
+    NODE: NT_CASE
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                6
+    [389]
+    NODE: NT_BREAK
+        RETTYPE:
+    [390]
+    IT_BLOCK_END (jump: 375)
+    [391]
+    NODE: NT_RET
+        RETTYPE:
+        CHILD [0]:
+            NODE: NT_CONSTANT
+                RETTYPE:
+                0
+    [392]
+    IT_BLOCK_END (jump: 372)
+
+
+Generovani kodu:
+
+; This script assembler code was produced from
+; script C source code by using 'scc.exe' script ANSI C compiler.
+
+
+
+
+
+
+
+
+
+XFN "sprintf(*char,*constchar,...)int" -1 1 4 0
+$extern0000=0
+
+XFN "swprintf(*unsignedshort,*unsignedshort,...)int" -1 1 4 0
+$extern0001=1
+
+XFN "rand(void)int" 0 1 4 0
+$extern0002=2
+
+XFN "frnd(float)float" 1 1 4 1
+$extern0003=3
+
+XFN "sqrt(float)float" 1 1 4 1
+$extern0004=4
+
+XFN "fmod(float,float)float" 2 1 4 1
+$extern0005=5
+
+XFN "sin(float)float" 1 1 4 1
+$extern0006=6
+
+XFN "cos(float)float" 1 1 4 1
+$extern0007=7
+
+XFN "atan2(float,float)float" 2 1 4 1
+$extern0008=8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XFN "SC_sgi(unsignedlong,int)void" 2 0 0 0
+$extern0009=9
+
+XFN "SC_ggi(unsignedlong)int" 1 1 4 0
+$extern0010=10
+
+XFN "SC_sgf(unsignedlong,float)void" 2 0 0 0
+$extern0011=11
+
+XFN "SC_ggf(unsignedlong)float" 1 1 4 1
+$extern0012=12
+
+XFN "SC_MP_Gvar_SetSynchro(unsignedlong)void" 1 0 0 0
+$extern0013=13
+
+XFN "SC_ZeroMem(*void,unsignedlong)void" 2 0 0 0
+$extern0014=14
+
+XFN "SC_GetLineDist(*c_Vector3,*c_Vector3,*c_Vector3)float" 3 1 4 1
+$extern0015=15
+
+XFN "SC_GetLineDistXY(*c_Vector3,*c_Vector3,*c_Vector3)float" 3 1 4 1
+$extern0016=16
+
+XFN "SC_IsNear2D(*c_Vector3,*c_Vector3,float)int" 3 1 4 0
+$extern0017=17
+
+XFN "SC_IsNear3D(*c_Vector3,*c_Vector3,float)int" 3 1 4 0
+$extern0018=18
+
+XFN "SC_2VectorsDist(*c_Vector3,*c_Vector3)float" 2 1 4 1
+$extern0019=19
+
+XFN "SC_VectorLen(*c_Vector3)float" 1 1 4 1
+$extern0020=20
+
+XFN "SC_VectorLen2(*c_Vector3)float" 1 1 4 1
+$extern0021=21
+
+XFN "SC_message(*char,...)void" -1 0 0 0
+$extern0022=22
+
+XFN "SC_Log(unsignedlong,*char,...)void" -1 0 0 0
+$extern0023=23
+
+XFN "SC_Osi(*char,...)void" -1 0 0 0
+$extern0024=24
+
+XFN "SC_StringSame(*char,*char)int" 2 1 4 0
+$extern0025=25
+
+XFN "SC_KeyJustPressed(unsignedlong)int" 1 1 4 0
+$extern0026=26
+
+XFN "SC_KeyPressed(unsignedlong)int" 1 1 4 0
+$extern0027=27
+
+XFN "SC_EventImpuls(*char)void" 1 0 0 0
+$extern0028=28
+
+XFN "SC_EventEnable(*char,int)void" 2 0 0 0
+$extern0029=29
+
+XFN "SC_MissionCompleted(void)void" 0 0 0 0
+$extern0030=30
+
+XFN "SC_MissionFailed(void)void" 0 0 0 0
+$extern0031=31
+
+XFN "SC_MissionFailedEx(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0032=32
+
+XFN "SC_MissionDone(void)void" 0 0 0 0
+$extern0033=33
+
+XFN "SC_SetMissileTrace(unsignedlong,float)void" 2 0 0 0
+$extern0034=34
+
+XFN "SC_CreatePtc(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0035=35
+
+XFN "SC_CreatePtc_Ext(unsignedlong,*void,float,float,float,float)void" 6 0 0 0
+$extern0036=36
+
+XFN "SC_CreatePtcVec_Ext(unsignedlong,*c_Vector3,float,float,float,float)void" 6 0 0 0
+$extern0037=37
+
+XFN "SC_CreatePtcInNodSpace_Ext(unsignedlong,*void,float,float,float,float)void" 6 0 0 0
+$extern0038=38
+
+XFN "SC_AnsiToUni(*char,*unsignedshort)*unsignedshort" 2 1 4 0
+$extern0039=39
+
+XFN "SC_Fnt_Write(float,float,*char,float,unsignedlong)void" 5 0 0 0
+$extern0040=40
+
+XFN "SC_Fnt_GetWidth(*char,float)float" 2 1 4 1
+$extern0041=41
+
+XFN "SC_Fnt_WriteW(float,float,*unsignedshort,float,unsignedlong)void" 5 0 0 0
+$extern0042=42
+
+XFN "SC_Fnt_GetWidthW(*unsignedshort,float)float" 2 1 4 1
+$extern0043=43
+
+XFN "SC_GetScreenRes(*float,*float)void" 2 0 0 0
+$extern0044=44
+
+XFN "SC_SpeechSet3Dto3Dincamera(int)void" 1 0 0 0
+$extern0045=45
+
+XFN "SC_DoExplosion(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0046=46
+
+XFN "SC_MWP_Create(*s_SC_MWP_Create)unsignedlong" 1 1 4 0
+$extern0047=47
+
+XFN "SC_SetObjectScript(*char,*char)void" 2 0 0 0
+$extern0048=48
+
+XFN "SC_GetPos_VecRz(*void,*c_Vector3,*float)void" 3 0 0 0
+$extern0049=49
+
+XFN "SC_PreloadBES(unsignedlong,*char)void" 2 0 0 0
+$extern0050=50
+
+XFN "SC_PreloadWeapon(unsignedlong,int)void" 2 0 0 0
+$extern0051=51
+
+XFN "SC_FadeTo(int,float)void" 2 0 0 0
+$extern0052=52
+
+XFN "SC_PreloadSound(unsignedlong,int)void" 2 0 0 0
+$extern0053=53
+
+XFN "SC_FadeSoundPlayer(unsignedlong,float,float)void" 3 0 0 0
+$extern0054=54
+
+XFN "SC_Wtxt(unsignedlong)*unsignedshort" 1 1 4 0
+$extern0055=55
+
+XFN "SC_GetNearestPlayer(*c_Vector3,*float)unsignedlong" 2 1 4 0
+$extern0056=56
+
+XFN "SC_SetMovieBorders(int)void" 1 0 0 0
+$extern0057=57
+
+XFN "SC_CreateLight(*s_SC_light)void" 1 0 0 0
+$extern0058=58
+
+XFN "SC_GetCameraPos(*c_Vector3)void" 1 0 0 0
+$extern0059=59
+
+XFN "SC_Fauna_DoSoundAlert(*c_Vector3)void" 1 0 0 0
+$extern0060=60
+
+XFN "SC_Fauna_KillThemAll(*s_sphere)void" 1 0 0 0
+$extern0061=61
+
+XFN "SC_PC_GetPos(*c_Vector3)int" 1 1 4 0
+$extern0062=62
+
+XFN "SC_PC_Get(void)unsignedlong" 0 1 4 0
+$extern0063=63
+
+XFN "SC_PC_SetControl(int)void" 1 0 0 0
+$extern0064=64
+
+XFN "SC_PC_EnableMovementAndLooking(int)void" 1 0 0 0
+$extern0065=65
+
+XFN "SC_PC_EnableMovement(int)void" 1 0 0 0
+$extern0066=66
+
+XFN "SC_PC_EnablePronePosition(int)void" 1 0 0 0
+$extern0067=67
+
+XFN "SC_PC_EnableWeaponsUsing(int)void" 1 0 0 0
+$extern0068=68
+
+XFN "SC_P_Create(*s_SC_P_Create)unsignedlong" 1 1 4 0
+$extern0069=69
+
+XFN "SC_P_IsReady(unsignedlong)int" 1 1 4 0
+$extern0070=70
+
+XFN "SC_P_GetName(unsignedlong)*char" 1 1 4 0
+$extern0071=71
+
+XFN "SC_P_GetPos(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0072=72
+
+XFN "SC_P_GetRot(unsignedlong)float" 1 1 4 1
+$extern0073=73
+
+XFN "SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void" 2 0 0 0
+$extern0074=74
+
+XFN "SC_P_GetBySideGroupMember(unsignedlong,unsignedlong,unsignedlong)unsignedlong" 3 1 4 0
+$extern0075=75
+
+XFN "SC_P_ScriptMessage(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0076=76
+
+XFN "SC_P_SetFaceStatus(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0077=77
+
+XFN "SC_P_SetHandVariation(unsignedlong,unsignedlong,unsignedlong,float)void" 4 0 0 0
+$extern0078=78
+
+XFN "SC_P_GetDistance(unsignedlong,unsignedlong)float" 2 1 4 1
+$extern0079=79
+
+XFN "SC_P_Ai_SetMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0080=80
+
+XFN "SC_P_Ai_GetMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0081=81
+
+XFN "SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0082=82
+
+XFN "SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void" 3 0 0 0
+$extern0083=83
+
+XFN "SC_P_Ai_GetBattleMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0084=84
+
+XFN "SC_P_Ai_SetPeaceMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0085=85
+
+XFN "SC_P_Ai_GetPeaceMode(unsignedlong)unsignedlong" 1 1 4 0
+$extern0086=86
+
+XFN "SC_P_Ai_GetSpecTask(unsignedlong)unsignedlong" 1 1 4 0
+$extern0087=87
+
+XFN "SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0088=88
+
+XFN "SC_P_Ai_SetMovePos(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0089=89
+
+XFN "SC_P_Ai_EnableShooting(unsignedlong,int)void" 2 0 0 0
+$extern0090=90
+
+XFN "SC_P_Ai_Go(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0091=91
+
+XFN "SC_P_Ai_Stop(unsignedlong)void" 1 0 0 0
+$extern0092=92
+
+XFN "SC_P_Ai_GetProps(unsignedlong,*s_SC_P_AI_props)void" 2 0 0 0
+$extern0093=93
+
+XFN "SC_P_Ai_SetProps(unsignedlong,*s_SC_P_AI_props)void" 2 0 0 0
+$extern0094=94
+
+XFN "SC_P_Ai_GetGrenateProps(unsignedlong,*s_SC_P_Ai_Grenade)void" 2 0 0 0
+$extern0095=95
+
+XFN "SC_P_Ai_SetGrenateProps(unsignedlong,*s_SC_P_Ai_Grenade)void" 2 0 0 0
+$extern0096=96
+
+XFN "SC_P_Ai_GetEnemies(unsignedlong)unsignedlong" 1 1 4 0
+$extern0097=97
+
+XFN "SC_P_Ai_GetSureEnemies(unsignedlong)unsignedlong" 1 1 4 0
+$extern0098=98
+
+XFN "SC_P_Ai_LookAt(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0099=99
+
+XFN "SC_P_Ai_EnableSituationUpdate(unsignedlong,int)void" 2 0 0 0
+$extern0100=100
+
+XFN "SC_P_Ai_KnowsAboutPl(unsignedlong,unsignedlong)int" 2 1 4 0
+$extern0101=101
+
+XFN "SC_P_Ai_SetBattleProps(unsignedlong,*s_SC_P_Ai_BattleProps)void" 2 0 0 0
+$extern0102=102
+
+XFN "SC_P_Ai_GetShooting(unsignedlong,*unsignedlong)int" 2 1 4 0
+$extern0103=103
+
+XFN "SC_P_Ai_GetDanger(unsignedlong)float" 1 1 4 1
+$extern0104=104
+
+XFN "SC_P_Ai_SetPreferedWeaponSlot(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0105=105
+
+XFN "SC_P_Ai_GetPreferedWeaponSlot(unsignedlong)unsignedlong" 1 1 4 0
+$extern0106=106
+
+XFN "SC_P_Ai_ShootAt(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0107=107
+
+XFN "SC_P_Ai_ForgetEnemies(unsignedlong)void" 1 0 0 0
+$extern0108=108
+
+XFN "SC_P_Ai_HideYourself(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0109=109
+
+XFN "SC_P_Ai_LookingAt(unsignedlong,*c_Vector3)int" 2 1 4 0
+$extern0110=110
+
+XFN "SC_P_Ai_ShouldLookAt(unsignedlong,*c_Vector3,float)void" 3 0 0 0
+$extern0111=111
+
+XFN "SC_P_Ai_SetStaticMode(unsignedlong,int)void" 2 0 0 0
+$extern0112=112
+
+XFN "SC_P_Ai_GetStaticMode(unsignedlong)int" 1 1 4 0
+$extern0113=113
+
+XFN "SC_P_Ai_GetNearestEnemyDist(unsignedlong)float" 1 1 4 1
+$extern0114=114
+
+XFN "SC_P_Ai_GetNearestEnemy(unsignedlong)unsignedlong" 1 1 4 0
+$extern0115=115
+
+XFN "SC_P_Ai_Script_WatchPlayer(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0116=116
+
+XFN "SC_P_Ai_UpdateSituation(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0117=117
+
+XFN "SC_P_Ai_GetEnemyShotAround(unsignedlong,float)void" 2 0 0 0
+$extern0118=118
+
+XFN "SC_P_Ai_SetIgnoreFlags(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0119=119
+
+XFN "SC_P_Ai_GetIgnoreFlags(unsignedlong)unsignedlong" 1 1 4 0
+$extern0120=120
+
+XFN "SC_P_Ai_EnableSayTo(unsignedlong,int)void" 2 0 0 0
+$extern0121=121
+
+XFN "SC_P_Ai_SetPointmanBreaks(unsignedlong,float,float)void" 3 0 0 0
+$extern0122=122
+
+XFN "SC_P_Ai_WalkThruAIs(unsignedlong,int)void" 2 0 0 0
+$extern0123=123
+
+XFN "SC_P_Ai_SetMedicIngMaxActiveDist(unsignedlong,float)void" 2 0 0 0
+$extern0124=124
+
+XFN "SC_Ai_SetBattleMode(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0125=125
+
+XFN "SC_Ai_SetBattleModeExt(unsignedlong,unsignedlong,unsignedlong,*c_Vector3)void" 4 0 0 0
+$extern0126=126
+
+XFN "SC_Ai_SetPeaceMode(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0127=127
+
+XFN "SC_Ai_SetPointRuns(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0128=128
+
+XFN "SC_Ai_SetPlFollow(unsignedlong,unsignedlong,unsignedlong,*s_SC_Ai_PlFollow,*unsignedlong,*unsignedlong,unsignedlong)void" 7 0 0 0
+$extern0129=129
+
+XFN "SC_Ai_PointStopDanger(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0130=130
+
+XFN "SC_Ai_StopDanger(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0131=131
+
+XFN "SC_Ai_SetStealthMode(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0132=132
+
+XFN "SC_Ai_SetStealthModeOff(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0133=133
+
+XFN "SC_Ai_GetStealthMode(unsignedlong,unsignedlong)int" 2 1 4 0
+$extern0134=134
+
+XFN "SC_Ai_EnableRelaxWalk(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0135=135
+
+XFN "SC_Ai_Blocker_Add(*s_sphere)unsignedlong" 1 1 4 0
+$extern0136=136
+
+XFN "SC_Ai_Blocker_Remove(unsignedlong)void" 1 0 0 0
+$extern0137=137
+
+XFN "SC_Ai_FakeEnemy_Add(unsignedlong,unsignedlong,*c_Vector3,unsignedlong,*s_sphere)void" 5 0 0 0
+$extern0138=138
+
+XFN "SC_Ai_FakeEnemy_Remove(unsignedlong,unsignedlong,*c_Vector3)void" 3 0 0 0
+$extern0139=139
+
+XFN "SC_Ai_FakeDanger(*s_sphere,float)void" 2 0 0 0
+$extern0140=140
+
+XFN "SC_Ai_SetGroupEnemyUpdate(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0141=141
+
+XFN "SC_Ai_SetPointmanNormalWalking(unsignedlong,unsignedlong,int)void" 3 0 0 0
+$extern0142=142
+
+XFN "SC_P_Ai_CanSeePlayer(unsignedlong,unsignedlong,float,unsignedlong)int" 4 1 4 0
+$extern0143=143
+
+XFN "SC_GetWp(*char,*c_Vector3)int" 2 1 4 0
+$extern0144=144
+
+XFN "SC_SetSideAlly(unsignedlong,unsignedlong,float)void" 3 0 0 0
+$extern0145=145
+
+XFN "SC_InitSide(unsignedlong,*s_SC_initside)void" 2 0 0 0
+$extern0146=146
+
+XFN "SC_InitSideGroup(*s_SC_initgroup)void" 1 0 0 0
+$extern0147=147
+
+XFN "SC_GetGroupPlayers(unsignedlong,unsignedlong)unsignedlong" 2 1 4 0
+$extern0148=148
+
+XFN "SC_Item_Create(unsignedlong,*c_Vector3)unsignedlong" 2 1 4 0
+$extern0149=149
+
+XFN "SC_Item_Create2(unsignedlong,*c_Vector3,*c_Vector3)unsignedlong" 3 1 4 0
+$extern0150=150
+
+XFN "SC_Item_Preload(unsignedlong)void" 1 0 0 0
+$extern0151=151
+
+XFN "SC_Item_GetPos(unsignedlong,*c_Vector3)int" 2 1 4 0
+$extern0152=152
+
+XFN "SC_SRV_Item_Release(unsignedlong)void" 1 0 0 0
+$extern0153=153
+
+XFN "SC_Item_Find(unsignedlong)unsignedlong" 1 1 4 0
+$extern0154=154
+
+XFN "SC_LevScr_Event(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0155=155
+
+XFN "SC_StorySkipEnable(int)void" 1 0 0 0
+$extern0156=156
+
+XFN "SC_NET_FillRecover(*s_SC_MP_Recover,*char)int" 2 1 4 0
+$extern0157=157
+
+XFN "SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void" 3 0 0 0
+$extern0158=158
+
+XFN "SC_GetPlsInLine(*c_Vector3,*c_Vector3,*unsignedlong,*unsignedlong)void" 4 0 0 0
+$extern0159=159
+
+XFN "SC_DisplayBinocular(int)void" 1 0 0 0
+$extern0160=160
+
+XFN "SC_GetScriptHelper(*char,*s_sphere)int" 2 1 4 0
+$extern0161=161
+
+XFN "SC_MissionFailedDeathPlayer(unsignedlong)void" 1 0 0 0
+$extern0162=162
+
+XFN "SC_SND_SetEnvironment(unsignedlong,unsignedlong,float)int" 3 1 4 0
+$extern0163=163
+
+XFN "SC_SND_Ambient_Play(unsignedlong)void" 1 0 0 0
+$extern0164=164
+
+XFN "SC_SND_Ambient_Stop(void)void" 0 0 0 0
+$extern0165=165
+
+XFN "SC_SND_PlaySound3D(unsignedlong,*c_Vector3)void" 2 0 0 0
+$extern0166=166
+
+XFN "SC_SND_PlaySound3Dex(unsignedlong,*c_Vector3,*float)void" 3 0 0 0
+$extern0167=167
+
+XFN "SC_SND_PlaySound2D(unsignedlong)void" 1 0 0 0
+$extern0168=168
+
+XFN "SC_SND_PlaySound3Dlink(unsignedlong,*void,*float)void" 3 0 0 0
+$extern0169=169
+
+XFN "SC_SND_PlaySound3Dpl(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0170=170
+
+XFN "SC_SND_PlaySound3DSpec(unsignedlong,*c_Vector3,unsignedlong)void" 3 0 0 0
+$extern0171=171
+
+XFN "SC_SND_PlaySound3DexSpec(unsignedlong,*c_Vector3,*float,unsignedlong)void" 4 0 0 0
+$extern0172=172
+
+XFN "SC_SND_PlaySound2DSpec(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0173=173
+
+XFN "SC_SND_SetHearableRatio(float)void" 1 0 0 0
+$extern0174=174
+
+XFN "SC_SND_GetSoundLen(unsignedlong)float" 1 1 4 1
+$extern0175=175
+
+XFN "SC_SND_PlayMusic(unsignedlong)void" 1 0 0 0
+$extern0176=176
+
+XFN "SC_SND_MusicPlay(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0177=177
+
+XFN "SC_SND_MusicStop(unsignedlong)void" 1 0 0 0
+$extern0178=178
+
+XFN "SC_SND_MusicStopFade(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0179=179
+
+XFN "SC_SND_MusicFadeVolume(unsignedlong,unsignedlong,unsignedlong)void" 3 0 0 0
+$extern0180=180
+
+XFN "SC_AGS_Set(unsignedlong)unsignedlong" 1 1 4 0
+$extern0181=181
+
+XFN "SC_NOD_SetDSTR(*void,*char,*char)void" 3 0 0 0
+$extern0182=182
+
+XFN "SC_NOD_ResetDSTR(*void,*char)void" 2 0 0 0
+$extern0183=183
+
+XFN "SC_NOD_GetName(*void)*char" 1 1 4 0
+$extern0184=184
+
+XFN "SC_NOD_GetPivotWorld(*void,*c_Vector3)void" 2 0 0 0
+$extern0185=185
+
+XFN "SC_NOD_Detach(*void,*char)void" 2 0 0 0
+$extern0186=186
+
+XFN "SC_NOD_AddDynamic(*void,*char,*s_SC_OBJ_dynamic)void" 3 0 0 0
+$extern0187=187
+
+XFN "SC_NOD_GetWorldPos(*void,*c_Vector3)void" 2 0 0 0
+$extern0188=188
+
+XFN "SC_NOD_GetWorldRotZ(*void)float" 1 1 4 1
+$extern0189=189
+
+XFN "SC_NOD_GetCollision(*void,*char,int)int" 3 1 4 0
+$extern0190=190
+
+XFN "SC_NOD_GetCollision2(*void,int)int" 2 1 4 0
+$extern0191=191
+
+XFN "SC_DOBJ_IsBurning(*void,float)int" 2 1 4 0
+$extern0192=192
+
+XFN "SC_DOBJ_IsBurning2(*void)int" 1 1 4 0
+$extern0193=193
+
+XFN "SC_DOBJ_StopBurning(*void,int)void" 2 0 0 0
+$extern0194=194
+
+XFN "SC_NOD_GetDummySph(*void,*char,*s_sphere)void" 3 0 0 0
+$extern0195=195
+
+XFN "SC_DOBJ_ClearDamagedHP(*void)void" 1 0 0 0
+$extern0196=196
+
+XFN "SC_DOBJ_BurnCreateBlockers(*void,*s_sphere,unsignedlong)void" 3 0 0 0
+$extern0197=197
+
+XFN "SC_DOBJ_SetFrozenFlag(*void,int)void" 2 0 0 0
+$extern0198=198
+
+XFN "SC_NOD_Get(*void,*char)*void" 2 1 4 0
+$extern0199=199
+
+XFN "SC_NOD_GetNoMessage(*void,*char)*void" 2 1 4 0
+$extern0200=200
+
+XFN "SC_NOD_GetNoMessage_Entity(*char)*void" 1 1 4 0
+$extern0201=201
+
+XFN "SC_NOD_GetTransform(*void,*s_SC_NOD_transform)void" 2 0 0 0
+$extern0202=202
+
+XFN "SC_NOD_SetTransform(*void,*s_SC_NOD_transform)void" 2 0 0 0
+$extern0203=203
+
+XFN "SC_NOD_Hide(*void,int)void" 2 0 0 0
+$extern0204=204
+
+XFN "SC_NOD_GetPosInOtherSpace(*void,*void,*c_Vector3)void" 3 0 0 0
+$extern0205=205
+
+XFN "SC_DOBJ_CameraLooksAt(*void,float)float" 2 1 4 1
+$extern0206=206
+
+XFN "SC_DOBJ_CameraLooksAtCollision(*void,float)float" 2 1 4 1
+$extern0207=207
+
+XFN "SC_ACTIVE_Add(*void,float,unsignedlong)void" 3 0 0 0
+$extern0208=208
+
+XFN "SC_DUMMY_Set_DoNotRenHier(*char,int)void" 2 0 0 0
+$extern0209=209
+
+XFN "SC_DUMMY_Set_DoNotRenHier2(*void,int)void" 2 0 0 0
+$extern0210=210
+
+XFN "SC_CAR_Create(*void,*s_SC_Car_Init)*void" 2 1 4 0
+$extern0211=211
+
+XFN "SC_CAR_WheelAdd(*void,*void,*s_SC_Car_AddWheel)void" 3 0 0 0
+$extern0212=212
+
+XFN "SC_CAR_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0213=213
+
+XFN "SC_CAR_SetAirResistance(*void,float,float,float)void" 4 0 0 0
+$extern0214=214
+
+XFN "SC_SHIP_Create(*void,*s_SC_Ship_Init,*s_SC_PHS_IWantToFloat)*void" 3 1 4 0
+$extern0215=215
+
+XFN "SC_SHIP_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0216=216
+
+XFN "SC_HELI_Create(*void,*s_SC_Heli_Init)*void" 2 1 4 0
+$extern0217=217
+
+XFN "SC_HELI_EntryAdd(*void,*s_SC_Car_AddEntry)void" 2 0 0 0
+$extern0218=218
+
+XFN "SC_HELI_ChangeEntryStativ(*void,unsignedlong,*char)void" 3 0 0 0
+$extern0219=219
+
+XFN "SC_MP_EnumPlayers(*s_SC_MP_EnumPlayers,*unsignedlong,unsignedlong)int" 3 1 4 0
+$extern0220=220
+
+XFN "SC_MP_RestartMission(void)void" 0 0 0 0
+$extern0221=221
+
+XFN "SC_MP_P_SetRecoverTime(unsignedlong,float)void" 2 0 0 0
+$extern0222=222
+
+XFN "SC_MP_P_GetAfterRecoverSide(unsignedlong)unsignedlong" 1 1 4 0
+$extern0223=223
+
+XFN "SC_MP_P_GetClass(unsignedlong)unsignedlong" 1 1 4 0
+$extern0224=224
+
+XFN "SC_MP_P_GetAfterRecoverClass(unsignedlong)unsignedlong" 1 1 4 0
+$extern0225=225
+
+XFN "SC_MP_AddPlayerScript(*char)void" 1 0 0 0
+$extern0226=226
+
+XFN "SC_MP_SRV_SetForceSide(unsignedlong)void" 1 0 0 0
+$extern0227=227
+
+XFN "SC_MP_SRV_SetClassLimit(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0228=228
+
+XFN "SC_MP_SRV_SetClassLimitsForDM(void)void" 0 0 0 0
+$extern0229=229
+
+XFN "SC_MP_SRV_GetBestDMrecov(*s_SC_MP_Recover,unsignedlong,*float,float)unsignedlong" 4 1 4 0
+$extern0230=230
+
+XFN "SC_MP_SRV_InitWeaponsRecovery(float)void" 1 0 0 0
+$extern0231=231
+
+XFN "SC_MP_HUD_SetTabInfo(*s_SC_MP_hud)void" 1 0 0 0
+$extern0232=232
+
+XFN "SC_MP_HUD_SelectPl(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0233=233
+
+XFN "SC_GameInfo(unsignedlong,*char)void" 2 0 0 0
+$extern0234=234
+
+XFN "SC_GameInfoW(*unsignedshort)void" 1 0 0 0
+$extern0235=235
+
+XFN "SC_P_MP_AddPoints(unsignedlong,int)void" 2 0 0 0
+$extern0236=236
+
+XFN "SC_MP_GetMaxPointsPl(*int)unsignedlong" 1 1 4 0
+$extern0237=237
+
+XFN "SC_MP_GetMaxFragsPl(*int)unsignedlong" 1 1 4 0
+$extern0238=238
+
+XFN "SC_MP_GetHandleofPl(unsignedlong)unsignedlong" 1 1 4 0
+$extern0239=239
+
+XFN "SC_MP_GetPlofHandle(unsignedlong)unsignedlong" 1 1 4 0
+$extern0240=240
+
+XFN "SC_HUD_RadarShowPlayer(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0241=241
+
+XFN "SC_HUD_RadarShowPos(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0242=242
+
+XFN "SC_MP_SetSideStats(unsignedlong,int,int)void" 3 0 0 0
+$extern0243=243
+
+XFN "SC_MP_ScriptMessage(unsignedlong,unsignedlong)void" 2 0 0 0
+$extern0244=244
+
+XFN "SC_MP_AllowStPwD(int)void" 1 0 0 0
+$extern0245=245
+
+XFN "SC_MP_AllowFriendlyFireOFF(int)void" 1 0 0 0
+$extern0246=246
+
+XFN "SC_MP_SetIconHUD(*s_SC_HUD_MP_icon,unsignedlong)void" 2 0 0 0
+$extern0247=247
+
+XFN "SC_MP_SetInstantRecovery(int)void" 1 0 0 0
+$extern0248=248
+
+XFN "SC_MP_SetItemsNoDisappear(int)void" 1 0 0 0
+$extern0249=249
+
+XFN "SC_MP_EnableBotsFromScene(int)void" 1 0 0 0
+$extern0250=250
+
+XFN "SC_MP_SetChooseValidSides(unsignedlong)void" 1 0 0 0
+$extern0251=251
+
+XFN "SC_MP_EnableC4weapon(int)void" 1 0 0 0
+$extern0252=252
+
+XFN "SC_MP_LoadNextMap(void)void" 0 0 0 0
+$extern0253=253
+
+XFN "SC_MP_SetTeamGame(int)void" 1 0 0 0
+$extern0254=254
+
+XFN "SC_MP_RecoverAllNoAiPlayers(void)void" 0 0 0 0
+$extern0255=255
+
+XFN "SC_MP_RecoverAllAiPlayers(void)void" 0 0 0 0
+$extern0256=256
+
+XFN "SC_MP_EndRule_SetTimeLeft(float,int)void" 2 0 0 0
+$extern0257=257
+
+XFN "SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void" 1 0 0 0
+$extern0258=258
+
+XFN "SC_MP_SRV_P_SetSideClass(unsignedlong,unsignedlong,unsignedlong)int" 3 1 4 0
+$extern0259=259
+
+XFN "SC_MP_SRV_GetAutoTeamBalance(void)int" 0 1 4 0
+$extern0260=260
+
+XFN "SC_MP_SRV_GetTeamsNrDifference(int)int" 1 1 4 0
+$extern0261=261
+
+XFN "SC_MP_SRV_DoExplosion(*c_Vector3,unsignedlong)void" 2 0 0 0
+$extern0262=262
+
+XFN "SC_MP_SRV_ClearPlsStats(void)void" 0 0 0 0
+$extern0263=263
+
+XFN "SC_MP_SRV_InitGameAfterInactive(void)void" 0 0 0 0
+$extern0264=264
+
+XFN "SC_MP_GetAmmoBoxesEnabled(void)int" 0 1 4 0
+$extern0265=265
+
+XFN "SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void" 1 0 0 0
+$extern0266=266
+
+XFN "SC_MP_SetSpectatorCameras(char)void" 1 0 0 0
+$extern0267=267
+
+XFN "SC_MP_GetRecovers(unsignedlong,*s_SC_MP_Recover,*unsignedlong)void" 3 0 0 0
+$extern0268=268
+
+XFN "SC_MP_RecoverPlayer(unsignedlong)void" 1 0 0 0
+$extern0269=269
+
+XFN "SC_MP_FpvMapSign_Load(*char)unsignedlong" 1 1 4 0
+$extern0270=270
+
+XFN "SC_MP_FpvMapSign_Unload(unsignedlong)int" 1 1 4 0
+$extern0271=271
+
+XFN "SC_MP_FpvMapSign_Set(unsignedlong,*s_SC_FpvMapSign)void" 2 0 0 0
+$extern0272=272
+
+
+@ScriptMain				; function 'ScriptMain'
+
+		IN 0
+		OUT 0
+		$temp0000=-3		; return variable
+		$var0000=-4		; parameter 'info'
+
+					; { 0
+
+					; code of next node
+
+					; StackAdress: 0
+
+@debug0000				; source_line(NT_SWITCH): 14
+
+
+
+					; 'switch' begin   0
+		$temp0001=0
+		LADR var0000
+		DADR 0
+		DCP 4
+		JMP label0000		; jump to first 'case'
+					; { 1
+		JMP label0002		; jump to body of next 'case'
+
+	@label0000			; 'case'
+
+		LCP temp0001
+		$const0000=0
+		?0x3i			; (3)
+		GCP const0000
+		EQU
+		JZ label0003
+
+
+	@label0002			; 'case' body
+
+					; StackAdress: 1
+
+@debug0001				; source_line(NT_RET): 17
+
+
+
+					; 'return'
+		$const0001=1
+		?0x1i			; (1)
+		GCP const0001
+		LLD temp0000
+					; StackAdress: 1
+
+@debug0002				; source_line(NT_FUNEXIT): -1
+
+
+
+		RET 1
+		JMP label0004		; jump to body of next 'case'
+
+	@label0003			; 'case'
+
+		LCP temp0001
+		$const0002=2
+		?0x7i			; (7)
+		GCP const0002
+		EQU
+		JZ label0005
+
+
+	@label0004			; 'case' body
+
+					; StackAdress: 1
+
+@debug0003				; source_line(NT_BREAK): 21
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0006		; jump to body of next 'case'
+
+	@label0005			; 'case'
+
+		LCP temp0001
+		$const0003=3
+		?0x5i			; (5)
+		GCP const0003
+		EQU
+		JZ label0007
+
+
+	@label0006			; 'case' body
+
+					; StackAdress: 1
+
+@debug0004				; source_line(NT_BREAK): 24
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0008		; jump to body of next 'case'
+
+	@label0007			; 'case'
+
+		LCP temp0001
+		$const0004=4
+		?0x1i			; (1)
+		GCP const0004
+		EQU
+		JZ label0009
+
+
+	@label0008			; 'case' body
+
+					; StackAdress: 1
+
+@debug0005				; source_line(NT_CALL): 27
+
+
+
+					; function call
+		$const0005=5
+		?0x34i			; (52)
+		GCP const0005
+		LADR var0000
+		DADR 4
+		DCP 4
+		XCALL extern0155
+		SSP 2
+
+					; StackAdress: 1
+
+@debug0006				; source_line(NT_BREAK): 28
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0010		; jump to body of next 'case'
+
+	@label0009			; 'case'
+
+		LCP temp0001
+		$const0006=6
+		?0x4i			; (4)
+		GCP const0006
+		EQU
+		JZ label0011
+
+
+	@label0010			; 'case' body
+
+					; StackAdress: 1
+
+@debug0007				; source_line(NT_BREAK): 31
+
+
+
+					; 'break' 1,1
+		JMP label0001
+		JMP label0012		; jump to body of next 'case'
+
+	@label0011			; 'case'
+
+		LCP temp0001
+		$const0007=7
+		?0x6i			; (6)
+		GCP const0007
+		EQU
+		JZ label0013
+
+
+	@label0012			; 'case' body
+
+					; StackAdress: 1
+
+@debug0008				; source_line(NT_BREAK): 34
+
+
+
+					; 'break' 1,1
+		JMP label0001
+					; StackAdress: 1
+
+@debug0009				; source_line(IT_BLOCK_END): 36
+
+
+
+					; } 1 -> 1
+
+	@label0013			; no 'case' match 'switch' condition
+
+
+	@label0001			; 'case' was finished by 'break'
+
+					; 'switch' end   1
+		SSP 1
+
+					; code of next node
+
+					; StackAdress: 0
+
+@debug0010				; source_line(NT_RET): 39
+
+
+
+					; 'return'
+		$const0008=8
+		?0x0i			; (0)
+		GCP const0008
+		LLD temp0000
+					; StackAdress: 0
+
+@debug0011				; source_line(NT_FUNEXIT): -1
+
+
+
+		RET 0
+
+
+
+							; } 0 -> 0
+
+
+
