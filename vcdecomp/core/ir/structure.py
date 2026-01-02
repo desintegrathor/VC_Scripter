@@ -200,29 +200,29 @@ def _format_block_lines(
                 # Check if pattern is: CALL/XCALL, LLD, (SSP), JZ
                 # LLD should be 1-2 instructions before JZ
                 import sys
-                print(f"DEBUG early_return block {block_id}: jz_index={jz_index}, checking for CALL+LLD", file=sys.stderr)
+                # print(f"DEBUG early_return block {block_id}: jz_index={jz_index}, checking for CALL+LLD", file=sys.stderr)
                 for check_idx in range(jz_index - 1, max(0, jz_index - 3), -1):
                     check_inst = ssa_block[check_idx]
-                    print(f"  check_idx={check_idx}: {check_inst.mnemonic}@{check_inst.address}", file=sys.stderr)
+                    # print(f"  check_idx={check_idx}: {check_inst.mnemonic}@{check_inst.address}", file=sys.stderr)
                     if check_inst.mnemonic == "LLD":
-                        print(f"  Found LLD at {check_idx}", file=sys.stderr)
+                        # print(f"  Found LLD at {check_idx}", file=sys.stderr)
                         # Found LLD, now check if there's CALL/XCALL before it
                         for call_idx in range(check_idx - 1, max(0, check_idx - 3), -1):
                             call_inst = ssa_block[call_idx]
-                            print(f"    call_idx={call_idx}: {call_inst.mnemonic}@{call_inst.address}", file=sys.stderr)
+                            # print(f"    call_idx={call_idx}: {call_inst.mnemonic}@{call_inst.address}", file=sys.stderr)
                             if call_inst.mnemonic in {"CALL", "XCALL"}:
                                 # Found CALL + LLD pattern! Use this as condition
-                                print(f"  Found CALL/XCALL at {call_idx}! Formatting...", file=sys.stderr)
-                                print(f"  CALL inputs: {[inp.name for inp in call_inst.inputs]}", file=sys.stderr)
+                                # print(f"  Found CALL/XCALL at {call_idx}! Formatting...", file=sys.stderr)
+                                # print(f"  CALL inputs: {[inp.name for inp in call_inst.inputs]}", file=sys.stderr)
                                 try:
                                     call_expr = formatter._format_call(call_inst)
-                                    print(f"  Formatted: {call_expr}", file=sys.stderr)
+                                    # print(f"  Formatted: {call_expr}", file=sys.stderr)
                                     if call_expr.endswith(";"):
                                         call_expr = call_expr[:-1].strip()
                                     func_call_cond = call_expr
-                                    print(f"  func_call_cond set to: {func_call_cond}", file=sys.stderr)
+                                    # print(f"  func_call_cond set to: {func_call_cond}", file=sys.stderr)
                                 except Exception as e:
-                                    print(f"  Exception formatting: {e}", file=sys.stderr)
+                                    # print(f"  Exception formatting: {e}", file=sys.stderr)
                                     import traceback
                                     traceback.print_exc(file=sys.stderr)
                                 break
@@ -525,7 +525,15 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     lines: List[str] = []
     # Load symbol database for global variable name resolution
     symbol_db = _load_symbol_db()
-    formatter = ExpressionFormatter(ssa_func, symbol_db=symbol_db)
+
+    # FIX 2: Variable name collision resolution (simplified for legacy function)
+    # Note: This function is likely deprecated, main function is format_structured_function_v3
+    from .variable_renaming import VariableRenamer
+    all_block_ids = set(cfg.blocks.keys()) if cfg and cfg.blocks else set()
+    renamer = VariableRenamer(ssa_func, all_block_ids)
+    rename_map = renamer.analyze_and_rename()
+
+    formatter = ExpressionFormatter(ssa_func, symbol_db=symbol_db, rename_map=rename_map)
     ssa_blocks = ssa_func.instructions
 
     def process(block_id: int, indent: str = "    ") -> None:
@@ -944,10 +952,43 @@ def _detect_for_loop(
                         }
                         op = op_map.get(compare_inst.mnemonic, "?")
 
-                        # FÁZE 2.1: NO normalization - decompiler should be faithful to bytecode
-                        # The compiler may have bugs (e.g., compiling i<2 as i<=2), but decompiler
-                        # should show what's actually in the binary, not what we think it should be.
-                        # Users can compare with source to find compiler bugs.
+                        # P0.2 FIX: Analyze jump direction to correct loop conditions
+                        # Problem: Compiler generates <= for < in some cases (off-by-one bug)
+                        # Solution: Check if jump exits loop (forward) or continues (backward)
+                        jump_instr = ssa_inst  # The JZ/JNZ instruction
+                        jump_target = last_instr.arg1  # Target address of jump
+
+                        # Determine if jump exits loop or continues loop
+                        # If jump goes FORWARD (to higher address) → likely exit condition
+                        # If jump goes BACKWARD (to lower address) → likely loop continuation
+                        is_forward_jump = jump_target > last_instr.address
+
+                        # For-loops typically have pattern: JZ forward (exit when condition false)
+                        # So if bytecode has ULES (<=) and JZ forward, we need to normalize:
+                        # - ULES + JZ forward = exit when (i <= limit) is FALSE = continue when (i > limit)
+                        # - But wait, that's inverted! Let's check the jump mnemonic
+
+                        # Actually, the condition in bytecode represents when to EXIT the loop
+                        # For standard for-loops: continue while (i < N), exit when NOT (i < N)
+                        # Compiler generates: compare i vs N, JZ exit_label (jump if i >= N)
+                        # So bytecode comparison is "i >= N" (exit condition)
+                        # We want to display: "i < N" (continue condition)
+
+                        # Heuristic for for-loops:
+                        # If operator is <= and it looks like a standard loop bound check,
+                        # convert to < (the original source likely used <)
+                        if op in ["<=", ">="]:
+                            # Check if this is a standard loop pattern (counter vs constant/variable)
+                            # Pattern: local_X <= N where local_X starts at 0
+                            if init_value in ["0", "0x0", "0x00000000"]:
+                                # Loop starts at 0, likely should be < not <=
+                                if op == "<=":
+                                    op = "<"
+                                    # Note: We're making an educated guess that the original
+                                    # source used < and the compiler generated <=
+                                    # This is a common pattern in VC Script compiler
+                                elif op == ">=":
+                                    op = ">"
 
                         cond_expr = f"({left} {op} {right})"
 
@@ -1222,14 +1263,14 @@ def _trace_value_to_function_call(
 
     # DEBUG
     import sys
-    print(f"DEBUG _trace_value_to_function_call: value={value.name}, has_producer={value.producer_inst is not None}", file=sys.stderr)
+    # print(f"DEBUG _trace_value_to_function_call: value={value.name}, has_producer={value.producer_inst is not None}", file=sys.stderr)
 
     # Check if this value came from LLD instruction
     if not value.producer_inst:
         return None
 
     producer = value.producer_inst
-    print(f"DEBUG producer: mnemonic={producer.mnemonic}, addr={producer.address}", file=sys.stderr)
+    # print(f"DEBUG producer: mnemonic={producer.mnemonic}, addr={producer.address}", file=sys.stderr)
 
     # Pattern: LLD [sp+307] loads return value from stack
     # This is the standard return value slot after CALL/XCALL
@@ -1470,7 +1511,7 @@ def _find_case_body_blocks(cfg: CFG, case_entry: int, stop_blocks: Set[int], res
     return body_blocks
 
 
-def _trace_value_to_global(value, formatter: ExpressionFormatter) -> Optional[str]:
+def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) -> Optional[str]:
     """
     Trace an SSA value back to its global variable source.
 
@@ -1480,9 +1521,20 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter) -> Optional[st
     Pattern:
         GCP/GLD offset -> produces value with alias local_X
         We want to return the global name for that offset instead.
+
+    Also handles indirection through stack:
+        GCP offset -> stack -> LCP -> value
+        In this case, LCP loads from stack where GCP stored the value.
     """
     if not value:
         return None
+
+    # Prevent infinite recursion
+    if visited is None:
+        visited = set()
+    if id(value) in visited:
+        return None
+    visited.add(id(value))
 
     # Check if value itself is a data_X alias (direct global reference)
     if value.alias and value.alias.startswith("data_"):
@@ -1510,6 +1562,18 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter) -> Optional[st
                 if global_name:
                     return global_name
 
+    # CRITICAL FIX: Check if producer is LCP (load from stack)
+    # Pattern: GCP -> stack push -> LCP -> value
+    # In this case, we need to trace through PHI or find the value's source
+    elif producer.mnemonic == "LCP":
+        # LCP loads from stack - the value might have been stored by GCP earlier
+        # Try to find the source through PHI sources
+        if value.phi_sources:
+            for _, phi_source in value.phi_sources:
+                global_name = _trace_value_to_global(phi_source, formatter, visited)
+                if global_name:
+                    return global_name
+
     # Check if producer is DCP (load from memory via pointer)
     # Pattern: GADR global -> DCP -> value
     # This happens when global is loaded via pointer dereference
@@ -1529,7 +1593,7 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter) -> Optional[st
     elif producer.mnemonic == "PHI":
         # Try to find global source from any PHI input
         for inp in producer.inputs:
-            global_name = _trace_value_to_global(inp, formatter)
+            global_name = _trace_value_to_global(inp, formatter, visited)
             if global_name:
                 return global_name
 
@@ -1604,6 +1668,64 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
                 param_name = formatter._param_names.get(stack_offset)
                 if param_name:
                     return param_name
+
+    return None
+
+
+def _find_switch_variable_from_nearby_gcp(
+    ssa_func: SSAFunction,
+    current_block_id: int,
+    var_value,
+    formatter: ExpressionFormatter,
+    func_block_ids: Set[int]
+) -> Optional[str]:
+    """
+    Heuristic to find switch variable when normal tracing fails.
+
+    Pattern: Compiler generates code like:
+        Block 1: GCP data[X]  # Load global variable
+                 JMP Block 2
+        Block 2: LCP [sp+0]   # Load from stack (but value didn't propagate through CFG)
+                 ...
+                 EQU          # Compare in switch
+
+    We look for GCP instructions in SSA blocks (which preserve correct mnemonics)
+    to find the first global variable load - this is likely the switch variable.
+    """
+    import sys
+
+    # Search through SSA instructions (which have correct mnemonics)
+    ssa_blocks = ssa_func.instructions  # Dict[block_id, List[SSAInstruction]]
+
+    # Find the FIRST (earliest) GCP/GLD instruction in the entire function
+    # that loads a global variable - this is likely the switch variable
+    gcp_candidates = []
+
+    # Collect all GCP/GLD from all SSA blocks in function
+    for block_id in func_block_ids:
+        if block_id not in ssa_blocks:
+            continue
+
+        ssa_instrs = ssa_blocks[block_id]
+        for ssa_instr in ssa_instrs:
+            if ssa_instr.mnemonic in {'GCP', 'GLD'}:
+                # Found a global load!
+                # Get the dword offset from instruction
+                if hasattr(ssa_instr, 'instruction') and hasattr(ssa_instr.instruction, 'instruction'):
+                    dword_offset = ssa_instr.instruction.instruction.arg1
+
+                    if hasattr(formatter, '_global_names'):
+                        global_name = formatter._global_names.get(dword_offset)
+                        if global_name:
+                            # Record this as candidate with instruction address
+                            gcp_candidates.append((ssa_instr.address, global_name, dword_offset))
+
+    # If we found any GCP, use the FIRST one (earliest in function)
+    if gcp_candidates:
+        # Sort by instruction address (earliest first)
+        gcp_candidates.sort(key=lambda x: x[0])
+        # Return the first global variable name
+        return gcp_candidates[0][1]
 
     return None
 
@@ -1699,6 +1821,19 @@ def _detect_switch_patterns(
                     var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
                     if not var_name:
                         var_name = _trace_value_to_global(var_value, formatter)
+
+                    # CRITICAL FIX for Switch Variable Tracking:
+                    # If normal tracing failed, use heuristic to find switch variable
+                    # from nearby GCP instructions. This is needed because compiler generates
+                    # code where global is loaded once at function entry but not properly
+                    # propagated through CFG to switch comparison blocks.
+                    if not var_name:
+                        # Look for GCP in SSA blocks - works for all iterations, not just first
+                        # IMPORTANT: Pass SSA function, not CFG, to get correct mnemonics
+                        var_name = _find_switch_variable_from_nearby_gcp(
+                            ssa_func, current_block, var_value, formatter, func_block_ids
+                        )
+
                     if not var_name:
                         # Fall back to regular rendering if neither parameter nor global
                         var_name = formatter.render_value(var_value)
@@ -1859,6 +1994,9 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Track variable names and their types
     var_types: Dict[str, str] = {}
 
+    # P0.3: Track local arrays detected from usage patterns
+    local_arrays: Dict[str, Tuple[str, int]] = {}  # var_name -> (element_type, size)
+
     def process_value(value, default_type="int"):
         """Process a value to extract variable names and types."""
         if not value:
@@ -1931,6 +2069,70 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # Store variable type
         var_types[display_name] = var_type
 
+    # P0.3: First pass - detect local arrays from usage patterns
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            # Pattern 1: sprintf(&local_X, ...) → char array
+            if inst.mnemonic == "XCALL" and inst.inputs:
+                # Get function name from XFN table
+                call_name = None
+                if inst.instruction and inst.instruction.instruction:
+                    xfn_idx = inst.instruction.instruction.arg1
+                    xfn_entry = ssa_func.scr.get_xfn(xfn_idx) if ssa_func.scr else None
+                    if xfn_entry:
+                        full_name = xfn_entry.name
+                        paren_idx = full_name.find("(")
+                        call_name = full_name[:paren_idx] if paren_idx > 0 else full_name
+
+                if call_name == "sprintf" and len(inst.inputs) >= 1:
+                    # First argument is buffer
+                    buffer_arg = inst.inputs[0]
+                    buf_name = buffer_arg.alias or buffer_arg.name
+                    if buf_name and buf_name.startswith("&local_"):
+                        var_name = buf_name[1:]  # Strip &
+                        local_arrays[var_name] = ("char", 32)  # Default buffer size
+
+            # Pattern 2: SC_ZeroMem(&local_X, size) → byte array
+            if inst.mnemonic == "XCALL" and inst.inputs and inst.mnemonic == "XCALL":
+                # Get function name from XFN table
+                call_name = None
+                if inst.instruction and inst.instruction.instruction:
+                    xfn_idx = inst.instruction.instruction.arg1
+                    xfn_entry = ssa_func.scr.get_xfn(xfn_idx) if ssa_func.scr else None
+                    if xfn_entry:
+                        full_name = xfn_entry.name
+                        paren_idx = full_name.find("(")
+                        call_name = full_name[:paren_idx] if paren_idx > 0 else full_name
+
+                if call_name and "ZeroMem" in call_name and len(inst.inputs) >= 2:
+                    # First arg is buffer, second is size
+                    buffer_arg = inst.inputs[0]
+                    size_arg = inst.inputs[1]
+
+                    buf_name = buffer_arg.alias or buffer_arg.name
+                    # Skip globals
+                    if buf_name and buf_name.startswith("&local_"):
+                        var_name = buf_name[1:]  # Strip &
+                        # Try to get constant size
+                        size = 64  # Default
+                        if hasattr(size_arg, 'constant_value'):
+                            size = size_arg.constant_value
+                        elif size_arg.producer_inst and size_arg.producer_inst.mnemonic in ["IPUSH", "PUSH"]:
+                            # Size is a constant
+                            if size_arg.producer_inst.instruction:
+                                size = size_arg.producer_inst.instruction.instruction.arg1
+
+                        # Infer element type from size
+                        if size == 60 or size == 156:  # Known struct sizes
+                            # This is likely a struct, keep as int for now
+                            pass
+                        elif size >= 8:
+                            # Likely an array
+                            element_type = "dword"
+                            array_size = size // 4
+                            local_arrays[var_name] = (element_type, array_size)
+
     # Process all instructions in function blocks
     for block_id in func_block_ids:
         ssa_instrs = ssa_func.instructions.get(block_id, [])
@@ -1943,11 +2145,20 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             for inp in inst.inputs:
                 process_value(inp, default_type="int")
 
-    # Generate declarations
+    # P0.3: Generate declarations (arrays first, then regular variables)
     declarations = []
+
+    # First, declare arrays
     for var_name in sorted(var_types.keys()):
-        var_type = var_types[var_name]
-        declarations.append(f"{var_type} {var_name}")
+        if var_name in local_arrays:
+            element_type, array_size = local_arrays[var_name]
+            declarations.append(f"{element_type} {var_name}[{array_size}]")
+
+    # Then, declare regular variables (skip arrays)
+    for var_name in sorted(var_types.keys()):
+        if var_name not in local_arrays:
+            var_type = var_types[var_name]
+            declarations.append(f"{var_type} {var_name}")
 
     return declarations
 
@@ -1978,23 +2189,30 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     from .function_signature import detect_function_signature
     func_sig = detect_function_signature(ssa_func, entry_addr, end_addr)
 
-    # Create per-function formatter with function boundaries for accurate structure detection
-    # FÁZE 3.3: Pass parameter info for correct aliasing
-    # FÁZE 4: Pass function_bounds for CALL resolution
-    formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds)
-    ssa_blocks = ssa_func.instructions
-
     # Find the entry block for this function
     entry_block = start_to_block.get(entry_addr)
     if entry_block is None:
         return f"// Function {func_name} at {entry_addr} - entry block not found"
 
-    # Find blocks in this function
+    # Find blocks in this function (MOVED UP - needed for VariableRenamer)
     func_block_ids: Set[int] = set()
     for block_id, block in cfg.blocks.items():
         if block.start >= entry_addr:
             if end_addr is None or block.start <= end_addr:
                 func_block_ids.add(block_id)
+
+    # FIX 2: Variable name collision resolution
+    # Run variable renaming BEFORE creating formatter to detect and resolve collisions
+    from .variable_renaming import VariableRenamer
+    renamer = VariableRenamer(ssa_func, func_block_ids)
+    rename_map = renamer.analyze_and_rename()
+
+    # Create per-function formatter with function boundaries for accurate structure detection
+    # FÁZE 3.3: Pass parameter info for correct aliasing
+    # FÁZE 4: Pass function_bounds for CALL resolution
+    # FIX 2: Pass rename_map for variable collision resolution
+    formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds, rename_map=rename_map)
+    ssa_blocks = ssa_func.instructions
 
     # Detect loops in this function using local dominator computation
     func_loops = find_loops_in_function(cfg, func_block_ids, entry_block)

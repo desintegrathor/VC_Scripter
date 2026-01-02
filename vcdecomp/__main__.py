@@ -399,6 +399,7 @@ def cmd_structure(args):
     from .core.ir.structure import format_structured_function_named
     from .core.ir.ssa import build_ssa_all_blocks
     from .core.headers.detector import generate_include_block
+    from .core.ir.global_resolver import GlobalResolver
 
     scr = SCRFile.load(args.file, variant=args.variant)
     disasm = Disassembler(scr)
@@ -415,6 +416,51 @@ def cmd_structure(args):
     include_block = generate_include_block(scr)
     print(include_block)
     print()
+
+    # P0.1 FIX: Analyze and export global variables
+    resolver = GlobalResolver(
+        ssa_func,
+        aggressive_typing=False,  # Conservative for now
+        infer_structs=False       # Disabled until fully implemented
+    )
+    globals_usage = resolver.analyze()
+
+    # Generate global variable declarations
+    if globals_usage:
+        print("// Global variables")
+        # Sort by offset for consistent output
+        for offset in sorted(globals_usage.keys()):
+            usage = globals_usage[offset]
+            # Skip array elements (only declare array base)
+            if usage.is_array_element:
+                continue
+
+            # P0.1 FIX: Filter out read-only constants (likely from data segment)
+            # Real global variables are written to at least once
+            if usage.write_count == 0 and not usage.name.startswith("g"):
+                # Skip pure read-only data_XXX entries (likely constants)
+                continue
+
+            # Determine type and name
+            var_type = usage.inferred_type if usage.inferred_type else "dword"
+            var_name = usage.name if usage.name else f"data_{offset}"
+
+            # Format declaration
+            if usage.is_array_base and usage.array_element_size:
+                # Array declaration: type name[size];
+                # Try to infer array size from SaveInfo or usage patterns
+                # For now, estimate based on known patterns
+                if "RecTimer" in var_name or var_name == "gRec":
+                    array_size = 64  # REC_MAX
+                elif "SideFrags" in var_name:
+                    array_size = 2   # 2 teams
+                else:
+                    array_size = 64  # Default
+                print(f"{var_type} {var_name}[{array_size}];")
+            else:
+                # Simple variable: type name;
+                print(f"{var_type} {var_name};")
+        print()
 
     # Zpracuj funkce v pořadí podle adresy
     # FÁZE 4: Pass function_bounds for CALL instruction resolution

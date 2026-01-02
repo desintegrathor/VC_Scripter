@@ -28,8 +28,11 @@ def _stack_alias_from_offset(offset: int) -> str:
         # Parameters: -4=param_0, -8=param_1, -12=param_2, etc.
         param_idx = (abs(signed) - 4) // 4
         return f"param_{param_idx}"
-    # Positive offsets above stack pointer: 0=local_0, 4=local_1, etc.
-    return f"local_{signed // 4}"
+    # FIX 2: Use BYTE offset, not dword index!
+    # Compiler uses byte-level addressing (offset 8, 9, 10, 11, ...)
+    # NOT dword-aligned (0, 4, 8, 12, ...)
+    # This prevents collisions like offset 8,9,10,11 all mapping to local_2
+    return f"local_{signed}"
 
 
 def _is_return_value_store(instr: Instruction, stack: List, resolver: opcodes.OpcodeResolver) -> bool:
@@ -194,18 +197,24 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
             stack.append(stack_val)
             outputs.append(stack_val)
 
-        # Special handling for XCALL: capture stack values as arguments
+        # Special handling for XCALL and CALL: capture stack values as arguments
         mnemonic = resolver.get_mnemonic(instr.opcode)
         if mnemonic == "XCALL" and stack:
             # XCALL consumes arguments from stack - we'll capture current stack state
             # The actual arg count will be determined by SSP after XCALL
             # For now, store stack snapshot for later processing
             instr._xcall_stack_snapshot = stack.copy()  # type: ignore[attr-defined]
+        elif mnemonic == "CALL" and stack:
+            # CALL also consumes arguments from stack (similar pattern)
+            # Arguments are pushed via ASP/LADR/value/ASGN sequences, but end up on eval stack
+            instr._call_stack_snapshot = stack.copy()  # type: ignore[attr-defined]
 
         lifted.append(LiftedInstruction(instruction=instr, inputs=inputs, outputs=outputs))
 
     # Post-process: find XCALL+SSP pairs and assign arguments
     _assign_xcall_arguments(lifted, resolver, scr)
+    # Post-process: find CALL patterns and assign arguments
+    _assign_call_arguments(lifted, resolver, scr)
 
     block._out_stack = stack  # type: ignore[attr-defined]
     return lifted
@@ -270,6 +279,78 @@ def _assign_xcall_arguments(lifted: List[LiftedInstruction], resolver: opcodes.O
                 # Non-variadic OR edge case: take last N values
                 args = stack_snapshot[-arg_count:]
                 inst.inputs = args
+
+
+def _assign_call_arguments(lifted: List[LiftedInstruction], resolver: opcodes.OpcodeResolver, scr: Optional["SCRFile"] = None) -> None:
+    """
+    Post-process lifted instructions to assign CALL arguments from stack snapshots.
+
+    CALL pattern analysis from bytecode:
+
+    func_0010(info->field_16):
+        ASP 1          ; Allocate stack slot
+        LADR [sp-4]    ; Address on eval stack
+        DADR 16        ; Modified address on eval stack
+        DCP 4          ; VALUE on eval stack ← THIS IS THE ARGUMENT
+        ASP 1          ; Stack cleanup
+        CALL func_0010 ; Argument is on eval stack
+
+    func_0096():  (no arguments)
+        <prev operation leaves value on eval stack>
+        SSP 1          ; Clean up that value
+        CALL func_0096 ; No arguments!
+
+    Key insight: Look for values PRODUCED RECENTLY (last 1-3 instructions before CALL).
+    Old values on stack are leftovers, not arguments.
+    """
+    for i, inst in enumerate(lifted):
+        mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
+        if mnemonic != "CALL":
+            continue
+
+        # Get stack snapshot captured during lifting
+        stack_snapshot = getattr(inst.instruction, "_call_stack_snapshot", None)
+        if not stack_snapshot:
+            continue
+
+        # Find values that were pushed to stack in the last few instructions before CALL
+        # These are likely arguments
+        recent_values = []  # Use list instead of set since StackValue is not hashable
+        for j in range(max(0, i - 6), i):  # Look back 6 instructions
+            prev_inst = lifted[j]
+            prev_mnemonic = resolver.get_mnemonic(prev_inst.instruction.opcode)
+
+            # Stop at control flow (new basic block starts, can't be same argument chain)
+            if prev_mnemonic in {"JZ", "JNZ", "JMP", "JE", "JNE"}:
+                recent_values.clear()  # Reset - arguments must be after control flow
+                continue
+
+            # Stop at previous CALL/XCALL (separate operation)
+            if prev_mnemonic in {"CALL", "XCALL"}:
+                recent_values.clear()
+                continue
+
+            # SSP before CALL means values are being REMOVED, not added for arguments
+            if prev_mnemonic == "SSP":
+                recent_values.clear()  # Values removed = no arguments follow
+                continue
+
+            # Track values produced by this instruction
+            if prev_inst.outputs:
+                for out_val in prev_inst.outputs:
+                    if out_val not in recent_values:  # Avoid duplicates
+                        recent_values.append(out_val)
+
+        # Extract arguments: stack values that were produced recently
+        # Maintain order from stack (last pushed = rightmost argument)
+        args = []
+        for stack_val in stack_snapshot:
+            if stack_val in recent_values:
+                args.append(stack_val)
+
+        # Assign arguments to CALL
+        if args:
+            inst.inputs = args
 
 
 def lift_function(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -> Tuple[CFG, Dict[int, List[LiftedInstruction]]]:

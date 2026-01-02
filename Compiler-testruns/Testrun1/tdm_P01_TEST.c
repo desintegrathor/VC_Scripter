@@ -5,6 +5,23 @@
 #include <inc\sc_def.h>
 #include <inc\mplevel.inc>
 
+// Global variables
+dword gRecs;
+dword gRec;
+dword gVar;
+dword gVar1;
+dword gRecTimer;
+dword gNextRecover;
+dword gSideFrags[2];
+dword gCLN_SideFrags[2];
+dword gEndRule;
+dword gEndValue;
+dword gTime;
+dword gPlayersConnected;
+dword gVar4;
+dword gVar2;
+dword gVar3;
+
 int _init(s_SC_NET_info *info) {
     int local_0;
 
@@ -64,9 +81,9 @@ int ScriptMain(s_SC_NET_info *info) {
 
     switch (info->message) {
     case 3:
-        if ((func_0010())) break;
+        if ((func_0010(info->field_16))) break;
         // Loop header - Block 26 @145
-        for (local_2 = 0; (local_2 <= gRecs); local_2++) {
+        for (local_2 = 0; (local_2 < gRecs); local_2++) {
             gRecTimer[local_2] = (gRecTimer[local_2] - info->field_16);
         }
         local_2 = 64;
@@ -87,7 +104,7 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SetSideStats(0, gCLN_SideFrags[0], 0);
         SC_MP_SetSideStats(1, gCLN_SideFrags[1], 0);
         // Loop header - Block 36 @270
-        for (local_2 = 0; (local_2 < 3); local_2++) {
+        for (local_2 = 0; (local_2 < 2); local_2++) {
             local_8[local_2].field1 = 1;
             local_8[local_2] = (3 * local_2);
             local_8[local_2].field2 = gCLN_SideFrags[local_2];
@@ -149,7 +166,7 @@ int ScriptMain(s_SC_NET_info *info) {
             }
         }
         // Loop header - Block 45 @494
-        for (local_2 = 0; (local_2 < 65); local_2++) {
+        for (local_2 = 0; (local_2 < 64); local_2++) {
         }
         break;
     case 2:

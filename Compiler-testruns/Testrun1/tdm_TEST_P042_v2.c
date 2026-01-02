@@ -1,3 +1,4 @@
+[DEBUG P0.4.2 DCP+DADR] local_12 v0 @ 613: SKIPPED (DADR detected)
 // Structured decompilation of Compiler-testruns/Testrun1/tdm.scr
 // Functions: 4
 
@@ -87,15 +88,14 @@ int ScriptMain(s_SC_NET_info *info) {
     switch (info->message) {
     case 3:
         if ((func_0010(info->field_16))) break;
-        sideA = 0;
         // Loop header - Block 26 @145
-        for (sideA = 0; (sideA < gRecs); sideA = (sideA + 1)) {
-            gRecTimer[sideA] = (gRecTimer[sideA] - info->field_16);
-            sideB = (sideA + 1);
+        for (local_8 = 0; (local_8 < gRecs); local_8++) {
+            gRecTimer[local_8] = (gRecTimer[local_8] - info->field_16);
+            tmp = (local_8 + 1);
         }
-        tmp3 = 64;
-        if ((SC_MP_EnumPlayers(&tmp4, &tmp3, -1))) {
-            if (((tmp3 == 0))) {
+        tmp4 = 64;
+        if ((SC_MP_EnumPlayers(&tmp5, &tmp4, -1))) {
+            if (((tmp4 == 0))) {
                 if ((((gSideFrags[0] + gSideFrags[1]) != 0))) {
                     gSideFrags[0] = 0;
                     gSideFrags[1] = 0;
@@ -103,7 +103,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 }
             }
         }
-        gPlayersConnected = tmp3;
+        gPlayersConnected = tmp4;
         break;
     case 4:
         gCLN_SideFrags[0] = SC_ggi(GVAR_SIDE0FRAGS);
@@ -117,9 +117,9 @@ int ScriptMain(s_SC_NET_info *info) {
             local_33[local_8_v2] = (3 * local_8_v2);
             local_33[local_8_v2].field2 = gCLN_SideFrags[local_8_v2];
             local_33[local_8_v2].field3 = -1;
-            tmp = (local_8_v2 + 1);
+            tmp1 = (local_8_v2 + 1);
         }
-        SC_MP_SetIconHUD(&tmp5, 2);
+        SC_MP_SetIconHUD(&tmp6, 2);
         break;
     case 9:
         SC_sgi(GVAR_MP_MISSIONTYPE, 2);
@@ -132,37 +132,37 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_SetForceSide(-1);
         SC_MP_SetChooseValidSides(3);
         SC_MP_SRV_SetClassLimitsForDM();
-        SC_ZeroMem(&tmp6, 60);
-        tmp6 = 1051;
-        tmp6.field10 = 2;
-        tmp6.field11 = 3;
-        tmp6.field12 = -2147483644;
-        tmp6.field13 = -2147483643;
-        tmp6.field8 = 28;
-        tmp6.field1 = 1;
-        tmp6.field4 = 1010;
-        tmp6.field6 = 512.0155639648438f;
-        tmp6.field5 = 1011;
-        tmp6.field7 = 2040.0f;
-        tmp6.field9 = 2;
-        SC_MP_HUD_SetTabInfo(&tmp6);
+        SC_ZeroMem(&tmp7, 60);
+        tmp7 = 1051;
+        tmp7.field10 = 2;
+        tmp7.field11 = 3;
+        tmp7.field12 = -2147483644;
+        tmp7.field13 = -2147483643;
+        tmp7.field8 = 28;
+        tmp7.field1 = 1;
+        tmp7.field4 = 1010;
+        tmp7.field6 = 512.0155639648438f;
+        tmp7.field5 = 1011;
+        tmp7.field7 = 2040.0f;
+        tmp7.field9 = 2;
+        SC_MP_HUD_SetTabInfo(&tmp7);
         SC_MP_AllowStPwD(1);
         SC_MP_AllowFriendlyFireOFF(1);
         SC_MP_SetItemsNoDisappear(0);
         if ((info->field_8)) {
             if ((info->field_4)) {
-                SC_MP_GetSRVsettings(&tmp7);
-                SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp7.field2));
+                SC_MP_GetSRVsettings(&tmp8);
+                SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp8.field2));
                 SC_MP_Gvar_SetSynchro(500);
                 SC_MP_Gvar_SetSynchro(501);
                 func_0096();
                 gRecs = 0;
                 local_8_v4 = 0;
-                sprintf(&tmp9, "DM%d", local_8_v4);
-                if ((SC_NET_FillRecover(&gRec[gRecs], &tmp9))) {
+                sprintf(&tmp10, "DM%d", local_8_v4);
+                if ((SC_NET_FillRecover(&gRec[gRecs], &tmp10))) {
                     gRecs++;
                 } else {
-                    tmp1 = (local_8_v4 + 1);
+                    tmp2 = (local_8_v4 + 1);
                 }
                 local_8_v6 = (64 - gRecs);
                 SC_MP_GetRecovers(1, &gRec[gRecs], &local_8_v6);
@@ -176,7 +176,7 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         // Loop header - Block 45 @494
         for (local_8_v4 = 0; (local_8_v4 < 64); local_8_v4 = (local_8_v4_v4 + 1)) {
-            tmp1 = (local_8_v4 + 1);
+            tmp2 = (local_8_v4 + 1);
         }
         break;
     case 2:
@@ -187,25 +187,25 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         break;
     case 6:
-        side2 = info->field_8;
-        tmp2 = SC_MP_SRV_GetBestDMrecov(&gRec, gRecs, &gRecTimer, 3.0f);
-        gRecTimer[tmp2] = 3.0f;
-        side3 = gRec[tmp2];
+        tmp11 = info->field_8;
+        tmp3 = SC_MP_SRV_GetBestDMrecov(&gRec, gRecs, &gRecTimer, 3.0f);
+        gRecTimer[tmp3] = 3.0f;
+        tmp12 = gRec[tmp3];
         break;
     case 7:
-        SC_P_GetInfo(info->field_4, &tmp10);
-        side4 = tmp10.field2;
+        SC_P_GetInfo(info->field_4, &tmp15);
+        tmp13 = tmp15.field2;
         if ((info->field_8)) {
-            SC_P_GetInfo(info->field_8, &tmp10);
-            side5 = tmp10.field2;
+            SC_P_GetInfo(info->field_8, &tmp15);
+            tmp14 = tmp15.field2;
         } else {
-            side6 = -1;
+            local_11_v1 = -1;
         }
-        if (((side4 == side6))) {
-            gSideFrags[side6]--;
+        if (((tmp13 == local_11_v1))) {
+            gSideFrags[local_11_v1]--;
         } else {
-            if (((side6 != -1))) {
-                gSideFrags[side6]++;
+            if (((local_11_v1 != -1))) {
+                gSideFrags[local_11_v1]++;
             }
         }
         func_0096();

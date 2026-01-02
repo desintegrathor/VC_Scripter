@@ -44,7 +44,13 @@
   najdi nesrovnalosti a navrhni opravy dekompilátoru 
 
 
-    ⚠️ Fáze 3: Call Arguments (PARTIAL)
-  - Implementován _trace_call_arguments()
-  - Problém: Kompilátor nepoužívá PUSH pattern, ale stack manipulation
-  - Status: Vyžaduje full stack tracking (mimo scope quick fixes)
+    ✅ Fáze 3: Call Arguments (COMPLETED - 2026-01-02)
+  - VYŘEŠENO! Stack manipulation calling convention implementována
+  - Změny:
+    * expr.py: Smazána obsolete _trace_call_arguments() metoda (-65 řádků)
+    * stack_lifter.py: Přidána _assign_call_arguments() (+68 řádků)
+  - Výsledek:
+    * func_0010(info->field_16) ✓ - správný argument
+    * func_0096() ✓ - bez falešných argumentů
+    * SC_sgi(GVAR_SIDE0FRAGS, gSideFrags[0]) ✓ - funguje
+  - Report: Compiler-testruns/Testrun1/CALL_ARGS_FIX_REPORT.md

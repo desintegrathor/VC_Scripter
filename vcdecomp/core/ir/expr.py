@@ -228,7 +228,7 @@ class FormattedExpression:
 
 
 class ExpressionFormatter:
-    def __init__(self, ssa: SSAFunction, func_start: int = None, func_end: int = None, func_name: str = None, symbol_db=None, func_signature=None, function_bounds=None):
+    def __init__(self, ssa: SSAFunction, func_start: int = None, func_end: int = None, func_name: str = None, symbol_db=None, func_signature=None, function_bounds=None, rename_map: Dict[str, str] = None):
         """
         Initialize expression formatter.
 
@@ -240,6 +240,7 @@ class ExpressionFormatter:
             symbol_db: Optional symbol database for constant/type resolution
             func_signature: Optional FunctionSignature for parameter name mapping (FÁZE 3.3)
             function_bounds: Optional dict {func_name: (start_addr, end_addr)} for CALL resolution (FÁZE 4)
+            rename_map: Optional dict mapping SSA value names → final names (FIX 2 - Variable Collision Resolution)
 
         When func_start and func_end are provided, structure type detection
         is limited to blocks within that range. This ensures 100% reliable
@@ -262,6 +263,8 @@ class ExpressionFormatter:
         self._func_signature = func_signature
         # FÁZE 4: Function bounds for CALL instruction resolution
         self._function_bounds = function_bounds or {}
+        # FIX 2: Variable name collision resolution (SSA value name → final name)
+        self._rename_map = rename_map or {}
         # Build parameter offset -> name mapping
         self._param_names = {}  # stack_offset -> param_name
         if func_signature and func_signature.param_types:
@@ -633,8 +636,8 @@ class ExpressionFormatter:
             # Pokud selže global resolution, pokračuj bez něj
             import sys
             import traceback
-            print(f"\n[DEBUG expr.py:630] Global name resolution FAILED!", file=sys.stderr)
-            print(f"  Exception: {e}", file=sys.stderr)
+            # print(f"\n[DEBUG expr.py:630] Global name resolution FAILED!", file=sys.stderr)
+            # print(f"  Exception: {e}", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             self._global_names = {}
             self._global_type_info = {}
@@ -904,6 +907,12 @@ class ExpressionFormatter:
         return None
 
     def _render_value(self, value: SSAValue, expected_type_str: str = None) -> str:
+        # FIX 2: ABSOLUTE HIGHEST PRIORITY - Check rename_map for variable collision resolution
+        # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
+        # This allows sideA and sideB to have different names even though both have alias="local_2"
+        if self._rename_map and value.name in self._rename_map:
+            return self._rename_map[value.name]
+
         # NEW: Check if value represents struct field access (HIGHEST PRIORITY)
         field_expr = self._field_tracker.get_field_expression(value)
         if field_expr:
@@ -1519,11 +1528,12 @@ class ExpressionFormatter:
         call_expr_override = None
         source_val = inst.inputs[0]
         # Debug: print all ASGN to see what we're working with
-        print(f"DEBUG ASGN@{inst.address}: source={source_val.name}, has_producer={source_val.producer_inst is not None}", file=sys.stderr)
+        # print(f"DEBUG ASGN@{inst.address}: source={source_val.name}, has_producer={source_val.producer_inst is not None}", file=sys.stderr)
         if source_val.producer_inst:
-            print(f"  producer: {source_val.producer_inst.mnemonic}@{source_val.producer_inst.address}", file=sys.stderr)
+            pass  # Debug print removed
+            # print(f"  producer: {source_val.producer_inst.mnemonic}@{source_val.producer_inst.address}", file=sys.stderr)
         if source_val.producer_inst and source_val.producer_inst.mnemonic == "LLD":
-            print(f"DEBUG Pattern 2: ASGN@{inst.address} source from LLD@{source_val.producer_inst.address}", file=sys.stderr)
+            # print(f"DEBUG Pattern 2: ASGN@{inst.address} source from LLD@{source_val.producer_inst.address}", file=sys.stderr)
             # LLD loads return value - check if there's a CALL before it
             # We need to find the CALL in the block's instruction sequence
             # The CALL should be right before the LLD
@@ -1531,18 +1541,18 @@ class ExpressionFormatter:
                 lld_inst = source_val.producer_inst
                 for i, bi in enumerate(block_instrs):
                     if bi == lld_inst and i > 0:
-                        print(f"  Found LLD at index {i} in block {block_id}", file=sys.stderr)
+                        # print(f"  Found LLD at index {i} in block {block_id}", file=sys.stderr)
                         # Found LLD, check previous instructions for CALL/XCALL
                         for check_idx in range(i - 1, max(0, i - 3), -1):
-                            print(f"    check_idx={check_idx}: {block_instrs[check_idx].mnemonic}@{block_instrs[check_idx].address}", file=sys.stderr)
+                            # print(f"    check_idx={check_idx}: {block_instrs[check_idx].mnemonic}@{block_instrs[check_idx].address}", file=sys.stderr)
                             if block_instrs[check_idx].mnemonic in {"CALL", "XCALL"}:
                                 # Found CALL+LLD pattern!
-                                print(f"  Found CALL/XCALL! Formatting...", file=sys.stderr)
+                                # print(f"  Found CALL/XCALL! Formatting...", file=sys.stderr)
                                 call_expr = self._format_call(block_instrs[check_idx])
                                 if call_expr.endswith(";"):
                                     call_expr = call_expr[:-1].strip()
                                 call_expr_override = call_expr
-                                print(f"  call_expr_override={call_expr_override}", file=sys.stderr)
+                                # print(f"  call_expr_override={call_expr_override}", file=sys.stderr)
                                 break
                         break
                 if call_expr_override:
@@ -1921,72 +1931,6 @@ class ExpressionFormatter:
         joined = ", ".join(formatted_sources) if formatted_sources else "?"
         return f"{target} = phi({joined})"
 
-    def _trace_call_arguments(self, call_inst: SSAInstruction, func_name: str) -> list[str]:
-        """
-        FÁZE 3.1: Trace backwards from CALL to find PUSH instructions for arguments.
-
-        Pattern in bytecode:
-            PUSH arg1
-            PUSH arg2
-            ...
-            CALL function
-            ASP N  (clean stack)
-
-        Args:
-            call_inst: The CALL instruction
-            func_name: Function name (to get signature if available)
-
-        Returns:
-            List of rendered argument strings
-        """
-        # Try to get function signature to know how many args to expect
-        param_count = None
-        if self._header_db and func_name.startswith("SC_"):
-            signature = self._header_db.get_function(func_name)
-            if signature:
-                param_count = len(signature.params)
-
-        # Find the block containing this CALL
-        call_block_id = None
-        call_index = None
-        for block_id, instructions in self.ssa.instructions.items():
-            for idx, inst in enumerate(instructions):
-                if inst.address == call_inst.address and inst.mnemonic == "CALL":
-                    call_block_id = block_id
-                    call_index = idx
-                    break
-            if call_block_id is not None:
-                break
-
-        if call_block_id is None or call_index is None:
-            return []  # Can't find CALL
-
-        # Scan backwards from CALL to find PUSH instructions
-        block_instructions = self.ssa.instructions[call_block_id]
-        args = []
-
-        # Scan backwards from call_index
-        for idx in range(call_index - 1, -1, -1):
-            inst = block_instructions[idx]
-
-            # Check if this is a PUSH instruction
-            if inst.mnemonic in {"IPSH", "FPSH", "DPSH", "SPSH", "CPSH"}:
-                # Found argument PUSH
-                if inst.inputs and len(inst.inputs) > 0:
-                    arg_value = inst.inputs[0]
-                    arg_str = self._render_value(arg_value)
-                    args.insert(0, arg_str)  # Insert at front (reverse order)
-
-                    # If we know param count, stop when we have enough
-                    if param_count is not None and len(args) >= param_count:
-                        break
-            elif inst.mnemonic in {"CALL", "XCALL"}:
-                # Hit another call - stop searching
-                break
-            # Continue past other instructions (LLD, GLD, etc. that load values for PUSH)
-
-        return args
-
     def _format_call(self, inst: SSAInstruction) -> str:
         # FÁZE 4: CALL - internal function call
         if inst.mnemonic == "CALL":
@@ -2003,8 +1947,13 @@ class ExpressionFormatter:
                         func_name = fname
                         break
 
-            # FÁZE 3.1: Render arguments by tracing PUSH instructions before CALL
-            rendered_args = self._trace_call_arguments(inst, func_name)
+            # STACK MANIPULATION FIX: Use inst.inputs directly
+            # The compiler uses stack manipulation (ASP/LADR/ASGN), not PUSH.
+            # Arguments are extracted during SSA lifting and stored in inst.inputs.
+            rendered_args = []
+            for arg_val in inst.inputs:
+                arg_str = self._render_value(arg_val)
+                rendered_args.append(arg_str)
             args = ", ".join(rendered_args)
 
             # Return function call expression - note: CALL can return value!
