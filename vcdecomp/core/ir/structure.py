@@ -10,7 +10,7 @@ Prints block contents using the expression formatter.
 
 from __future__ import annotations
 
-from typing import Dict, Set, List, Optional
+from typing import Dict, Set, List, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,6 +19,7 @@ from .ssa import SSAFunction
 from .expr import format_block_expressions, FormattedExpression, ExpressionFormatter
 from .cfg import CFG, NaturalLoop, find_all_loops, find_loops_in_function, dominates
 from ...parsing.symbol_db import SymbolDatabase
+from .parenthesization import ExpressionContext, is_simple_expression
 
 # Configuration: Show block comments for debugging
 SHOW_BLOCK_COMMENTS = False  # Set to True to show "// Block X @addr" comments
@@ -242,18 +243,22 @@ def _format_block_lines(
                         if func_call:
                             cond_expr = func_call
                         else:
-                            cond_expr = formatter.render_value(cond_value)
+                            # FIX 3: Pass IN_CONDITION context
+                            cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
                             # Only use SSA name if rendered as pure number
                             if cond_expr.lstrip('-').isdigit():
                                 alias = cond_value.alias or cond_value.name
                                 if alias and not alias.startswith("data_"):
                                     cond_expr = alias
 
-                    # Apply negation if needed
+                    # FIX 3: Smart negation - only add parens if needed
                     if is_negated:
-                        cond_text = f"(!{cond_expr})"
+                        if is_simple_expression(cond_expr):
+                            cond_text = f"!{cond_expr}"
+                        else:
+                            cond_text = f"!({cond_expr})"
                     else:
-                        cond_text = f"({cond_expr})"
+                        cond_text = cond_expr
                     break
 
         if cond_text is None:
@@ -365,7 +370,40 @@ def _render_if_else_recursive(
     # Get header block
     header_block = cfg.blocks[if_pattern.header_block]
 
-    # Extract condition from SSA
+    # NEW: Check if this is a compound condition pattern
+    compound = getattr(if_pattern, 'compound', None)
+    if compound is not None:
+        # This is a compound condition (AND/OR chain)
+        # Render using _combine_conditions helper
+        cond_text = _combine_conditions(
+            compound.conditions,
+            compound.operator,
+            preserve_style=True  # Match original formatting
+        )
+
+        # Mark all involved blocks as emitted to prevent duplicate rendering
+        for involved_block in compound.involved_blocks:
+            emitted_blocks.add(involved_block)
+
+        # Render the if statement with compound condition
+        lines.append(f"{indent}if ({cond_text}) {{")
+
+        # Render true body
+        true_block_lines = _format_block_lines(
+            ssa_func, compound.true_target, indent + "    ", formatter,
+            block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+            early_returns
+        )
+        lines.extend(true_block_lines)
+
+        # Mark TRUE body as emitted to prevent duplication
+        emitted_blocks.add(compound.true_target)
+
+        lines.append(f"{indent}}}")
+
+        return lines
+
+    # Extract condition from SSA (simple if/else case)
     cond_text = None
     ssa_block = ssa_blocks.get(if_pattern.header_block, [])
 
@@ -410,7 +448,8 @@ def _render_if_else_recursive(
                 if func_call_cond:
                     cond_expr = func_call_cond
                 else:
-                    cond_expr = formatter.render_value(cond_value)
+                    # FIX 3: Pass IN_CONDITION context
+                    cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
                     # Only use SSA name if rendered as pure number
                     if cond_expr.lstrip('-').isdigit():
                         alias = cond_value.alias or cond_value.name
@@ -418,7 +457,8 @@ def _render_if_else_recursive(
                             cond_expr = alias
                 # FÁZE 3 FIX: NO negation needed - we already swapped true/false branches
                 # in _detect_if_else_pattern based on JZ vs JNZ semantics
-                cond_text = f"({cond_expr})"
+                # FIX 3: No hardcoded parens - expression already has them if needed
+                cond_text = cond_expr
                 break
     if cond_text is None:
         cond_text = f"cond_{if_pattern.header_block}"
@@ -570,15 +610,20 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
                 for ssa_inst in ssa_block:
                     if ssa_inst.address == last_instr.address and ssa_inst.inputs:
                         cond_value = ssa_inst.inputs[0]
-                        cond_expr = formatter.render_value(cond_value)
+                        # FIX 3: Pass IN_CONDITION context
+                        cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
                         # If condition renders as just a number, use SSA name instead
                         if cond_expr.lstrip('-').isdigit():
                             cond_expr = cond_value.alias or cond_value.name
                         mnemonic = resolver.get_mnemonic(opcode)
+                        # FIX 3: Smart negation
                         if mnemonic == "JZ":
-                            cond_text = f"!({cond_expr})"
+                            if is_simple_expression(cond_expr):
+                                cond_text = f"!{cond_expr}"
+                            else:
+                                cond_text = f"!({cond_expr})"
                         elif mnemonic == "JNZ":
-                            cond_text = f"({cond_expr})"
+                            cond_text = cond_expr
                         else:
                             cond_text = cond_expr
                         break
@@ -643,6 +688,31 @@ class IfElsePattern:
             self.true_body = {self.true_block}
         if self.false_body is None:
             self.false_body = {self.false_block}
+
+
+@dataclass
+class CompoundCondition:
+    """
+    Represents a compound logical condition (AND/OR of multiple tests).
+
+    Used to reconstruct short-circuit evaluation patterns like:
+    - (A && B)
+    - (A || B)
+    - ((A && B) || (C && D))
+
+    Conditions can be:
+    - Simple strings (rendered condition expressions)
+    - Nested CompoundCondition objects (for complex nesting)
+    """
+    operator: str                          # "&&" or "||"
+    conditions: List                       # List[Union[str, CompoundCondition]]
+    true_target: int                       # Block to execute if TRUE
+    false_target: int                      # Block to execute if FALSE
+    involved_blocks: Set[int] = None      # All blocks involved in this compound condition
+
+    def __post_init__(self):
+        if self.involved_blocks is None:
+            self.involved_blocks = set()
 
 
 @dataclass
@@ -1162,6 +1232,241 @@ def _find_common_successor(cfg: CFG, block_a: int, block_b: int) -> Optional[int
     return min(candidates, key=lambda x: x[1])[0]
 
 
+def _is_jmp_after_jz(
+    block: BasicBlock,
+    resolver: opcodes.OpcodeResolver
+) -> Optional[int]:
+    """
+    Check if block ends with pattern: JZ target1; JMP target2
+
+    This pattern indicates short-circuit evaluation:
+    - If condition is FALSE, jump to target1 (next condition in OR, or exit)
+    - If condition is TRUE, jump to target2 (true body)
+
+    Returns:
+        target2 (the JMP destination) if pattern matches, None otherwise
+    """
+    if not block or not block.instructions or len(block.instructions) < 2:
+        return None
+
+    last = block.instructions[-1]
+    second_last = block.instructions[-2]
+
+    # Check for: conditional jump followed by unconditional jump
+    if (resolver.is_conditional_jump(second_last.opcode) and
+        resolver.get_mnemonic(last.opcode) == "JMP"):
+        return last.arg1  # The TRUE target
+
+    return None
+
+
+def _find_all_jz_targets(
+    cfg: CFG,
+    block_id: int,
+    resolver: opcodes.OpcodeResolver
+) -> Set[int]:
+    """
+    Find all JZ/JNZ targets within a block (for AND detection).
+
+    In short-circuit AND evaluation, multiple conditions in sequence all
+    jump to the same FALSE exit point:
+        if (!cond1) goto exit;
+        if (!cond2) goto exit;
+        if (!cond3) goto exit;
+        goto body;
+    This is: if (cond1 && cond2 && cond3) body;
+
+    Returns:
+        Set of target addresses for all conditional jumps in the block
+    """
+    block = cfg.blocks.get(block_id)
+    if not block:
+        return set()
+
+    targets = set()
+    for instr in block.instructions:
+        if resolver.is_conditional_jump(instr.opcode):
+            targets.add(instr.arg1)
+
+    return targets
+
+
+def _find_common_true_target(
+    cfg: CFG,
+    blocks: List[int],
+    resolver: opcodes.OpcodeResolver
+) -> Optional[int]:
+    """
+    Find if multiple blocks all JMP to the same TRUE target (OR detection).
+
+    In short-circuit OR evaluation, multiple condition groups all jump to
+    the same TRUE body:
+        if (cond1) goto body;
+        if (cond2) goto body;
+        if (cond3) goto body;
+        goto exit;
+    This is: if (cond1 || cond2 || cond3) body;
+
+    Returns:
+        The common target address if found, None otherwise
+    """
+    true_targets = []
+
+    for block_id in blocks:
+        block = cfg.blocks.get(block_id)
+        if not block:
+            continue
+
+        jmp_target = _is_jmp_after_jz(block, resolver)
+        if jmp_target is not None:
+            true_targets.append(jmp_target)
+
+    # Check if all jump to same target
+    if len(true_targets) >= 2 and len(set(true_targets)) == 1:
+        return true_targets[0]  # All jump to same target = OR pattern
+
+    return None
+
+
+def _extract_condition_from_block(
+    block_id: int,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver
+) -> Optional[str]:
+    """
+    Extract condition expression from a block ending with conditional jump.
+
+    Finds the JZ/JNZ instruction in the block and extracts its condition
+    from the corresponding SSA instruction.
+
+    Args:
+        block_id: Block ID to extract condition from
+        ssa_func: SSA function containing the block
+        formatter: Expression formatter for rendering
+        cfg: Control flow graph
+        resolver: Opcode resolver
+
+    Returns:
+        Rendered condition expression, or None if not found/not applicable
+    """
+    from .parenthesization import ExpressionContext
+
+    block = cfg.blocks.get(block_id)
+    if not block or not block.instructions:
+        return None
+
+    # Find the last conditional jump in the block
+    for instr in reversed(block.instructions):
+        if resolver.is_conditional_jump(instr.opcode):
+            # Found conditional jump, now find corresponding SSA instruction
+            ssa_block = ssa_func.instructions.get(block_id, [])
+
+            for ssa_inst in ssa_block:
+                if ssa_inst.address == instr.address and ssa_inst.inputs:
+                    cond_value = ssa_inst.inputs[0]
+                    cond_expr = formatter.render_value(
+                        cond_value,
+                        context=ExpressionContext.IN_CONDITION
+                    )
+
+                    # If renders as just a number, use SSA name/alias instead
+                    if cond_expr.lstrip('-').isdigit():
+                        alias = cond_value.alias or cond_value.name
+                        if alias and not alias.startswith("data_"):
+                            cond_expr = alias
+
+                    return cond_expr
+            break
+
+    return None
+
+
+# Keep old function name for backward compatibility (used in other places)
+def _extract_condition_expr(
+    ssa_func: SSAFunction,
+    block_id: int,
+    instr_address: int,
+    formatter: ExpressionFormatter,
+    resolver: opcodes.OpcodeResolver
+) -> Optional[str]:
+    """Legacy wrapper - calls _extract_condition_from_block."""
+    from .cfg import CFG as _  # Import to get type
+    # We don't have CFG here, so just do the old implementation
+    from .parenthesization import ExpressionContext
+
+    ssa_block = ssa_func.instructions.get(block_id, [])
+
+    for ssa_inst in ssa_block:
+        if ssa_inst.address == instr_address and ssa_inst.inputs:
+            cond_value = ssa_inst.inputs[0]
+            cond_expr = formatter.render_value(
+                cond_value,
+                context=ExpressionContext.IN_CONDITION
+            )
+
+            # If renders as just a number, use SSA name/alias instead
+            if cond_expr.lstrip('-').isdigit():
+                alias = cond_value.alias or cond_value.name
+                if alias and not alias.startswith("data_"):
+                    cond_expr = alias
+
+            return cond_expr
+
+    return None
+
+
+def _combine_conditions(
+    conditions: List,  # List[Union[str, CompoundCondition]]
+    operator: str,
+    preserve_style: bool = True
+) -> str:
+    """
+    Combine multiple conditions with && or || operators.
+
+    Applies proper parenthesization to match original code style.
+
+    Args:
+        conditions: List of condition strings or CompoundCondition objects
+        operator: "&&" or "||"
+        preserve_style: If True, add extra parentheses to match original style
+
+    Returns:
+        Combined condition expression
+    """
+    if len(conditions) == 0:
+        return "true"
+    if len(conditions) == 1:
+        cond = conditions[0]
+        if isinstance(cond, CompoundCondition):
+            return _combine_conditions(cond.conditions, cond.operator, preserve_style)
+        return str(cond)
+
+    # Render each condition
+    rendered = []
+    for cond in conditions:
+        if isinstance(cond, CompoundCondition):
+            # Recursively render compound conditions
+            sub_expr = _combine_conditions(cond.conditions, cond.operator, preserve_style)
+            # Wrap in parentheses for clarity (matches original style)
+            rendered.append(f"({sub_expr})")
+        else:
+            rendered.append(str(cond))
+
+    # Combine with operator
+    if operator == "||":
+        # OR style: (A && B) || (C && D)
+        # CompoundConditions already wrapped above
+        combined = f" {operator} ".join(rendered)
+    else:
+        # AND style: A && B && C
+        # Don't add extra parentheses for simple AND
+        combined = f" {operator} ".join(rendered)
+
+    return combined
+
+
 def _detect_early_return_pattern(
     cfg: CFG,
     block_id: int,
@@ -1323,6 +1628,212 @@ def _trace_value_to_function_call(
     return None
 
 
+def _collect_and_chain(
+    start_block_id: int,
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    visited: Set[int]
+) -> Tuple[List[int], Optional[int], Optional[int]]:
+    """
+    Collect blocks forming an AND chain by following fallthrough paths.
+
+    An AND chain is a sequence of blocks where:
+    1. Each block ends with JZ jumping to the same FALSE target
+    2. Blocks are connected via fallthrough (sequential addresses)
+    3. Final block in chain has a fallthrough to JMP block (TRUE target)
+
+    Example CFG structure:
+        Block A: cond1; JZ false_target  → fallthrough to B
+        Block B: cond2; JZ false_target  → fallthrough to C
+        Block C: JMP true_target
+
+    This represents: if (cond1 && cond2) goto true_target else goto false_target
+
+    Args:
+        start_block_id: Block ID to start from
+        cfg: Control flow graph
+        resolver: Opcode resolver
+        start_to_block: Address to block ID mapping
+        visited: Set of already visited blocks (to prevent infinite loops)
+
+    Returns:
+        Tuple of (chain_blocks, true_target, false_target):
+        - chain_blocks: List of block IDs in the AND chain
+        - true_target: Block ID to jump to when all conditions are TRUE
+        - false_target: Block ID to jump to when any condition is FALSE
+        Returns ([], None, None) if no AND chain detected
+    """
+    if start_block_id in visited:
+        return ([], None, None)
+
+    visited.add(start_block_id)
+
+    block = cfg.blocks.get(start_block_id)
+    if not block or not block.instructions:
+        return ([], None, None)
+
+    last_instr = block.instructions[-1]
+    mnemonic = resolver.get_mnemonic(last_instr.opcode)
+
+    # Block must end with conditional jump (JZ/JNZ) to be part of AND chain
+    if not resolver.is_conditional_jump(last_instr.opcode):
+        return ([], None, None)
+
+    # This is the first block in potential AND chain
+    chain_blocks = [start_block_id]
+    false_target_addr = last_instr.arg1  # Where to go if condition fails
+    false_target = start_to_block.get(false_target_addr)
+
+    # Follow fallthrough path to find more conditions or TRUE target
+    fallthrough_addr = last_instr.address + 1
+    fallthrough_block_id = start_to_block.get(fallthrough_addr)
+
+    if not fallthrough_block_id:
+        return (chain_blocks, None, false_target)
+
+    fallthrough_block = cfg.blocks.get(fallthrough_block_id)
+    if not fallthrough_block or not fallthrough_block.instructions:
+        return (chain_blocks, None, false_target)
+
+    # Check if fallthrough block is just a JMP (end of AND chain, this is TRUE target)
+    if len(fallthrough_block.instructions) == 1:
+        ft_last = fallthrough_block.instructions[-1]
+        if resolver.get_mnemonic(ft_last.opcode) == "JMP":
+            # This JMP is where we go if all conditions pass
+            true_target = start_to_block.get(ft_last.arg1)
+            return (chain_blocks, true_target, false_target)
+
+    # Check if fallthrough block is another condition in the AND chain
+    ft_last_instr = fallthrough_block.instructions[-1]
+    if resolver.is_conditional_jump(ft_last_instr.opcode):
+        # Check if it jumps to the SAME false target
+        if ft_last_instr.arg1 == false_target_addr:
+            # It's part of the AND chain! Recursively collect the rest
+            rest_chain, true_target, _ = _collect_and_chain(
+                fallthrough_block_id, cfg, resolver, start_to_block, visited
+            )
+            if rest_chain:
+                chain_blocks.extend(rest_chain)
+                return (chain_blocks, true_target, false_target)
+
+    # Fallthrough doesn't continue the AND chain
+    return (chain_blocks, None, false_target)
+
+
+def _detect_short_circuit_pattern(
+    cfg: CFG,
+    header_block_id: int,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter
+) -> Optional[CompoundCondition]:
+    """
+    Detect short-circuit && and || patterns using multi-block analysis.
+
+    NEW IMPLEMENTATION: Follows fallthrough chains across multiple blocks
+    to detect AND chains, then identifies OR by finding multiple branches
+    jumping to the same TRUE target.
+
+    Patterns detected:
+    1. Simple AND: Block A → Block B → JMP (conditions in separate blocks)
+    2. Simple OR: Multiple blocks with different conditions jumping to same target
+    3. Combined: (AND) OR (AND) - multiple AND chains to same TRUE target
+
+    Args:
+        cfg: Control flow graph
+        header_block_id: Starting block to analyze
+        resolver: Opcode resolver
+        start_to_block: Mapping from addresses to block IDs
+        ssa_func: SSA function for condition extraction
+        formatter: Expression formatter
+
+    Returns:
+        CompoundCondition if pattern detected, None otherwise
+    """
+    # Step 1: Try to collect an AND chain starting from this block
+    visited = set()
+    and_blocks, true_target, false_target = _collect_and_chain(
+        header_block_id, cfg, resolver, start_to_block, visited
+    )
+
+    # No AND chain detected
+    if not and_blocks:
+        return None
+
+    # Step 2: Extract conditions from each block in the AND chain
+    and_conditions = []
+    for block_id in and_blocks:
+        cond = _extract_condition_from_block(
+            block_id, ssa_func, formatter, cfg, resolver
+        )
+        if cond:
+            and_conditions.append(cond)
+
+    if not and_conditions:
+        return None
+
+    # Step 3: Create AND compound (or single condition if len==1)
+    if len(and_conditions) > 1:
+        and_compound = CompoundCondition(
+            operator="&&",
+            conditions=and_conditions,
+            true_target=true_target if true_target is not None else -1,
+            false_target=false_target if false_target is not None else -1,
+            involved_blocks=set(and_blocks)
+        )
+    else:
+        # Single condition - might still be part of OR
+        and_compound = and_conditions[0]  # Just the string
+
+    # Step 4: Check if false_target leads to another OR branch
+    if false_target is None or true_target is None:
+        # No clear targets, return what we have
+        if isinstance(and_compound, CompoundCondition):
+            return and_compound
+        return None
+
+    # Step 5: Recursively check if false_target is start of another AND chain
+    # that jumps to the SAME true_target (indicating OR)
+    next_branch = _detect_short_circuit_pattern(
+        cfg, false_target, resolver, start_to_block, ssa_func, formatter
+    )
+
+    # Step 6: If next branch jumps to same TRUE target, combine with OR
+    if next_branch and next_branch.true_target == true_target:
+        # Build OR compound
+        or_conditions = []
+        or_involved_blocks = set()
+
+        # Add first AND branch
+        if isinstance(and_compound, CompoundCondition):
+            or_conditions.append(and_compound)
+            or_involved_blocks.update(and_compound.involved_blocks)
+        else:
+            or_conditions.append(and_compound)
+            or_involved_blocks.update(and_blocks)
+
+        # Add second AND branch (or more if recursively nested)
+        or_conditions.append(next_branch)
+        or_involved_blocks.update(next_branch.involved_blocks)
+
+        return CompoundCondition(
+            operator="||",
+            conditions=or_conditions,
+            true_target=true_target,
+            false_target=next_branch.false_target,  # Use last branch's false target
+            involved_blocks=or_involved_blocks
+        )
+
+    # No OR detected, return the AND compound
+    if isinstance(and_compound, CompoundCondition):
+        return and_compound
+
+    # Single condition, not compound
+    return None
+
+
 def _detect_if_else_pattern(
     cfg: CFG,
     block_id: int,
@@ -1330,7 +1841,9 @@ def _detect_if_else_pattern(
     resolver: opcodes.OpcodeResolver,
     visited_ifs: Set[int],
     func_loops: Optional[List] = None,
-    context_stop_blocks: Optional[Set[int]] = None
+    context_stop_blocks: Optional[Set[int]] = None,
+    ssa_func: Optional[SSAFunction] = None,
+    formatter: Optional = None  # ExpressionFormatter
 ) -> Optional[IfElsePattern]:
     """
     Detect if/else pattern starting at block_id.
@@ -1340,6 +1853,9 @@ def _detect_if_else_pattern(
     - Has exactly 2 successors (true and false branches)
     - Branches may or may not merge at a common successor
 
+    NOTE: If ssa_func and formatter are provided, will attempt to detect
+    compound conditions (AND/OR chains) before falling back to simple if/else.
+
     Args:
         cfg: Control flow graph
         block_id: Block to check
@@ -1347,9 +1863,37 @@ def _detect_if_else_pattern(
         resolver: Opcode resolver
         visited_ifs: Set of already processed if patterns
         func_loops: List of loops in function (optional, to avoid misdetecting loop headers)
+        context_stop_blocks: Blocks to stop at (for switch case analysis)
+        ssa_func: SSA function (optional, for compound condition detection)
+        formatter: Expression formatter (optional, for compound condition detection)
     """
     if block_id in visited_ifs:
         return None
+
+    # NEW: Try to detect compound conditions first (if we have SSA/formatter available)
+    # This must be done BEFORE simple if/else detection to avoid breaking up compound patterns
+    if ssa_func is not None and formatter is not None:
+        compound = _detect_short_circuit_pattern(
+            cfg, block_id, resolver, start_to_block, ssa_func, formatter
+        )
+        if compound:
+            # Convert CompoundCondition to IfElsePattern for compatibility
+            # Mark all involved blocks as visited to prevent re-processing
+            for involved_block in compound.involved_blocks:
+                visited_ifs.add(involved_block)
+
+            # Create IfElsePattern representing the compound condition
+            # We'll use a special marker to indicate this is compound
+            if_pattern = IfElsePattern(
+                header_block=block_id,
+                true_block=compound.true_target,
+                false_block=compound.false_target,
+                merge_block=-1  # Will be determined later
+            )
+            # Store compound info in the pattern for later rendering
+            # We'll use a custom attribute (Python allows this)
+            if_pattern.compound = compound  # type: ignore
+            return if_pattern
 
     # FÁZE 3.2 FIX: Don't detect loop headers as if/else
     # Loop headers have back edges and should be handled by loop detection instead
@@ -2301,8 +2845,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
         # FÁZE 2B: Runtime if/else detection (moved from pre-processing)
         # Try to detect if/else pattern if not already known and not part of switch
+        # NEW: Pass ssa_func and formatter for compound condition detection
         if block_id not in block_to_if and block_id not in block_to_switch:
-            if_pattern = _detect_if_else_pattern(cfg, block_id, start_to_block, resolver, visited_ifs, func_loops)
+            if_pattern = _detect_if_else_pattern(cfg, block_id, start_to_block, resolver, visited_ifs, func_loops, ssa_func=ssa_func, formatter=formatter)
             if if_pattern:
                 # Register this pattern
                 block_to_if[if_pattern.header_block] = if_pattern
@@ -2358,17 +2903,35 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 if switch.exit_block:
                     case_stop_blocks.add(switch.exit_block)
 
-                # FÁZE 1.3: Detect early return/break patterns BEFORE if/else detection
+                # NEW FIX: Detect compound conditions FIRST (highest priority)
+                # Then detect early returns, but skip blocks that are part of compound patterns
+                compound_blocks = set()  # Blocks involved in compound conditions
+
+                for body_block_id in case_body_sorted:
+                    if body_block_id not in block_to_if:
+                        temp_visited = set()
+                        # Try compound detection first
+                        if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
+                        if if_pattern and hasattr(if_pattern, 'compound'):
+                            # Compound pattern detected - mark all involved blocks
+                            compound_blocks.update(if_pattern.compound.involved_blocks)
+                            block_to_if[body_block_id] = if_pattern
+
+                # FÁZE 1.3: Detect early return/break patterns AFTER compound detection
+                # Skip blocks that are part of compound patterns
                 early_returns: Dict[int, tuple] = {}
                 for body_block_id in case_body_sorted:
-                    early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
-                    if early_ret:
-                        early_returns[body_block_id] = early_ret
+                    if body_block_id not in compound_blocks:
+                        early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
+                        if early_ret:
+                            early_returns[body_block_id] = early_ret
 
+                # Now detect regular if/else patterns (not compound, not early return)
                 for body_block_id in case_body_sorted:
                     if body_block_id not in block_to_if and body_block_id not in early_returns:
                         temp_visited = set()
-                        if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks)
+                        # Regular if/else detection (compound already done above)
+                        if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
                         if if_pattern:
                             block_to_if[body_block_id] = if_pattern
 
@@ -2412,7 +2975,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 for body_block_id in default_body_sorted:
                     if body_block_id not in block_to_if:
                         temp_visited = set()
-                        if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops)
+                        # FIX: Pass ssa_func and formatter for compound condition detection
+                        if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, ssa_func=ssa_func, formatter=formatter)
                         if if_pattern:
                             block_to_if[body_block_id] = if_pattern
 
@@ -2474,16 +3038,24 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 for ssa_inst in ssa_block:
                     if ssa_inst.address == last_instr.address and ssa_inst.inputs:
                         cond_value = ssa_inst.inputs[0]
-                        cond_expr = formatter.render_value(cond_value)
+                        # FIX 3: Pass IN_CONDITION context to avoid redundant parentheses
+                        cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
                         # Only use SSA name if rendered as pure number
                         if cond_expr.lstrip('-').isdigit():
                             alias = cond_value.alias or cond_value.name
                             if alias and not alias.startswith("data_"):
                                 cond_expr = alias
+
+                        # FIX 3: Smart negation - only add parens if needed
                         if mnemonic == "JZ":
-                            cond_text = f"!({cond_expr})"
+                            # JZ means "jump if zero" = jump if false, so negate condition
+                            if is_simple_expression(cond_expr):
+                                cond_text = f"!{cond_expr}"
+                            else:
+                                cond_text = f"!({cond_expr})"
                         elif mnemonic == "JNZ":
-                            cond_text = f"({cond_expr})"
+                            # JNZ means "jump if not zero" = jump if true, use as-is
+                            cond_text = cond_expr
                         else:
                             cond_text = cond_expr
                         break
@@ -2623,7 +3195,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     for ssa_inst in ssa_block:
                         if ssa_inst.address == last_instr.address and ssa_inst.inputs:
                             cond_value = ssa_inst.inputs[0]
-                            cond_expr = formatter.render_value(cond_value)
+                            # FIX 3: Pass IN_CONDITION context
+                            cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
                             # Only use SSA name if rendered as pure number AND has meaningful alias
                             # Skip data_ aliases as they should be resolved to actual values
                             if cond_expr.lstrip('-').isdigit():
@@ -2632,10 +3205,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                                 # Use alias only for local_/param_ variables
                                 if alias and not alias.startswith("data_"):
                                     cond_expr = alias
+                            # FIX 3: Smart negation
                             if mnemonic == "JZ":
-                                cond_text = f"!({cond_expr})"
+                                if is_simple_expression(cond_expr):
+                                    cond_text = f"!{cond_expr}"
+                                else:
+                                    cond_text = f"!({cond_expr})"
                             elif mnemonic == "JNZ":
-                                cond_text = f"({cond_expr})"
+                                cond_text = cond_expr
                             else:
                                 cond_text = cond_expr
                             break
