@@ -1814,30 +1814,7 @@
 [DEBUG PHI] local_8: PHI phi_75_38_522 → version 2, inputs=['phi_74_38_461']
 [DEBUG PHI ALL] @-1404 PHI phi_75_39_523 (alias=data_438), var_name=None, inputs=[('phi_74_39_462', 'data_438')]
 [DEBUG PHI ALL] @-1405 PHI phi_75_40_524 (alias=None), var_name=None, inputs=[('phi_74_40_463', None)]
-[DEBUG PHI ALL] @-1406 PHI phi_75_41_525 (alias=&local_8), var_name=local_8, inputs=[('phi_74_41_464', '&local_8')]
-[DEBUG PHI] local_8: PHI phi_75_41_525 → version 3, inputs=['phi_74_41_464']
-[DEBUG PHI ALL] @-1407 PHI phi_75_42_526 (alias=data_440), var_name=None, inputs=[('phi_74_42_465', 'data_440')]
-[DEBUG PHI ALL] @-1408 PHI phi_75_43_527 (alias=&data_441), var_name=None, inputs=[('phi_74_43_466', '&data_441')]
-[DEBUG PHI ALL] @-1409 PHI phi_75_44_528 (alias=data_0), var_name=None, inputs=[('phi_74_44_467', 'data_0')]
-[DEBUG PHI ALL] @-1410 PHI phi_75_45_529 (alias=data_446), var_name=None, inputs=[('phi_74_45_468', 'data_446')]
-[DEBUG PHI ALL] @-1411 PHI phi_75_46_530 (alias=&data_448), var_name=None, inputs=[('phi_74_46_469', '&data_448')]
-[DEBUG PHI ALL] @-1412 PHI phi_75_47_531 (alias=data_455), var_name=None, inputs=[('phi_74_47_470', 'data_455')]
-[DEBUG PHI ALL] @-1413 PHI phi_75_48_532 (alias=&data_257), var_name=None, inputs=[('phi_74_48_471', '&data_257')]
-[DEBUG PHI ALL] @-1414 PHI phi_75_49_533 (alias=data_456), var_name=None, inputs=[('phi_74_49_472', 'data_456')]
-[DEBUG PHI ALL] @-1415 PHI phi_75_50_534 (alias=&data_1), var_name=None, inputs=[('phi_74_50_473', '&data_1')]
-[DEBUG PHI ALL] @-1416 PHI phi_75_51_535 (alias=data_0), var_name=None, inputs=[('phi_74_51_474', 'data_0')]
-[DEBUG PHI ALL] @-1417 PHI phi_75_52_536 (alias=&data_257), var_name=None, inputs=[('phi_74_52_475', '&data_257')]
-[DEBUG PHI ALL] @-1418 PHI phi_75_53_537 (alias=data_462), var_name=None, inputs=[('phi_74_53_476', 'data_462')]
-[DEBUG PHI ALL] @-1419 PHI phi_75_54_538 (alias=None), var_name=None, inputs=[('phi_74_54_477', None)]
-[DEBUG PHI ALL] @-1420 PHI phi_75_55_539 (alias=&local_28), var_name=local_28, inputs=[('phi_74_55_478', '&local_28')]
-[DEBUG PHI] local_28: PHI phi_75_55_539 → version 0, inputs=['phi_74_55_478']
-[DEBUG PHI ALL] @-1421 PHI phi_75_56_540 (alias=None), var_name=None, inputs=[('phi_74_56_479', None)]
-[DEBUG PHI ALL] @-1422 PHI phi_75_57_541 (alias=&local_28), var_name=local_28, inputs=[('phi_74_57_480', '&local_28')]
-[DEBUG PHI] local_28: PHI phi_75_57_541 → version 0, inputs=['phi_74_57_480']
-[DEBUG PHI ALL] @-1423 PHI phi_75_58_542 (alias=None), var_name=None, inputs=[('phi_74_58_481', None)]
-[DEBUG PHI ALL] @-1424 PHI phi_75_59_543 (alias=&data_322), var_name=None, inputs=[('phi_74_59_482', '&data_322')]
-[DEBUG PHI ALL] @-1425 PHI phi_75_60_544 (alias=data_479), var_name=None, inputs=[('phi_74_60_483', 'data_479')]
-// Structured decompilation of Compiler-testruns/Testrun1/tdm.scr
+[DEBUG PHI ALL] @-1406 PHI phi_75_41_525 (alias=&local_8), var_name=local_8, inputs=[('phi_74_41_464', '&local_8')]// Structured decompilation of Compiler-testruns/Testrun1/tdm.scr
 // Functions: 4
 
 #include <inc\sc_global.h>
@@ -1861,6 +1838,8 @@ dword gVar4;
 dword gVar2;
 dword gVar3;
 
+[DEBUG COMPOUND] Checking block 0 @0
+[DEBUG COMPOUND] Block 0: No JZ+JMP pattern
 int _init(s_SC_NET_info *info) {
     int local_0;
 
@@ -1869,6 +1848,38 @@ int _init(s_SC_NET_info *info) {
     return FALSE;
 }
 
+[DEBUG COMPOUND] Checking block 1 @10
+[DEBUG COMPOUND] Block 1: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 3 @17
+[DEBUG COMPOUND] Block 3: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 5 @27
+[DEBUG COMPOUND] Block 5: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 6 @38
+[DEBUG COMPOUND] Block 6: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 7 @42
+[DEBUG COMPOUND] Block 7: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 9 @48
+[DEBUG COMPOUND] Block 9: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 10 @55
+[DEBUG COMPOUND] Block 10: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 11 @62
+[DEBUG COMPOUND] Block 11: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 12 @63
+[DEBUG COMPOUND] Block 12: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 13 @70
+[DEBUG COMPOUND] Block 13: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 14 @77
+[DEBUG COMPOUND] Block 14: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 15 @78
+[DEBUG COMPOUND] Block 15: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 16 @82
+[DEBUG COMPOUND] Block 16: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 17 @84
+[DEBUG COMPOUND] Block 17: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 19 @92
+[DEBUG COMPOUND] Block 19: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 18 @91
+[DEBUG COMPOUND] Block 18: No JZ+JMP pattern
 int func_0010(float time) {
     int local_0;
 
@@ -1884,22 +1895,120 @@ int func_0010(float time) {
         }
         break;
     case 1:
-        if ((gSideFrags[0] > 0 && gSideFrags[0] >= gEndValue) || (gSideFrags[1] > 1 && gSideFrags[1] >= gEndValue)) {
-            SC_MP_LoadNextMap();
-            return TRUE;
+        if (gSideFrags[0] > 0) {
+            if (gSideFrags[0] >= gEndValue) {
+            } else {
+                if (gSideFrags[1] > 1) {
+                    if (gSideFrags[1] >= gEndValue) {
+                        SC_MP_LoadNextMap();
+                        return TRUE;
+                    }
+                }
+                SC_message("EndRule unsopported: %d", gEndRule);
+                return FALSE;
+            }
         }
-        SC_message("EndRule unsopported: %d", gEndRule);
-        return FALSE;
+        break;
     default:
     }
 }
 
+[DEBUG COMPOUND] Checking block 20 @96
+[DEBUG COMPOUND] Block 20: No JZ+JMP pattern
 int func_0096(void) {
     SC_sgi(GVAR_SIDE0FRAGS, gSideFrags[0]);
     SC_sgi(GVAR_SIDE1FRAGS, gSideFrags[1]);
     return FALSE;
 }
 
+[DEBUG COMPOUND] Checking block 21 @111
+[DEBUG COMPOUND] Block 21: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 24 @140
+[DEBUG COMPOUND] Block 24: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 25 @141
+[DEBUG COMPOUND] Block 25: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 26 @145
+[DEBUG COMPOUND] Block 26: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 27 @149
+[DEBUG COMPOUND] Block 27: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 28 @175
+[DEBUG COMPOUND] Block 28: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 29 @188
+[DEBUG COMPOUND] Block 29: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 30 @192
+[DEBUG COMPOUND] Block 30: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 31 @204
+[DEBUG COMPOUND] Block 31: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 32 @205
+[DEBUG COMPOUND] Block 32: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 33 @218
+[DEBUG COMPOUND] Block 33: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 35 @228
+[DEBUG COMPOUND] Block 35: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 36 @270
+[DEBUG COMPOUND] Block 36: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 37 @274
+[DEBUG COMPOUND] Block 37: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 38 @325
+[DEBUG COMPOUND] Block 38: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 40 @335
+[DEBUG COMPOUND] Block 40: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 42 @364
+[DEBUG COMPOUND] Block 42: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 43 @466
+[DEBUG COMPOUND] Block 43: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 44 @470
+[DEBUG COMPOUND] Block 44: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 45 @494
+[DEBUG COMPOUND] Block 45: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 46 @498
+[DEBUG COMPOUND] Block 46: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 47 @520
+[DEBUG COMPOUND] Block 47: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 48 @528
+[DEBUG COMPOUND] Block 48: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 49 @537
+[DEBUG COMPOUND] Block 49: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 50 @568
+[DEBUG COMPOUND] Block 50: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 51 @572
+[DEBUG COMPOUND] Block 51: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 52 @576
+[DEBUG COMPOUND] Block 52: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 54 @582
+[DEBUG COMPOUND] Block 54: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 56 @588
+[DEBUG COMPOUND] Block 56: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 57 @592
+[DEBUG COMPOUND] Block 57: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 58 @598
+[DEBUG COMPOUND] Block 58: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 59 @603
+[DEBUG COMPOUND] Block 59: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 61 @609
+[DEBUG COMPOUND] Block 61: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 63 @650
+[DEBUG COMPOUND] Block 63: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 64 @666
+[DEBUG COMPOUND] Block 64: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 65 @679
+[DEBUG COMPOUND] Block 65: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 66 @683
+[DEBUG COMPOUND] Block 66: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 67 @687
+[DEBUG COMPOUND] Block 67: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 68 @710
+[DEBUG COMPOUND] Block 68: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 69 @714
+[DEBUG COMPOUND] Block 69: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 70 @736
+[DEBUG COMPOUND] Block 70: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 72 @743
+[DEBUG COMPOUND] Block 72: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 74 @761
+[DEBUG COMPOUND] Block 74: No JZ+JMP pattern
+[DEBUG COMPOUND] Checking block 75 @778
+[DEBUG COMPOUND] Block 75: No JZ+JMP pattern
 int ScriptMain(s_SC_NET_info *info) {
     char local_0[32];
     dword local_13[16];
@@ -1923,10 +2032,15 @@ int ScriptMain(s_SC_NET_info *info) {
             gRecTimer[local_8] = gRecTimer[local_8] - info->field_16;
             local_8_v1 = local_8 + 1;
         }
-        if (tmp32 && local_9 == 0 && gSideFrags[0] + gSideFrags[1] != 0) {
-            gSideFrags[0] = 0;
-            gSideFrags[1] = 0;
-            func_0096();
+        local_9 = 64;
+        if (SC_MP_EnumPlayers(&tmp28, &local_9, -1)) {
+            if (local_9 == 0) {
+                if (gSideFrags[0] + gSideFrags[1] != 0) {
+                    gSideFrags[0] = 0;
+                    gSideFrags[1] = 0;
+                    func_0096();
+                }
+            }
         }
         gPlayersConnected = local_9;
         break;
@@ -1954,33 +2068,55 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_EnableBotsFromScene(0);
         break;
     case 1:
-        if (info->field_8 && info->field_4) {
+        SC_MP_SRV_SetForceSide(-1);
+        SC_MP_SetChooseValidSides(3);
+        SC_MP_SRV_SetClassLimitsForDM();
+        SC_ZeroMem(&tmp30, 60);
+        tmp30 = 1051;
+        tmp30.field10 = 2;
+        tmp30.field11 = 3;
+        tmp30.field12 = -2147483644;
+        tmp30.field13 = -2147483643;
+        tmp30.field8 = 28;
+        tmp30.field1 = 1;
+        tmp30.field4 = 1010;
+        tmp30.field6 = 512.0155639648438f;
+        tmp30.field5 = 1011;
+        tmp30.field7 = 2040.0f;
+        tmp30.field9 = 2;
+        SC_MP_HUD_SetTabInfo(&tmp30);
+        SC_MP_AllowStPwD(1);
+        SC_MP_AllowFriendlyFireOFF(1);
+        SC_MP_SetItemsNoDisappear(0);
+        if (info->field_8) {
+            if (info->field_4) {
+                SC_MP_GetSRVsettings(&tmp31);
+                SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp31.field2));
+                SC_MP_Gvar_SetSynchro(500);
+                SC_MP_Gvar_SetSynchro(501);
+                func_0096();
+                gRecs = 0;
+                local_8_v2 = 0;
+                sprintf(&tmp33, "DM%d", local_8_v2);
+                if (SC_NET_FillRecover(&gRec[gRecs], &tmp33)) {
+                    gRecs++;
+                } else {
+                    tmp = local_8_v2 + 1;
+                }
+                tmp = 64 - gRecs;
+                SC_MP_GetRecovers(1, &gRec[gRecs], &tmp);
+                gRecs = gRecs + tmp;
+                SC_Log(3, "TDM respawns: %d", gRecs);
+                if (gRecs == 0) {
+                    SC_message("no recover place defined!");
+                }
+                SC_ZeroMem(&gRecTimer, 256);
+            }
         }
-        SC_MP_GetSRVsettings(&tmp31);
-        SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp31.field2));
-        SC_MP_Gvar_SetSynchro(500);
-        SC_MP_Gvar_SetSynchro(501);
-        func_0096();
-        gRecs = 0;
-        local_8_v2 = 0;
         // Loop header - Block 45 @494
         for (local_8_v2 = 0; (local_8_v2 < 64); local_8_v2 = local_8_v2_v2 + 1) {
-            sprintf(&tmp33, "DM%d", local_8_v2);
-            if (SC_NET_FillRecover(&gRec[gRecs], &tmp33)) {
-                gRecs++;
-            } else {
-                tmp = local_8_v2 + 1;
-            }
             tmp = local_8_v2 + 1;
         }
-        tmp = 64 - gRecs;
-        SC_MP_GetRecovers(1, &gRec[gRecs], &tmp);
-        gRecs = gRecs + tmp;
-        SC_Log(3, "TDM respawns: %d", gRecs);
-        if (gRecs == 0) {
-            SC_message("no recover place defined!");
-        }
-        SC_ZeroMem(&gRecTimer, 256);
         break;
     case 2:
         break;
@@ -2030,4 +2166,27 @@ int ScriptMain(s_SC_NET_info *info) {
         return TRUE;
     }
 }
+[DEBUG PHI] local_8: PHI phi_75_41_525 → version 3, inputs=['phi_74_41_464']
+[DEBUG PHI ALL] @-1407 PHI phi_75_42_526 (alias=data_440), var_name=None, inputs=[('phi_74_42_465', 'data_440')]
+[DEBUG PHI ALL] @-1408 PHI phi_75_43_527 (alias=&data_441), var_name=None, inputs=[('phi_74_43_466', '&data_441')]
+[DEBUG PHI ALL] @-1409 PHI phi_75_44_528 (alias=data_0), var_name=None, inputs=[('phi_74_44_467', 'data_0')]
+[DEBUG PHI ALL] @-1410 PHI phi_75_45_529 (alias=data_446), var_name=None, inputs=[('phi_74_45_468', 'data_446')]
+[DEBUG PHI ALL] @-1411 PHI phi_75_46_530 (alias=&data_448), var_name=None, inputs=[('phi_74_46_469', '&data_448')]
+[DEBUG PHI ALL] @-1412 PHI phi_75_47_531 (alias=data_455), var_name=None, inputs=[('phi_74_47_470', 'data_455')]
+[DEBUG PHI ALL] @-1413 PHI phi_75_48_532 (alias=&data_257), var_name=None, inputs=[('phi_74_48_471', '&data_257')]
+[DEBUG PHI ALL] @-1414 PHI phi_75_49_533 (alias=data_456), var_name=None, inputs=[('phi_74_49_472', 'data_456')]
+[DEBUG PHI ALL] @-1415 PHI phi_75_50_534 (alias=&data_1), var_name=None, inputs=[('phi_74_50_473', '&data_1')]
+[DEBUG PHI ALL] @-1416 PHI phi_75_51_535 (alias=data_0), var_name=None, inputs=[('phi_74_51_474', 'data_0')]
+[DEBUG PHI ALL] @-1417 PHI phi_75_52_536 (alias=&data_257), var_name=None, inputs=[('phi_74_52_475', '&data_257')]
+[DEBUG PHI ALL] @-1418 PHI phi_75_53_537 (alias=data_462), var_name=None, inputs=[('phi_74_53_476', 'data_462')]
+[DEBUG PHI ALL] @-1419 PHI phi_75_54_538 (alias=None), var_name=None, inputs=[('phi_74_54_477', None)]
+[DEBUG PHI ALL] @-1420 PHI phi_75_55_539 (alias=&local_28), var_name=local_28, inputs=[('phi_74_55_478', '&local_28')]
+[DEBUG PHI] local_28: PHI phi_75_55_539 → version 0, inputs=['phi_74_55_478']
+[DEBUG PHI ALL] @-1421 PHI phi_75_56_540 (alias=None), var_name=None, inputs=[('phi_74_56_479', None)]
+[DEBUG PHI ALL] @-1422 PHI phi_75_57_541 (alias=&local_28), var_name=local_28, inputs=[('phi_74_57_480', '&local_28')]
+[DEBUG PHI] local_28: PHI phi_75_57_541 → version 0, inputs=['phi_74_57_480']
+[DEBUG PHI ALL] @-1423 PHI phi_75_58_542 (alias=None), var_name=None, inputs=[('phi_74_58_481', None)]
+[DEBUG PHI ALL] @-1424 PHI phi_75_59_543 (alias=&data_322), var_name=None, inputs=[('phi_74_59_482', '&data_322')]
+[DEBUG PHI ALL] @-1425 PHI phi_75_60_544 (alias=data_479), var_name=None, inputs=[('phi_74_60_483', 'data_479')]
+
 

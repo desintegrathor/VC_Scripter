@@ -111,9 +111,9 @@ class GlobalResolver:
         self._map_globals_to_sgi_constants()
 
         # NEW Pattern 5: Infer types from instruction usage
-        # NOTE: Temporarily disabled until type_inference module is implemented (KROK 4)
-        # if self.aggressive_typing:
-        #     self._infer_global_types()
+        # FIX 4: Enable type inference for globals
+        if self.aggressive_typing:
+            self._infer_global_types()
 
         # NEW Pattern 6: Infer struct definitions from access patterns
         # NOTE: Temporarily disabled until struct_inference module is implemented
@@ -503,6 +503,12 @@ class GlobalResolver:
                     if not inferred_type:
                         continue
 
+                    # FIX 4: Skip void* types from GCP/GLD/GADR outputs
+                    # These instructions load ADDRESS of global, not the value itself
+                    # So the output SSA value is a pointer, but the global is NOT a pointer
+                    if inferred_type in ['void*', 'void *', 'ptr']:
+                        continue
+
                     # Get confidence from type inference engine
                     type_info = self.type_inference.type_info.get(output_value.name)
                     confidence = 0.0
@@ -521,6 +527,16 @@ class GlobalResolver:
                     elif not usage.inferred_type:
                         usage.inferred_type = inferred_type
                         usage.type_confidence = confidence
+
+                    # FIX 4.3: Propagate type from array element to array base
+                    # If this is an array element and we inferred its type,
+                    # propagate the type to the base array
+                    if usage.is_array_element and usage.array_base_offset is not None:
+                        base_usage = self.globals.get(usage.array_base_offset)
+                        if base_usage and not base_usage.inferred_type:
+                            # Propagate type with slightly lower confidence
+                            base_usage.inferred_type = inferred_type
+                            base_usage.type_confidence = confidence * 0.9
 
     def _infer_struct_definitions(self):
         """

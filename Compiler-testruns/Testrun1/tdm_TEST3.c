@@ -1884,12 +1884,12 @@ int func_0010(float time) {
         }
         break;
     case 1:
-        if ((gSideFrags[0] > 0 && gSideFrags[0] >= gEndValue) || (gSideFrags[1] > 1 && gSideFrags[1] >= gEndValue)) {
+        if (((gSideFrags[0] > 0 && gSideFrags[0] >= gEndValue)) || ((gSideFrags[1] > 1 && gSideFrags[1] >= gEndValue))) {
             SC_MP_LoadNextMap();
             return TRUE;
         }
-        SC_message("EndRule unsopported: %d", gEndRule);
-        return FALSE;
+        SC_MP_LoadNextMap();
+        return TRUE;
     default:
     }
 }
@@ -1928,6 +1928,9 @@ int ScriptMain(s_SC_NET_info *info) {
             gSideFrags[1] = 0;
             func_0096();
         }
+        gSideFrags[0] = 0;
+        gSideFrags[1] = 0;
+        func_0096();
         gPlayersConnected = local_9;
         break;
     case 4:

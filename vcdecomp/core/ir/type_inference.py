@@ -243,6 +243,10 @@ class TypeInferenceEngine:
         elif mnemonic == 'DCP':
             self._add_dereference_evidence(inst)
 
+        # FIX 4: Switch/jump table values are integers
+        elif mnemonic in ['JMP', 'JMPI']:
+            self._add_switch_evidence(inst)
+
     def _add_float_evidence(self, inst: SSAInstruction):
         """Add evidence that operands are float."""
         confidence = 0.95  # Very high confidence for float ops
@@ -431,6 +435,18 @@ class TypeInferenceEngine:
                 source=TypeSource.INSTRUCTION,
                 inferred_type='void*',  # Must be pointer
                 reason='DCP dereferences pointer'
+            ))
+
+    def _add_switch_evidence(self, inst: SSAInstruction):
+        """FIX 4: Add evidence that switch/jump table values are integers."""
+        # JMP/JMPI use integer index for jump table
+        if inst.inputs and inst.inputs[0].name:
+            info = self._get_or_create_type_info(inst.inputs[0].name)
+            info.add_evidence(TypeEvidence(
+                confidence=0.85,
+                source=TypeSource.INSTRUCTION,
+                inferred_type='int',
+                reason='Used as switch/jump table index'
             ))
 
     def _infer_from_function_calls(self):

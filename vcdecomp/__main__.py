@@ -418,9 +418,10 @@ def cmd_structure(args):
     print()
 
     # P0.1 FIX: Analyze and export global variables
+    # FIX 4: Enable aggressive type inference for globals
     resolver = GlobalResolver(
         ssa_func,
-        aggressive_typing=False,  # Conservative for now
+        aggressive_typing=True,   # FIX 4: Enabled for int/float inference
         infer_structs=False       # Disabled until fully implemented
     )
     globals_usage = resolver.analyze()
@@ -442,7 +443,19 @@ def cmd_structure(args):
                 continue
 
             # Determine type and name
-            var_type = usage.inferred_type if usage.inferred_type else "dword"
+            # FIX 4.4: Improved fallback logic for type inference
+            if usage.inferred_type:
+                var_type = usage.inferred_type
+            elif usage.is_incremented or usage.is_decremented:
+                # INC/DEC operations imply integer type
+                var_type = "int"
+            elif usage.possible_types:
+                # Use first detected type if available
+                var_type = list(usage.possible_types)[0]
+            else:
+                # True fallback - unknown type
+                var_type = "dword"
+
             var_name = usage.name if usage.name else f"data_{offset}"
 
             # Format declaration

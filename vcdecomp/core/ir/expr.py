@@ -24,6 +24,13 @@ from .global_resolver import resolve_globals
 from .constant_propagation import ConstantPropagator
 from .field_tracker import FieldAccessTracker
 from ..headers.database import get_header_database
+from .parenthesization import (
+    ExpressionContext,
+    needs_parens,
+    is_simple_expression,
+    get_operator_info,
+    wrap_if_needed
+)
 
 
 def _is_likely_float(val: int) -> bool:
@@ -875,8 +882,14 @@ class ExpressionFormatter:
         except ValueError:
             return False, None
 
-    def render_value(self, value: SSAValue, expected_type_str: str = None) -> str:
-        return self._render_value(value, expected_type_str=expected_type_str)
+    def render_value(
+        self,
+        value: SSAValue,
+        expected_type_str: str = None,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
+        parent_operator: Optional[str] = None
+    ) -> str:
+        return self._render_value(value, expected_type_str=expected_type_str, context=context, parent_operator=parent_operator)
 
     def _find_array_load_in_chain(self, value: SSAValue, depth: int = 0) -> Optional[str]:
         """
@@ -906,7 +919,13 @@ class ExpressionFormatter:
 
         return None
 
-    def _render_value(self, value: SSAValue, expected_type_str: str = None) -> str:
+    def _render_value(
+        self,
+        value: SSAValue,
+        expected_type_str: str = None,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
+        parent_operator: Optional[str] = None
+    ) -> str:
         # FIX 2: ABSOLUTE HIGHEST PRIORITY - Check rename_map for variable collision resolution
         # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
         # This allows sideA and sideB to have different names even though both have alias="local_2"
@@ -1047,7 +1066,7 @@ class ExpressionFormatter:
 
             return value.alias
         if self._can_inline(value):
-            return self._inline_expression(value)
+            return self._inline_expression(value, context, parent_operator)
         return value.name
 
     def _is_valid_pointer(self, value: SSAValue) -> bool:
@@ -1690,7 +1709,12 @@ class ExpressionFormatter:
 
         return f"{target} = {source};"
 
-    def _inline_expression(self, value: SSAValue) -> str:
+    def _inline_expression(
+        self,
+        value: SSAValue,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
+        parent_operator: Optional[str] = None
+    ) -> str:
         cache_key = value.name
         if cache_key in self._inline_cache:
             return self._inline_cache[cache_key]
@@ -1752,8 +1776,19 @@ class ExpressionFormatter:
             # WORKAROUND: Check if input[0] is PHI with address alias but should be array load
             # This happens when SSA construction loses DCP value from stack
             # Pattern: SUB/ADD has PHI input, but preceding DCP loads from array
-            left_operand = self._render_value(inst.inputs[0])
-            right_operand = self._render_value(inst.inputs[1])
+
+            # Get operator for left/right children
+            current_op = INFIX_OPS[inst.mnemonic]
+
+            # Render left operand with context
+            left_inst = inst.inputs[0].producer_inst
+            left_op = INFIX_OPS.get(left_inst.mnemonic) if left_inst else None
+            left_operand = self._render_value(inst.inputs[0], parent_operator=current_op)
+
+            # Render right operand with context
+            right_inst = inst.inputs[1].producer_inst
+            right_op = INFIX_OPS.get(right_inst.mnemonic) if right_inst else None
+            right_operand = self._render_value(inst.inputs[1], parent_operator=current_op)
 
             # If left operand is address-like (&param_X or &local_X) and this might be broken PHI
             if (inst.inputs[0].alias and inst.inputs[0].alias.startswith("&") and
@@ -1765,9 +1800,57 @@ class ExpressionFormatter:
                         left_operand = self._recent_array_loads[search_addr]
                         break
 
-            expr = f"({left_operand} {INFIX_OPS[inst.mnemonic]} {right_operand})"
+            # FIX 3: Smart parenthesization based on operator precedence and context
+            # Check if left operand needs parens
+            left_needs_parens = needs_parens(
+                child_expr=left_operand,
+                child_operator=left_op,
+                parent_operator=current_op,
+                context=context,
+                is_left_operand=True
+            )
+            left_wrapped = wrap_if_needed(left_operand, left_needs_parens)
+
+            # Check if right operand needs parens
+            right_needs_parens = needs_parens(
+                child_expr=right_operand,
+                child_operator=right_op,
+                parent_operator=current_op,
+                context=context,
+                is_left_operand=False
+            )
+            right_wrapped = wrap_if_needed(right_operand, right_needs_parens)
+
+            # Build expression without automatic parentheses
+            expr_without_parens = f"{left_wrapped} {current_op} {right_wrapped}"
+
+            # Check if the whole expression needs parens based on parent context
+            expr_needs_parens = needs_parens(
+                child_expr=expr_without_parens,
+                child_operator=current_op,
+                parent_operator=parent_operator,
+                context=context,
+                is_left_operand=True  # Conservative default
+            )
+            expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
         elif inst.mnemonic in UNARY_PREFIX and len(inst.inputs) == 1:
-            expr = f"({UNARY_PREFIX[inst.mnemonic]}{self._render_value(inst.inputs[0])})"
+            # FIX 3: Smart parenthesization for unary operators
+            unary_op = UNARY_PREFIX[inst.mnemonic]
+            operand = self._render_value(inst.inputs[0], parent_operator=unary_op)
+
+            # Unary operators rarely need parens around them, but the operand might
+            # For now, keep simple approach - no outer parens unless parent requires it
+            expr_without_parens = f"{unary_op}{operand}"
+
+            # Check if whole expression needs parens based on parent
+            expr_needs_parens = needs_parens(
+                child_expr=expr_without_parens,
+                child_operator=unary_op,
+                parent_operator=parent_operator,
+                context=context,
+                is_left_operand=True
+            )
+            expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
         elif inst.mnemonic in CAST_OPS and len(inst.inputs) == 1:
             expr = f"{inst.mnemonic}({self._render_value(inst.inputs[0])})"
         elif inst.mnemonic == "PNT" and len(inst.inputs) >= 1:
