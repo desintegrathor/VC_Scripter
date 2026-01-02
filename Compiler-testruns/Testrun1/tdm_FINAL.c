@@ -7,16 +7,16 @@
 
 // Global variables
 dword gRecs;
-dword gRec;
+s_SC_MP_Recover * gRec;
 dword gVar;
 dword gVar1;
-dword gRecTimer;
+float * gRecTimer;
 dword gNextRecover;
 dword gSideFrags[2];
 dword gCLN_SideFrags[2];
 dword gEndRule;
-dword gEndValue;
-dword gTime;
+int gEndValue;
+float gTime;
 dword gPlayersConnected;
 dword gVar4;
 dword gVar2;
@@ -45,20 +45,12 @@ int func_0010(float time) {
         }
         break;
     case 1:
-        if (gSideFrags[0] > 0) {
-            if (gSideFrags[0] >= gEndValue) {
-            } else {
-                if (gSideFrags[1] > 1) {
-                    if (gSideFrags[1] >= gEndValue) {
-                        SC_MP_LoadNextMap();
-                        return TRUE;
-                    }
-                }
-                SC_message("EndRule unsopported: %d", gEndRule);
-                return FALSE;
-            }
+        if ((gSideFrags[0] > 0 && gSideFrags[0] >= gEndValue) || (gSideFrags[1] > 1 && gSideFrags[1] >= gEndValue)) {
+            SC_MP_LoadNextMap();
+            return TRUE;
         }
-        break;
+        SC_message("EndRule unsopported: %d", gEndRule);
+        return FALSE;
     default:
     }
 }
@@ -92,15 +84,10 @@ int ScriptMain(s_SC_NET_info *info) {
             gRecTimer[local_8] = gRecTimer[local_8] - info->field_16;
             local_8_v1 = local_8 + 1;
         }
-        local_9 = 64;
-        if (SC_MP_EnumPlayers(&tmp28, &local_9, -1)) {
-            if (local_9 == 0) {
-                if (gSideFrags[0] + gSideFrags[1] != 0) {
-                    gSideFrags[0] = 0;
-                    gSideFrags[1] = 0;
-                    func_0096();
-                }
-            }
+        if (tmp32 && local_9 == 0 && gSideFrags[0] + gSideFrags[1] != 0) {
+            gSideFrags[0] = 0;
+            gSideFrags[1] = 0;
+            func_0096();
         }
         gPlayersConnected = local_9;
         break;
@@ -128,55 +115,33 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_EnableBotsFromScene(0);
         break;
     case 1:
-        SC_MP_SRV_SetForceSide(-1);
-        SC_MP_SetChooseValidSides(3);
-        SC_MP_SRV_SetClassLimitsForDM();
-        SC_ZeroMem(&tmp30, 60);
-        tmp30 = 1051;
-        tmp30.field10 = 2;
-        tmp30.field11 = 3;
-        tmp30.field12 = -2147483644;
-        tmp30.field13 = -2147483643;
-        tmp30.field8 = 28;
-        tmp30.field1 = 1;
-        tmp30.field4 = 1010;
-        tmp30.field6 = 512.0155639648438f;
-        tmp30.field5 = 1011;
-        tmp30.field7 = 2040.0f;
-        tmp30.field9 = 2;
-        SC_MP_HUD_SetTabInfo(&tmp30);
-        SC_MP_AllowStPwD(1);
-        SC_MP_AllowFriendlyFireOFF(1);
-        SC_MP_SetItemsNoDisappear(0);
-        if (info->field_8) {
-            if (info->field_4) {
-                SC_MP_GetSRVsettings(&tmp31);
-                SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp31.field2));
-                SC_MP_Gvar_SetSynchro(500);
-                SC_MP_Gvar_SetSynchro(501);
-                func_0096();
-                gRecs = 0;
-                local_8_v2 = 0;
-                sprintf(&tmp33, "DM%d", local_8_v2);
-                if (SC_NET_FillRecover(&gRec[gRecs], &tmp33)) {
-                    gRecs++;
-                } else {
-                    tmp = local_8_v2 + 1;
-                }
-                tmp = 64 - gRecs;
-                SC_MP_GetRecovers(1, &gRec[gRecs], &tmp);
-                gRecs = gRecs + tmp;
-                SC_Log(3, "TDM respawns: %d", gRecs);
-                if (gRecs == 0) {
-                    SC_message("no recover place defined!");
-                }
-                SC_ZeroMem(&gRecTimer, 256);
-            }
+        if (info->field_8 && info->field_4) {
         }
+        SC_MP_GetSRVsettings(&tmp31);
+        SC_MP_SRV_InitWeaponsRecovery(ITOF(tmp31.field2));
+        SC_MP_Gvar_SetSynchro(500);
+        SC_MP_Gvar_SetSynchro(501);
+        func_0096();
+        gRecs = 0;
+        local_8_v2 = 0;
         // Loop header - Block 45 @494
         for (local_8_v2 = 0; (local_8_v2 < 64); local_8_v2 = local_8_v2_v2 + 1) {
+            sprintf(&tmp33, "DM%d", local_8_v2);
+            if (SC_NET_FillRecover(&gRec[gRecs], &tmp33)) {
+                gRecs++;
+            } else {
+                tmp = local_8_v2 + 1;
+            }
             tmp = local_8_v2 + 1;
         }
+        tmp = 64 - gRecs;
+        SC_MP_GetRecovers(1, &gRec[gRecs], &tmp);
+        gRecs = gRecs + tmp;
+        SC_Log(3, "TDM respawns: %d", gRecs);
+        if (gRecs == 0) {
+            SC_message("no recover place defined!");
+        }
+        SC_ZeroMem(&gRecTimer, 256);
         break;
     case 2:
         break;
