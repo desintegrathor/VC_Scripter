@@ -1,9 +1,9 @@
-#line 0 "C:\Program Files\Vietcong\dev\compiler\test.c"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1\tdm.c"
  
 
 
 
-#line 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1\inc\sc_global.h"
  
 
 
@@ -1663,8 +1663,8 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
-#line 5 "C:\Program Files\Vietcong\dev\compiler\test.c"
-#line 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"
+#line 5 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1\tdm.c"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1\inc\sc_def.h"
  
 
 
@@ -2284,7 +2284,7 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
-#line 6 "C:\Program Files\Vietcong\dev\compiler\test.c"
+#line 6 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1\tdm.c"
 
 
 

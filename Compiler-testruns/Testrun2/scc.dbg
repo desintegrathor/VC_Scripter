@@ -1,11 +1,11 @@
- 0 "C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"'
 
 
- 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\inc\sc_global.h"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\inc\sc_global.h"'
 
  
 
@@ -1666,13 +1666,13 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
- 2 "C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"
+ 2 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"
 lineno==2
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"'
 
- 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\inc\sc_def.h"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\inc\sc_def.h"'
 
  
 
@@ -2293,9 +2293,9 @@ parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"'
 
 
 
- 3 "C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"
+ 3 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"
 lineno==3
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\Gaz_67.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun2\Gaz_67.c"'
 
 
 void *car;

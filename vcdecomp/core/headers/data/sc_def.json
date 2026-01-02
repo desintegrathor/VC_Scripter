@@ -1,0 +1,2626 @@
+{
+  "constants": {
+    "SC_DEF_H": {
+      "name": "SC_DEF_H",
+      "value": "//messages to individual scripts, last 66",
+      "comment": null,
+      "prefix": "SC"
+    },
+    "SCM_FEELDANGER": {
+      "name": "SCM_FEELDANGER",
+      "value": "1",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RUN": {
+      "name": "SCM_RUN",
+      "value": "2",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WARNABOUTENEMY": {
+      "name": "SCM_WARNABOUTENEMY",
+      "value": "3",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_BOOBYTRAPFOUND": {
+      "name": "SCM_BOOBYTRAPFOUND",
+      "value": "4",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_TAUNTRUNNER": {
+      "name": "SCM_TAUNTRUNNER",
+      "value": "5",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_CREATE": {
+      "name": "SCM_CREATE",
+      "value": "6",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_HEARDSOMETHING": {
+      "name": "SCM_HEARDSOMETHING",
+      "value": "7",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_SETGPHASE": {
+      "name": "SCM_SETGPHASE",
+      "value": "8",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_ONWAYPOINT": {
+      "name": "SCM_ONWAYPOINT",
+      "value": "9",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_DISABLE": {
+      "name": "SCM_DISABLE",
+      "value": "10",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_ENABLE": {
+      "name": "SCM_ENABLE",
+      "value": "11",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_TELEPORT": {
+      "name": "SCM_TELEPORT",
+      "value": "12",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_CONFIRM": {
+      "name": "SCM_CONFIRM",
+      "value": "14",
+      "comment": "yes a bla bla bla....",
+      "prefix": "SCM"
+    },
+    "SCM_TIMEDRUN": {
+      "name": "SCM_TIMEDRUN",
+      "value": "15",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WALK": {
+      "name": "SCM_WALK",
+      "value": "35",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_BATTLEWALK": {
+      "name": "SCM_BATTLEWALK",
+      "value": "17",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_BATTLERUN": {
+      "name": "SCM_BATTLERUN",
+      "value": "22",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RETREAT": {
+      "name": "SCM_RETREAT",
+      "value": "23",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_PANICRUN": {
+      "name": "SCM_PANICRUN",
+      "value": "24",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_STARTWALK": {
+      "name": "SCM_STARTWALK",
+      "value": "25",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_CHECKBODY": {
+      "name": "SCM_CHECKBODY",
+      "value": "26",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_GETBACK": {
+      "name": "SCM_GETBACK",
+      "value": "27",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_HUNTER": {
+      "name": "SCM_HUNTER",
+      "value": "28",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RUNANDKILL": {
+      "name": "SCM_RUNANDKILL",
+      "value": "29",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_PLAYANIM": {
+      "name": "SCM_PLAYANIM",
+      "value": "30",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_STARTPATROL": {
+      "name": "SCM_STARTPATROL",
+      "value": "31",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_STARTMORTARFIRE": {
+      "name": "SCM_STARTMORTARFIRE",
+      "value": "33",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_STARTASSAULT": {
+      "name": "SCM_STARTASSAULT",
+      "value": "34",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RUNATWP": {
+      "name": "SCM_RUNATWP",
+      "value": "36",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WALKATWP": {
+      "name": "SCM_WALKATWP",
+      "value": "37",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_SHOOTING": {
+      "name": "SCM_SHOOTING",
+      "value": "38",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_PATHWALK": {
+      "name": "SCM_PATHWALK",
+      "value": "39",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WPPATH_BEGIN": {
+      "name": "SCM_WPPATH_BEGIN",
+      "value": "40",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WPPATH_CONTINUE": {
+      "name": "SCM_WPPATH_CONTINUE",
+      "value": "41",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_WPPATH_END": {
+      "name": "SCM_WPPATH_END",
+      "value": "42",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RUNWITHMORTAR": {
+      "name": "SCM_RUNWITHMORTAR",
+      "value": "43",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_SAPPERATTACK": {
+      "name": "SCM_SAPPERATTACK",
+      "value": "44",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_SUPPORTSAPPER": {
+      "name": "SCM_SUPPORTSAPPER",
+      "value": "46",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_EXITCAR": {
+      "name": "SCM_EXITCAR",
+      "value": "47",
+      "comment": "or heli",
+      "prefix": "SCM"
+    },
+    "SCM_CHANGETARGET": {
+      "name": "SCM_CHANGETARGET",
+      "value": "49",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_CAREFULLASSAULT": {
+      "name": "SCM_CAREFULLASSAULT",
+      "value": "50",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_DONE": {
+      "name": "SCM_DONE",
+      "value": "53",
+      "comment": "player finished task, info->param2  - pl_id",
+      "prefix": "SCM"
+    },
+    "SCM_ENTERCAR": {
+      "name": "SCM_ENTERCAR",
+      "value": "54",
+      "comment": "info->param2 - entryfunction",
+      "prefix": "SCM"
+    },
+    "SCM_THROWSMOKE": {
+      "name": "SCM_THROWSMOKE",
+      "value": "55",
+      "comment": "info->param2 - id of waypoint - \"WayPointxxx\"",
+      "prefix": "SCM"
+    },
+    "SCM_KAMIKADZE": {
+      "name": "SCM_KAMIKADZE",
+      "value": "57",
+      "comment": "starts kamikadze run",
+      "prefix": "SCM"
+    },
+    "SCM_ENABLEINTERACTION": {
+      "name": "SCM_ENABLEINTERACTION",
+      "value": "58",
+      "comment": "info->param2 - Id of string shown to player",
+      "prefix": "SCM"
+    },
+    "SCM_DISABLEINTERACTION": {
+      "name": "SCM_DISABLEINTERACTION",
+      "value": "59",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_EXITHELI": {
+      "name": "SCM_EXITHELI",
+      "value": "62",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_RADIOCOM": {
+      "name": "SCM_RADIOCOM",
+      "value": "63",
+      "comment": "starts or ends radio communication - playing of anim",
+      "prefix": "SCM"
+    },
+    "SCM_YOUARECOMMANDER": {
+      "name": "SCM_YOUARECOMMANDER",
+      "value": "64",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_GROUPRETREAT": {
+      "name": "SCM_GROUPRETREAT",
+      "value": "65",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_NEWCOMMANDER": {
+      "name": "SCM_NEWCOMMANDER",
+      "value": "66",
+      "comment": "param2 is memberid of new group commander",
+      "prefix": "SCM"
+    },
+    "SCM_GOTO": {
+      "name": "SCM_GOTO",
+      "value": "70",
+      "comment": "param2 = id specifying where to go",
+      "prefix": "SCM"
+    },
+    "SCM_CANUSEMAP": {
+      "name": "SCM_CANUSEMAP",
+      "value": "71",
+      "comment": "param2 = id specifying which speech to say",
+      "prefix": "SCM"
+    },
+    "SCM_DO": {
+      "name": "SCM_DO",
+      "value": "72",
+      "comment": "param2 - specifies what to do",
+      "prefix": "SCM"
+    },
+    "SCM_SETPHASE": {
+      "name": "SCM_SETPHASE",
+      "value": "73",
+      "comment": "sets gPhase to param2",
+      "prefix": "SCM"
+    },
+    "SCM_HELIIN": {
+      "name": "SCM_HELIIN",
+      "value": "74",
+      "comment": "message to player's team - enter heli",
+      "prefix": "SCM"
+    },
+    "SCM_HELIOUT": {
+      "name": "SCM_HELIOUT",
+      "value": "75",
+      "comment": "message to player's team - leave heli",
+      "prefix": "SCM"
+    },
+    "SCM_FIRE": {
+      "name": "SCM_FIRE",
+      "value": "76",
+      "comment": "e.g. when we need mortar-team to work",
+      "prefix": "SCM"
+    },
+    "SCM_RECOVER": {
+      "name": "SCM_RECOVER",
+      "value": "77",
+      "comment": "ressurection of player, param2 - if FALSE, player is recovered immediately, otherwise he is not recovered until he is in player's view",
+      "prefix": "SCM"
+    },
+    "SCM_HELILOADED": {
+      "name": "SCM_HELILOADED",
+      "value": "78",
+      "comment": "heli is full, all members in",
+      "prefix": "SCM"
+    },
+    "SCM_HELIEMPTY": {
+      "name": "SCM_HELIEMPTY",
+      "value": "79",
+      "comment": "all players left heli",
+      "prefix": "SCM"
+    },
+    "SCM_INFO": {
+      "name": "SCM_INFO",
+      "value": "80",
+      "comment": "info player about param2",
+      "prefix": "SCM"
+    },
+    "SCM_REMOVE": {
+      "name": "SCM_REMOVE",
+      "value": "13",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_INITTRAP": {
+      "name": "SCM_INITTRAP",
+      "value": "18",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_EXPLODETRAP": {
+      "name": "SCM_EXPLODETRAP",
+      "value": "19",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_DISARMTRAP": {
+      "name": "SCM_DISARMTRAP",
+      "value": "20",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_TEAMKIA": {
+      "name": "SCM_TEAMKIA",
+      "value": "21",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_MORTARLAND": {
+      "name": "SCM_MORTARLAND",
+      "value": "32",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_EXPLOSIVEPLANTED": {
+      "name": "SCM_EXPLOSIVEPLANTED",
+      "value": "45",
+      "comment": null,
+      "prefix": "SCM"
+    },
+    "SCM_MORTARPLACED": {
+      "name": "SCM_MORTARPLACED",
+      "value": "48",
+      "comment": "mortar infantry reports it's on the deignated place",
+      "prefix": "SCM"
+    },
+    "SCM_OBJECTUSED": {
+      "name": "SCM_OBJECTUSED",
+      "value": "51",
+      "comment": "info->param2 - master_nod of object",
+      "prefix": "SCM"
+    },
+    "SCM_OBJECTDESTROYED": {
+      "name": "SCM_OBJECTDESTROYED",
+      "value": "52",
+      "comment": "info->param2 - master_nod of object",
+      "prefix": "SCM"
+    },
+    "SCM_SMOKETHROWED": {
+      "name": "SCM_SMOKETHROWED",
+      "value": "56",
+      "comment": "info->param2 - player finished smokethrow",
+      "prefix": "SCM"
+    },
+    "SCM_PLAYERINTERACTION": {
+      "name": "SCM_PLAYERINTERACTION",
+      "value": "60",
+      "comment": "info->param2 - id of interacted player",
+      "prefix": "SCM"
+    },
+    "SCM_TRAPACTIVATED": {
+      "name": "SCM_TRAPACTIVATED",
+      "value": "61",
+      "comment": "info->param2 - id of hit player",
+      "prefix": "SCM"
+    },
+    "SCM_MP_REINIT": {
+      "name": "SCM_MP_REINIT",
+      "value": "777",
+      "comment": "used in cooperative for AI reinit",
+      "prefix": "SCM"
+    },
+    "SGI_MISSIONDEATHCOUNT": {
+      "name": "SGI_MISSIONDEATHCOUNT",
+      "value": "1",
+      "comment": "stores count of death enemy in mission",
+      "prefix": "SGI"
+    },
+    "SGI_MISSIONALARM": {
+      "name": "SGI_MISSIONALARM",
+      "value": "2",
+      "comment": "is enemy alarmed?",
+      "prefix": "SGI"
+    },
+    "SGI_TEAMDEATHCOUNT": {
+      "name": "SGI_TEAMDEATHCOUNT",
+      "value": "3",
+      "comment": "teammates deathcount (right now including wounded too)",
+      "prefix": "SGI"
+    },
+    "SGI_ALLYDEATHCOUNT": {
+      "name": "SGI_ALLYDEATHCOUNT",
+      "value": "4",
+      "comment": "Allies deathcount",
+      "prefix": "SGI"
+    },
+    "SGI_GROUPDEATHCOUNT": {
+      "name": "SGI_GROUPDEATHCOUNT",
+      "value": "5",
+      "comment": "deathcount of one specific important group",
+      "prefix": "SGI"
+    },
+    "SGI_LEVELPHASE": {
+      "name": "SGI_LEVELPHASE",
+      "value": "6",
+      "comment": "gphase of level.c",
+      "prefix": "SGI"
+    },
+    "SGI_CHOPPER": {
+      "name": "SGI_CHOPPER",
+      "value": "7",
+      "comment": "Chopper control",
+      "prefix": "SGI"
+    },
+    "SGI_TEAMWIA": {
+      "name": "SGI_TEAMWIA",
+      "value": "8",
+      "comment": "teammates wounded",
+      "prefix": "SGI"
+    },
+    "SGI_DIFFICULTY": {
+      "name": "SGI_DIFFICULTY",
+      "value": "10",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_GAMETYPE": {
+      "name": "SGI_GAMETYPE",
+      "value": "11",
+      "comment": "0 normal, 1 coop mutliplayer",
+      "prefix": "SGI"
+    },
+    "SGI_C4COUNT": {
+      "name": "SGI_C4COUNT",
+      "value": "12",
+      "comment": "for missions, where it's possible use C4 on multiple places\t\t- usable only for singleplayer!!!!",
+      "prefix": "SGI"
+    },
+    "SGF_C4TIMER": {
+      "name": "SGF_C4TIMER",
+      "value": "13",
+      "comment": "timer to c4 explosion",
+      "prefix": "SGF"
+    },
+    "SGI_INTELBASE": {
+      "name": "SGI_INTELBASE",
+      "value": "2000",
+      "comment": "2000-2080 reserved for intel status in level",
+      "prefix": "SGI"
+    },
+    "SGI_INTELCOUNT": {
+      "name": "SGI_INTELCOUNT",
+      "value": "2081",
+      "comment": "number of intel in the game",
+      "prefix": "SGI"
+    },
+    "SC_COMPLETEINTELCOUNT": {
+      "name": "SC_COMPLETEINTELCOUNT",
+      "value": "80",
+      "comment": "number of intel's in the game",
+      "prefix": "SC"
+    },
+    "PLAYER_INTELSTART": {
+      "name": "PLAYER_INTELSTART",
+      "value": "50",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_INTELEND": {
+      "name": "PLAYER_INTELEND",
+      "value": "59",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_AMMOSTART": {
+      "name": "PLAYER_AMMOSTART",
+      "value": "60",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_AMMOLAST": {
+      "name": "PLAYER_AMMOLAST",
+      "value": "89",
+      "comment": "30 gv reserved for campaing mode - ammo",
+      "prefix": "PLAYER"
+    },
+    "PLAYER_AMMOINGUN": {
+      "name": "PLAYER_AMMOINGUN",
+      "value": "90",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_AMMOINPISTOL": {
+      "name": "PLAYER_AMMOINPISTOL",
+      "value": "91",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_HEALTHSTART": {
+      "name": "PLAYER_HEALTHSTART",
+      "value": "95",
+      "comment": "2 gv reserved for health status",
+      "prefix": "PLAYER"
+    },
+    "PLAYER_HEALTHEND": {
+      "name": "PLAYER_HEALTHEND",
+      "value": "96",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON1": {
+      "name": "PLAYER_WEAPON1",
+      "value": "101",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON2": {
+      "name": "PLAYER_WEAPON2",
+      "value": "102",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON3": {
+      "name": "PLAYER_WEAPON3",
+      "value": "103",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON4": {
+      "name": "PLAYER_WEAPON4",
+      "value": "104",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON5": {
+      "name": "PLAYER_WEAPON5",
+      "value": "105",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON6": {
+      "name": "PLAYER_WEAPON6",
+      "value": "106",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON7": {
+      "name": "PLAYER_WEAPON7",
+      "value": "107",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON8": {
+      "name": "PLAYER_WEAPON8",
+      "value": "108",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON9": {
+      "name": "PLAYER_WEAPON9",
+      "value": "109",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_WEAPON10": {
+      "name": "PLAYER_WEAPON10",
+      "value": "110",
+      "comment": null,
+      "prefix": "PLAYER"
+    },
+    "PLAYER_FREESLOT": {
+      "name": "PLAYER_FREESLOT",
+      "value": "0xff",
+      "comment": "player has nothing in this slot",
+      "prefix": "PLAYER"
+    },
+    "SGI_ARRIVAL_UNLOCKED": {
+      "name": "SGI_ARRIVAL_UNLOCKED",
+      "value": "130",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ARRIVAL_HORNSTERSPECANI": {
+      "name": "SGI_ARRIVAL_HORNSTERSPECANI",
+      "value": "131",
+      "comment": "Medic Patrol setting  - is player driving the jeep?",
+      "prefix": "SGI"
+    },
+    "SGI_MEDPATROL_DRIVING": {
+      "name": "SGI_MEDPATROL_DRIVING",
+      "value": "140",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_TUNNELS_C4UNUSED": {
+      "name": "SGI_TUNNELS_C4UNUSED",
+      "value": "141",
+      "comment": "craters in outpost",
+      "prefix": "SGI"
+    },
+    "OUTPOSTCRATERBASE": {
+      "name": "OUTPOSTCRATERBASE",
+      "value": "150",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER4": {
+      "name": "OUTPOSTCRATER4",
+      "value": "154",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER5": {
+      "name": "OUTPOSTCRATER5",
+      "value": "155",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER6": {
+      "name": "OUTPOSTCRATER6",
+      "value": "156",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER7": {
+      "name": "OUTPOSTCRATER7",
+      "value": "157",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER8": {
+      "name": "OUTPOSTCRATER8",
+      "value": "158",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER9": {
+      "name": "OUTPOSTCRATER9",
+      "value": "159",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER10": {
+      "name": "OUTPOSTCRATER10",
+      "value": "160",
+      "comment": null,
+      "prefix": null
+    },
+    "OUTPOSTCRATER11": {
+      "name": "OUTPOSTCRATER11",
+      "value": "161",
+      "comment": null,
+      "prefix": null
+    },
+    "SGI_CURRENTMISSION": {
+      "name": "SGI_CURRENTMISSION",
+      "value": "200",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGF_MISSIONTIMER": {
+      "name": "SGF_MISSIONTIMER",
+      "value": "201",
+      "comment": "defines for Ricefields / Pilot",
+      "prefix": "SGF"
+    },
+    "SGI_LEVPILOT_S1G0": {
+      "name": "SGI_LEVPILOT_S1G0",
+      "value": "1000",
+      "comment": "#define SGI_LEVPILOT_S1G0C\t\t\t\t\t\t1001",
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_S1G1": {
+      "name": "SGI_LEVPILOT_S1G1",
+      "value": "1002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_S1G2": {
+      "name": "SGI_LEVPILOT_S1G2",
+      "value": "1003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_S1G3": {
+      "name": "SGI_LEVPILOT_S1G3",
+      "value": "1004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_S1G4": {
+      "name": "SGI_LEVPILOT_S1G4",
+      "value": "1005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_S1G5": {
+      "name": "SGI_LEVPILOT_S1G5",
+      "value": "1006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_WILL1": {
+      "name": "SGI_LEVPILOT_WILL1",
+      "value": "1010",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_WILL2": {
+      "name": "SGI_LEVPILOT_WILL2",
+      "value": "1011",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_WILL3": {
+      "name": "SGI_LEVPILOT_WILL3",
+      "value": "1012",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_WILL4": {
+      "name": "SGI_LEVPILOT_WILL4",
+      "value": "1013",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_EVACVILLID": {
+      "name": "SGI_LEVPILOT_EVACVILLID",
+      "value": "1020",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_HELI3_ATTACK": {
+      "name": "SGI_LEVPILOT_HELI3_ATTACK",
+      "value": "1021",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVPILOT_JUSTLOADEDVALUE": {
+      "name": "SGI_LEVPILOT_JUSTLOADEDVALUE",
+      "value": "1022",
+      "comment": "defines for Big Valley Chopper flight",
+      "prefix": "SGI"
+    },
+    "SGI_LEVBCHOPPER_SYNCHRO": {
+      "name": "SGI_LEVBCHOPPER_SYNCHRO",
+      "value": "1030",
+      "comment": "defines for basecamp final",
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_GROUP0": {
+      "name": "SGI_LEVBASE_GROUP0",
+      "value": "1040",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_GROUP1": {
+      "name": "SGI_LEVBASE_GROUP1",
+      "value": "1041",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_GROUP2": {
+      "name": "SGI_LEVBASE_GROUP2",
+      "value": "1042",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYOUT1": {
+      "name": "SGI_LEVBASE_CLAYOUT1",
+      "value": "1050",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYOUT2": {
+      "name": "SGI_LEVBASE_CLAYOUT2",
+      "value": "1051",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYOUT3": {
+      "name": "SGI_LEVBASE_CLAYOUT3",
+      "value": "1052",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYOUT4": {
+      "name": "SGI_LEVBASE_CLAYOUT4",
+      "value": "1053",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYIN1": {
+      "name": "SGI_LEVBASE_CLAYIN1",
+      "value": "1054",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYIN2": {
+      "name": "SGI_LEVBASE_CLAYIN2",
+      "value": "1055",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYIN3": {
+      "name": "SGI_LEVBASE_CLAYIN3",
+      "value": "1056",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LEVBASE_CLAYIN4": {
+      "name": "SGI_LEVBASE_CLAYIN4",
+      "value": "1057",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_MEDIC": {
+      "name": "SGI_REWARD_MEDIC",
+      "value": "3000",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_3CANYONS": {
+      "name": "SGI_REWARD_3CANYONS",
+      "value": "3001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_BASECAMP": {
+      "name": "SGI_REWARD_BASECAMP",
+      "value": "3002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_FRENCHROUTE": {
+      "name": "SGI_REWARD_FRENCHROUTE",
+      "value": "3003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_NIGHT": {
+      "name": "SGI_REWARD_NIGHT",
+      "value": "3004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_AMBUSH": {
+      "name": "SGI_REWARD_AMBUSH",
+      "value": "3005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_OUTPOST": {
+      "name": "SGI_REWARD_OUTPOST",
+      "value": "3006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_CRASHFLIGHT": {
+      "name": "SGI_REWARD_CRASHFLIGHT",
+      "value": "3007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_PILOT": {
+      "name": "SGI_REWARD_PILOT",
+      "value": "3008",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_STREAM": {
+      "name": "SGI_REWARD_STREAM",
+      "value": "3009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_LASTBASECAMP": {
+      "name": "SGI_REWARD_LASTBASECAMP",
+      "value": "3010",
+      "comment": "added by Erik",
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_RADIORELAY": {
+      "name": "SGI_REWARD_RADIORELAY",
+      "value": "3011",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_REWARD_BIGVALLEYCHOPPER": {
+      "name": "SGI_REWARD_BIGVALLEYCHOPPER",
+      "value": "3012",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MUSICRADIO_DEFCOMMENT_FIRST": {
+      "name": "SGI_MUSICRADIO_DEFCOMMENT_FIRST",
+      "value": "4000",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MUSICRADIO_DEFCOMMENT_LAST": {
+      "name": "SGI_MUSICRADIO_DEFCOMMENT_LAST",
+      "value": "4015",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MUSICRADIO_MUSIC_FIRST": {
+      "name": "SGI_MUSICRADIO_MUSIC_FIRST",
+      "value": "4020",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MUSICRADIO_MUSIC_LAST": {
+      "name": "SGI_MUSICRADIO_MUSIC_LAST",
+      "value": "4049",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MUSICRADIO_MAKESWITCHON": {
+      "name": "SGI_MUSICRADIO_MAKESWITCHON",
+      "value": "4050",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGF_MUSICRADIO_VOLUME": {
+      "name": "SGF_MUSICRADIO_VOLUME",
+      "value": "4051",
+      "comment": "is used, when >0.0f",
+      "prefix": "SGF"
+    },
+    "SGI_HELI01GO": {
+      "name": "SGI_HELI01GO",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALARM01": {
+      "name": "SGI_ALARM01",
+      "value": "2001",
+      "comment": "ve vesnici",
+      "prefix": "SGI"
+    },
+    "NUM_SGF_CNTDOWN": {
+      "name": "NUM_SGF_CNTDOWN",
+      "value": "5",
+      "comment": "up to 5 countdown timers",
+      "prefix": "NUM"
+    },
+    "_SGF_CNTDOWN_BASE": {
+      "name": "_SGF_CNTDOWN_BASE",
+      "value": "2060",
+      "comment": null,
+      "prefix": "_SGF"
+    },
+    "SGF_CNTDOWN00": {
+      "name": "SGF_CNTDOWN00",
+      "value": "2060",
+      "comment": "placeholder",
+      "prefix": "SGF"
+    },
+    "SGF_CNTDOWN01": {
+      "name": "SGF_CNTDOWN01",
+      "value": "2061",
+      "comment": "placeholder",
+      "prefix": "SGF"
+    },
+    "SGF_CNTDOWN02": {
+      "name": "SGF_CNTDOWN02",
+      "value": "2062",
+      "comment": "placeholder",
+      "prefix": "SGF"
+    },
+    "SGF_CNTDOWN03": {
+      "name": "SGF_CNTDOWN03",
+      "value": "2063",
+      "comment": "placeholder",
+      "prefix": "SGF"
+    },
+    "SGF_CNTDOWN04": {
+      "name": "SGF_CNTDOWN04",
+      "value": "2064",
+      "comment": "placeholder",
+      "prefix": "SGF"
+    },
+    "SGI_DOLOOP": {
+      "name": "SGI_DOLOOP",
+      "value": "2234",
+      "comment": "informs heli that should do loop",
+      "prefix": "SGI"
+    },
+    "SGI_HELIAMP": {
+      "name": "SGI_HELIAMP",
+      "value": "2235",
+      "comment": "heli loudspeaker",
+      "prefix": "SGI"
+    },
+    "SGI_BIGGROUP01": {
+      "name": "SGI_BIGGROUP01",
+      "value": "2001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HELIFORSURR": {
+      "name": "SGI_HELIFORSURR",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HFSLANDED": {
+      "name": "SGI_HFSLANDED",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HFS_GOAWAY": {
+      "name": "SGI_HFS_GOAWAY",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_AM_HELI1xGO": {
+      "name": "SGI_AM_HELI1xGO",
+      "value": "2005",
+      "comment": "Night B",
+      "prefix": "SGI"
+    },
+    "SGI_GO_NOSIC": {
+      "name": "SGI_GO_NOSIC",
+      "value": "2000",
+      "comment": "#define\tSGI_HELI01GO\t2001",
+      "prefix": "SGI"
+    },
+    "SGI_EVERYIN": {
+      "name": "SGI_EVERYIN",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ENTERHELI": {
+      "name": "SGI_ENTERHELI",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_OUTOFHELI": {
+      "name": "SGI_OUTOFHELI",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CHAJDAIN": {
+      "name": "SGI_CHAJDAIN",
+      "value": "2005",
+      "comment": "#define\tSGI_ALARM01\t\t2006",
+      "prefix": "SGI"
+    },
+    "SGI_PRISFREE": {
+      "name": "SGI_PRISFREE",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HWIZD": {
+      "name": "SGI_HWIZD",
+      "value": "2008",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BRONSONOK": {
+      "name": "SGI_BRONSONOK",
+      "value": "2009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CURKECGROUP": {
+      "name": "SGI_CURKECGROUP",
+      "value": "2021",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CURKEC": {
+      "name": "SGI_CURKEC",
+      "value": "2022",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CURPLAYER": {
+      "name": "SGI_CURPLAYER",
+      "value": "2023",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BOMBALARM": {
+      "name": "SGI_BOMBALARM",
+      "value": "2024",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_IGNORE_LSC": {
+      "name": "SGI_IGNORE_LSC",
+      "value": "2025",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_LSC": {
+      "name": "SGI_LSC",
+      "value": "2026",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HLIDACALARM": {
+      "name": "SGI_HLIDACALARM",
+      "value": "2027",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BRONSN_R": {
+      "name": "SGI_BRONSN_R",
+      "value": "2030",
+      "comment": "ready to action?",
+      "prefix": "SGI"
+    },
+    "SGI_DEFORT_R": {
+      "name": "SGI_DEFORT_R",
+      "value": "2031",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HORNST_R": {
+      "name": "SGI_HORNST_R",
+      "value": "2032",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NAPALM": {
+      "name": "SGI_NAPALM",
+      "value": "2033",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NHUTCOOP": {
+      "name": "SGI_NHUTCOOP",
+      "value": "2034",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HELIFULL": {
+      "name": "SGI_HELIFULL",
+      "value": "2035",
+      "comment": "when SCM_HELILOADED recevied",
+      "prefix": "SGI"
+    },
+    "SGI_KILLMARV": {
+      "name": "SGI_KILLMARV",
+      "value": "2036",
+      "comment": "NVA base",
+      "prefix": "SGI"
+    },
+    "SGI_USPRISONER": {
+      "name": "SGI_USPRISONER",
+      "value": "2000",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_FOUNDEXIT": {
+      "name": "SGI_FOUNDEXIT",
+      "value": "2001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CANTALK": {
+      "name": "SGI_CANTALK",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CAMANIM01": {
+      "name": "SGI_CAMANIM01",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CAMANIMEND01": {
+      "name": "SGI_CAMANIMEND01",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_AADESTR1": {
+      "name": "SGI_AADESTR1",
+      "value": "2005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_AADESTR2": {
+      "name": "SGI_AADESTR2",
+      "value": "2006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NVA_HELI1xGO": {
+      "name": "SGI_NVA_HELI1xGO",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NVA_FANTOM1xGO": {
+      "name": "SGI_NVA_FANTOM1xGO",
+      "value": "2008",
+      "comment": "3 canyons B",
+      "prefix": "SGI"
+    },
+    "SGI_CB_HELI1xGO": {
+      "name": "SGI_CB_HELI1xGO",
+      "value": "2002",
+      "comment": "RadioRelay",
+      "prefix": "SGI"
+    },
+    "SGI_HELIATEND": {
+      "name": "SGI_HELIATEND",
+      "value": "2000",
+      "comment": "if TRUE, Heli01 goes for US_0",
+      "prefix": "SGI"
+    },
+    "SGI_MINDEAD": {
+      "name": "SGI_MINDEAD",
+      "value": "2001",
+      "comment": "when minometcici are dead, set to TRUE",
+      "prefix": "SGI"
+    },
+    "SGI_USEFLARES": {
+      "name": "SGI_USEFLARES",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_SOUMRAK": {
+      "name": "SGI_SOUMRAK",
+      "value": "2003",
+      "comment": "uz se setmelo?",
+      "prefix": "SGI"
+    },
+    "SGI_SENDATTDONE": {
+      "name": "SGI_SENDATTDONE",
+      "value": "2004",
+      "comment": "if TRUE, vc_wps can send SCM_ATTACKDONE",
+      "prefix": "SGI"
+    },
+    "SGI_BYTHEAMMO": {
+      "name": "SGI_BYTHEAMMO",
+      "value": "2000",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BRONSONINT": {
+      "name": "SGI_BRONSONINT",
+      "value": "2001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DOORSOUT": {
+      "name": "SGI_DOORSOUT",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_UROSENPOLE": {
+      "name": "SGI_UROSENPOLE",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGF_USKECTMR": {
+      "name": "SGF_USKECTMR",
+      "value": "2005",
+      "comment": "/",
+      "prefix": "SGF"
+    },
+    "SGI_VYRESAMMO": {
+      "name": "SGI_VYRESAMMO",
+      "value": "2004",
+      "comment": "see Rosenfield.c",
+      "prefix": "SGI"
+    },
+    "SGI_ROZAKEC": {
+      "name": "SGI_ROZAKEC",
+      "value": "2006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NOKILLER": {
+      "name": "SGI_NOKILLER",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_C4PLANTED": {
+      "name": "SGI_C4PLANTED",
+      "value": "2008",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_SEZAM": {
+      "name": "SGI_SEZAM",
+      "value": "2009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_RAKETKA": {
+      "name": "SGI_RAKETKA",
+      "value": "2010",
+      "comment": "Escape",
+      "prefix": "SGI"
+    },
+    "SGI_ALARM02": {
+      "name": "SGI_ALARM02",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALARM03": {
+      "name": "SGI_ALARM03",
+      "value": "2003",
+      "comment": "#define\tSGI_HELI01GO\t2004",
+      "prefix": "SGI"
+    },
+    "SGI_MISSIONOK": {
+      "name": "SGI_MISSIONOK",
+      "value": "2005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NUM_VC2_DEAD": {
+      "name": "SGI_NUM_VC2_DEAD",
+      "value": "2006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_JETOMAGOR": {
+      "name": "SGI_JETOMAGOR",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGF_SAYSOMETHING": {
+      "name": "SGF_SAYSOMETHING",
+      "value": "2008",
+      "comment": null,
+      "prefix": "SGF"
+    },
+    "SGI_CANSAY": {
+      "name": "SGI_CANSAY",
+      "value": "2009",
+      "comment": "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++  Datadisc defines  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++",
+      "prefix": "SGI"
+    },
+    "SGI_PHASE": {
+      "name": "SGI_PHASE",
+      "value": "2222",
+      "comment": "BomberPilot",
+      "prefix": "SGI"
+    },
+    "SGI_G01_ACT": {
+      "name": "SGI_G01_ACT",
+      "value": "2001",
+      "comment": "guard groups",
+      "prefix": "SGI"
+    },
+    "SGI_G02_ACT": {
+      "name": "SGI_G02_ACT",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_G03_ACT": {
+      "name": "SGI_G03_ACT",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_G04_ACT": {
+      "name": "SGI_G04_ACT",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_G05_ACT": {
+      "name": "SGI_G05_ACT",
+      "value": "2005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALP_01": {
+      "name": "SGI_ALP_01",
+      "value": "2006",
+      "comment": "Activation Lines Passed",
+      "prefix": "SGI"
+    },
+    "SGI_ALP_11": {
+      "name": "SGI_ALP_11",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALP_02": {
+      "name": "SGI_ALP_02",
+      "value": "2008",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALP_12": {
+      "name": "SGI_ALP_12",
+      "value": "2009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALP_22": {
+      "name": "SGI_ALP_22",
+      "value": "2009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALP_03": {
+      "name": "SGI_ALP_03",
+      "value": "2010",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BP_ALARM01": {
+      "name": "SGI_BP_ALARM01",
+      "value": "2011",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BP_ALARM02": {
+      "name": "SGI_BP_ALARM02",
+      "value": "2012",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BP_ALARM03": {
+      "name": "SGI_BP_ALARM03",
+      "value": "2013",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BP_ALARM04": {
+      "name": "SGI_BP_ALARM04",
+      "value": "2014",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BP_ALARM05": {
+      "name": "SGI_BP_ALARM05",
+      "value": "2015",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_PILOTWAKE": {
+      "name": "SGI_PILOTWAKE",
+      "value": "2020",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_PILOTFOUND": {
+      "name": "SGI_PILOTFOUND",
+      "value": "2021",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_PILOTPOS": {
+      "name": "SGI_PILOTPOS",
+      "value": "2022",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_PILOTSTATE": {
+      "name": "SGI_PILOTSTATE",
+      "value": "2023",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_C4_PLANTED": {
+      "name": "SGI_C4_PLANTED",
+      "value": "2024",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_R2_STATUS": {
+      "name": "SGI_R2_STATUS",
+      "value": "2025",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_RADIO_LZ": {
+      "name": "SGI_RADIO_LZ",
+      "value": "2026",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BOXCOMMENT": {
+      "name": "SGI_BOXCOMMENT",
+      "value": "2027",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_VC4_TALKING": {
+      "name": "SGI_VC4_TALKING",
+      "value": "2028",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_HIDEITEMS": {
+      "name": "SGI_HIDEITEMS",
+      "value": "2029",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_USEDLZ": {
+      "name": "SGI_USEDLZ",
+      "value": "2030",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CROCKERE": {
+      "name": "SGI_CROCKERE",
+      "value": "2031",
+      "comment": "DEATHVALLEY",
+      "prefix": "SGI"
+    },
+    "SGI_DV_BOMB1": {
+      "name": "SGI_DV_BOMB1",
+      "value": "2200",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DV_BOMB2": {
+      "name": "SGI_DV_BOMB2",
+      "value": "2201",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DV_ALARMER": {
+      "name": "SGI_DV_ALARMER",
+      "value": "2202",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGF_DV_ALARMX": {
+      "name": "SGF_DV_ALARMX",
+      "value": "2203",
+      "comment": null,
+      "prefix": "SGF"
+    },
+    "SGF_DV_ALARMY": {
+      "name": "SGF_DV_ALARMY",
+      "value": "2204",
+      "comment": null,
+      "prefix": "SGF"
+    },
+    "SGF_DV_ALARMZ": {
+      "name": "SGF_DV_ALARMZ",
+      "value": "2205",
+      "comment": "JARAI",
+      "prefix": "SGF"
+    },
+    "SGI_JARAI_TREE": {
+      "name": "SGI_JARAI_TREE",
+      "value": "2210",
+      "comment": "BaseAttack",
+      "prefix": "SGI"
+    },
+    "SGI_MIN01": {
+      "name": "SGI_MIN01",
+      "value": "2001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MIN02": {
+      "name": "SGI_MIN02",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_MIN03": {
+      "name": "SGI_MIN03",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_VC0_PHASE": {
+      "name": "SGI_VC0_PHASE",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DONTSHOOT": {
+      "name": "SGI_DONTSHOOT",
+      "value": "2005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DESTROY_TER": {
+      "name": "SGI_DESTROY_TER",
+      "value": "2006",
+      "comment": "MineFucktory",
+      "prefix": "SGI"
+    },
+    "SGI_MF_HELIGO": {
+      "name": "SGI_MF_HELIGO",
+      "value": "2001",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_GRENUSED": {
+      "name": "SGI_GRENUSED",
+      "value": "2002",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_NUM_C4": {
+      "name": "SGI_NUM_C4",
+      "value": "2003",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_INTELFOUND": {
+      "name": "SGI_INTELFOUND",
+      "value": "2004",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_TEAM2LEFT": {
+      "name": "SGI_TEAM2LEFT",
+      "value": "2005",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ACT_VC5": {
+      "name": "SGI_ACT_VC5",
+      "value": "2006",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ACTIVATE_VC": {
+      "name": "SGI_ACTIVATE_VC",
+      "value": "2007",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_TESTGREN": {
+      "name": "SGI_TESTGREN",
+      "value": "2008",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_CLOSEDOORS": {
+      "name": "SGI_CLOSEDOORS",
+      "value": "2009",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_INTRO": {
+      "name": "SGI_INTRO",
+      "value": "2010",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DOORSDSTR": {
+      "name": "SGI_DOORSDSTR",
+      "value": "2011",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_UNDERFUCKIT": {
+      "name": "SGI_UNDERFUCKIT",
+      "value": "2012",
+      "comment": "---------------------------------------------------------  Datadisc defines  -------------------------------------------------------------",
+      "prefix": "SGI"
+    },
+    "SGI_A2_PASS": {
+      "name": "SGI_A2_PASS",
+      "value": "3333",
+      "comment": "player(s) pased line dmPassA-dmPassB",
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_01": {
+      "name": "SGI_DEBR_01",
+      "value": "3501",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_02": {
+      "name": "SGI_DEBR_02",
+      "value": "3502",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_03": {
+      "name": "SGI_DEBR_03",
+      "value": "3503",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_04": {
+      "name": "SGI_DEBR_04",
+      "value": "3504",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_05": {
+      "name": "SGI_DEBR_05",
+      "value": "3505",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_06": {
+      "name": "SGI_DEBR_06",
+      "value": "3506",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_07": {
+      "name": "SGI_DEBR_07",
+      "value": "3507",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_08": {
+      "name": "SGI_DEBR_08",
+      "value": "3508",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBR_09": {
+      "name": "SGI_DEBR_09",
+      "value": "3509",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "DEBR_DONTSHOW": {
+      "name": "DEBR_DONTSHOW",
+      "value": "0xFFFFFFFF",
+      "comment": "--",
+      "prefix": "DEBR"
+    },
+    "SGI_ALC_SAVE_DOC": {
+      "name": "SGI_ALC_SAVE_DOC",
+      "value": "3600",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_ALC_SAVE_PAGE": {
+      "name": "SGI_ALC_SAVE_PAGE",
+      "value": "3601",
+      "comment": "brief save",
+      "prefix": "SGI"
+    },
+    "SGI_BRIEF_SAVE_DOC": {
+      "name": "SGI_BRIEF_SAVE_DOC",
+      "value": "3602",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_BRIEF_SAVE_PAGE": {
+      "name": "SGI_BRIEF_SAVE_PAGE",
+      "value": "3603",
+      "comment": "diary save",
+      "prefix": "SGI"
+    },
+    "SGI_DIARY_SAVE_DOC": {
+      "name": "SGI_DIARY_SAVE_DOC",
+      "value": "3604",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DIARY_SAVE_PAGE": {
+      "name": "SGI_DIARY_SAVE_PAGE",
+      "value": "3605",
+      "comment": "--",
+      "prefix": "SGI"
+    },
+    "SGI_RV_BRIEF": {
+      "name": "SGI_RV_BRIEF",
+      "value": "3610",
+      "comment": "DEBRIEFING INFORMATIONS",
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_MEDIC_VARA": {
+      "name": "SGI_DEBRIEF_MEDIC_VARA",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_MEDIC_VARB": {
+      "name": "SGI_DEBRIEF_MEDIC_VARB",
+      "value": "SGI_DEBR_02",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_MEDIC_VARC": {
+      "name": "SGI_DEBRIEF_MEDIC_VARC",
+      "value": "SGI_DEBR_03",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_3CANYON_NOCACHE": {
+      "name": "SGI_DEBRIEF_3CANYON_NOCACHE",
+      "value": "SGI_DEBR_02",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_3CANYON_SOMECACHE": {
+      "name": "SGI_DEBRIEF_3CANYON_SOMECACHE",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_3CANYON_WOUNDEDFOUND": {
+      "name": "SGI_DEBRIEF_3CANYON_WOUNDEDFOUND",
+      "value": "SGI_DEBR_03",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_3CANYON_WOUNDEDNOTFOUND": {
+      "name": "SGI_DEBRIEF_3CANYON_WOUNDEDNOTFOUND",
+      "value": "SGI_DEBR_04",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_3CANYON_REWARDED": {
+      "name": "SGI_DEBRIEF_3CANYON_REWARDED",
+      "value": "SGI_DEBR_05",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_BASECAMP_REWARDED": {
+      "name": "SGI_DEBRIEF_BASECAMP_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_FRENCHROUTE_REWARDED": {
+      "name": "SGI_DEBRIEF_FRENCHROUTE_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_NIGHT_REWARDED": {
+      "name": "SGI_DEBRIEF_NIGHT_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_AMBUSH_REWARDED": {
+      "name": "SGI_DEBRIEF_AMBUSH_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_OUTPOST_REWARDED": {
+      "name": "SGI_DEBRIEF_OUTPOST_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_RELAY_REWARDED": {
+      "name": "SGI_DEBRIEF_RELAY_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_NVA_MAPSFOUND": {
+      "name": "SGI_DEBRIEF_NVA_MAPSFOUND",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_NVA_REWARDED": {
+      "name": "SGI_DEBRIEF_NVA_REWARDED",
+      "value": "SGI_DEBR_02",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_PILOT_REWARDED": {
+      "name": "SGI_DEBRIEF_PILOT_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_BRIDGE_REWARDED": {
+      "name": "SGI_DEBRIEF_BRIDGE_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": null,
+      "prefix": "SGI"
+    },
+    "SGI_DEBRIEF_FINALBASECAMP_REWARDED": {
+      "name": "SGI_DEBRIEF_FINALBASECAMP_REWARDED",
+      "value": "SGI_DEBR_01",
+      "comment": "only for back compatibility!!!!!!",
+      "prefix": "SGI"
+    },
+    "MISSION_COLLECTORS": {
+      "name": "MISSION_COLLECTORS",
+      "value": "6",
+      "comment": "now unused",
+      "prefix": "MISSION"
+    },
+    "MISSION_ROAD": {
+      "name": "MISSION_ROAD",
+      "value": "7",
+      "comment": "now unused",
+      "prefix": "MISSION"
+    },
+    "MISSION_JARAIEVAC": {
+      "name": "MISSION_JARAIEVAC",
+      "value": "28",
+      "comment": "now unused",
+      "prefix": "MISSION"
+    },
+    "MISSION_OUTPOSTEVAC": {
+      "name": "MISSION_OUTPOSTEVAC",
+      "value": "29",
+      "comment": "now unused",
+      "prefix": "MISSION"
+    },
+    "MISSION_BASECAMPARRIVAL": {
+      "name": "MISSION_BASECAMPARRIVAL",
+      "value": "0",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_MEDPATROL": {
+      "name": "MISSION_MEDPATROL",
+      "value": "1",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_3CANYONSFIRST": {
+      "name": "MISSION_3CANYONSFIRST",
+      "value": "2",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_3CANYONSA": {
+      "name": "MISSION_3CANYONSA",
+      "value": "3",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_3CANYONSB": {
+      "name": "MISSION_3CANYONSB",
+      "value": "4",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BAHNARFIRST": {
+      "name": "MISSION_BAHNARFIRST",
+      "value": "5",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BASECAMPFIRST": {
+      "name": "MISSION_BASECAMPFIRST",
+      "value": "6",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_FRENCHROUTE": {
+      "name": "MISSION_FRENCHROUTE",
+      "value": "7",
+      "comment": "for back compatibility",
+      "prefix": "MISSION"
+    },
+    "MISSION_FRENCHROUTEA": {
+      "name": "MISSION_FRENCHROUTEA",
+      "value": "7",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_FRENCHROUTEB": {
+      "name": "MISSION_FRENCHROUTEB",
+      "value": "8",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_TUNNELS": {
+      "name": "MISSION_TUNNELS",
+      "value": "9",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_ARROYO": {
+      "name": "MISSION_ARROYO",
+      "value": "10",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_TUNNELS2": {
+      "name": "MISSION_TUNNELS2",
+      "value": "11",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BIGRIVER": {
+      "name": "MISSION_BIGRIVER",
+      "value": "12",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NIGHT": {
+      "name": "MISSION_NIGHT",
+      "value": "13",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NIGHT_B": {
+      "name": "MISSION_NIGHT_B",
+      "value": "14",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_AMBUSH": {
+      "name": "MISSION_AMBUSH",
+      "value": "15",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BIGVALLEY": {
+      "name": "MISSION_BIGVALLEY",
+      "value": "16",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_OUTPOST": {
+      "name": "MISSION_OUTPOST",
+      "value": "17",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_RADIORELAY": {
+      "name": "MISSION_RADIORELAY",
+      "value": "18",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_CRASHFLIGHT": {
+      "name": "MISSION_CRASHFLIGHT",
+      "value": "19",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_CRASH": {
+      "name": "MISSION_CRASH",
+      "value": "20",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_CONQUEST": {
+      "name": "MISSION_CONQUEST",
+      "value": "21",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NVABASE": {
+      "name": "MISSION_NVABASE",
+      "value": "22",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_UNDERGROUND": {
+      "name": "MISSION_UNDERGROUND",
+      "value": "23",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_ESCAPE": {
+      "name": "MISSION_ESCAPE",
+      "value": "24",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_PILOT": {
+      "name": "MISSION_PILOT",
+      "value": "25",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_STREAM": {
+      "name": "MISSION_STREAM",
+      "value": "26",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BAHNARRAZEDA": {
+      "name": "MISSION_BAHNARRAZEDA",
+      "value": "27",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BAHNARRAZEDB": {
+      "name": "MISSION_BAHNARRAZEDB",
+      "value": "28",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BIGVALLEYCHOPPER": {
+      "name": "MISSION_BIGVALLEYCHOPPER",
+      "value": "29",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BASECAMPDEFEAT": {
+      "name": "MISSION_BASECAMPDEFEAT",
+      "value": "30",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BASECAMPDEFEAT2": {
+      "name": "MISSION_BASECAMPDEFEAT2",
+      "value": "31",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BASECAMPDEFEAT3": {
+      "name": "MISSION_BASECAMPDEFEAT3",
+      "value": "32",
+      "comment": "DEFINES FOR ADDON MISSIONS",
+      "prefix": "MISSION"
+    },
+    "MISSION_BOMBERPILOT": {
+      "name": "MISSION_BOMBERPILOT",
+      "value": "50",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_PLEIKU": {
+      "name": "MISSION_PLEIKU",
+      "value": "51",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_JARAI": {
+      "name": "MISSION_JARAI",
+      "value": "52",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_HANGINGBRIDGE": {
+      "name": "MISSION_HANGINGBRIDGE",
+      "value": "53",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NUIPEK": {
+      "name": "MISSION_NUIPEK",
+      "value": "54",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_MINEFACTORY": {
+      "name": "MISSION_MINEFACTORY",
+      "value": "55",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NUIPEK2": {
+      "name": "MISSION_NUIPEK2",
+      "value": "56",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_BASEATTACK": {
+      "name": "MISSION_BASEATTACK",
+      "value": "57",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NUIPEK3": {
+      "name": "MISSION_NUIPEK3",
+      "value": "58",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_DEATHVALLEYA": {
+      "name": "MISSION_DEATHVALLEYA",
+      "value": "59",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_DEATHVALLEYB": {
+      "name": "MISSION_DEATHVALLEYB",
+      "value": "60",
+      "comment": null,
+      "prefix": "MISSION"
+    },
+    "MISSION_NVACAMP": {
+      "name": "MISSION_NVACAMP",
+      "value": "61",
+      "comment": "identifiers for bes-preloading",
+      "prefix": "MISSION"
+    },
+    "BESID_KNIFE": {
+      "name": "BESID_KNIFE",
+      "value": "1",
+      "comment": "SC_PreloadBES(BESID_KNIFE, \"g\\\\weapons\\\\Vvh_Knife\\\\VvH_Knife_fpv.bes\");",
+      "prefix": "BESID"
+    },
+    "BESID_CLACKER": {
+      "name": "BESID_CLACKER",
+      "value": "2",
+      "comment": "SC_PreloadBES(BESID_CLACKER, \"g\\\\weapons\\\\VvH_Switch\\\\VvH_switch_fpv.bes\");",
+      "prefix": "BESID"
+    },
+    "BESID_SMOKE3PV": {
+      "name": "BESID_SMOKE3PV",
+      "value": "3",
+      "comment": "SC_PreloadBES(BESID_SMOKE3PV, \"G\\Weapons\\VvH_Grenade_Smoke\\VvH_Grenade_Smoke_stg.bes\");",
+      "prefix": "BESID"
+    },
+    "BESID_SMOKEFPV": {
+      "name": "BESID_SMOKEFPV",
+      "value": "4",
+      "comment": "SC_PreloadBES(BESID_SMOKEFPV, \"G\\Weapons\\VvH_Grenade_Smoke\\VvH_Grenade_Smoke_fpv.bes\");",
+      "prefix": "BESID"
+    },
+    "BESID_C4FPV": {
+      "name": "BESID_C4FPV",
+      "value": "5",
+      "comment": "SC_PreloadBES(BESID_C4FPV, \"g\\\\weapons\\\\Vvh_C4\\\\VvH_C4_fpv.bes\");",
+      "prefix": "BESID"
+    },
+    "BESID_C4STG": {
+      "name": "BESID_C4STG",
+      "value": "6",
+      "comment": "SC_PreloadBES(BESID_C4STG, \"g\\\\weapons\\\\Vvh_C4\\\\Vvh_C4_stg.BES\");",
+      "prefix": "BESID"
+    },
+    "BESID_HANDAXE": {
+      "name": "BESID_HANDAXE",
+      "value": "7",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_PICKAXE": {
+      "name": "BESID_PICKAXE",
+      "value": "8",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_PIPE": {
+      "name": "BESID_PIPE",
+      "value": "9",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_BEERS": {
+      "name": "BESID_BEERS",
+      "value": "10",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_RADIOEAR": {
+      "name": "BESID_RADIOEAR",
+      "value": "11",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_BINOCULAR": {
+      "name": "BESID_BINOCULAR",
+      "value": "12",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_STIRRER": {
+      "name": "BESID_STIRRER",
+      "value": "13",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_WINE": {
+      "name": "BESID_WINE",
+      "value": "14",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_SHOVEL": {
+      "name": "BESID_SHOVEL",
+      "value": "15",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_HAMMER": {
+      "name": "BESID_HAMMER",
+      "value": "16",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_MACHETTE": {
+      "name": "BESID_MACHETTE",
+      "value": "17",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_NAILS": {
+      "name": "BESID_NAILS",
+      "value": "18",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_CANTEEN": {
+      "name": "BESID_CANTEEN",
+      "value": "19",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_WOOD": {
+      "name": "BESID_WOOD",
+      "value": "20",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_NOTEBOOK": {
+      "name": "BESID_NOTEBOOK",
+      "value": "21",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_GUITAR": {
+      "name": "BESID_GUITAR",
+      "value": "22",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_PENCIL": {
+      "name": "BESID_PENCIL",
+      "value": "23",
+      "comment": null,
+      "prefix": "BESID"
+    },
+    "BESID_HARMONY": {
+      "name": "BESID_HARMONY",
+      "value": "24",
+      "comment": "bes preloading macros",
+      "prefix": "BESID"
+    },
+    "BESPRELOAD_KNIFE": {
+      "name": "BESPRELOAD_KNIFE",
+      "value": "SC_PreloadBES(BESID_KNIFE, \"g\\\\weapons\\\\Vvh_Knife\\\\VvH_Knife_fpv.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_CLACKER": {
+      "name": "BESPRELOAD_CLACKER",
+      "value": "SC_PreloadBES(BESID_CLACKER, \"g\\\\weapons\\\\VvH_Switch\\\\VvH_switch_fpv.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_SMOKE3PV": {
+      "name": "BESPRELOAD_SMOKE3PV",
+      "value": "SC_PreloadBES(BESID_SMOKE3PV, \"G\\Weapons\\VvH_Grenade_Smoke\\VvH_Grenade_Smoke_stg.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_SMOKEFPV": {
+      "name": "BESPRELOAD_SMOKEFPV",
+      "value": "SC_PreloadBES(BESID_SMOKEFPV, \"G\\Weapons\\VvH_Grenade_Smoke\\VvH_Grenade_Smoke_fpv.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_C4FPV": {
+      "name": "BESPRELOAD_C4FPV",
+      "value": "SC_PreloadBES(BESID_C4FPV, \"g\\\\weapons\\\\Vvh_C4\\\\VvH_C4_fpv.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_C4STG": {
+      "name": "BESPRELOAD_C4STG",
+      "value": "SC_PreloadBES(BESID_C4STG, \"g\\\\weapons\\\\Vvh_C4\\\\Vvh_C4_stg.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_HANDAXE": {
+      "name": "BESPRELOAD_HANDAXE",
+      "value": "SC_PreloadBES(BESID_HANDAXE, \"g\\\\items\\\\v - pracovni nastroje\\\\ivg_sekera.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_PICKAXE": {
+      "name": "BESPRELOAD_PICKAXE",
+      "value": "SC_PreloadBES(BESID_PICKAXE, \"g\\\\items\\\\v - pracovni nastroje\\\\ivq_kopac.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_PIPE": {
+      "name": "BESPRELOAD_PIPE",
+      "value": "SC_PreloadBES(BESID_PIPE, \"g\\\\equipment\\\\us\\\\IUC_dymka.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_BEERS": {
+      "name": "BESPRELOAD_BEERS",
+      "value": "SC_PreloadBES(BESID_BEERS, \"g\\\\equipment\\\\us\\\\caseofbeer\\\\IUJ_basapiv.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_RADIOEAR": {
+      "name": "BESPRELOAD_RADIOEAR",
+      "value": "SC_PreloadBES(BESID_RADIOEAR, \"g\\\\equipment\\\\us\\\\bes\\\\EOP_e_radioear01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_BINOCULAR": {
+      "name": "BESPRELOAD_BINOCULAR",
+      "value": "SC_PreloadBES(BESID_BINOCULAR, \"g\\\\weapons\\\\VvH_Binoculars\\\\VvH_Binoculars_3pv.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_STIRRER": {
+      "name": "BESPRELOAD_STIRRER",
+      "value": "SC_PreloadBES(BESID_STIRRER, \"g\\\\items\\\\v - pracovni nastroje\\\\IVT_Varecka.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_WINE": {
+      "name": "BESPRELOAD_WINE",
+      "value": "SC_PreloadBES(BESID_WINE, \"g\\\\items\\\\v - nadoby\\\\ivk_dzban.bes\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_SHOVEL": {
+      "name": "BESPRELOAD_SHOVEL",
+      "value": "SC_PreloadBES(BESID_SHOVEL, \"g\\\\items\\\\us\\\\IUZ_Shovel_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_HAMMER": {
+      "name": "BESPRELOAD_HAMMER",
+      "value": "SC_PreloadBES(BESID_HAMMER, \"g\\\\items\\\\us\\\\IUZ_hammer_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_MACHETTE": {
+      "name": "BESPRELOAD_MACHETTE",
+      "value": "SC_PreloadBES(BESID_MACHETTE, \"g\\\\items\\\\us\\\\IUZ_Machette_low_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_NAILS": {
+      "name": "BESPRELOAD_NAILS",
+      "value": "SC_PreloadBES(BESID_NAILS, \"g\\\\items\\\\us\\\\IUK_Nail01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_CANTEEN": {
+      "name": "BESPRELOAD_CANTEEN",
+      "value": "SC_PreloadBES(BESID_CANTEEN, \"g\\\\items\\\\us\\\\IUZ_Canteen_low_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_WOOD": {
+      "name": "BESPRELOAD_WOOD",
+      "value": "SC_PreloadBES(BESID_WOOD, \"g\\\\items\\\\us\\\\IUZ_traverse_snuff.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_NOTEBOOK": {
+      "name": "BESPRELOAD_NOTEBOOK",
+      "value": "SC_PreloadBES(BESID_NOTEBOOK, \"g\\\\items\\\\us\\\\IUZ_note_book_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_GUITAR": {
+      "name": "BESPRELOAD_GUITAR",
+      "value": "SC_PreloadBES(BESID_GUITAR, \"g\\\\items\\\\us\\\\IUZ_quitar_01_01.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_PENCIL": {
+      "name": "BESPRELOAD_PENCIL",
+      "value": "SC_PreloadBES(BESID_PENCIL, \"g\\\\items\\\\U - DROBNOSTI\\\\IUC_tuzka1.BES\")",
+      "comment": null,
+      "prefix": "BESPRELOAD"
+    },
+    "BESPRELOAD_HARMONY": {
+      "name": "BESPRELOAD_HARMONY",
+      "value": "SC_PreloadBES(BESID_HARMONY, \"g\\\\items\\\\US\\\\IOP_harmonica.BES\")",
+      "comment": "FPV ANIMATIONS MACROS",
+      "prefix": "BESPRELOAD"
+    },
+    "FPVANIM_USEC4": {
+      "name": "FPVANIM_USEC4",
+      "value": "SC_PC_PlayFpvAnim2(\"g\\\\weapons\\\\Vvh_C4\\\\Movement\\\\c-4.stg\",BESID_C4FPV,\"g\\\\weapons\\\\Vvh_C4\\\\Eqp\\\\VvH_C4_fpv.eqp\",NULL);SC_SND_PlaySound2D(10963)",
+      "comment": null,
+      "prefix": "FPVANIM"
+    },
+    "FPVANIM_KNIFESWING": {
+      "name": "FPVANIM_KNIFESWING",
+      "value": "SC_PC_PlayFpvAnim2(\"g\\\\weapons\\\\VvH_Knife\\\\Movement\\\\sek.stg\",BESID_KNIFE,\"g\\\\weapons\\\\VvH_Knife\\\\Eqp\\\\VvH_Knife_fpv.eqp\",NULL)",
+      "comment": "#define FPVANIM_TRAPDISARM\tSC_PC_PlayFpvAnim2(\"g\\\\traps\\\\deploy.stg\",0,NULL,NULL)",
+      "prefix": "FPVANIM"
+    },
+    "FPVANIM_TRAPDISARM": {
+      "name": "FPVANIM_TRAPDISARM",
+      "value": "SC_Log(3,\"Trying to play disarm trap anim\");",
+      "comment": null,
+      "prefix": "FPVANIM"
+    },
+    "OBJECTIVES_TIME": {
+      "name": "OBJECTIVES_TIME",
+      "value": "6.0f",
+      "comment": null,
+      "prefix": "OBJECTIVES"
+    },
+    "HELP_TIME": {
+      "name": "HELP_TIME",
+      "value": "6.0f",
+      "comment": null,
+      "prefix": "HELP"
+    },
+    "CAMPAIGN_GUN": {
+      "name": "CAMPAIGN_GUN",
+      "value": "9999",
+      "comment": "player script generates weapon according to the mission",
+      "prefix": "CAMPAIGN"
+    }
+  }
+}

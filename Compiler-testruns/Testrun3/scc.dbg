@@ -1,6 +1,6 @@
- 0 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"'
 
 
 
@@ -8,9 +8,9 @@ parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
 
 
 
- 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_global.h"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_global.h"'
 
  
 
@@ -1671,13 +1671,13 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
- 7 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+ 7 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
 lineno==7
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"'
 
- 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"
+ 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_def.h"
 lineno==0
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_def.h"'
 
  
 
@@ -2298,9 +2298,9 @@ parsed_file=='"C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"'
 
 
 
- 8 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+ 8 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
 lineno==8
-parsed_file=='"C:\Program Files\Vietcong\dev\compiler\hitable.c"'
+parsed_file=='"C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"'
 
 
 

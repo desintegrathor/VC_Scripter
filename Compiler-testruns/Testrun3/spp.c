@@ -1,11 +1,11 @@
-#line 0 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
 
 
 
 
 
 
-#line 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_global.h"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_global.h"
  
 
 
@@ -1665,8 +1665,8 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
-#line 7 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
-#line 0 "C:\Program Files\Vietcong\dev\compiler\inc\sc_def.h"
+#line 7 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
+#line 0 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\inc\sc_def.h"
  
 
 
@@ -2286,7 +2286,7 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 
 
 
-#line 8 "C:\Program Files\Vietcong\dev\compiler\hitable.c"
+#line 8 "C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3\hitable.c"
 
 
 

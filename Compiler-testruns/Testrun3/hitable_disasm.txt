@@ -1,0 +1,81 @@
+; ==========================================
+; Disassembly of: Compiler-testruns/Testrun3/hitable.scr
+; Instructions: 53
+; External functions: 1
+; ==========================================
+
+; External Functions (XFN)
+; ------------------------
+;   [  0] SC_LevScr_Event(unsignedlong,unsignedlong)void
+
+; Code
+; ----
+
+_init:
+  000: RET      0                    
+ScriptMain:
+  001: LADR     [sp-4]               
+  002: DADR     0                    
+  003: DCP      4                    
+  004: JMP      label_0006           
+  005: JMP      label_0010           
+label_0006:
+  006: LCP      [sp+0]               
+  007: GCP      data[0]               ; = 3
+  008: EQU                           
+  009: JZ       label_0014           
+label_0010:
+  010: GCP      data[1]               ; = 1
+  011: LLD      [sp-3]               
+  012: RET      1                    
+  013: JMP      label_0018           
+label_0014:
+  014: LCP      [sp+0]               
+  015: GCP      data[2]               ; = 7
+  016: EQU                           
+  017: JZ       label_0020           
+label_0018:
+  018: JMP      label_0049           
+  019: JMP      label_0024           
+label_0020:
+  020: LCP      [sp+0]               
+  021: GCP      data[3]               ; = 5
+  022: EQU                           
+  023: JZ       label_0026           
+label_0024:
+  024: JMP      label_0049           
+  025: JMP      label_0030           
+label_0026:
+  026: LCP      [sp+0]               
+  027: GCP      data[4]               ; = 1
+  028: EQU                           
+  029: JZ       label_0038           
+label_0030:
+  030: GCP      data[5]               ; = 52
+  031: LADR     [sp-4]               
+  032: DADR     4                    
+  033: DCP      4                    
+  034: XCALL    $SC_LevScr_Event(unsignedlong,unsignedlong)void ; args=2
+  035: SSP      2                    
+  036: JMP      label_0049           
+  037: JMP      label_0042           
+label_0038:
+  038: LCP      [sp+0]               
+  039: GCP      data[6]               ; = 4
+  040: EQU                           
+  041: JZ       label_0044           
+label_0042:
+  042: JMP      label_0049           
+  043: JMP      label_0048           
+label_0044:
+  044: LCP      [sp+0]               
+  045: GCP      data[7]               ; = 6
+  046: EQU                           
+  047: JZ       label_0049           
+label_0048:
+  048: JMP      label_0049           
+label_0049:
+  049: SSP      1                    
+  050: GCP      data[8]               ; = 0.0f
+  051: LLD      [sp-3]               
+  052: RET      0                    

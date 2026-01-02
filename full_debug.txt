@@ -1,0 +1,90 @@
+// Structured decompilation of Compiler-testruns/Testrun1/tdm.scr
+// Functions: 4
+
+#include <inc\sc_global.h>
+#include <inc\sc_def.h>
+#include <inc\mplevel.inc>
+
+int _init(s_SC_NET_info *info) {
+    int local_0;
+
+    DLD();
+    DLD();
+    return FALSE;
+}
+
+DEBUG _detect_early_return_pattern(3): true_addr=27, false_addr=21, true_block=5, false_block=4, switch_exit=4
+  DEBUG is_exit_jump(5): 11 instructions (need 1)
+  DEBUG is_exit_jump(4): 6 instructions (need 1)
+DEBUG: Block 3 ends with JZ, not early return
+DEBUG _detect_early_return_pattern(5): true_addr=42, false_addr=38, true_block=7, false_block=6, switch_exit=4
+  DEBUG is_exit_jump(7): 2 instructions (need 1)
+  DEBUG is_exit_jump(6): 4 instructions (need 1)
+DEBUG: Block 5 ends with JZ, not early return
+DEBUG: Block 6 ends with RET, not early return
+DEBUG: Block 7 ends with JMP, not early return
+DEBUG _detect_early_return_pattern(9): true_addr=63, false_addr=55, true_block=12, false_block=10, switch_exit=4
+  DEBUG is_exit_jump(12): 7 instructions (need 1)
+  DEBUG is_exit_jump(10): 7 instructions (need 1)
+DEBUG: Block 9 ends with JZ, not early return
+DEBUG _detect_early_return_pattern(10): true_addr=63, false_addr=62, true_block=12, false_block=11, switch_exit=4
+  DEBUG is_exit_jump(12): 7 instructions (need 1)
+  DEBUG is_exit_jump(11): jump_target=15, switch_exit=4, result=False
+DEBUG: Block 10 ends with JZ, not early return
+DEBUG: Block 11 ends with JMP, not early return
+DEBUG _detect_early_return_pattern(12): true_addr=82, false_addr=70, true_block=16, false_block=13, switch_exit=4
+  DEBUG is_exit_jump(16): 2 instructions (need 1)
+  DEBUG is_exit_jump(13): 7 instructions (need 1)
+DEBUG: Block 12 ends with JZ, not early return
+DEBUG _detect_early_return_pattern(13): true_addr=82, false_addr=77, true_block=16, false_block=14, switch_exit=4
+  DEBUG is_exit_jump(16): 2 instructions (need 1)
+  DEBUG is_exit_jump(14): jump_target=15, switch_exit=4, result=False
+DEBUG: Block 13 ends with JZ, not early return
+DEBUG: Block 14 ends with JMP, not early return
+DEBUG: Block 15 ends with RET, not early return
+DEBUG: Block 16 ends with JMP, not early return
+DEBUG: Block 17 ends with JMP, not early return
+DEBUG: Block 19 ends with RET, not early return
+int func_0010(float time) {
+    int local_0;
+
+    switch (local_0) {
+    case 0:
+        if (((gPlayersConnected > 0))) {
+            gTime = (gTime + time);
+        }
+        SC_MP_EndRule_SetTimeLeft(gTime, (gPlayersConnected > 0));
+        if (((gTime > ITOF(gEndValue)))) {
+            SC_MP_LoadNextMap();
+            return TRUE;
+        }
+        break;
+    case 1:
+        if (((gSideFrags[0] > 0))) {
+            if (((gSideFrags[0] >= gEndValue))) {
+            } else {
+                if (((gSideFrags[1] > 1))) {
+                    if (((gSideFrags[1] >= gEndValue))) {
+                        SC_MP_LoadNextMap();
+                        return TRUE;
+                    }
+                    SC_MP_LoadNextMap();
+                    return TRUE;
+                }
+                SC_message("EndRule unsopported: %d", gEndRule);
+                return FALSE;
+            }
+            SC_MP_LoadNextMap();
+            return TRUE;
+        }
+        break;
+    default:
+    }
+}
+
+int func_0096(void) {
+    SC_sgi(GVAR_SIDE0FRAGS, gSideFrags[0]);
+    SC_sgi(GVAR_SIDE1FRAGS, gSideFrags[1]);
+    return FALSE;
+}
+

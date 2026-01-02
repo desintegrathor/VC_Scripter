@@ -1,0 +1,3095 @@
+; ==========================================
+; Disassembly of: decompilation/USBOT0/USBOT0.SCR
+; Instructions: 2776
+; External functions: 41
+; ==========================================
+
+; External Functions (XFN)
+; ------------------------
+;   [  0] SC_ZeroMem(*void,unsignedlong)void
+;   [  1] SC_P_Create(*s_SC_P_Create)unsignedlong
+;   [  2] SC_P_GetPos(unsignedlong,*c_Vector3)void
+;   [  3] SC_P_EnableSearchDeathBodies(unsignedlong,int)void
+;   [  4] SC_P_GetRot(unsignedlong)float
+;   [  5] SC_P_Ai_SetMode(unsignedlong,unsignedlong)void
+;   [  6] SC_P_Ai_EnableShooting(unsignedlong,int)void
+;   [  7] SC_P_Ai_GetProps(unsignedlong,*s_SC_P_AI_props)void
+;   [  8] SC_ggi(unsignedlong)int
+;   [  9] SC_P_Ai_SetProps(unsignedlong,*s_SC_P_AI_props)void
+;   [ 10] SC_P_SetSpeachDist(unsignedlong,float)void
+;   [ 11] SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void
+;   [ 12] SC_NOD_Get(*void,*char)*void
+;   [ 13] SC_NOD_GetWorldPos(*void,*c_Vector3)void
+;   [ 14] SC_P_GetDir(unsignedlong,*c_Vector3)void
+;   [ 15] SC_VectorLen(*c_Vector3)float
+;   [ 16] SC_P_Ai_GetEnemies(unsignedlong)unsignedlong
+;   [ 17] SC_P_Ai_GetDanger(unsignedlong)float
+;   [ 18] SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void
+;   [ 19] SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void
+;   [ 20] SC_P_IsReady(unsignedlong)int
+;   [ 21] SC_P_GetActive(unsignedlong)int
+;   [ 22] SC_P_GetDistance(unsignedlong,unsignedlong)float
+;   [ 23] SC_P_GetBySideGroupMember(unsignedlong,unsignedlong,unsignedlong)unsignedlong
+;   [ 24] SC_IsNear2D(*c_Vector3,*c_Vector3,float)int
+;   [ 25] SC_GetRndWp(*s_sphere,*c_Vector3)int
+;   [ 26] SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void
+;   [ 27] SC_P_Ai_Go(unsignedlong,*c_Vector3)void
+;   [ 28] rand(void)int
+;   [ 29] SC_P_Ai_HideYourself(unsignedlong,*c_Vector3,float)void
+;   [ 30] SC_P_SetActive(unsignedlong,int)void
+;   [ 31] SC_IsNear3D(*c_Vector3,*c_Vector3,float)int
+;   [ 32] SC_MP_GetPlofHandle(unsignedlong)unsignedlong
+;   [ 33] SC_Item_Find(unsignedlong)unsignedlong
+;   [ 34] SC_Item_GetPos(unsignedlong,*c_Vector3)int
+;   [ 35] SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void
+;   [ 36] SC_P_Ai_SetMovePos(unsignedlong,unsignedlong)void
+;   [ 37] SC_P_Ai_GetSureEnemies(unsignedlong)unsignedlong
+;   [ 38] SC_MP_ScriptMessage(unsignedlong,unsignedlong)void
+;   [ 39] SC_message(*char,...)void
+;   [ 40] SC_MP_RecoverAiPlayer(unsignedlong,*c_Vector3,float)int
+
+; Strings
+; -------
+;   [ 104] "Ini\Players\net_vc_nvaofficer.ini"
+;   [ 164] "Ini\Players\net_us_sf1.ini"
+;   [ 240] "nhut"
+;   [ 416] "flag_vc"
+;   [ 428] "flag_us"
+;   [ 440] "flag_vc"
+;   [ 452] "flag_us"
+;   [1364] "SOMETHING IS WRONG! Received respawntime, but n..."
+
+; Code
+; ----
+
+_init:
+  000: RET      0                    
+func_0001:
+  001: GADR     data[26]  ; "Ini\Players\net_vc_nvaofficer.ini"
+  002: LADR     [sp-3]               
+  003: DADR     data[24]             
+  004: ASGN                          
+  005: SSP      1                    
+  006: GCP      data[35]              ; = 2506
+  007: LADR     [sp-3]               
+  008: DADR     data[16]             
+  009: ASGN                          
+  010: SSP      1                    
+  011: GCP      data[36]              ; = 9
+  012: LADR     [sp-3]               
+  013: DADR     data[44]             
+  014: ASGN                          
+  015: SSP      1                    
+  016: GCP      data[37]              ; = 2
+  017: LADR     [sp-3]               
+  018: DADR     data[48]             
+  019: ASGN                          
+  020: SSP      1                    
+  021: GCP      data[38]              ; = 50
+  022: LADR     [sp-3]               
+  023: DADR     data[56]             
+  024: ASGN                          
+  025: SSP      1                    
+  026: GCP      data[39]              ; = 1
+  027: GADR     data[4]              
+  028: ASGN                          
+  029: SSP      1                    
+  030: GCP      data[40]              ; = 0.0f
+  031: GADR     data[3]              
+  032: ASGN                          
+  033: SSP      1                    
+  034: RET      0                    
+func_0035:
+  035: GADR     data[41]  ; "Ini\Players\net_us_sf1.ini"
+  036: LADR     [sp-3]               
+  037: DADR     data[24]             
+  038: ASGN                          
+  039: SSP      1                    
+  040: GCP      data[48]              ; = 2499
+  041: LADR     [sp-3]               
+  042: DADR     data[16]             
+  043: ASGN                          
+  044: SSP      1                    
+  045: GCP      data[49]              ; = 7
+  046: LADR     [sp-3]               
+  047: DADR     data[44]             
+  048: ASGN                          
+  049: SSP      1                    
+  050: GCP      data[50]              ; = 1
+  051: LADR     [sp-3]               
+  052: DADR     data[48]             
+  053: ASGN                          
+  054: SSP      1                    
+  055: GCP      data[51]              ; = 59
+  056: LADR     [sp-3]               
+  057: DADR     data[56]             
+  058: ASGN                          
+  059: SSP      1                    
+  060: GCP      data[52]              ; = 0.0f
+  061: GADR     data[4]              
+  062: ASGN                          
+  063: SSP      1                    
+  064: GCP      data[53]              ; = 1
+  065: GADR     data[3]              
+  066: ASGN                          
+  067: SSP      1                    
+  068: RET      0                    
+func_0069:
+  069: ASP      39                   
+  070: ASP      20                   
+  071: ASP      1                    
+  072: LADR     [sp+0]               
+  073: GCP      data[54]              ; = 156
+  074: XCALL    $SC_ZeroMem(*void,unsignedlong)void ; args=2
+  075: SSP      2                    
+  076: GCP      data[55]              ; = 2
+  077: LADR     [sp+0]               
+  078: ASGN                          
+  079: SSP      1                    
+  080: GCP      data[56]              ; = 0.0f
+  081: LADR     [sp+0]               
+  082: PNT      4                    
+  083: ASGN                          
+  084: SSP      1                    
+  085: GCP      data[57]              ; = 0.0f
+  086: LADR     [sp+0]               
+  087: PNT      8                    
+  088: ASGN                          
+  089: SSP      1                    
+  090: GCP      data[58]              ; = 0.0f
+  091: LADR     [sp+0]               
+  092: PNT      12                   
+  093: ASGN                          
+  094: SSP      1                    
+  095: LADR     [sp+39]              
+  096: GCP      data[59]              ; = 80
+  097: XCALL    $SC_ZeroMem(*void,unsignedlong)void ; args=2
+  098: SSP      2                    
+  099: LADR     [sp+39]              
+  100: LADR     [sp+0]               
+  101: PNT      88                   
+  102: ASGN                          
+  103: SSP      1                    
+  104: LADR     [sp+0]               
+  105: PNT      4                    
+  106: DCP      4                    
+  107: JZ       label_0112           
+  108: LADR     [sp+0]               
+  109: CALL     func_0001            
+  110: SSP      1                    
+  111: JMP      label_0115           
+label_0112:
+  112: LADR     [sp+0]               
+  113: CALL     func_0035            
+  114: SSP      1                    
+label_0115:
+  115: GADR     data[60]  ; "nhut"   
+  116: LADR     [sp+0]               
+  117: PNT      32                   
+  118: ASGN                          
+  119: SSP      1                    
+  120: GCP      data[62]              ; = 0.0f
+  121: LADR     [sp+0]               
+  122: PNT      40                   
+  123: ASGN                          
+  124: SSP      1                    
+  125: LADR     [sp-3]               
+  126: DADR     data[16]             
+  127: DCP      4                    
+  128: LADR     [sp+0]               
+  129: PNT      28                   
+  130: ASGN                          
+  131: SSP      1                    
+  132: ASP      1                    
+  133: LADR     [sp+0]               
+  134: ASP      1                    
+  135: XCALL    $SC_P_Create(*s_SC_P_Create)unsignedlong ; args=1
+  136: LLD      [sp+60]              
+  137: SSP      1                    
+  138: LADR     [sp-3]               
+  139: DADR     data[12]             
+  140: ASGN                          
+  141: SSP      1                    
+  142: GCP      data[63]              ; = 1
+  143: GADR     data[1]              
+  144: ASGN                          
+  145: SSP      1                    
+  146: RET      60                   
+func_0147:
+  147: ASP      5                    
+  148: ASP      32                   
+  149: ASP      1                    
+  150: LADR     [sp-3]               
+  151: DADR     data[12]             
+  152: DCP      4                    
+  153: GADR     data[8]              
+  154: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  155: SSP      2                    
+  156: LADR     [sp-3]               
+  157: DADR     data[12]             
+  158: DCP      4                    
+  159: GCP      data[64]              ; = 0.0f
+  160: XCALL    $SC_P_EnableSearchDeathBodies(unsignedlong,int)void ; args=2
+  161: SSP      2                    
+  162: ASP      1                    
+  163: LADR     [sp-3]               
+  164: DADR     data[12]             
+  165: DCP      4                    
+  166: ASP      1                    
+  167: XCALL    $SC_P_GetRot(unsignedlong)float ; args=1
+  168: LLD      [sp+38]              
+  169: SSP      1                    
+  170: GADR     data[25]             
+  171: ASGN                          
+  172: SSP      1                    
+  173: LADR     [sp-3]               
+  174: DADR     data[12]             
+  175: DCP      4                    
+  176: GCP      data[65]              ; = 1
+  177: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  178: SSP      2                    
+  179: LADR     [sp-3]               
+  180: DADR     data[12]             
+  181: DCP      4                    
+  182: GCP      data[66]              ; = 1
+  183: XCALL    $SC_P_Ai_EnableShooting(unsignedlong,int)void ; args=2
+  184: SSP      2                    
+  185: LADR     [sp+5]               
+  186: GCP      data[67]              ; = 128
+  187: XCALL    $SC_ZeroMem(*void,unsignedlong)void ; args=2
+  188: SSP      2                    
+  189: LADR     [sp-3]               
+  190: DADR     data[12]             
+  191: DCP      4                    
+  192: LADR     [sp+5]               
+  193: XCALL    $SC_P_Ai_GetProps(unsignedlong,*s_SC_P_AI_props)void ; args=2
+  194: SSP      2                    
+  195: ASP      1                    
+  196: GCP      data[68]              ; = 10
+  197: ASP      1                    
+  198: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  199: LLD      [sp+38]              
+  200: SSP      1                    
+  201: JMP      label_0203           
+  202: JMP      label_0207           
+label_0203:
+  203: LCP      [sp+38]              
+  204: GCP      data[69]              ; = 0.0f
+  205: EQU                           
+  206: JZ       label_0229           
+label_0207:
+  207: GCP      data[70]              ; = 1.0f
+  208: LADR     [sp+5]               
+  209: PNT      20                   
+  210: ASGN                          
+  211: SSP      1                    
+  212: GCP      data[71]              ; = 1.2f
+  213: LADR     [sp+5]               
+  214: PNT      92                   
+  215: ASGN                          
+  216: SSP      1                    
+  217: GCP      data[72]              ; = 2.0f
+  218: LADR     [sp+5]               
+  219: PNT      104                  
+  220: ASGN                          
+  221: SSP      1                    
+  222: GCP      data[73]              ; = 0.8f
+  223: LADR     [sp+5]               
+  224: PNT      108                  
+  225: ASGN                          
+  226: SSP      1                    
+  227: JMP      label_0306           
+  228: JMP      label_0233           
+label_0229:
+  229: LCP      [sp+38]              
+  230: GCP      data[74]              ; = 1
+  231: EQU                           
+  232: JZ       label_0255           
+label_0233:
+  233: GCP      data[75]              ; = 0.7f
+  234: LADR     [sp+5]               
+  235: PNT      20                   
+  236: ASGN                          
+  237: SSP      1                    
+  238: GCP      data[76]              ; = 0.4f
+  239: LADR     [sp+5]               
+  240: PNT      92                   
+  241: ASGN                          
+  242: SSP      1                    
+  243: GCP      data[77]              ; = 1.4f
+  244: LADR     [sp+5]               
+  245: PNT      104                  
+  246: ASGN                          
+  247: SSP      1                    
+  248: GCP      data[78]              ; = 0.5f
+  249: LADR     [sp+5]               
+  250: PNT      108                  
+  251: ASGN                          
+  252: SSP      1                    
+  253: JMP      label_0306           
+  254: JMP      label_0259           
+label_0255:
+  255: LCP      [sp+38]              
+  256: GCP      data[79]              ; = 2
+  257: EQU                           
+  258: JZ       label_0286           
+label_0259:
+  259: GCP      data[80]              ; = 0.3f
+  260: LADR     [sp+5]               
+  261: PNT      20                   
+  262: ASGN                          
+  263: SSP      1                    
+  264: GCP      data[81]              ; = 0.3f
+  265: LADR     [sp+5]               
+  266: PNT      100                  
+  267: ASGN                          
+  268: SSP      1                    
+  269: GCP      data[82]              ; = 0.2f
+  270: LADR     [sp+5]               
+  271: PNT      92                   
+  272: ASGN                          
+  273: SSP      1                    
+  274: GCP      data[83]              ; = 1.0f
+  275: LADR     [sp+5]               
+  276: PNT      104                  
+  277: ASGN                          
+  278: SSP      1                    
+  279: GCP      data[84]              ; = 0.3f
+  280: LADR     [sp+5]               
+  281: PNT      108                  
+  282: ASGN                          
+  283: SSP      1                    
+  284: JMP      label_0306           
+  285: JMP      label_0290           
+label_0286:
+  286: LCP      [sp+38]              
+  287: GCP      data[85]              ; = 3
+  288: EQU                           
+  289: JZ       label_0306           
+label_0290:
+  290: GCP      data[86]              ; = 0.1f
+  291: LADR     [sp+5]               
+  292: PNT      20                   
+  293: ASGN                          
+  294: SSP      1                    
+  295: GCP      data[87]              ; = 0.3f
+  296: LADR     [sp+5]               
+  297: PNT      100                  
+  298: ASGN                          
+  299: SSP      1                    
+  300: GCP      data[88]              ; = 0.1f
+  301: LADR     [sp+5]               
+  302: PNT      92                   
+  303: ASGN                          
+  304: SSP      1                    
+  305: JMP      label_0306           
+label_0306:
+  306: SSP      1                    
+  307: LADR     [sp+5]               
+  308: PNT      100                  
+  309: DCP      4                    
+  310: GCP      data[89]              ; = 1.0f
+  311: FMUL                          
+  312: LADR     [sp+5]               
+  313: PNT      100                  
+  314: ASGN                          
+  315: SSP      1                    
+  316: LADR     [sp+5]               
+  317: PNT      20                   
+  318: DCP      4                    
+  319: GCP      data[90]              ; = 1.0f
+  320: FMUL                          
+  321: LADR     [sp+5]               
+  322: PNT      20                   
+  323: ASGN                          
+  324: SSP      1                    
+  325: GCP      data[91]              ; = 0.0f
+  326: LADR     [sp+5]               
+  327: PNT      24                   
+  328: ASGN                          
+  329: SSP      1                    
+  330: GCP      data[92]              ; = 0.0f
+  331: LADR     [sp+5]               
+  332: PNT      28                   
+  333: ASGN                          
+  334: SSP      1                    
+  335: GCP      data[93]              ; = 120.0f
+  336: LADR     [sp+5]               
+  337: ASGN                          
+  338: SSP      1                    
+  339: GCP      data[94]              ; = 3.0f
+  340: LADR     [sp+5]               
+  341: PNT      32                   
+  342: ASGN                          
+  343: SSP      1                    
+  344: GCP      data[95]              ; = 4.0f
+  345: LADR     [sp+5]               
+  346: PNT      36                   
+  347: ASGN                          
+  348: SSP      1                    
+  349: LADR     [sp+5]               
+  350: PNT      92                   
+  351: DCP      4                    
+  352: GCP      data[96]              ; = 1.0f
+  353: FMUL                          
+  354: LADR     [sp+5]               
+  355: PNT      92                   
+  356: ASGN                          
+  357: SSP      1                    
+  358: GCP      data[97]              ; = 1.0f
+  359: LADR     [sp+5]               
+  360: PNT      96                   
+  361: ASGN                          
+  362: SSP      1                    
+  363: GCP      data[98]              ; = 120.0f
+  364: LADR     [sp+5]               
+  365: PNT      48                   
+  366: ASGN                          
+  367: SSP      1                    
+  368: GCP      data[99]              ; = 1.0f
+  369: LADR     [sp+5]               
+  370: PNT      40                   
+  371: ASGN                          
+  372: SSP      1                    
+  373: LADR     [sp-3]               
+  374: DADR     data[12]             
+  375: DCP      4                    
+  376: LADR     [sp+5]               
+  377: XCALL    $SC_P_Ai_SetProps(unsignedlong,*s_SC_P_AI_props)void ; args=2
+  378: SSP      2                    
+  379: LADR     [sp-3]               
+  380: DADR     data[12]             
+  381: DCP      4                    
+  382: GCP      data[100]             ; = 30.0f
+  383: XCALL    $SC_P_SetSpeachDist(unsignedlong,float)void ; args=2
+  384: SSP      2                    
+  385: LADR     [sp-3]               
+  386: DADR     data[12]             
+  387: DCP      4                    
+  388: GCP      data[101]             ; = 1
+  389: XCALL    $SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void ; args=2
+  390: SSP      2                    
+  391: GCP      data[102]             ; = 0.0f
+  392: LADR     [sp+37]              
+  393: ASGN                          
+  394: SSP      1                    
+  395: LCP      [sp+37]              
+  396: JZ       label_0418           
+  397: ASP      1                    
+  398: GCP      data[103]             ; = 0.0f
+  399: GADR     data[104]  ; "flag_vc"
+  400: ASP      1                    
+  401: XCALL    $SC_NOD_Get(*void,*char)*void ; args=2
+  402: LLD      [sp+38]              
+  403: SSP      2                    
+  404: GADR     data[11]             
+  405: XCALL    $SC_NOD_GetWorldPos(*void,*c_Vector3)void ; args=2
+  406: SSP      2                    
+  407: ASP      1                    
+  408: GCP      data[106]             ; = 0.0f
+  409: GADR     data[107]  ; "flag_us"
+  410: ASP      1                    
+  411: XCALL    $SC_NOD_Get(*void,*char)*void ; args=2
+  412: LLD      [sp+38]              
+  413: SSP      2                    
+  414: GADR     data[14]             
+  415: XCALL    $SC_NOD_GetWorldPos(*void,*c_Vector3)void ; args=2
+  416: SSP      2                    
+  417: JMP      label_0438           
+label_0418:
+  418: ASP      1                    
+  419: GCP      data[109]             ; = 0.0f
+  420: GADR     data[110]  ; "flag_vc"
+  421: ASP      1                    
+  422: XCALL    $SC_NOD_Get(*void,*char)*void ; args=2
+  423: LLD      [sp+38]              
+  424: SSP      2                    
+  425: GADR     data[14]             
+  426: XCALL    $SC_NOD_GetWorldPos(*void,*c_Vector3)void ; args=2
+  427: SSP      2                    
+  428: ASP      1                    
+  429: GCP      data[112]             ; = 0.0f
+  430: GADR     data[113]  ; "flag_us"
+  431: ASP      1                    
+  432: XCALL    $SC_NOD_Get(*void,*char)*void ; args=2
+  433: LLD      [sp+38]              
+  434: SSP      2                    
+  435: GADR     data[11]             
+  436: XCALL    $SC_NOD_GetWorldPos(*void,*c_Vector3)void ; args=2
+  437: SSP      2                    
+label_0438:
+  438: GADR     data[11]             
+  439: DCP      12                   
+  440: GADR     data[17]             
+  441: ASGN                          
+  442: SSP      3                    
+  443: GADR     data[14]             
+  444: DCP      12                   
+  445: GADR     data[20]             
+  446: ASGN                          
+  447: SSP      3                    
+  448: GCP      data[115]             ; = 0.0f
+  449: GADR     data[23]             
+  450: ASGN                          
+  451: SSP      1                    
+  452: GCP      data[116]             ; = 0.0f
+  453: GADR     data[24]             
+  454: ASGN                          
+  455: SSP      1                    
+  456: GCP      data[117]             ; = 2
+  457: GADR     data[1]              
+  458: ASGN                          
+  459: SSP      1                    
+  460: RET      38                   
+func_0461:
+  461: ASP      3                    
+  462: ASP      1                    
+  463: LCP      [sp-4]               
+  464: LADR     [sp+0]               
+  465: XCALL    $SC_P_GetDir(unsignedlong,*c_Vector3)void ; args=2
+  466: SSP      2                    
+  467: ASP      1                    
+  468: LADR     [sp+0]               
+  469: ASP      1                    
+  470: XCALL    $SC_VectorLen(*c_Vector3)float ; args=1
+  471: LLD      [sp+4]               
+  472: SSP      1                    
+  473: LADR     [sp+3]               
+  474: ASGN                          
+  475: SSP      1                    
+  476: LCP      [sp+3]               
+  477: GCP      data[123]             ; = 1.0f
+  478: FGRE                          
+  479: JZ       label_0483           
+  480: GCP      data[124]             ; = 1
+  481: LLD      [sp-3]               
+  482: RET      4                    
+label_0483:
+  483: GCP      data[125]             ; = 0.0f
+  484: LLD      [sp-3]               
+  485: RET      4                    
+  486: ASP      1                    
+  487: LCP      [sp-4]               
+  488: ASP      1                    
+  489: XCALL    $SC_P_Ai_GetEnemies(unsignedlong)unsignedlong ; args=1
+  490: LLD      [sp+0]               
+  491: SSP      1                    
+  492: JZ       label_0496           
+  493: GCP      data[126]             ; = 1
+  494: LLD      [sp-3]               
+  495: RET      0                    
+label_0496:
+  496: ASP      1                    
+  497: LCP      [sp-4]               
+  498: ASP      1                    
+  499: XCALL    $SC_P_Ai_GetDanger(unsignedlong)float ; args=1
+  500: LLD      [sp+0]               
+  501: SSP      1                    
+  502: GCP      data[127]             ; = 0.0f
+  503: FGRE                          
+  504: JZ       label_0508           
+  505: GCP      data[128]             ; = 1
+  506: LLD      [sp-3]               
+  507: RET      0                    
+label_0508:
+  508: GCP      data[129]             ; = 0.0f
+  509: LLD      [sp-3]               
+  510: RET      0                    
+func_0511:
+  511: ASP      1                    
+  512: ASP      1                    
+  513: ASP      32                   
+  514: ASP      1                    
+  515: ASP      4                    
+  516: ASP      5                    
+  517: ASP      3                    
+  518: ASP      1                    
+  519: ASP      1                    
+  520: LCP      [sp-4]               
+  521: DCP      12                   
+  522: LADR     [sp+35]              
+  523: ASGN                          
+  524: SSP      3                    
+  525: GCP      data[130]             ; = 2.0f
+  526: LADR     [sp+35]              
+  527: PNT      12                   
+  528: ASGN                          
+  529: SSP      1                    
+  530: GCP      data[131]             ; = 64
+  531: LADR     [sp+0]               
+  532: ASGN                          
+  533: SSP      1                    
+  534: LADR     [sp+35]              
+  535: LADR     [sp+2]               
+  536: LADR     [sp+0]               
+  537: XCALL    $SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void ; args=3
+  538: SSP      3                    
+  539: LCP      [sp+0]               
+  540: JZ       label_0544           
+  541: GCP      data[132]             ; = 0.0f
+  542: LLD      [sp-3]               
+  543: RET      49                   
+label_0544:
+  544: GCP      data[133]             ; = 1
+  545: LLD      [sp-3]               
+  546: RET      49                   
+func_0547:
+  547: ASP      1                    
+  548: ASP      1                    
+  549: ASP      32                   
+  550: ASP      1                    
+  551: ASP      4                    
+  552: ASP      5                    
+  553: ASP      3                    
+  554: ASP      1                    
+  555: ASP      1                    
+  556: LCP      [sp-4]               
+  557: JZ       label_0559           
+  558: JMP      label_0562           
+label_0559:
+  559: GCP      data[134]             ; = 0.0f
+  560: LLD      [sp-3]               
+  561: RET      49                   
+label_0562:
+  562: GCP      data[135]             ; = 10000.0f
+  563: LADR     [sp+47]              
+  564: ASGN                          
+  565: SSP      1                    
+  566: GCP      data[136]             ; = 1000.0f
+  567: LADR     [sp+35]              
+  568: PNT      12                   
+  569: ASGN                          
+  570: SSP      1                    
+  571: LCP      [sp-4]               
+  572: LADR     [sp+44]              
+  573: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  574: SSP      2                    
+  575: LADR     [sp+44]              
+  576: DCP      12                   
+  577: LADR     [sp+35]              
+  578: ASGN                          
+  579: SSP      3                    
+  580: GCP      data[137]             ; = 64
+  581: LADR     [sp+0]               
+  582: ASGN                          
+  583: SSP      1                    
+  584: LADR     [sp+35]              
+  585: LADR     [sp+2]               
+  586: LADR     [sp+0]               
+  587: XCALL    $SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void ; args=3
+  588: SSP      3                    
+  589: GCP      data[138]             ; = 0.0f
+  590: LADR     [sp+34]              
+  591: ASGN                          
+  592: SSP      1                    
+  593: GCP      data[139]             ; = 0.0f
+  594: LADR     [sp+1]               
+  595: ASGN                          
+  596: SSP      1                    
+label_0597:
+  597: LCP      [sp+1]               
+  598: LCP      [sp+0]               
+  599: LES                           
+  600: JZ       label_0683           
+  601: LADR     [sp+2]               
+  602: LCP      [sp+1]               
+  603: GCP      data[140]             ; = 4
+  604: MUL                           
+  605: ADD                           
+  606: DCP      4                    
+  607: LADR     [sp+39]              
+  608: XCALL    $SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void ; args=2
+  609: SSP      2                    
+  610: LADR     [sp+39]              
+  611: PNT      8                    
+  612: DCP      4                    
+  613: GCP      data[3]              
+  614: EQU                           
+  615: JZ       label_0674           
+  616: ASP      1                    
+  617: LADR     [sp+2]               
+  618: LCP      [sp+1]               
+  619: GCP      data[141]             ; = 4
+  620: MUL                           
+  621: ADD                           
+  622: DCP      4                    
+  623: ASP      1                    
+  624: XCALL    $SC_P_IsReady(unsignedlong)int ; args=1
+  625: LLD      [sp+49]              
+  626: SSP      1                    
+  627: JZ       label_0674           
+  628: JMP      label_0629           
+label_0629:
+  629: ASP      1                    
+  630: LADR     [sp+2]               
+  631: LCP      [sp+1]               
+  632: GCP      data[142]             ; = 4
+  633: MUL                           
+  634: ADD                           
+  635: DCP      4                    
+  636: ASP      1                    
+  637: XCALL    $SC_P_GetActive(unsignedlong)int ; args=1
+  638: LLD      [sp+49]              
+  639: SSP      1                    
+  640: JZ       label_0674           
+  641: JMP      label_0642           
+label_0642:
+  642: ASP      1                    
+  643: LCP      [sp-4]               
+  644: LADR     [sp+2]               
+  645: LCP      [sp+1]               
+  646: GCP      data[143]             ; = 4
+  647: MUL                           
+  648: ADD                           
+  649: DCP      4                    
+  650: ASP      1                    
+  651: XCALL    $SC_P_GetDistance(unsignedlong,unsignedlong)float ; args=2
+  652: LLD      [sp+49]              
+  653: SSP      2                    
+  654: LADR     [sp+48]              
+  655: ASGN                          
+  656: SSP      1                    
+  657: LCP      [sp+48]              
+  658: LCP      [sp+47]              
+  659: FLES                          
+  660: JZ       label_0674           
+  661: LCP      [sp+48]              
+  662: LADR     [sp+47]              
+  663: ASGN                          
+  664: SSP      1                    
+  665: LADR     [sp+2]               
+  666: LCP      [sp+1]               
+  667: GCP      data[144]             ; = 4
+  668: MUL                           
+  669: ADD                           
+  670: DCP      4                    
+  671: LADR     [sp+34]              
+  672: ASGN                          
+  673: SSP      1                    
+label_0674:
+  674: LCP      [sp+1]               
+  675: LCP      [sp+1]               
+  676: GCP      data[145]             ; = 1
+  677: ADD                           
+  678: LADR     [sp+1]               
+  679: ASGN                          
+  680: SSP      1                    
+  681: SSP      1                    
+  682: JMP      label_0597           
+label_0683:
+  683: LCP      [sp+34]              
+  684: LLD      [sp-3]               
+  685: RET      49                   
+func_0686:
+  686: ASP      1                    
+  687: ASP      1                    
+  688: ASP      1                    
+  689: ASP      1                    
+  690: ASP      1                    
+  691: GCP      data[146]             ; = 10000.0f
+  692: LADR     [sp+0]               
+  693: ASGN                          
+  694: SSP      1                    
+  695: GCP      data[147]             ; = 0.0f
+  696: LADR     [sp+4]               
+  697: ASGN                          
+  698: SSP      1                    
+  699: GCP      data[148]             ; = 0.0f
+  700: LADR     [sp+2]               
+  701: ASGN                          
+  702: SSP      1                    
+label_0703:
+  703: LCP      [sp+2]               
+  704: GCP      data[149]             ; = 8
+  705: LES                           
+  706: JZ       label_0777           
+  707: ASP      1                    
+  708: GCP      data[3]              
+  709: GCP      data[150]             ; = 0.0f
+  710: GCP      data[151]             ; = 10
+  711: LCP      [sp+2]               
+  712: ADD                           
+  713: ASP      1                    
+  714: XCALL    $SC_P_GetBySideGroupMember(unsignedlong,unsignedlong,unsignedlong)unsignedlong ; args=3
+  715: LLD      [sp+5]               
+  716: SSP      3                    
+  717: LADR     [sp+3]               
+  718: ASGN                          
+  719: SSP      1                    
+  720: LCP      [sp+3]               
+  721: JZ       label_0768           
+  722: ASP      1                    
+  723: LCP      [sp+3]               
+  724: ASP      1                    
+  725: XCALL    $SC_P_GetActive(unsignedlong)int ; args=1
+  726: LLD      [sp+5]               
+  727: SSP      1                    
+  728: JZ       label_0768           
+  729: JMP      label_0730           
+label_0730:
+  730: ASP      1                    
+  731: LCP      [sp+3]               
+  732: ASP      1                    
+  733: XCALL    $SC_P_IsReady(unsignedlong)int ; args=1
+  734: LLD      [sp+5]               
+  735: SSP      1                    
+  736: JZ       label_0768           
+  737: JMP      label_0738           
+label_0738:
+  738: ASP      1                    
+  739: LCP      [sp+3]               
+  740: ASP      1                    
+  741: XCALL    $SC_P_Ai_GetEnemies(unsignedlong)unsignedlong ; args=1
+  742: LLD      [sp+5]               
+  743: SSP      1                    
+  744: JZ       label_0768           
+  745: JMP      label_0746           
+label_0746:
+  746: ASP      1                    
+  747: LCP      [sp-4]               
+  748: LCP      [sp+3]               
+  749: ASP      1                    
+  750: XCALL    $SC_P_GetDistance(unsignedlong,unsignedlong)float ; args=2
+  751: LLD      [sp+5]               
+  752: SSP      2                    
+  753: LADR     [sp+1]               
+  754: ASGN                          
+  755: SSP      1                    
+  756: LCP      [sp+1]               
+  757: LCP      [sp+0]               
+  758: FLES                          
+  759: JZ       label_0768           
+  760: LCP      [sp+1]               
+  761: LADR     [sp+0]               
+  762: ASGN                          
+  763: SSP      1                    
+  764: LCP      [sp+3]               
+  765: LADR     [sp+4]               
+  766: ASGN                          
+  767: SSP      1                    
+label_0768:
+  768: LCP      [sp+2]               
+  769: LCP      [sp+2]               
+  770: GCP      data[152]             ; = 1
+  771: ADD                           
+  772: LADR     [sp+2]               
+  773: ASGN                          
+  774: SSP      1                    
+  775: SSP      1                    
+  776: JMP      label_0703           
+label_0777:
+  777: LCP      [sp+4]               
+  778: LLD      [sp-3]               
+  779: RET      5                    
+func_0780:
+  780: ASP      32                   
+  781: ASP      1                    
+  782: ASP      4                    
+  783: ASP      5                    
+  784: ASP      3                    
+  785: ASP      1                    
+  786: ASP      1                    
+  787: ASP      1                    
+  788: GCP      data[24]             
+  789: GCP      data[153]             ; = 0.0f
+  790: NEQ                           
+  791: JZ       label_0795           
+  792: GCP      data[154]             ; = 1
+  793: LLD      [sp-3]               
+  794: RET      48                   
+label_0795:
+  795: LCP      [sp-4]               
+  796: LADR     [sp+42]              
+  797: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  798: SSP      2                    
+  799: ASP      1                    
+  800: LADR     [sp+42]              
+  801: GADR     data[11]             
+  802: GCP      data[155]             ; = 30.0f
+  803: ASP      1                    
+  804: XCALL    $SC_IsNear2D(*c_Vector3,*c_Vector3,float)int ; args=3
+  805: LLD      [sp+48]              
+  806: SSP      3                    
+  807: JZ       label_0809           
+  808: JMP      label_0812           
+label_0809:
+  809: GCP      data[156]             ; = 1
+  810: LLD      [sp-3]               
+  811: RET      48                   
+label_0812:
+  812: GADR     data[11]             
+  813: DCP      12                   
+  814: LADR     [sp+33]              
+  815: ASGN                          
+  816: SSP      3                    
+  817: GCP      data[157]             ; = 20.0f
+  818: LADR     [sp+33]              
+  819: PNT      12                   
+  820: ASGN                          
+  821: SSP      1                    
+  822: GCP      data[158]             ; = 64
+  823: LADR     [sp+45]              
+  824: ASGN                          
+  825: SSP      1                    
+  826: LADR     [sp+33]              
+  827: LADR     [sp+0]               
+  828: LADR     [sp+45]              
+  829: XCALL    $SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void ; args=3
+  830: SSP      3                    
+  831: GCP      data[159]             ; = 0.0f
+  832: LADR     [sp+47]              
+  833: ASGN                          
+  834: SSP      1                    
+  835: GCP      data[160]             ; = 0.0f
+  836: LADR     [sp+46]              
+  837: ASGN                          
+  838: SSP      1                    
+label_0839:
+  839: LCP      [sp+46]              
+  840: LCP      [sp+45]              
+  841: LES                           
+  842: JZ       label_0901           
+  843: LADR     [sp+0]               
+  844: LCP      [sp+46]              
+  845: GCP      data[161]             ; = 4
+  846: MUL                           
+  847: ADD                           
+  848: DCP      4                    
+  849: LADR     [sp+37]              
+  850: XCALL    $SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void ; args=2
+  851: SSP      2                    
+  852: LADR     [sp+37]              
+  853: PNT      8                    
+  854: DCP      4                    
+  855: GCP      data[4]              
+  856: EQU                           
+  857: JZ       label_0892           
+  858: ASP      1                    
+  859: LADR     [sp+0]               
+  860: LCP      [sp+46]              
+  861: GCP      data[162]             ; = 4
+  862: MUL                           
+  863: ADD                           
+  864: DCP      4                    
+  865: ASP      1                    
+  866: XCALL    $SC_P_IsReady(unsignedlong)int ; args=1
+  867: LLD      [sp+48]              
+  868: SSP      1                    
+  869: JZ       label_0892           
+  870: JMP      label_0871           
+label_0871:
+  871: ASP      1                    
+  872: LADR     [sp+0]               
+  873: LCP      [sp+46]              
+  874: GCP      data[163]             ; = 4
+  875: MUL                           
+  876: ADD                           
+  877: DCP      4                    
+  878: ASP      1                    
+  879: XCALL    $SC_P_GetActive(unsignedlong)int ; args=1
+  880: LLD      [sp+48]              
+  881: SSP      1                    
+  882: JZ       label_0892           
+  883: JMP      label_0884           
+label_0884:
+  884: LCP      [sp+47]              
+  885: LCP      [sp+47]              
+  886: GCP      data[164]             ; = 1
+  887: ADD                           
+  888: LADR     [sp+47]              
+  889: ASGN                          
+  890: SSP      1                    
+  891: SSP      1                    
+label_0892:
+  892: LCP      [sp+46]              
+  893: LCP      [sp+46]              
+  894: GCP      data[165]             ; = 1
+  895: ADD                           
+  896: LADR     [sp+46]              
+  897: ASGN                          
+  898: SSP      1                    
+  899: SSP      1                    
+  900: JMP      label_0839           
+label_0901:
+  901: LCP      [sp+47]              
+  902: GCP      data[166]             ; = 1
+  903: GRE                           
+  904: JZ       label_0908           
+  905: GCP      data[167]             ; = 1
+  906: LLD      [sp-3]               
+  907: RET      48                   
+label_0908:
+  908: GCP      data[168]             ; = 0.0f
+  909: LLD      [sp-3]               
+  910: RET      48                   
+func_0911:
+  911: ASP      4                    
+  912: ASP      3                    
+  913: ASP      1                    
+  914: ASP      1                    
+  915: LCP      [sp-3]               
+  916: ASP      1                    
+  917: CALL     func_0780            
+  918: LLD      [sp+8]               
+  919: SSP      1                    
+  920: JZ       label_1013           
+  921: GCP      data[23]             
+  922: GCP      data[170]             ; = 0.0f
+  923: NEQ                           
+  924: JZ       label_0969           
+  925: GCP      data[169]            
+  926: GCP      data[171]             ; = 0.0f
+  927: EQU                           
+  928: JZ       label_0969           
+  929: JMP      label_0930           
+label_0930:
+  930: GCP      data[23]             
+  931: GADR     data[169]            
+  932: ASGN                          
+  933: SSP      1                    
+  934: GADR     data[14]             
+  935: DCP      12                   
+  936: LADR     [sp+0]               
+  937: ASGN                          
+  938: SSP      3                    
+  939: GCP      data[172]             ; = 35.0f
+  940: LADR     [sp+0]               
+  941: PNT      12                   
+  942: ASGN                          
+  943: SSP      1                    
+  944: ASP      1                    
+  945: LADR     [sp+0]               
+  946: LADR     [sp+4]               
+  947: ASP      1                    
+  948: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  949: LLD      [sp+8]               
+  950: SSP      2                    
+  951: JZ       label_0961           
+  952: LCP      [sp-3]               
+  953: GCP      data[173]             ; = 2
+  954: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  955: SSP      2                    
+  956: LCP      [sp-3]               
+  957: LADR     [sp+4]               
+  958: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  959: SSP      2                    
+  960: JMP      label_0969           
+label_0961:
+  961: LCP      [sp-3]               
+  962: GCP      data[174]             ; = 2
+  963: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  964: SSP      2                    
+  965: LCP      [sp-3]               
+  966: LADR     [sp+0]               
+  967: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  968: SSP      2                    
+label_0969:
+  969: GCP      data[23]             
+  970: GCP      data[175]             ; = 0.0f
+  971: EQU                           
+  972: JZ       label_1012           
+  973: GCP      data[176]             ; = 0.0f
+  974: GADR     data[169]            
+  975: ASGN                          
+  976: SSP      1                    
+  977: GADR     data[14]             
+  978: DCP      12                   
+  979: LADR     [sp+0]               
+  980: ASGN                          
+  981: SSP      3                    
+  982: GCP      data[177]             ; = 30.0f
+  983: LADR     [sp+0]               
+  984: PNT      12                   
+  985: ASGN                          
+  986: SSP      1                    
+  987: ASP      1                    
+  988: LADR     [sp+0]               
+  989: LADR     [sp+4]               
+  990: ASP      1                    
+  991: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  992: LLD      [sp+8]               
+  993: SSP      2                    
+  994: JZ       label_1004           
+  995: LCP      [sp-3]               
+  996: GCP      data[178]             ; = 2
+  997: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  998: SSP      2                    
+  999: LCP      [sp-3]               
+  1000: LADR     [sp+4]               
+  1001: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1002: SSP      2                    
+  1003: JMP      label_1012           
+label_1004:
+  1004: LCP      [sp-3]               
+  1005: GCP      data[179]             ; = 2
+  1006: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1007: SSP      2                    
+  1008: LCP      [sp-3]               
+  1009: LADR     [sp+0]               
+  1010: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1011: SSP      2                    
+label_1012:
+  1012: JMP      label_1062           
+label_1013:
+  1013: ASP      1                    
+  1014: ASP      1                    
+  1015: XCALL    $rand(void)int        ; args=0
+  1016: LLD      [sp+8]               
+  1017: GCP      data[180]             ; = 10
+  1018: MOD                           
+  1019: JZ       label_1021           
+  1020: JMP      label_1057           
+label_1021:
+  1021: GADR     data[11]             
+  1022: DCP      12                   
+  1023: LADR     [sp+0]               
+  1024: ASGN                          
+  1025: SSP      3                    
+  1026: GCP      data[181]             ; = 15.0f
+  1027: LADR     [sp+0]               
+  1028: PNT      12                   
+  1029: ASGN                          
+  1030: SSP      1                    
+  1031: ASP      1                    
+  1032: LADR     [sp+0]               
+  1033: LADR     [sp+4]               
+  1034: ASP      1                    
+  1035: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1036: LLD      [sp+8]               
+  1037: SSP      2                    
+  1038: JZ       label_1048           
+  1039: LCP      [sp-3]               
+  1040: GCP      data[182]             ; = 2
+  1041: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1042: SSP      2                    
+  1043: LCP      [sp-3]               
+  1044: LADR     [sp+4]               
+  1045: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1046: SSP      2                    
+  1047: JMP      label_1056           
+label_1048:
+  1048: LCP      [sp-3]               
+  1049: GCP      data[183]             ; = 2
+  1050: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1051: SSP      2                    
+  1052: LCP      [sp-3]               
+  1053: LADR     [sp+0]               
+  1054: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1055: SSP      2                    
+label_1056:
+  1056: JMP      label_1062           
+label_1057:
+  1057: LCP      [sp-3]               
+  1058: GADR     data[11]             
+  1059: GCP      data[184]             ; = 15.0f
+  1060: XCALL    $SC_P_Ai_HideYourself(unsignedlong,*c_Vector3,float)void ; args=3
+  1061: SSP      3                    
+label_1062:
+  1062: RET      8                    
+func_1063:
+  1063: ASP      4                    
+  1064: ASP      3                    
+  1065: ASP      1                    
+  1066: ASP      1                    
+  1067: LCP      [sp-3]               
+  1068: ASP      1                    
+  1069: CALL     func_0686            
+  1070: LLD      [sp+8]               
+  1071: SSP      1                    
+  1072: LADR     [sp+7]               
+  1073: ASGN                          
+  1074: SSP      1                    
+  1075: LCP      [sp+7]               
+  1076: JZ       label_1116           
+  1077: ASP      1                    
+  1078: LCP      [sp+7]               
+  1079: ASP      1                    
+  1080: XCALL    $SC_P_Ai_GetEnemies(unsignedlong)unsignedlong ; args=1
+  1081: LLD      [sp+8]               
+  1082: SSP      1                    
+  1083: JZ       label_1116           
+  1084: JMP      label_1085           
+label_1085:
+  1085: LCP      [sp+7]               
+  1086: LADR     [sp+0]               
+  1087: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1088: SSP      2                    
+  1089: GCP      data[185]             ; = 20.0f
+  1090: LADR     [sp+0]               
+  1091: PNT      12                   
+  1092: ASGN                          
+  1093: SSP      1                    
+  1094: LCP      [sp-3]               
+  1095: GCP      data[186]             ; = 2
+  1096: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1097: SSP      2                    
+  1098: ASP      1                    
+  1099: LADR     [sp+0]               
+  1100: LADR     [sp+4]               
+  1101: ASP      1                    
+  1102: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1103: LLD      [sp+8]               
+  1104: SSP      2                    
+  1105: JZ       label_1111           
+  1106: LCP      [sp-3]               
+  1107: LADR     [sp+4]               
+  1108: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1109: SSP      2                    
+  1110: JMP      label_1115           
+label_1111:
+  1111: LCP      [sp-3]               
+  1112: LADR     [sp+0]               
+  1113: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1114: SSP      2                    
+label_1115:
+  1115: JMP      label_1190           
+label_1116:
+  1116: ASP      1                    
+  1117: ASP      1                    
+  1118: XCALL    $rand(void)int        ; args=0
+  1119: LLD      [sp+8]               
+  1120: GCP      data[187]             ; = 3
+  1121: MOD                           
+  1122: JZ       label_1165           
+  1123: ASP      1                    
+  1124: LCP      [sp-3]               
+  1125: ASP      1                    
+  1126: CALL     func_0547            
+  1127: LLD      [sp+8]               
+  1128: SSP      1                    
+  1129: LADR     [sp+7]               
+  1130: ASGN                          
+  1131: SSP      1                    
+  1132: LCP      [sp+7]               
+  1133: JZ       label_1164           
+  1134: LCP      [sp+7]               
+  1135: LADR     [sp+0]               
+  1136: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1137: SSP      2                    
+  1138: GCP      data[188]             ; = 25.0f
+  1139: LADR     [sp+0]               
+  1140: PNT      12                   
+  1141: ASGN                          
+  1142: SSP      1                    
+  1143: LCP      [sp-3]               
+  1144: GCP      data[189]             ; = 2
+  1145: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1146: SSP      2                    
+  1147: ASP      1                    
+  1148: LADR     [sp+0]               
+  1149: LADR     [sp+4]               
+  1150: ASP      1                    
+  1151: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1152: LLD      [sp+8]               
+  1153: SSP      2                    
+  1154: JZ       label_1160           
+  1155: LCP      [sp-3]               
+  1156: LADR     [sp+4]               
+  1157: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1158: SSP      2                    
+  1159: JMP      label_1164           
+label_1160:
+  1160: LCP      [sp-3]               
+  1161: LADR     [sp+0]               
+  1162: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1163: SSP      2                    
+label_1164:
+  1164: JMP      label_1190           
+label_1165:
+  1165: LCP      [sp-3]               
+  1166: LADR     [sp+0]               
+  1167: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1168: SSP      2                    
+  1169: GCP      data[190]             ; = 20.0f
+  1170: LADR     [sp+0]               
+  1171: PNT      12                   
+  1172: ASGN                          
+  1173: SSP      1                    
+  1174: LCP      [sp-3]               
+  1175: GCP      data[191]             ; = 2
+  1176: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1177: SSP      2                    
+  1178: ASP      1                    
+  1179: LADR     [sp+0]               
+  1180: LADR     [sp+4]               
+  1181: ASP      1                    
+  1182: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1183: LLD      [sp+8]               
+  1184: SSP      2                    
+  1185: JZ       label_1190           
+  1186: LCP      [sp-3]               
+  1187: LADR     [sp+4]               
+  1188: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1189: SSP      2                    
+label_1190:
+  1190: RET      8                    
+func_1191:
+  1191: ASP      1                    
+  1192: LADR     [sp-3]               
+  1193: DADR     data[12]             
+  1194: DCP      4                    
+  1195: GCP      data[193]             ; = 1
+  1196: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1197: SSP      2                    
+  1198: LADR     [sp-3]               
+  1199: DADR     data[12]             
+  1200: DCP      4                    
+  1201: GCP      data[194]             ; = 1
+  1202: XCALL    $SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void ; args=2
+  1203: SSP      2                    
+  1204: GCP      data[195]             ; = 0.0f
+  1205: GADR     data[121]            
+  1206: ASGN                          
+  1207: SSP      1                    
+  1208: GCP      data[196]             ; = 540
+  1209: LADR     [sp+0]               
+  1210: ASGN                          
+  1211: SSP      1                    
+  1212: GCP      data[197]             ; = 0.0f
+  1213: ASP      1                    
+  1214: LCP      [sp+0]               
+  1215: ASP      1                    
+  1216: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1217: LLD      [sp+2]               
+  1218: SSP      1                    
+  1219: LES                           
+  1220: JZ       label_1232           
+  1221: GCP      data[198]             ; = 3
+  1222: GADR     data[1]              
+  1223: ASGN                          
+  1224: SSP      1                    
+  1225: LADR     [sp-3]               
+  1226: DADR     data[12]             
+  1227: DCP      4                    
+  1228: GCP      data[199]             ; = 1
+  1229: XCALL    $SC_P_SetActive(unsignedlong,int)void ; args=2
+  1230: SSP      2                    
+  1231: JMP      label_1242           
+label_1232:
+  1232: GCP      data[200]             ; = 500
+  1233: GADR     data[1]              
+  1234: ASGN                          
+  1235: SSP      1                    
+  1236: LADR     [sp-3]               
+  1237: DADR     data[12]             
+  1238: DCP      4                    
+  1239: GCP      data[201]             ; = 0.0f
+  1240: XCALL    $SC_P_SetActive(unsignedlong,int)void ; args=2
+  1241: SSP      2                    
+label_1242:
+  1242: RET      1                    
+func_1243:
+  1243: ASP      1                    
+  1244: LADR     [sp-3]               
+  1245: DADR     data[12]             
+  1246: DCP      4                    
+  1247: ASP      1                    
+  1248: XCALL    $SC_P_Ai_GetEnemies(unsignedlong)unsignedlong ; args=1
+  1249: LLD      [sp+0]               
+  1250: SSP      1                    
+  1251: JZ       label_1253           
+  1252: JMP      label_1261           
+label_1253:
+  1253: GCP      data[118]            
+  1254: LADR     [sp-3]               
+  1255: DADR     data[20]             
+  1256: DCP      4                    
+  1257: FADD                          
+  1258: GADR     data[118]            
+  1259: ASGN                          
+  1260: SSP      1                    
+label_1261:
+  1261: ASP      1                    
+  1262: LADR     [sp-3]               
+  1263: DADR     data[12]             
+  1264: DCP      4                    
+  1265: ASP      1                    
+  1266: CALL     func_0461            
+  1267: LLD      [sp+0]               
+  1268: SSP      1                    
+  1269: JZ       label_1274           
+  1270: GCP      data[202]             ; = 0.0f
+  1271: GADR     data[118]            
+  1272: ASGN                          
+  1273: SSP      1                    
+label_1274:
+  1274: GCP      data[118]            
+  1275: GCP      data[119]            
+  1276: FGRE                          
+  1277: JZ       label_1297           
+  1278: GCP      data[203]             ; = 0.0f
+  1279: GADR     data[118]            
+  1280: ASGN                          
+  1281: SSP      1                    
+  1282: ASP      1                    
+  1283: ASP      1                    
+  1284: XCALL    $rand(void)int        ; args=0
+  1285: LLD      [sp+0]               
+  1286: GCP      data[204]             ; = 5
+  1287: MOD                           
+  1288: ITOF                          
+  1289: GADR     data[119]            
+  1290: ASGN                          
+  1291: SSP      1                    
+  1292: LADR     [sp-3]               
+  1293: DADR     data[12]             
+  1294: DCP      4                    
+  1295: CALL     func_1063            
+  1296: SSP      1                    
+label_1297:
+  1297: RET      0                    
+func_1298:
+  1298: ASP      3                    
+  1299: LCP      [sp-6]               
+  1300: LADR     [sp+0]               
+  1301: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1302: SSP      2                    
+  1303: ASP      1                    
+  1304: LADR     [sp+0]               
+  1305: LCP      [sp-5]               
+  1306: LCP      [sp-4]               
+  1307: ASP      1                    
+  1308: XCALL    $SC_IsNear3D(*c_Vector3,*c_Vector3,float)int ; args=3
+  1309: LLD      [sp+3]               
+  1310: SSP      3                    
+  1311: LLD      [sp-3]               
+  1312: RET      3                    
+func_1313:
+  1313: ASP      1                    
+  1314: ASP      1                    
+  1315: ASP      1                    
+  1316: ASP      1                    
+  1317: GCP      data[206]             ; = 511
+  1318: LADR     [sp+0]               
+  1319: ASGN                          
+  1320: SSP      1                    
+  1321: ASP      1                    
+  1322: LCP      [sp+0]               
+  1323: ASP      1                    
+  1324: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1325: LLD      [sp+4]               
+  1326: SSP      1                    
+  1327: LADR     [sp+1]               
+  1328: ASGN                          
+  1329: SSP      1                    
+  1330: LCP      [sp+1]               
+  1331: GCP      data[23]             
+  1332: NEQ                           
+  1333: JZ       label_1411           
+  1334: LCP      [sp+1]               
+  1335: JMP      label_1337           
+  1336: JMP      label_1341           
+label_1337:
+  1337: LCP      [sp+4]               
+  1338: GCP      data[207]             ; = 0.0f
+  1339: EQU                           
+  1340: JZ       label_1348           
+label_1341:
+  1341: GADR     data[14]             
+  1342: DCP      12                   
+  1343: GADR     data[20]             
+  1344: ASGN                          
+  1345: SSP      3                    
+  1346: JMP      label_1406           
+  1347: JMP      label_1352           
+label_1348:
+  1348: LCP      [sp+4]               
+  1349: GCP      data[208]             ; = 1
+  1350: EQU                           
+  1351: JZ       label_1378           
+label_1352:
+  1352: GCP      data[209]             ; = 513
+  1353: LADR     [sp+0]               
+  1354: ASGN                          
+  1355: SSP      1                    
+  1356: ASP      1                    
+  1357: ASP      1                    
+  1358: LCP      [sp+0]               
+  1359: ASP      1                    
+  1360: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1361: LLD      [sp+6]               
+  1362: SSP      1                    
+  1363: ASP      1                    
+  1364: XCALL    $SC_MP_GetPlofHandle(unsignedlong)unsignedlong ; args=1
+  1365: LLD      [sp+5]               
+  1366: SSP      1                    
+  1367: LADR     [sp+3]               
+  1368: ASGN                          
+  1369: SSP      1                    
+  1370: LCP      [sp+3]               
+  1371: JZ       label_1376           
+  1372: LCP      [sp+3]               
+  1373: GADR     data[20]             
+  1374: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1375: SSP      2                    
+label_1376:
+  1376: JMP      label_1406           
+  1377: JMP      label_1382           
+label_1378:
+  1378: LCP      [sp+4]               
+  1379: GCP      data[210]             ; = 2
+  1380: EQU                           
+  1381: JZ       label_1406           
+label_1382:
+  1382: GCP      data[211]             ; = 146
+  1383: LADR     [sp+0]               
+  1384: ASGN                          
+  1385: SSP      1                    
+  1386: ASP      1                    
+  1387: LCP      [sp+0]               
+  1388: ASP      1                    
+  1389: XCALL    $SC_Item_Find(unsignedlong)unsignedlong ; args=1
+  1390: LLD      [sp+5]               
+  1391: SSP      1                    
+  1392: LADR     [sp+2]               
+  1393: ASGN                          
+  1394: SSP      1                    
+  1395: LCP      [sp+2]               
+  1396: JZ       label_1405           
+  1397: ASP      1                    
+  1398: LCP      [sp+2]               
+  1399: GADR     data[20]             
+  1400: ASP      1                    
+  1401: XCALL    $SC_Item_GetPos(unsignedlong,*c_Vector3)int ; args=2
+  1402: LLD      [sp+5]               
+  1403: SSP      2                    
+  1404: SSP      1                    
+label_1405:
+  1405: JMP      label_1406           
+label_1406:
+  1406: SSP      1                    
+  1407: LCP      [sp+1]               
+  1408: GADR     data[23]             
+  1409: ASGN                          
+  1410: SSP      1                    
+label_1411:
+  1411: GCP      data[212]             ; = 510
+  1412: LADR     [sp+0]               
+  1413: ASGN                          
+  1414: SSP      1                    
+  1415: ASP      1                    
+  1416: LCP      [sp+0]               
+  1417: ASP      1                    
+  1418: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1419: LLD      [sp+4]               
+  1420: SSP      1                    
+  1421: LADR     [sp+1]               
+  1422: ASGN                          
+  1423: SSP      1                    
+  1424: LCP      [sp+1]               
+  1425: GCP      data[24]             
+  1426: NEQ                           
+  1427: JZ       label_1505           
+  1428: LCP      [sp+1]               
+  1429: JMP      label_1431           
+  1430: JMP      label_1435           
+label_1431:
+  1431: LCP      [sp+4]               
+  1432: GCP      data[213]             ; = 0.0f
+  1433: EQU                           
+  1434: JZ       label_1442           
+label_1435:
+  1435: GADR     data[11]             
+  1436: DCP      12                   
+  1437: GADR     data[17]             
+  1438: ASGN                          
+  1439: SSP      3                    
+  1440: JMP      label_1500           
+  1441: JMP      label_1446           
+label_1442:
+  1442: LCP      [sp+4]               
+  1443: GCP      data[214]             ; = 1
+  1444: EQU                           
+  1445: JZ       label_1472           
+label_1446:
+  1446: GCP      data[215]             ; = 512
+  1447: LADR     [sp+0]               
+  1448: ASGN                          
+  1449: SSP      1                    
+  1450: ASP      1                    
+  1451: ASP      1                    
+  1452: LCP      [sp+0]               
+  1453: ASP      1                    
+  1454: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1455: LLD      [sp+6]               
+  1456: SSP      1                    
+  1457: ASP      1                    
+  1458: XCALL    $SC_MP_GetPlofHandle(unsignedlong)unsignedlong ; args=1
+  1459: LLD      [sp+5]               
+  1460: SSP      1                    
+  1461: LADR     [sp+3]               
+  1462: ASGN                          
+  1463: SSP      1                    
+  1464: LCP      [sp+3]               
+  1465: JZ       label_1470           
+  1466: LCP      [sp+3]               
+  1467: GADR     data[17]             
+  1468: XCALL    $SC_P_GetPos(unsignedlong,*c_Vector3)void ; args=2
+  1469: SSP      2                    
+label_1470:
+  1470: JMP      label_1500           
+  1471: JMP      label_1476           
+label_1472:
+  1472: LCP      [sp+4]               
+  1473: GCP      data[216]             ; = 2
+  1474: EQU                           
+  1475: JZ       label_1500           
+label_1476:
+  1476: GCP      data[217]             ; = 145
+  1477: LADR     [sp+0]               
+  1478: ASGN                          
+  1479: SSP      1                    
+  1480: ASP      1                    
+  1481: LCP      [sp+0]               
+  1482: ASP      1                    
+  1483: XCALL    $SC_Item_Find(unsignedlong)unsignedlong ; args=1
+  1484: LLD      [sp+5]               
+  1485: SSP      1                    
+  1486: LADR     [sp+2]               
+  1487: ASGN                          
+  1488: SSP      1                    
+  1489: LCP      [sp+2]               
+  1490: JZ       label_1499           
+  1491: ASP      1                    
+  1492: LCP      [sp+2]               
+  1493: GADR     data[17]             
+  1494: ASP      1                    
+  1495: XCALL    $SC_Item_GetPos(unsignedlong,*c_Vector3)int ; args=2
+  1496: LLD      [sp+5]               
+  1497: SSP      2                    
+  1498: SSP      1                    
+label_1499:
+  1499: JMP      label_1500           
+label_1500:
+  1500: SSP      1                    
+  1501: LCP      [sp+1]               
+  1502: GADR     data[24]             
+  1503: ASGN                          
+  1504: SSP      1                    
+label_1505:
+  1505: RET      4                    
+func_1506:
+  1506: GCP      data[24]             
+  1507: JMP      label_1509           
+  1508: JMP      label_1513           
+label_1509:
+  1509: LCP      [sp+0]               
+  1510: GCP      data[218]             ; = 1
+  1511: EQU                           
+  1512: JZ       label_1552           
+label_1513:
+  1513: ASP      1                    
+  1514: LADR     [sp-4]               
+  1515: DADR     data[12]             
+  1516: DCP      4                    
+  1517: GADR     data[17]             
+  1518: GCP      data[219]             ; = 15.0f
+  1519: ASP      1                    
+  1520: CALL     func_1298            
+  1521: LLD      [sp+1]               
+  1522: SSP      3                    
+  1523: JZ       label_1550           
+  1524: LADR     [sp-4]               
+  1525: DADR     data[12]             
+  1526: DCP      4                    
+  1527: GCP      data[220]             ; = 3
+  1528: GADR     data[20]             
+  1529: XCALL    $SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void ; args=3
+  1530: SSP      3                    
+  1531: GCP      data[221]             ; = 7
+  1532: GADR     data[121]            
+  1533: ASGN                          
+  1534: SSP      1                    
+  1535: LADR     [sp-4]               
+  1536: DADR     data[12]             
+  1537: DCP      4                    
+  1538: GCP      data[222]             ; = 2
+  1539: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1540: SSP      2                    
+  1541: LADR     [sp-4]               
+  1542: DADR     data[12]             
+  1543: DCP      4                    
+  1544: GADR     data[20]             
+  1545: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1546: SSP      2                    
+  1547: GCP      data[223]             ; = 1
+  1548: LLD      [sp-3]               
+  1549: RET      1                    
+label_1550:
+  1550: JMP      label_1594           
+  1551: JMP      label_1556           
+label_1552:
+  1552: LCP      [sp+0]               
+  1553: GCP      data[224]             ; = 2
+  1554: EQU                           
+  1555: JZ       label_1594           
+label_1556:
+  1556: ASP      1                    
+  1557: LADR     [sp-4]               
+  1558: DADR     data[12]             
+  1559: DCP      4                    
+  1560: GADR     data[17]             
+  1561: GCP      data[225]             ; = 30.0f
+  1562: ASP      1                    
+  1563: CALL     func_1298            
+  1564: LLD      [sp+1]               
+  1565: SSP      3                    
+  1566: JZ       label_1593           
+  1567: LADR     [sp-4]               
+  1568: DADR     data[12]             
+  1569: DCP      4                    
+  1570: GCP      data[226]             ; = 3
+  1571: GADR     data[20]             
+  1572: XCALL    $SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void ; args=3
+  1573: SSP      3                    
+  1574: GCP      data[227]             ; = 9
+  1575: GADR     data[121]            
+  1576: ASGN                          
+  1577: SSP      1                    
+  1578: LADR     [sp-4]               
+  1579: DADR     data[12]             
+  1580: DCP      4                    
+  1581: GCP      data[228]             ; = 2
+  1582: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1583: SSP      2                    
+  1584: LADR     [sp-4]               
+  1585: DADR     data[12]             
+  1586: DCP      4                    
+  1587: GADR     data[20]             
+  1588: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1589: SSP      2                    
+  1590: GCP      data[229]             ; = 1
+  1591: LLD      [sp-3]               
+  1592: RET      1                    
+label_1593:
+  1593: JMP      label_1594           
+label_1594:
+  1594: SSP      1                    
+  1595: GCP      data[230]             ; = 0.0f
+  1596: LLD      [sp-3]               
+  1597: RET      0                    
+func_1598:
+  1598: ASP      4                    
+  1599: ASP      3                    
+  1600: GCP      data[23]             
+  1601: JMP      label_1603           
+  1602: JMP      label_1607           
+label_1603:
+  1603: LCP      [sp+7]               
+  1604: GCP      data[232]             ; = 0.0f
+  1605: EQU                           
+  1606: JZ       label_1608           
+label_1607:
+  1607: JMP      label_1612           
+label_1608:
+  1608: LCP      [sp+7]               
+  1609: GCP      data[233]             ; = 2
+  1610: EQU                           
+  1611: JZ       label_1655           
+label_1612:
+  1612: GCP      data[234]             ; = 1
+  1613: GADR     data[231]            
+  1614: ASGN                          
+  1615: SSP      1                    
+  1616: ASP      1                    
+  1617: LADR     [sp-4]               
+  1618: DADR     data[12]             
+  1619: DCP      4                    
+  1620: GADR     data[20]             
+  1621: GCP      data[235]             ; = 30.0f
+  1622: ASP      1                    
+  1623: CALL     func_1298            
+  1624: LLD      [sp+8]               
+  1625: SSP      3                    
+  1626: JZ       label_1653           
+  1627: LADR     [sp-4]               
+  1628: DADR     data[12]             
+  1629: DCP      4                    
+  1630: GCP      data[236]             ; = 3
+  1631: GADR     data[20]             
+  1632: XCALL    $SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void ; args=3
+  1633: SSP      3                    
+  1634: GCP      data[237]             ; = 2
+  1635: GADR     data[121]            
+  1636: ASGN                          
+  1637: SSP      1                    
+  1638: LADR     [sp-4]               
+  1639: DADR     data[12]             
+  1640: DCP      4                    
+  1641: GCP      data[238]             ; = 2
+  1642: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1643: SSP      2                    
+  1644: LADR     [sp-4]               
+  1645: DADR     data[12]             
+  1646: DCP      4                    
+  1647: GADR     data[20]             
+  1648: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1649: SSP      2                    
+  1650: GCP      data[239]             ; = 1
+  1651: LLD      [sp-3]               
+  1652: RET      8                    
+label_1653:
+  1653: JMP      label_1718           
+  1654: JMP      label_1659           
+label_1655:
+  1655: LCP      [sp+7]               
+  1656: GCP      data[240]             ; = 1
+  1657: EQU                           
+  1658: JZ       label_1718           
+label_1659:
+  1659: GCP      data[231]            
+  1660: JZ       label_1717           
+  1661: ASP      1                    
+  1662: LADR     [sp-4]               
+  1663: DADR     data[12]             
+  1664: DCP      4                    
+  1665: GADR     data[14]             
+  1666: GCP      data[241]             ; = 15.0f
+  1667: ASP      1                    
+  1668: CALL     func_1298            
+  1669: LLD      [sp+8]               
+  1670: SSP      3                    
+  1671: JZ       label_1717           
+  1672: JMP      label_1673           
+label_1673:
+  1673: GCP      data[242]             ; = 0.0f
+  1674: GADR     data[231]            
+  1675: ASGN                          
+  1676: SSP      1                    
+  1677: LADR     [sp-4]               
+  1678: DADR     data[12]             
+  1679: DCP      4                    
+  1680: GCP      data[243]             ; = 2
+  1681: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1682: SSP      2                    
+  1683: GADR     data[20]             
+  1684: DCP      12                   
+  1685: LADR     [sp+0]               
+  1686: ASGN                          
+  1687: SSP      3                    
+  1688: GCP      data[244]             ; = 30.0f
+  1689: LADR     [sp+0]               
+  1690: PNT      12                   
+  1691: ASGN                          
+  1692: SSP      1                    
+  1693: ASP      1                    
+  1694: LADR     [sp+0]               
+  1695: LADR     [sp+4]               
+  1696: ASP      1                    
+  1697: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1698: LLD      [sp+8]               
+  1699: SSP      2                    
+  1700: JZ       label_1708           
+  1701: LADR     [sp-4]               
+  1702: DADR     data[12]             
+  1703: DCP      4                    
+  1704: LADR     [sp+4]               
+  1705: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1706: SSP      2                    
+  1707: JMP      label_1714           
+label_1708:
+  1708: LADR     [sp-4]               
+  1709: DADR     data[12]             
+  1710: DCP      4                    
+  1711: LADR     [sp+0]               
+  1712: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1713: SSP      2                    
+label_1714:
+  1714: GCP      data[245]             ; = 1
+  1715: LLD      [sp-3]               
+  1716: RET      8                    
+label_1717:
+  1717: JMP      label_1718           
+label_1718:
+  1718: SSP      1                    
+  1719: GCP      data[246]             ; = 0.0f
+  1720: LLD      [sp-3]               
+  1721: RET      7                    
+func_1722:
+  1722: ASP      1                    
+  1723: ASP      4                    
+  1724: ASP      3                    
+  1725: GCP      data[121]            
+  1726: JMP      label_1728           
+  1727: JMP      label_1732           
+label_1728:
+  1728: LCP      [sp+8]               
+  1729: GCP      data[247]             ; = 0.0f
+  1730: EQU                           
+  1731: JZ       label_1733           
+label_1732:
+  1732: JMP      label_1737           
+label_1733:
+  1733: LCP      [sp+8]               
+  1734: GCP      data[248]             ; = 1
+  1735: EQU                           
+  1736: JZ       label_1758           
+label_1737:
+  1737: GCP      data[249]             ; = 1
+  1738: GADR     data[121]            
+  1739: ASGN                          
+  1740: SSP      1                    
+  1741: ASP      1                    
+  1742: LCP      [sp-3]               
+  1743: ASP      1                    
+  1744: CALL     func_1598            
+  1745: LLD      [sp+9]               
+  1746: SSP      1                    
+  1747: JZ       label_1749           
+  1748: JMP      label_1756           
+label_1749:
+  1749: ASP      1                    
+  1750: LCP      [sp-3]               
+  1751: ASP      1                    
+  1752: CALL     func_1506            
+  1753: LLD      [sp+9]               
+  1754: SSP      1                    
+  1755: SSP      1                    
+label_1756:
+  1756: JMP      label_2086           
+  1757: JMP      label_1762           
+label_1758:
+  1758: LCP      [sp+8]               
+  1759: GCP      data[250]             ; = 2
+  1760: EQU                           
+  1761: JZ       label_1812           
+label_1762:
+  1762: GCP      data[23]             
+  1763: JZ       label_1765           
+  1764: JMP      label_1811           
+label_1765:
+  1765: ASP      1                    
+  1766: LADR     [sp-3]               
+  1767: DADR     data[12]             
+  1768: DCP      4                    
+  1769: GADR     data[20]             
+  1770: GCP      data[251]             ; = 8.0f
+  1771: ASP      1                    
+  1772: CALL     func_1298            
+  1773: LLD      [sp+9]               
+  1774: SSP      3                    
+  1775: JZ       label_1811           
+  1776: JMP      label_1777           
+label_1777:
+  1777: LADR     [sp-3]               
+  1778: DADR     data[12]             
+  1779: DCP      4                    
+  1780: GCP      data[252]             ; = 1
+  1781: XCALL    $SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void ; args=2
+  1782: SSP      2                    
+  1783: LADR     [sp-3]               
+  1784: DADR     data[12]             
+  1785: DCP      4                    
+  1786: GCP      data[253]             ; = 0.0f
+  1787: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1788: SSP      2                    
+  1789: LADR     [sp-3]               
+  1790: DADR     data[12]             
+  1791: DCP      4                    
+  1792: GADR     data[20]             
+  1793: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1794: SSP      2                    
+  1795: LADR     [sp-3]               
+  1796: DADR     data[12]             
+  1797: DCP      4                    
+  1798: GCP      data[254]             ; = 2
+  1799: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1800: SSP      2                    
+  1801: LADR     [sp-3]               
+  1802: DADR     data[12]             
+  1803: DCP      4                    
+  1804: GCP      data[255]             ; = 0.0f
+  1805: XCALL    $SC_P_Ai_SetMovePos(unsignedlong,unsignedlong)void ; args=2
+  1806: SSP      2                    
+  1807: GCP      data[256]             ; = 3
+  1808: GADR     data[121]            
+  1809: ASGN                          
+  1810: SSP      1                    
+label_1811:
+  1811: JMP      label_1816           
+label_1812:
+  1812: LCP      [sp+8]               
+  1813: GCP      data[257]             ; = 3
+  1814: EQU                           
+  1815: JZ       label_1889           
+label_1816:
+  1816: GCP      data[258]             ; = 511
+  1817: LADR     [sp+0]               
+  1818: ASGN                          
+  1819: SSP      1                    
+  1820: ASP      1                    
+  1821: LCP      [sp+0]               
+  1822: ASP      1                    
+  1823: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1824: LLD      [sp+9]               
+  1825: SSP      1                    
+  1826: GCP      data[259]             ; = 1
+  1827: EQU                           
+  1828: JZ       label_1887           
+  1829: LADR     [sp-3]               
+  1830: DADR     data[12]             
+  1831: DCP      4                    
+  1832: GCP      data[260]             ; = 1
+  1833: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1834: SSP      2                    
+  1835: GCP      data[261]             ; = 1
+  1836: GADR     data[121]            
+  1837: ASGN                          
+  1838: SSP      1                    
+  1839: ASP      1                    
+  1840: LADR     [sp-3]               
+  1841: DADR     data[12]             
+  1842: DCP      4                    
+  1843: GADR     data[14]             
+  1844: GCP      data[262]             ; = 15.0f
+  1845: ASP      1                    
+  1846: CALL     func_1298            
+  1847: LLD      [sp+9]               
+  1848: SSP      3                    
+  1849: JZ       label_1887           
+  1850: LADR     [sp-3]               
+  1851: DADR     data[12]             
+  1852: DCP      4                    
+  1853: GCP      data[263]             ; = 2
+  1854: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1855: SSP      2                    
+  1856: GADR     data[20]             
+  1857: DCP      12                   
+  1858: LADR     [sp+1]               
+  1859: ASGN                          
+  1860: SSP      3                    
+  1861: GCP      data[264]             ; = 30.0f
+  1862: LADR     [sp+1]               
+  1863: PNT      12                   
+  1864: ASGN                          
+  1865: SSP      1                    
+  1866: ASP      1                    
+  1867: LADR     [sp+1]               
+  1868: LADR     [sp+5]               
+  1869: ASP      1                    
+  1870: XCALL    $SC_GetRndWp(*s_sphere,*c_Vector3)int ; args=2
+  1871: LLD      [sp+9]               
+  1872: SSP      2                    
+  1873: JZ       label_1881           
+  1874: LADR     [sp-3]               
+  1875: DADR     data[12]             
+  1876: DCP      4                    
+  1877: LADR     [sp+5]               
+  1878: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1879: SSP      2                    
+  1880: JMP      label_1887           
+label_1881:
+  1881: LADR     [sp-3]               
+  1882: DADR     data[12]             
+  1883: DCP      4                    
+  1884: LADR     [sp+1]               
+  1885: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1886: SSP      2                    
+label_1887:
+  1887: JMP      label_2086           
+  1888: JMP      label_1893           
+label_1889:
+  1889: LCP      [sp+8]               
+  1890: GCP      data[265]             ; = 4
+  1891: EQU                           
+  1892: JZ       label_1953           
+label_1893:
+  1893: GCP      data[266]             ; = 510
+  1894: LADR     [sp+0]               
+  1895: ASGN                          
+  1896: SSP      1                    
+  1897: ASP      1                    
+  1898: LCP      [sp+0]               
+  1899: ASP      1                    
+  1900: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1901: LLD      [sp+9]               
+  1902: SSP      1                    
+  1903: GCP      data[267]             ; = 0.0f
+  1904: EQU                           
+  1905: JZ       label_1951           
+  1906: ASP      1                    
+  1907: LADR     [sp-3]               
+  1908: DADR     data[12]             
+  1909: DCP      4                    
+  1910: GADR     data[11]             
+  1911: GCP      data[268]             ; = 8.0f
+  1912: ASP      1                    
+  1913: CALL     func_1298            
+  1914: LLD      [sp+9]               
+  1915: SSP      3                    
+  1916: JZ       label_1951           
+  1917: LADR     [sp-3]               
+  1918: DADR     data[12]             
+  1919: DCP      4                    
+  1920: GCP      data[269]             ; = 1
+  1921: XCALL    $SC_P_Ai_SetBattleMode(unsignedlong,unsignedlong)void ; args=2
+  1922: SSP      2                    
+  1923: LADR     [sp-3]               
+  1924: DADR     data[12]             
+  1925: DCP      4                    
+  1926: GCP      data[270]             ; = 0.0f
+  1927: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1928: SSP      2                    
+  1929: LADR     [sp-3]               
+  1930: DADR     data[12]             
+  1931: DCP      4                    
+  1932: GADR     data[11]             
+  1933: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  1934: SSP      2                    
+  1935: LADR     [sp-3]               
+  1936: DADR     data[12]             
+  1937: DCP      4                    
+  1938: GCP      data[271]             ; = 2
+  1939: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  1940: SSP      2                    
+  1941: LADR     [sp-3]               
+  1942: DADR     data[12]             
+  1943: DCP      4                    
+  1944: GCP      data[272]             ; = 0.0f
+  1945: XCALL    $SC_P_Ai_SetMovePos(unsignedlong,unsignedlong)void ; args=2
+  1946: SSP      2                    
+  1947: GCP      data[273]             ; = 5
+  1948: GADR     data[121]            
+  1949: ASGN                          
+  1950: SSP      1                    
+label_1951:
+  1951: JMP      label_2086           
+  1952: JMP      label_1957           
+label_1953:
+  1953: LCP      [sp+8]               
+  1954: GCP      data[274]             ; = 5
+  1955: EQU                           
+  1956: JZ       label_2005           
+label_1957:
+  1957: GCP      data[275]             ; = 510
+  1958: LADR     [sp+0]               
+  1959: ASGN                          
+  1960: SSP      1                    
+  1961: ASP      1                    
+  1962: LCP      [sp+0]               
+  1963: ASP      1                    
+  1964: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1965: LLD      [sp+9]               
+  1966: SSP      1                    
+  1967: GCP      data[276]             ; = 0.0f
+  1968: NEQ                           
+  1969: JZ       label_1980           
+  1970: LADR     [sp-3]               
+  1971: DADR     data[12]             
+  1972: DCP      4                    
+  1973: GCP      data[277]             ; = 1
+  1974: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1975: SSP      2                    
+  1976: GCP      data[278]             ; = 4
+  1977: GADR     data[121]            
+  1978: ASGN                          
+  1979: SSP      1                    
+label_1980:
+  1980: GCP      data[279]             ; = 511
+  1981: LADR     [sp+0]               
+  1982: ASGN                          
+  1983: SSP      1                    
+  1984: ASP      1                    
+  1985: LCP      [sp+0]               
+  1986: ASP      1                    
+  1987: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  1988: LLD      [sp+9]               
+  1989: SSP      1                    
+  1990: GCP      data[280]             ; = 1
+  1991: NEQ                           
+  1992: JZ       label_2003           
+  1993: LADR     [sp-3]               
+  1994: DADR     data[12]             
+  1995: DCP      4                    
+  1996: GCP      data[281]             ; = 1
+  1997: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  1998: SSP      2                    
+  1999: GCP      data[282]             ; = 1
+  2000: GADR     data[121]            
+  2001: ASGN                          
+  2002: SSP      1                    
+label_2003:
+  2003: JMP      label_2086           
+  2004: JMP      label_2009           
+label_2005:
+  2005: LCP      [sp+8]               
+  2006: GCP      data[283]             ; = 7
+  2007: EQU                           
+  2008: JZ       label_2034           
+label_2009:
+  2009: GCP      data[284]             ; = 510
+  2010: LADR     [sp+0]               
+  2011: ASGN                          
+  2012: SSP      1                    
+  2013: ASP      1                    
+  2014: LCP      [sp+0]               
+  2015: ASP      1                    
+  2016: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  2017: LLD      [sp+9]               
+  2018: SSP      1                    
+  2019: GCP      data[285]             ; = 1
+  2020: NEQ                           
+  2021: JZ       label_2032           
+  2022: LADR     [sp-3]               
+  2023: DADR     data[12]             
+  2024: DCP      4                    
+  2025: GCP      data[286]             ; = 1
+  2026: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  2027: SSP      2                    
+  2028: GCP      data[287]             ; = 1
+  2029: GADR     data[121]            
+  2030: ASGN                          
+  2031: SSP      1                    
+label_2032:
+  2032: JMP      label_2086           
+  2033: JMP      label_2038           
+label_2034:
+  2034: LCP      [sp+8]               
+  2035: GCP      data[288]             ; = 9
+  2036: EQU                           
+  2037: JZ       label_2039           
+label_2038:
+  2038: JMP      label_2043           
+label_2039:
+  2039: LCP      [sp+8]               
+  2040: GCP      data[289]             ; = 10
+  2041: EQU                           
+  2042: JZ       label_2086           
+label_2043:
+  2043: GCP      data[24]             
+  2044: JMP      label_2046           
+  2045: JMP      label_2050           
+label_2046:
+  2046: LCP      [sp+9]               
+  2047: GCP      data[290]             ; = 0.0f
+  2048: EQU                           
+  2049: JZ       label_2056           
+label_2050:
+  2050: GCP      data[291]             ; = 1
+  2051: GADR     data[121]            
+  2052: ASGN                          
+  2053: SSP      1                    
+  2054: JMP      label_2065           
+  2055: JMP      label_2060           
+label_2056:
+  2056: LCP      [sp+9]               
+  2057: GCP      data[292]             ; = 1
+  2058: EQU                           
+  2059: JZ       label_2065           
+label_2060:
+  2060: GCP      data[293]             ; = 7
+  2061: GADR     data[121]            
+  2062: ASGN                          
+  2063: SSP      1                    
+  2064: JMP      label_2065           
+label_2065:
+  2065: SSP      1                    
+  2066: GCP      data[121]            
+  2067: GCP      data[294]             ; = 9
+  2068: NEQ                           
+  2069: JZ       label_2085           
+  2070: ASP      1                    
+  2071: LCP      [sp-3]               
+  2072: ASP      1                    
+  2073: CALL     func_1598            
+  2074: LLD      [sp+9]               
+  2075: SSP      1                    
+  2076: JZ       label_2078           
+  2077: JMP      label_2085           
+label_2078:
+  2078: ASP      1                    
+  2079: LCP      [sp-3]               
+  2080: ASP      1                    
+  2081: CALL     func_1506            
+  2082: LLD      [sp+9]               
+  2083: SSP      1                    
+  2084: SSP      1                    
+label_2085:
+  2085: JMP      label_2086           
+label_2086:
+  2086: SSP      1                    
+  2087: RET      8                    
+func_2088:
+  2088: CALL     func_1313            
+  2089: LCP      [sp-3]               
+  2090: CALL     func_1722            
+  2091: SSP      1                    
+  2092: GCP      data[205]            
+  2093: LADR     [sp-3]               
+  2094: DADR     data[20]             
+  2095: DCP      4                    
+  2096: FSUB                          
+  2097: GADR     data[205]            
+  2098: ASGN                          
+  2099: SSP      1                    
+  2100: GCP      data[121]            
+  2101: JMP      label_2103           
+  2102: JMP      label_2107           
+label_2103:
+  2103: LCP      [sp+0]               
+  2104: GCP      data[295]             ; = 0.0f
+  2105: EQU                           
+  2106: JZ       label_2109           
+label_2107:
+  2107: JMP      label_2402           
+  2108: JMP      label_2113           
+label_2109:
+  2109: LCP      [sp+0]               
+  2110: GCP      data[296]             ; = 1
+  2111: EQU                           
+  2112: JZ       label_2169           
+label_2113:
+  2113: ASP      1                    
+  2114: LADR     [sp-3]               
+  2115: DADR     data[12]             
+  2116: DCP      4                    
+  2117: ASP      1                    
+  2118: XCALL    $SC_P_Ai_GetSureEnemies(unsignedlong)unsignedlong ; args=1
+  2119: LLD      [sp+1]               
+  2120: SSP      1                    
+  2121: JZ       label_2123           
+  2122: JMP      label_2131           
+label_2123:
+  2123: GCP      data[118]            
+  2124: LADR     [sp-3]               
+  2125: DADR     data[20]             
+  2126: DCP      4                    
+  2127: FADD                          
+  2128: GADR     data[118]            
+  2129: ASGN                          
+  2130: SSP      1                    
+label_2131:
+  2131: ASP      1                    
+  2132: LADR     [sp-3]               
+  2133: DADR     data[12]             
+  2134: DCP      4                    
+  2135: ASP      1                    
+  2136: CALL     func_0461            
+  2137: LLD      [sp+1]               
+  2138: SSP      1                    
+  2139: JZ       label_2144           
+  2140: GCP      data[297]             ; = 0.0f
+  2141: GADR     data[118]            
+  2142: ASGN                          
+  2143: SSP      1                    
+label_2144:
+  2144: GCP      data[118]            
+  2145: GCP      data[119]            
+  2146: FGRE                          
+  2147: JZ       label_2167           
+  2148: GCP      data[298]             ; = 0.0f
+  2149: GADR     data[118]            
+  2150: ASGN                          
+  2151: SSP      1                    
+  2152: ASP      1                    
+  2153: ASP      1                    
+  2154: XCALL    $rand(void)int        ; args=0
+  2155: LLD      [sp+1]               
+  2156: GCP      data[299]             ; = 5
+  2157: MOD                           
+  2158: ITOF                          
+  2159: GADR     data[119]            
+  2160: ASGN                          
+  2161: SSP      1                    
+  2162: LADR     [sp-3]               
+  2163: DADR     data[12]             
+  2164: DCP      4                    
+  2165: CALL     func_0911            
+  2166: SSP      1                    
+label_2167:
+  2167: JMP      label_2402           
+  2168: JMP      label_2173           
+label_2169:
+  2169: LCP      [sp+0]               
+  2170: GCP      data[300]             ; = 2
+  2171: EQU                           
+  2172: JZ       label_2205           
+label_2173:
+  2173: GCP      data[205]            
+  2174: GCP      data[301]             ; = 0.0f
+  2175: FLES                          
+  2176: JZ       label_2203           
+  2177: GCP      data[302]             ; = 10.0f
+  2178: GADR     data[205]            
+  2179: ASGN                          
+  2180: SSP      1                    
+  2181: ASP      1                    
+  2182: LADR     [sp-3]               
+  2183: DADR     data[12]             
+  2184: DCP      4                    
+  2185: ASP      1                    
+  2186: CALL     func_0461            
+  2187: LLD      [sp+1]               
+  2188: SSP      1                    
+  2189: JZ       label_2191           
+  2190: JMP      label_2203           
+label_2191:
+  2191: LADR     [sp-3]               
+  2192: DADR     data[12]             
+  2193: DCP      4                    
+  2194: GCP      data[303]             ; = 2
+  2195: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2196: SSP      2                    
+  2197: LADR     [sp-3]               
+  2198: DADR     data[12]             
+  2199: DCP      4                    
+  2200: GADR     data[20]             
+  2201: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2202: SSP      2                    
+label_2203:
+  2203: JMP      label_2402           
+  2204: JMP      label_2209           
+label_2205:
+  2205: LCP      [sp+0]               
+  2206: GCP      data[304]             ; = 3
+  2207: EQU                           
+  2208: JZ       label_2233           
+label_2209:
+  2209: ASP      1                    
+  2210: LADR     [sp-3]               
+  2211: DADR     data[12]             
+  2212: DCP      4                    
+  2213: ASP      1                    
+  2214: CALL     func_0461            
+  2215: LLD      [sp+1]               
+  2216: SSP      1                    
+  2217: JZ       label_2219           
+  2218: JMP      label_2231           
+label_2219:
+  2219: LADR     [sp-3]               
+  2220: DADR     data[12]             
+  2221: DCP      4                    
+  2222: GCP      data[305]             ; = 2
+  2223: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2224: SSP      2                    
+  2225: LADR     [sp-3]               
+  2226: DADR     data[12]             
+  2227: DCP      4                    
+  2228: GADR     data[20]             
+  2229: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2230: SSP      2                    
+label_2231:
+  2231: JMP      label_2402           
+  2232: JMP      label_2237           
+label_2233:
+  2233: LCP      [sp+0]               
+  2234: GCP      data[306]             ; = 4
+  2235: EQU                           
+  2236: JZ       label_2269           
+label_2237:
+  2237: GCP      data[205]            
+  2238: GCP      data[307]             ; = 0.0f
+  2239: FLES                          
+  2240: JZ       label_2267           
+  2241: GCP      data[308]             ; = 1.0f
+  2242: GADR     data[205]            
+  2243: ASGN                          
+  2244: SSP      1                    
+  2245: ASP      1                    
+  2246: LADR     [sp-3]               
+  2247: DADR     data[12]             
+  2248: DCP      4                    
+  2249: ASP      1                    
+  2250: CALL     func_0461            
+  2251: LLD      [sp+1]               
+  2252: SSP      1                    
+  2253: JZ       label_2255           
+  2254: JMP      label_2267           
+label_2255:
+  2255: LADR     [sp-3]               
+  2256: DADR     data[12]             
+  2257: DCP      4                    
+  2258: GCP      data[309]             ; = 2
+  2259: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2260: SSP      2                    
+  2261: LADR     [sp-3]               
+  2262: DADR     data[12]             
+  2263: DCP      4                    
+  2264: GADR     data[11]             
+  2265: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2266: SSP      2                    
+label_2267:
+  2267: JMP      label_2402           
+  2268: JMP      label_2273           
+label_2269:
+  2269: LCP      [sp+0]               
+  2270: GCP      data[310]             ; = 5
+  2271: EQU                           
+  2272: JZ       label_2297           
+label_2273:
+  2273: ASP      1                    
+  2274: LADR     [sp-3]               
+  2275: DADR     data[12]             
+  2276: DCP      4                    
+  2277: ASP      1                    
+  2278: CALL     func_0461            
+  2279: LLD      [sp+1]               
+  2280: SSP      1                    
+  2281: JZ       label_2283           
+  2282: JMP      label_2295           
+label_2283:
+  2283: LADR     [sp-3]               
+  2284: DADR     data[12]             
+  2285: DCP      4                    
+  2286: GCP      data[311]             ; = 2
+  2287: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2288: SSP      2                    
+  2289: LADR     [sp-3]               
+  2290: DADR     data[12]             
+  2291: DCP      4                    
+  2292: GADR     data[11]             
+  2293: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2294: SSP      2                    
+label_2295:
+  2295: JMP      label_2402           
+  2296: JMP      label_2301           
+label_2297:
+  2297: LCP      [sp+0]               
+  2298: GCP      data[312]             ; = 6
+  2299: EQU                           
+  2300: JZ       label_2303           
+label_2301:
+  2301: JMP      label_2402           
+  2302: JMP      label_2307           
+label_2303:
+  2303: LCP      [sp+0]               
+  2304: GCP      data[313]             ; = 7
+  2305: EQU                           
+  2306: JZ       label_2339           
+label_2307:
+  2307: GCP      data[205]            
+  2308: GCP      data[314]             ; = 0.0f
+  2309: FLES                          
+  2310: JZ       label_2337           
+  2311: GCP      data[315]             ; = 5.0f
+  2312: GADR     data[205]            
+  2313: ASGN                          
+  2314: SSP      1                    
+  2315: ASP      1                    
+  2316: LADR     [sp-3]               
+  2317: DADR     data[12]             
+  2318: DCP      4                    
+  2319: ASP      1                    
+  2320: CALL     func_0461            
+  2321: LLD      [sp+1]               
+  2322: SSP      1                    
+  2323: JZ       label_2325           
+  2324: JMP      label_2337           
+label_2325:
+  2325: LADR     [sp-3]               
+  2326: DADR     data[12]             
+  2327: DCP      4                    
+  2328: GCP      data[316]             ; = 2
+  2329: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2330: SSP      2                    
+  2331: LADR     [sp-3]               
+  2332: DADR     data[12]             
+  2333: DCP      4                    
+  2334: GADR     data[17]             
+  2335: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2336: SSP      2                    
+label_2337:
+  2337: JMP      label_2402           
+  2338: JMP      label_2343           
+label_2339:
+  2339: LCP      [sp+0]               
+  2340: GCP      data[317]             ; = 8
+  2341: EQU                           
+  2342: JZ       label_2345           
+label_2343:
+  2343: JMP      label_2402           
+  2344: JMP      label_2349           
+label_2345:
+  2345: LCP      [sp+0]               
+  2346: GCP      data[318]             ; = 9
+  2347: EQU                           
+  2348: JZ       label_2375           
+label_2349:
+  2349: GCP      data[205]            
+  2350: GCP      data[319]             ; = 0.0f
+  2351: FLES                          
+  2352: JZ       label_2373           
+  2353: GCP      data[320]             ; = 5.0f
+  2354: GADR     data[205]            
+  2355: ASGN                          
+  2356: SSP      1                    
+  2357: ASP      1                    
+  2358: LADR     [sp-3]               
+  2359: DADR     data[12]             
+  2360: DCP      4                    
+  2361: ASP      1                    
+  2362: CALL     func_0461            
+  2363: LLD      [sp+1]               
+  2364: SSP      1                    
+  2365: JZ       label_2367           
+  2366: JMP      label_2373           
+label_2367:
+  2367: LADR     [sp-3]               
+  2368: DADR     data[12]             
+  2369: DCP      4                    
+  2370: GADR     data[17]             
+  2371: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2372: SSP      2                    
+label_2373:
+  2373: JMP      label_2402           
+  2374: JMP      label_2379           
+label_2375:
+  2375: LCP      [sp+0]               
+  2376: GCP      data[321]             ; = 10
+  2377: EQU                           
+  2378: JZ       label_2402           
+label_2379:
+  2379: ASP      1                    
+  2380: LADR     [sp-3]               
+  2381: DADR     data[12]             
+  2382: DCP      4                    
+  2383: ASP      1                    
+  2384: CALL     func_0461            
+  2385: LLD      [sp+1]               
+  2386: SSP      1                    
+  2387: JZ       label_2389           
+  2388: JMP      label_2401           
+label_2389:
+  2389: LADR     [sp-3]               
+  2390: DADR     data[12]             
+  2391: DCP      4                    
+  2392: GCP      data[322]             ; = 2
+  2393: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2394: SSP      2                    
+  2395: LADR     [sp-3]               
+  2396: DADR     data[12]             
+  2397: DCP      4                    
+  2398: GADR     data[17]             
+  2399: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2400: SSP      2                    
+label_2401:
+  2401: JMP      label_2402           
+label_2402:
+  2402: SSP      1                    
+  2403: RET      0                    
+ScriptMain:
+  2404: ASP      3                    
+  2405: ASP      3                    
+  2406: ASP      4                    
+  2407: ASP      1                    
+  2408: ASP      5                    
+  2409: ASP      64                   
+  2410: ASP      1                    
+  2411: ASP      1                    
+  2412: ASP      1                    
+  2413: LADR     [sp-4]               
+  2414: DADR     data[0]              
+  2415: DCP      4                    
+  2416: JMP      label_2418           
+  2417: JMP      label_2422           
+label_2418:
+  2418: LCP      [sp+83]              
+  2419: GCP      data[324]             ; = 4
+  2420: EQU                           
+  2421: JZ       label_2423           
+label_2422:
+  2422: JMP      label_2427           
+label_2423:
+  2423: LCP      [sp+83]              
+  2424: GCP      data[325]             ; = 5
+  2425: EQU                           
+  2426: JZ       label_2437           
+label_2427:
+  2427: GCP      data[326]             ; = 0.0f
+  2428: LADR     [sp-4]               
+  2429: DADR     data[4]              
+  2430: ASGN                          
+  2431: SSP      1                    
+  2432: GCP      data[327]             ; = 1
+  2433: LLD      [sp-3]               
+  2434: RET      84                   
+  2435: JMP      label_2772           
+  2436: JMP      label_2441           
+label_2437:
+  2437: LCP      [sp+83]              
+  2438: GCP      data[328]             ; = 1
+  2439: EQU                           
+  2440: JZ       label_2443           
+label_2441:
+  2441: JMP      label_2772           
+  2442: JMP      label_2447           
+label_2443:
+  2443: LCP      [sp+83]              
+  2444: GCP      data[329]             ; = 7
+  2445: EQU                           
+  2446: JZ       label_2459           
+label_2447:
+  2447: GCP      data[330]             ; = 100
+  2448: LADR     [sp-4]               
+  2449: DADR     data[12]             
+  2450: DCP      4                    
+  2451: XCALL    $SC_MP_ScriptMessage(unsignedlong,unsignedlong)void ; args=2
+  2452: SSP      2                    
+  2453: GCP      data[331]             ; = 1000
+  2454: GADR     data[1]              
+  2455: ASGN                          
+  2456: SSP      1                    
+  2457: JMP      label_2772           
+  2458: JMP      label_2463           
+label_2459:
+  2459: LCP      [sp+83]              
+  2460: GCP      data[332]             ; = 3
+  2461: EQU                           
+  2462: JZ       label_2465           
+label_2463:
+  2463: JMP      label_2772           
+  2464: JMP      label_2469           
+label_2465:
+  2465: LCP      [sp+83]              
+  2466: GCP      data[333]             ; = 2
+  2467: EQU                           
+  2468: JZ       label_2597           
+label_2469:
+  2469: LADR     [sp-4]               
+  2470: DADR     data[4]              
+  2471: DCP      4                    
+  2472: JMP      label_2474           
+  2473: JMP      label_2478           
+label_2474:
+  2474: LCP      [sp+84]              
+  2475: GCP      data[334]             ; = 100
+  2476: EQU                           
+  2477: JZ       label_2509           
+label_2478:
+  2478: GCP      data[335]             ; = 4
+  2479: GADR     data[121]            
+  2480: ASGN                          
+  2481: SSP      1                    
+  2482: LADR     [sp-4]               
+  2483: DADR     data[12]             
+  2484: DCP      4                    
+  2485: GCP      data[336]             ; = 3
+  2486: GADR     data[11]             
+  2487: XCALL    $SC_P_Ai_SetBattleModeExt(unsignedlong,unsignedlong,*c_Vector3)void ; args=3
+  2488: SSP      3                    
+  2489: LADR     [sp-4]               
+  2490: DADR     data[12]             
+  2491: DCP      4                    
+  2492: GCP      data[337]             ; = 2
+  2493: XCALL    $SC_P_Ai_SetMoveMode(unsignedlong,unsignedlong)void ; args=2
+  2494: SSP      2                    
+  2495: LADR     [sp-4]               
+  2496: DADR     data[12]             
+  2497: DCP      4                    
+  2498: GADR     data[11]             
+  2499: XCALL    $SC_P_Ai_Go(unsignedlong,*c_Vector3)void ; args=2
+  2500: SSP      2                    
+  2501: LADR     [sp-4]               
+  2502: DADR     data[12]             
+  2503: DCP      4                    
+  2504: GCP      data[338]             ; = 1
+  2505: XCALL    $SC_P_Ai_SetMode(unsignedlong,unsignedlong)void ; args=2
+  2506: SSP      2                    
+  2507: JMP      label_2594           
+  2508: JMP      label_2513           
+label_2509:
+  2509: LCP      [sp+84]              
+  2510: GCP      data[339]             ; = 666
+  2511: EQU                           
+  2512: JZ       label_2537           
+label_2513:
+  2513: LADR     [sp-4]               
+  2514: DADR     data[8]              
+  2515: DCP      4                    
+  2516: ITOF                          
+  2517: GADR     data[192]            
+  2518: ASGN                          
+  2519: SSP      1                    
+  2520: GCP      data[1]              
+  2521: GCP      data[340]             ; = 1000
+  2522: NEQ                           
+  2523: JZ       label_2531           
+  2524: GADR     data[341]            
+  2525: GCP      data[4]              
+  2526: GCP      data[357]             ; = 0.0f
+  2527: GCP      data[358]             ; = 3
+  2528: XCALL    $SC_message(*char,...)void ; args=4294967295
+  2529: SSP      3                    
+  2530: JMP      label_2535           
+label_2531:
+  2531: GCP      data[359]             ; = 1001
+  2532: GADR     data[1]              
+  2533: ASGN                          
+  2534: SSP      1                    
+label_2535:
+  2535: JMP      label_2594           
+  2536: JMP      label_2541           
+label_2537:
+  2537: LCP      [sp+84]              
+  2538: GCP      data[360]             ; = 2000
+  2539: EQU                           
+  2540: JZ       label_2547           
+label_2541:
+  2541: GCP      data[361]             ; = 1
+  2542: GADR     data[1]              
+  2543: ASGN                          
+  2544: SSP      1                    
+  2545: JMP      label_2594           
+  2546: JMP      label_2551           
+label_2547:
+  2547: LCP      [sp+84]              
+  2548: GCP      data[362]             ; = 3000
+  2549: EQU                           
+  2550: JZ       label_2579           
+label_2551:
+  2551: LADR     [sp-4]               
+  2552: DADR     data[8]              
+  2553: DCP      4                    
+  2554: JZ       label_2556           
+  2555: JMP      label_2567           
+label_2556:
+  2556: GCP      data[363]             ; = 500
+  2557: GADR     data[1]              
+  2558: ASGN                          
+  2559: SSP      1                    
+  2560: LADR     [sp-4]               
+  2561: DADR     data[12]             
+  2562: DCP      4                    
+  2563: GCP      data[364]             ; = 0.0f
+  2564: XCALL    $SC_P_SetActive(unsignedlong,int)void ; args=2
+  2565: SSP      2                    
+  2566: JMP      label_2577           
+label_2567:
+  2567: LADR     [sp-4]               
+  2568: DADR     data[12]             
+  2569: DCP      4                    
+  2570: GCP      data[365]             ; = 1
+  2571: XCALL    $SC_P_SetActive(unsignedlong,int)void ; args=2
+  2572: SSP      2                    
+  2573: GCP      data[366]             ; = 1
+  2574: GADR     data[1]              
+  2575: ASGN                          
+  2576: SSP      1                    
+label_2577:
+  2577: JMP      label_2594           
+  2578: JMP      label_2583           
+label_2579:
+  2579: LCP      [sp+84]              
+  2580: GCP      data[367]             ; = 4000
+  2581: EQU                           
+  2582: JZ       label_2594           
+label_2583:
+  2583: GCP      data[368]             ; = 500
+  2584: GADR     data[1]              
+  2585: ASGN                          
+  2586: SSP      1                    
+  2587: LADR     [sp-4]               
+  2588: DADR     data[12]             
+  2589: DCP      4                    
+  2590: GCP      data[369]             ; = 0.0f
+  2591: XCALL    $SC_P_SetActive(unsignedlong,int)void ; args=2
+  2592: SSP      2                    
+  2593: JMP      label_2594           
+label_2594:
+  2594: SSP      1                    
+  2595: JMP      label_2772           
+  2596: JMP      label_2601           
+label_2597:
+  2597: LCP      [sp+83]              
+  2598: GCP      data[370]             ; = 0.0f
+  2599: EQU                           
+  2600: JZ       label_2772           
+label_2601:
+  2601: GCP      data[371]             ; = 0.2f
+  2602: LADR     [sp-4]               
+  2603: DADR     data[24]             
+  2604: ASGN                          
+  2605: SSP      1                    
+  2606: GCP      data[1]              
+  2607: GCP      data[372]             ; = 0.0f
+  2608: EQU                           
+  2609: JZ       label_2638           
+  2610: GCP      data[373]             ; = 540
+  2611: LADR     [sp+10]              
+  2612: ASGN                          
+  2613: SSP      1                    
+  2614: GCP      data[374]             ; = 0.0f
+  2615: ASP      1                    
+  2616: LCP      [sp+10]              
+  2617: ASP      1                    
+  2618: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  2619: LLD      [sp+85]              
+  2620: SSP      1                    
+  2621: LES                           
+  2622: JZ       label_2630           
+  2623: LCP      [sp-4]               
+  2624: CALL     func_0069            
+  2625: SSP      1                    
+  2626: GCP      data[375]             ; = 1
+  2627: LLD      [sp-3]               
+  2628: RET      84                   
+  2629: JMP      label_2638           
+label_2630:
+  2630: GCP      data[376]             ; = 10000.0f
+  2631: LADR     [sp-4]               
+  2632: DADR     data[24]             
+  2633: ASGN                          
+  2634: SSP      1                    
+  2635: GCP      data[377]             ; = 0.0f
+  2636: LLD      [sp-3]               
+  2637: RET      84                   
+label_2638:
+  2638: GCP      data[1]              
+  2639: GCP      data[378]             ; = 1000
+  2640: ULES                          
+  2641: JZ       label_2660           
+  2642: ASP      1                    
+  2643: LADR     [sp-4]               
+  2644: DADR     data[12]             
+  2645: DCP      4                    
+  2646: ASP      1                    
+  2647: XCALL    $SC_P_IsReady(unsignedlong)int ; args=1
+  2648: LLD      [sp+84]              
+  2649: SSP      1                    
+  2650: JZ       label_2652           
+  2651: JMP      label_2660           
+label_2652:
+  2652: GCP      data[379]             ; = 1028443341
+  2653: LADR     [sp-4]               
+  2654: DADR     data[24]             
+  2655: ASGN                          
+  2656: SSP      1                    
+  2657: GCP      data[380]             ; = 0.0f
+  2658: LLD      [sp-3]               
+  2659: RET      84                   
+label_2660:
+  2660: GCP      data[1]              
+  2661: JMP      label_2663           
+  2662: JMP      label_2667           
+label_2663:
+  2663: LCP      [sp+84]              
+  2664: GCP      data[381]             ; = 1
+  2665: EQU                           
+  2666: JZ       label_2684           
+label_2667:
+  2667: GCP      data[323]            
+  2668: LADR     [sp-4]               
+  2669: DADR     data[20]             
+  2670: DCP      4                    
+  2671: FADD                          
+  2672: GADR     data[323]            
+  2673: ASGN                          
+  2674: SSP      1                    
+  2675: GCP      data[323]            
+  2676: GCP      data[382]             ; = 0.5f
+  2677: FGRE                          
+  2678: JZ       label_2682           
+  2679: LCP      [sp-4]               
+  2680: CALL     func_0147            
+  2681: SSP      1                    
+label_2682:
+  2682: JMP      label_2770           
+  2683: JMP      label_2688           
+label_2684:
+  2684: LCP      [sp+84]              
+  2685: GCP      data[383]             ; = 2
+  2686: EQU                           
+  2687: JZ       label_2693           
+label_2688:
+  2688: LCP      [sp-4]               
+  2689: CALL     func_1191            
+  2690: SSP      1                    
+  2691: JMP      label_2770           
+  2692: JMP      label_2697           
+label_2693:
+  2693: LCP      [sp+84]              
+  2694: GCP      data[384]             ; = 3
+  2695: EQU                           
+  2696: JZ       label_2725           
+label_2697:
+  2697: ASP      1                    
+  2698: GCP      data[385]             ; = 499
+  2699: ASP      1                    
+  2700: XCALL    $SC_ggi(unsignedlong)int ; args=1
+  2701: LLD      [sp+85]              
+  2702: SSP      1                    
+  2703: JMP      label_2705           
+  2704: JMP      label_2709           
+label_2705:
+  2705: LCP      [sp+85]              
+  2706: GCP      data[386]             ; = 5
+  2707: EQU                           
+  2708: JZ       label_2714           
+label_2709:
+  2709: LCP      [sp-4]               
+  2710: CALL     func_2088            
+  2711: SSP      1                    
+  2712: JMP      label_2722           
+  2713: JMP      label_2718           
+label_2714:
+  2714: LCP      [sp+85]              
+  2715: GCP      data[387]             ; = 3
+  2716: EQU                           
+  2717: JZ       label_2722           
+label_2718:
+  2718: LCP      [sp-4]               
+  2719: CALL     func_1243            
+  2720: SSP      1                    
+  2721: JMP      label_2722           
+label_2722:
+  2722: SSP      1                    
+  2723: JMP      label_2770           
+  2724: JMP      label_2729           
+label_2725:
+  2725: LCP      [sp+84]              
+  2726: GCP      data[388]             ; = 1000
+  2727: EQU                           
+  2728: JZ       label_2731           
+label_2729:
+  2729: JMP      label_2770           
+  2730: JMP      label_2735           
+label_2731:
+  2731: LCP      [sp+84]              
+  2732: GCP      data[389]             ; = 1001
+  2733: EQU                           
+  2734: JZ       label_2770           
+label_2735:
+  2735: GCP      data[192]            
+  2736: LADR     [sp-4]               
+  2737: DADR     data[20]             
+  2738: DCP      4                    
+  2739: FSUB                          
+  2740: GADR     data[192]            
+  2741: ASGN                          
+  2742: SSP      1                    
+  2743: GCP      data[192]            
+  2744: GCP      data[390]             ; = 0.0f
+  2745: FLES                          
+  2746: JZ       label_2769           
+  2747: ASP      1                    
+  2748: GADR     data[8]              
+  2749: ASP      1                    
+  2750: CALL     func_0511            
+  2751: LLD      [sp+85]              
+  2752: SSP      1                    
+  2753: JZ       label_2769           
+  2754: ASP      1                    
+  2755: LADR     [sp-4]               
+  2756: DADR     data[12]             
+  2757: DCP      4                    
+  2758: GADR     data[8]              
+  2759: GCP      data[25]             
+  2760: ASP      1                    
+  2761: XCALL    $SC_MP_RecoverAiPlayer(unsignedlong,*c_Vector3,float)int ; args=3
+  2762: LLD      [sp+85]              
+  2763: SSP      3                    
+  2764: SSP      1                    
+  2765: GCP      data[391]             ; = 1
+  2766: GADR     data[1]              
+  2767: ASGN                          
+  2768: SSP      1                    
+label_2769:
+  2769: JMP      label_2770           
+label_2770:
+  2770: SSP      1                    
+  2771: JMP      label_2772           
+label_2772:
+  2772: SSP      1                    
+  2773: GCP      data[392]             ; = 1
+  2774: LLD      [sp-3]               
+  2775: RET      83                   

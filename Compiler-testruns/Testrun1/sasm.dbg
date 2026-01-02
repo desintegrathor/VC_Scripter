@@ -1,15 +1,15 @@
-GetArgcArgv(): cmdln=='"sasm.exe" "sasm.sca" "test.scr"'
+GetArgcArgv(): cmdln=='"sasm.exe" "sasm.sca" "tdm.scr"'
 GetArgcArgv(): argc==3
 GetArgcArgv(): argv[0]=='sasm.exe'
 GetArgcArgv(): argv[1]=='sasm.sca'
-GetArgcArgv(): argv[2]=='test.scr'
+GetArgcArgv(): argv[2]=='tdm.scr'
 my_fopen(): OPENING FILE 'sasm.sca' with style 'rt'
-my_fopen(): old_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
-my_fopen(): path=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): old_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
+my_fopen(): path=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 my_fopen(): name=='sasm.sca'
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 my_fopen(): f=fopen("sasm.sca","rt");
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 
 Code segment (size 782):
 
@@ -973,17 +973,17 @@ XFN field (size = 29) :
 
 Global pointers (size 0):
 
-my_fopen(): OPENING FILE 'test.scr' with style 'wb'
-my_fopen(): old_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
-my_fopen(): path=='C:\Program Files\Vietcong\dev\compiler'
-my_fopen(): name=='test.scr'
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
-my_fopen(): f=fopen("test.scr","wb");
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): OPENING FILE 'tdm.scr' with style 'wb'
+my_fopen(): old_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
+my_fopen(): path=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
+my_fopen(): name=='tdm.scr'
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
+my_fopen(): f=fopen("tdm.scr","wb");
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 my_fopen(): OPENING FILE 'sav_file.scc' with style 'r'
-my_fopen(): old_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
-my_fopen(): path=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): old_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
+my_fopen(): path=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 my_fopen(): name=='sav_file.scc'
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'
 my_fopen(): f=fopen("sav_file.scc","r");
-my_fopen(): new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_fopen(): new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun1'

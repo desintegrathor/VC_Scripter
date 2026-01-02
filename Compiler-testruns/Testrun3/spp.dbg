@@ -29,10 +29,10 @@ TRANSLATING COMMAND: #include <inc\sc_global.h>
 
 PATH=='inc\sc_global.h'
 
-stdpath='C:\Program Files\Vietcong\dev\compiler'
-prjpath=='C:\Program Files\Vietcong\dev\compiler'
+stdpath='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
+prjpath=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
 
-my_cdfopen() debug message: new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_cdfopen() debug message: new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
 
 my_cdfopen() debug message: file=='inc\sc_global.h'
 
@@ -8155,10 +8155,10 @@ TRANSLATING COMMAND: #include <inc\sc_def.h>
 
 PATH=='inc\sc_def.h'
 
-stdpath='C:\Program Files\Vietcong\dev\compiler'
-prjpath=='C:\Program Files\Vietcong\dev\compiler'
+stdpath='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
+prjpath=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
 
-my_cdfopen() debug message: new_cur_dir=='C:\Program Files\Vietcong\dev\compiler'
+my_cdfopen() debug message: new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\Compiler-testruns\Testrun3'
 
 my_cdfopen() debug message: file=='inc\sc_def.h'
 

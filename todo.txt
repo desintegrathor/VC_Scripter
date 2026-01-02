@@ -1,0 +1,50 @@
+ Symbol table pro globální proměnné
+  2. Data segment string detection
+  3. Parsing lokálních #define z komentářů nebo heuristiky
+
+  Priorita 1: Opravit Array Indexing (60 min)
+
+  Proč: Kritický bug, vysoká frekvence, dělá kód nečitelným
+  Jak: Debug pořadí constant substitution vs array detection v expr.py
+
+  Priorita 2: Vylepšit Variable Naming (45 min)
+
+  Problémy:
+  - t30_0, t154_0 - dočasné hodnoty znečišťují výstup
+  - local_2 místo i v loop counters
+  - data_326[SCM_BOOBYTRAPFOUND] místo gFrags[1]
+
+  Priorita 3: Boolean Expression Simplification (45 min)
+
+  // AKTUÁLNĚ:
+  if (!(gPlayersConnected > 0)) { ... }
+
+  // MĚLO BY BÝT:
+  if (gPlayersConnected == 0) { ... }
+
+  Priorita 4: Vylepšit Fázi 3A - For-Loop Detection
+
+  Současná implementace existuje ale nefunguje na reálných případech. Potřebuje:
+  - Lepší pattern matching
+  - Toleranci k více komplexním inicializacím
+  - Debug proč nefunguje na tdm.scr
+ Global variable naming
+     data_257 → gRecTimer, data_322 → gFrags. Střední dopad, relativně jednoduché.
+  2. Debug for-loop detection ✔
+     Zjistit proč _detect_for_loop nefunguje na tdm.scr a opravit to. Vysoký dopad.
+  3. Struct field naming
+     info->field_16 → info->elapsed_time. Střední dopad, vyžaduje SDK mapping.
+  4. Boolean simplification
+     !(x > 0) → x <= 0, vylepšit podmínky. Střední dopad.
+
+> vymaž pycache dekompiátoru
+  ve složce testrun1 proveď dekompilaci TDM.SCR
+  porovnej výstup dekompilace se zdrojákem TDM.C
+
+  najdi nesrovnalosti a navrhni opravy dekompilátoru 
+
+
+    ⚠️ Fáze 3: Call Arguments (PARTIAL)
+  - Implementován _trace_call_arguments()
+  - Problém: Kompilátor nepoužívá PUSH pattern, ale stack manipulation
+  - Status: Vyžaduje full stack tracking (mimo scope quick fixes)
