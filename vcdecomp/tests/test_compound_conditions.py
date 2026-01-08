@@ -9,8 +9,8 @@ import unittest
 from typing import Dict, List
 from vcdecomp.core.ir.cfg import CFG, BasicBlock
 from vcdecomp.core.ir.structure import _detect_short_circuit_pattern, CompoundCondition
-from vcdecomp.parsing.disasm import Instruction
-from vcdecomp.parsing import opcodes
+from vcdecomp.core.loader.scr_loader import Instruction
+from vcdecomp.core.disasm import opcodes
 
 
 class MockResolver:
@@ -39,22 +39,33 @@ class MockResolver:
         return opcode == 0x01  # JMP
 
 
+class MockSSAFunction:
+    """Mock SSA function for testing"""
+    pass
+
+
+class MockFormatter:
+    """Mock expression formatter for testing"""
+    pass
+
+
 def make_instruction(addr: int, opcode: int, arg1: int = 0, arg2: int = 0) -> Instruction:
     """Helper to create instruction"""
     return Instruction(
         address=addr,
         opcode=opcode,
         arg1=arg1,
-        arg2=arg2,
-        comment=""
+        arg2=arg2
     )
 
 
 def make_block(block_id: int, start: int, instructions: List[Instruction]) -> BasicBlock:
     """Helper to create basic block"""
+    end = start + len(instructions) - 1 if instructions else start
     return BasicBlock(
         block_id=block_id,
-        start_address=start,
+        start=start,
+        end=end,
         instructions=instructions
     )
 
@@ -64,6 +75,8 @@ class TestSimpleOR(unittest.TestCase):
 
     def setUp(self):
         self.resolver = MockResolver()
+        self.ssa_func = MockSSAFunction()
+        self.formatter = MockFormatter()
 
     def test_simple_or_pattern(self):
         """
@@ -74,8 +87,6 @@ class TestSimpleOR(unittest.TestCase):
         Block 1:  <true body>
         Block 3:  <false body>
         """
-        cfg = CFG()
-
         # Block 0: test a, if true goto body (block 1)
         block0 = make_block(0, 100, [
             make_instruction(100, 0x20, 10),     # PUSH a
@@ -104,12 +115,11 @@ class TestSimpleOR(unittest.TestCase):
             make_instruction(400, 0x20, 0),      # Continue
         ])
 
-        cfg.blocks = {0: block0, 1: block1, 2: block2, 3: block3}
-        cfg.entry_block = 0
+        cfg = CFG(blocks={0: block0, 1: block1, 2: block2, 3: block3}, entry_block=0)
 
         # Test detection
         start_to_block = {100: 0, 200: 2, 300: 1, 400: 3}
-        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block)
+        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block, self.ssa_func, self.formatter)
 
         self.assertIsNotNone(result, "Should detect OR pattern")
         self.assertEqual(result.operator, "||", "Should be OR operator")
@@ -123,6 +133,8 @@ class TestSimpleAND(unittest.TestCase):
 
     def setUp(self):
         self.resolver = MockResolver()
+        self.ssa_func = MockSSAFunction()
+        self.formatter = MockFormatter()
 
     def test_simple_and_pattern(self):
         """
@@ -132,8 +144,6 @@ class TestSimpleAND(unittest.TestCase):
         Block 1:  <true body>
         Block 2:  <false body>
         """
-        cfg = CFG()
-
         # Block 0: test a AND b, both must be true
         block0 = make_block(0, 100, [
             make_instruction(100, 0x20, 10),     # PUSH a
@@ -157,12 +167,11 @@ class TestSimpleAND(unittest.TestCase):
             make_instruction(300, 0x20, 0),      # Continue
         ])
 
-        cfg.blocks = {0: block0, 1: block1, 2: block2}
-        cfg.entry_block = 0
+        cfg = CFG(blocks={0: block0, 1: block1, 2: block2}, entry_block=0)
 
         # Test detection
         start_to_block = {100: 0, 200: 1, 300: 2}
-        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block)
+        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block, self.ssa_func, self.formatter)
 
         self.assertIsNotNone(result, "Should detect AND pattern")
         self.assertEqual(result.operator, "&&", "Should be AND operator")
@@ -176,6 +185,8 @@ class TestCombinedANDOR(unittest.TestCase):
 
     def setUp(self):
         self.resolver = MockResolver()
+        self.ssa_func = MockSSAFunction()
+        self.formatter = MockFormatter()
 
     def test_tdm_scr_pattern(self):
         """
@@ -188,8 +199,6 @@ class TestCombinedANDOR(unittest.TestCase):
         Block 1:  <true body>
         Block 3:  <false body>
         """
-        cfg = CFG()
-
         # Block 0: First AND group (gSideFrags[0]>0 && gSideFrags[0]>=gEndValue)
         block0 = make_block(0, 1129, [
             make_instruction(1129, 0x30, 0x004),  # GADR gSideFrags
@@ -230,12 +239,11 @@ class TestCombinedANDOR(unittest.TestCase):
             make_instruction(1212, 0x20, 0),      # Continue
         ])
 
-        cfg.blocks = {0: block0, 1: block1, 2: block2, 3: block3}
-        cfg.entry_block = 0
+        cfg = CFG(blocks={0: block0, 1: block1, 2: block2, 3: block3}, entry_block=0)
 
         # Test detection
         start_to_block = {1129: 0, 1151: 2, 1175: 1, 1212: 3}
-        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block)
+        result = _detect_short_circuit_pattern(cfg, 0, self.resolver, start_to_block, self.ssa_func, self.formatter)
 
         self.assertIsNotNone(result, "Should detect compound (A&&B)||(C&&D) pattern")
         self.assertEqual(result.operator, "||", "Top-level should be OR")
