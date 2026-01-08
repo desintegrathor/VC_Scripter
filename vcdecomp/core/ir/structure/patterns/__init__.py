@@ -19,6 +19,11 @@ from .if_else import (
     _detect_if_else_pattern,
 )
 
+from .switch_case import (
+    _detect_switch_patterns,
+    _find_switch_variable_from_nearby_gcp,
+)
+
 __all__ = [
     # Data models
     "CaseInfo",
@@ -30,4 +35,7 @@ __all__ = [
     "_detect_early_return_pattern",
     "_detect_short_circuit_pattern",
     "_detect_if_else_pattern",
+    # Switch/case detection
+    "_detect_switch_patterns",
+    "_find_switch_variable_from_nearby_gcp",
 ]
