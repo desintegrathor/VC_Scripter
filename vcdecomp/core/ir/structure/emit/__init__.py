@@ -10,7 +10,14 @@ from .block_formatter import (
     _format_block_lines_filtered,
 )
 
+from .code_emitter import (
+    _render_if_else_recursive,
+    _render_blocks_with_loops,
+)
+
 __all__ = [
     '_format_block_lines',
     '_format_block_lines_filtered',
+    '_render_if_else_recursive',
+    '_render_blocks_with_loops',
 ]
