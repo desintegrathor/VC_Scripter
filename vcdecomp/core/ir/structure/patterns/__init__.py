@@ -13,10 +13,21 @@ from .models import (
     ForLoopInfo,
 )
 
+from .if_else import (
+    _detect_early_return_pattern,
+    _detect_short_circuit_pattern,
+    _detect_if_else_pattern,
+)
+
 __all__ = [
+    # Data models
     "CaseInfo",
     "SwitchPattern",
     "IfElsePattern",
     "CompoundCondition",
     "ForLoopInfo",
+    # If/else detection
+    "_detect_early_return_pattern",
+    "_detect_short_circuit_pattern",
+    "_detect_if_else_pattern",
 ]
