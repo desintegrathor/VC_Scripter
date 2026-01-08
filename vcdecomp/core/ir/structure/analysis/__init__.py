@@ -23,6 +23,13 @@ from .condition import (
     _collect_and_chain,
 )
 
+from .value_trace import (
+    _trace_value_to_function_call,
+    _trace_value_to_global,
+    _trace_value_to_parameter,
+    _find_switch_variable_from_nearby_gcp,
+)
+
 __all__ = [
     # Flow analysis
     "_get_loop_for_block",
@@ -38,4 +45,9 @@ __all__ = [
     "_extract_condition_expr",
     "_combine_conditions",
     "_collect_and_chain",
+    # Value tracing
+    "_trace_value_to_function_call",
+    "_trace_value_to_global",
+    "_trace_value_to_parameter",
+    "_find_switch_variable_from_nearby_gcp",
 ]
