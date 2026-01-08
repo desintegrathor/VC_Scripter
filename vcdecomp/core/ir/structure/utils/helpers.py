@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from pathlib import Path
 
-from .....core.disasm import opcodes
+from ....disasm import opcodes
 from .....parsing.symbol_db import SymbolDatabase
 
 
