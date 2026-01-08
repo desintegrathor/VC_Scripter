@@ -24,6 +24,10 @@ from .switch_case import (
     _find_switch_variable_from_nearby_gcp,
 )
 
+from .loops import (
+    _detect_for_loop,
+)
+
 __all__ = [
     # Data models
     "CaseInfo",
@@ -38,4 +42,6 @@ __all__ = [
     # Switch/case detection
     "_detect_switch_patterns",
     "_find_switch_variable_from_nearby_gcp",
+    # Loop detection
+    "_detect_for_loop",
 ]
