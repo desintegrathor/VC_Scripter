@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from pathlib import Path
 
-from ....disasm import opcodes
-from ....parsing.symbol_db import SymbolDatabase
+from .....core.disasm import opcodes
+from .....parsing.symbol_db import SymbolDatabase
 
 
 # Configuration: Show block comments for debugging
