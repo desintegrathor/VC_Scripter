@@ -30,6 +30,10 @@ from .value_trace import (
     _find_switch_variable_from_nearby_gcp,
 )
 
+from .variables import (
+    _collect_local_variables,
+)
+
 __all__ = [
     # Flow analysis
     "_get_loop_for_block",
@@ -50,4 +54,6 @@ __all__ = [
     "_trace_value_to_global",
     "_trace_value_to_parameter",
     "_find_switch_variable_from_nearby_gcp",
+    # Variable collection
+    "_collect_local_variables",
 ]
