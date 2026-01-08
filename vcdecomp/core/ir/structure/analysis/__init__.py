@@ -16,7 +16,15 @@ from .flow import (
     _find_case_body_blocks,
 )
 
+from .condition import (
+    _extract_condition_from_block,
+    _extract_condition_expr,
+    _combine_conditions,
+    _collect_and_chain,
+)
+
 __all__ = [
+    # Flow analysis
     "_get_loop_for_block",
     "_is_back_edge_target",
     "_find_if_body_blocks",
@@ -25,4 +33,9 @@ __all__ = [
     "_find_all_jz_targets",
     "_find_common_true_target",
     "_find_case_body_blocks",
+    # Condition analysis
+    "_extract_condition_from_block",
+    "_extract_condition_expr",
+    "_combine_conditions",
+    "_collect_and_chain",
 ]
