@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "016-split-monolithic-structure-py-1500-lines-into-focu",
+  "state": "building",
+  "subtasks": {
+    "completed": 0,
+    "total": 0,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "",
+    "id": 0,
+    "total": 0
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 23,
+    "started_at": "2026-01-07T22:32:43.404357"
+  },
+  "last_update": "2026-01-08T08:56:32.411229"
+}
