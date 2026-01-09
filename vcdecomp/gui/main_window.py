@@ -24,6 +24,7 @@ from ..core.disasm import Disassembler
 from ..core.ir.ssa import build_ssa, build_ssa_all_blocks
 from ..core.ir.expr import format_block_expressions
 from ..core.ir.structure import format_structured_function_named
+from .views import ValidationPanel
 
 
 class SyntaxHighlighter(QSyntaxHighlighter):
@@ -247,6 +248,12 @@ class MainWindow(QMainWindow):
         self.xfn_dock.setWidget(self.xfn_list)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.xfn_dock)
 
+        # Validation dock
+        self.validation_dock = QDockWidget("Validation", self)
+        self.validation_panel = ValidationPanel()
+        self.validation_dock.setWidget(self.validation_panel)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.validation_dock)
+
         # Create menus
         self.create_menus()
 
@@ -277,6 +284,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.func_dock.toggleViewAction())
         view_menu.addAction(self.strings_dock.toggleViewAction())
         view_menu.addAction(self.xfn_dock.toggleViewAction())
+        view_menu.addAction(self.validation_dock.toggleViewAction())
 
         # Options menu
         options_menu = menubar.addMenu("&Options")

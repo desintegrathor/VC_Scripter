@@ -2,10 +2,12 @@
 VC Script Decompiler - CLI Entry Point
 
 Použití:
-    python -m vcdecomp info <file.scr>      # Zobrazí info o souboru
-    python -m vcdecomp disasm <file.scr>    # Disassembly
-    python -m vcdecomp strings <file.scr>   # Seznam stringů
-    python -m vcdecomp gui [file.scr]       # Otevře GUI
+    python -m vcdecomp info <file.scr>                           # Zobrazí info o souboru
+    python -m vcdecomp disasm <file.scr>                         # Disassembly
+    python -m vcdecomp strings <file.scr>                        # Seznam stringů
+    python -m vcdecomp validate <orig.scr> <src.c>               # Validace rekompilace
+    python -m vcdecomp validate-batch --input-dir ... --original-dir ...  # Batch validace
+    python -m vcdecomp gui [file.scr]                            # Otevře GUI
 """
 
 import argparse
@@ -182,6 +184,13 @@ Příklady:
     python -m vcdecomp info level.scr
     python -m vcdecomp disasm level.scr > output.asm
     python -m vcdecomp strings level.scr
+    python -m vcdecomp validate original.scr decompiled.c
+    python -m vcdecomp validate original.scr decompiled.c --report-file report.html
+    python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --jobs 8
+    python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --report-file batch_report.json
+    python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --save-baseline
+    python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --regression
+    python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --regression --report-file regression.json
     python -m vcdecomp gui level.scr
 """
     )
@@ -248,6 +257,29 @@ Příklady:
                           help='Export format (default: json)')
     _add_variant_option(p_symbols)
 
+    # validate
+    p_validate = subparsers.add_parser('validate', help='Validate decompiled source by recompiling')
+    p_validate.add_argument('original_scr', help='Path to original .SCR file')
+    p_validate.add_argument('source_file', help='Path to decompiled source .c file')
+    p_validate.add_argument('--compiler-dir', help='Path to compiler directory (default: original-resources/compiler)')
+    p_validate.add_argument('--output-format', choices=['text', 'json', 'html'],
+                           help='Output format for report (default: auto-detect from --report-file or text)')
+    p_validate.add_argument('--report-file', help='Save detailed report to file')
+    p_validate.add_argument('--no-cache', action='store_true', help='Disable validation cache')
+    p_validate.add_argument('--no-color', action='store_true', help='Disable colored output')
+
+    # validate-batch
+    p_validate_batch = subparsers.add_parser('validate-batch', help='Validate multiple files in batch mode')
+    p_validate_batch.add_argument('--input-dir', required=True, help='Directory containing decompiled .c files')
+    p_validate_batch.add_argument('--original-dir', required=True, help='Directory containing original .scr files')
+    p_validate_batch.add_argument('--compiler-dir', help='Path to compiler directory (default: original-resources/compiler)')
+    p_validate_batch.add_argument('--jobs', type=int, default=4, help='Number of parallel validation jobs (default: 4)')
+    p_validate_batch.add_argument('--report-file', help='Save batch summary report to JSON file')
+    p_validate_batch.add_argument('--no-cache', action='store_true', help='Disable validation cache')
+    p_validate_batch.add_argument('--save-baseline', action='store_true', help='Save current results as baseline for regression testing')
+    p_validate_batch.add_argument('--regression', action='store_true', help='Compare results against baseline to detect regressions')
+    p_validate_batch.add_argument('--baseline-file', help='Path to baseline file (default: .validation-baseline.json)')
+
     # gui
     p_gui = subparsers.add_parser('gui', help='Spustí GUI aplikaci')
     p_gui.add_argument('file', nargs='?', help='Cesta k SCR souboru (volitelné)')
@@ -279,6 +311,10 @@ Příklady:
             cmd_structure(args)
         elif args.command == 'symbols':
             cmd_symbols(args)
+        elif args.command == 'validate':
+            cmd_validate(args)
+        elif args.command == 'validate-batch':
+            cmd_validate_batch(args)
         elif args.command == 'gui':
             cmd_gui(args)
     except FileNotFoundError as e:
@@ -526,6 +562,419 @@ def cmd_symbols(args):
     print(f"  SGI mapped: {sgi_mapped}")
     print(f"  Structs detected: {structs}")
     print(f"  Arrays detected: {arrays}")
+
+
+def cmd_validate(args):
+    """Validate decompiled source by recompiling and comparing bytecode"""
+    from .validation import ValidationOrchestrator, ReportGenerator, ValidationVerdict
+
+    # Resolve paths
+    original_scr = Path(args.original_scr).resolve()
+    source_file = Path(args.source_file).resolve()
+
+    # Determine compiler directory
+    if args.compiler_dir:
+        compiler_dir = Path(args.compiler_dir).resolve()
+    else:
+        # Default to original-resources/compiler relative to project root
+        compiler_dir = Path(__file__).parent.parent / "original-resources" / "compiler"
+
+    # Check files exist
+    if not original_scr.exists():
+        print(f"Error: Original SCR file not found: {original_scr}", file=sys.stderr)
+        sys.exit(1)
+
+    if not source_file.exists():
+        print(f"Error: Source file not found: {source_file}", file=sys.stderr)
+        sys.exit(1)
+
+    if not compiler_dir.exists():
+        print(f"Error: Compiler directory not found: {compiler_dir}", file=sys.stderr)
+        print(f"Use --compiler-dir to specify the location of SCMP.exe", file=sys.stderr)
+        sys.exit(1)
+
+    # Create validator
+    print(f"Validating {source_file.name} against {original_scr.name}...")
+    print(f"Compiler directory: {compiler_dir}")
+    print()
+
+    validator = ValidationOrchestrator(
+        compiler_dir=str(compiler_dir),
+        cache_enabled=not args.no_cache
+    )
+
+    # Run validation
+    try:
+        result = validator.validate(
+            original_scr_path=str(original_scr),
+            decompiled_source_path=str(source_file)
+        )
+    except Exception as e:
+        print(f"Error during validation: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine output format
+    output_format = args.output_format
+    if args.report_file and not output_format:
+        # Auto-detect from file extension
+        ext = Path(args.report_file).suffix.lower()
+        if ext == '.html':
+            output_format = 'html'
+        elif ext == '.json':
+            output_format = 'json'
+        else:
+            output_format = 'text'
+    elif not output_format:
+        output_format = 'text'
+
+    # Generate report
+    generator = ReportGenerator(result)
+
+    if args.report_file:
+        # Save to file
+        report_path = Path(args.report_file)
+        generator.save_report(str(report_path), format=output_format)
+        print(f"Report saved to: {report_path}")
+        print()
+
+    # Always print summary to console
+    if output_format == 'json' and not args.report_file:
+        # If JSON output to console, print the JSON
+        print(generator.generate_json())
+    else:
+        # Print text summary to console
+        print(generator.generate_text(use_colors=not args.no_color))
+
+    # Exit with appropriate code
+    if result.verdict == ValidationVerdict.PASS:
+        sys.exit(0)
+    elif result.verdict == ValidationVerdict.ERROR:
+        sys.exit(2)
+    else:
+        # FAIL or PARTIAL
+        sys.exit(1)
+
+
+def cmd_validate_batch(args):
+    """Validate multiple files in batch mode"""
+    import concurrent.futures
+    import json
+    from datetime import datetime
+    from .validation import (
+        ValidationOrchestrator,
+        ValidationVerdict,
+        RegressionBaseline,
+        RegressionComparator,
+        RegressionStatus,
+    )
+
+    # Resolve directories
+    input_dir = Path(args.input_dir).resolve()
+    original_dir = Path(args.original_dir).resolve()
+
+    # Determine compiler directory
+    if args.compiler_dir:
+        compiler_dir = Path(args.compiler_dir).resolve()
+    else:
+        compiler_dir = Path(__file__).parent.parent / "original-resources" / "compiler"
+
+    # Validate directories exist
+    if not input_dir.exists() or not input_dir.is_dir():
+        print(f"Error: Input directory not found: {input_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    if not original_dir.exists() or not original_dir.is_dir():
+        print(f"Error: Original directory not found: {original_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    if not compiler_dir.exists():
+        print(f"Error: Compiler directory not found: {compiler_dir}", file=sys.stderr)
+        print(f"Use --compiler-dir to specify the location of SCMP.exe", file=sys.stderr)
+        sys.exit(1)
+
+    # Find all source files and match with originals
+    source_files = list(input_dir.glob("*.c"))
+
+    if not source_files:
+        print(f"Error: No .c files found in {input_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Build list of validation pairs
+    validation_pairs = []
+    for source_file in source_files:
+        # Find matching .scr file by name
+        scr_name = source_file.stem + ".scr"
+        scr_path = original_dir / scr_name
+
+        if scr_path.exists():
+            validation_pairs.append((scr_path, source_file))
+        else:
+            print(f"Warning: No matching .scr file for {source_file.name}", file=sys.stderr)
+
+    if not validation_pairs:
+        print(f"Error: No matching file pairs found", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Batch Validation")
+    print(f"================")
+    print(f"Input directory:    {input_dir}")
+    print(f"Original directory: {original_dir}")
+    print(f"Compiler directory: {compiler_dir}")
+    print(f"Pairs to validate:  {len(validation_pairs)}")
+    print(f"Parallel jobs:      {args.jobs}")
+    print()
+
+    # Create validator
+    validator = ValidationOrchestrator(
+        compiler_dir=str(compiler_dir),
+        cache_enabled=not args.no_cache
+    )
+
+    # Function to validate a single pair
+    def validate_pair(pair):
+        scr_path, source_path = pair
+        try:
+            result = validator.validate(
+                original_scr_path=str(scr_path),
+                decompiled_source_path=str(source_path)
+            )
+            return (source_path.name, result, None)
+        except Exception as e:
+            return (source_path.name, None, str(e))
+
+    # Run validations in parallel
+    results = []
+    completed = 0
+    total = len(validation_pairs)
+
+    print("Progress:")
+    print("-" * 60)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        # Submit all tasks
+        futures = {executor.submit(validate_pair, pair): pair for pair in validation_pairs}
+
+        # Process as they complete
+        for future in concurrent.futures.as_completed(futures):
+            pair = futures[future]
+            scr_path, source_path = pair
+            completed += 1
+
+            name, result, error = future.result()
+            results.append((name, result, error))
+
+            # Show progress
+            progress_pct = (completed * 100) // total
+            progress_bar = "=" * (progress_pct // 2) + ">" + " " * (50 - progress_pct // 2)
+
+            if error:
+                status = "ERROR"
+                symbol = "✗"
+            elif result.verdict == ValidationVerdict.PASS:
+                status = "PASS"
+                symbol = "✓"
+            elif result.verdict == ValidationVerdict.ERROR:
+                status = "ERROR"
+                symbol = "✗"
+            else:
+                status = result.verdict.name
+                symbol = "!"
+
+            print(f"[{progress_bar}] {completed:3d}/{total:3d} | {symbol} {name:30s} {status}")
+
+    print("-" * 60)
+    print()
+
+    # Generate summary report
+    print("Summary Report")
+    print("=" * 60)
+
+    pass_count = 0
+    fail_count = 0
+    partial_count = 0
+    error_count = 0
+
+    for name, result, error in results:
+        if error:
+            error_count += 1
+        elif result.verdict == ValidationVerdict.PASS:
+            pass_count += 1
+        elif result.verdict == ValidationVerdict.FAIL:
+            fail_count += 1
+        elif result.verdict == ValidationVerdict.PARTIAL:
+            partial_count += 1
+        else:
+            error_count += 1
+
+    print(f"Total files:     {total}")
+    print(f"Passed:          {pass_count}")
+    print(f"Failed:          {fail_count}")
+    print(f"Partial:         {partial_count}")
+    print(f"Errors:          {error_count}")
+    print()
+
+    # Regression testing mode
+    regression_report = None
+    if args.regression or args.save_baseline:
+        baseline_path = Path(args.baseline_file) if args.baseline_file else Path(".validation-baseline.json")
+
+        # Build results dict for regression testing
+        results_dict = {}
+        for name, result, error in results:
+            if result:  # Only include successful validations
+                results_dict[name] = result
+
+        if args.save_baseline:
+            # Save current results as baseline
+            print("Saving baseline...")
+            baseline = RegressionBaseline(
+                description=f"Baseline created from batch validation of {len(results_dict)} files"
+            )
+            for name, result in results_dict.items():
+                baseline.add_entry(name, result)
+            baseline.save(baseline_path)
+            print(f"✓ Baseline saved to: {baseline_path}")
+            print()
+
+        if args.regression:
+            # Compare against baseline
+            if not baseline_path.exists():
+                print(f"Error: Baseline file not found: {baseline_path}", file=sys.stderr)
+                print(f"Create a baseline first with --save-baseline", file=sys.stderr)
+                sys.exit(1)
+
+            print("Regression Testing")
+            print("=" * 60)
+            print(f"Baseline: {baseline_path}")
+            print()
+
+            # Load baseline and compare
+            baseline = RegressionBaseline.load(baseline_path)
+            comparator = RegressionComparator(baseline)
+            regression_report = comparator.compare(results_dict)
+            regression_report.baseline_path = baseline_path
+
+            # Display regression results
+            print(f"Regressions:     {len(regression_report.regressions)}")
+            print(f"Improvements:    {len(regression_report.improvements)}")
+            print(f"Stable (pass):   {len(regression_report.stable_pass)}")
+            print(f"Stable (fail):   {len(regression_report.stable_fail)}")
+            print(f"New files:       {len(regression_report.new_files)}")
+            print()
+
+            # Show regressions
+            if regression_report.has_regressions:
+                print("⚠ REGRESSIONS DETECTED:")
+                print("-" * 60)
+                for item in regression_report.regressions:
+                    print(f"✗ {item.file}:")
+                    print(f"  Baseline: {item.baseline_verdict} ({item.baseline_semantic} semantic)")
+                    print(f"  Current:  {item.current_verdict} ({item.current_semantic} semantic)")
+                print()
+
+            # Show improvements
+            if regression_report.has_improvements:
+                print("✓ IMPROVEMENTS DETECTED:")
+                print("-" * 60)
+                for item in regression_report.improvements:
+                    print(f"✓ {item.file}:")
+                    print(f"  Baseline: {item.baseline_verdict} ({item.baseline_semantic} semantic)")
+                    print(f"  Current:  {item.current_verdict} ({item.current_semantic} semantic)")
+                print()
+
+            # Show new files
+            if regression_report.new_files:
+                print("New files (not in baseline):")
+                print("-" * 60)
+                for item in regression_report.new_files:
+                    symbol = "✓" if item.current_verdict == "PASS" else "✗"
+                    print(f"{symbol} {item.file}: {item.current_verdict}")
+                print()
+
+    # Show failures and errors (if not in regression mode)
+    if not args.regression and (fail_count > 0 or error_count > 0):
+        print("Failed/Error Files:")
+        print("-" * 60)
+        for name, result, error in results:
+            if error:
+                print(f"✗ {name}: {error}")
+            elif result and result.verdict in (ValidationVerdict.FAIL, ValidationVerdict.ERROR):
+                # Show brief error summary
+                if result.compilation_succeeded:
+                    diff_summary = f"{len(result.categorized_differences)} differences"
+                    semantic_count = sum(1 for d in result.categorized_differences
+                                       if d.category.name == 'SEMANTIC')
+                    if semantic_count > 0:
+                        diff_summary += f" ({semantic_count} semantic)"
+                    print(f"✗ {name}: {diff_summary}")
+                else:
+                    error_msgs = [e.message for e in result.compilation_result.errors[:3]]
+                    print(f"✗ {name}: Compilation failed - {'; '.join(error_msgs)}")
+        print()
+
+    # Save regression report if in regression mode
+    if args.regression and regression_report and args.report_file:
+        report_path = Path(args.report_file)
+        regression_report.save(report_path)
+        print(f"Regression report saved to: {report_path}")
+        print()
+
+    # Save detailed report if requested (and not in regression mode)
+    if args.report_file and not args.regression:
+        report_path = Path(args.report_file)
+
+        # Generate batch report
+        batch_report = {
+            "timestamp": datetime.now().isoformat(),
+            "input_dir": str(input_dir),
+            "original_dir": str(original_dir),
+            "compiler_dir": str(compiler_dir),
+            "total": total,
+            "passed": pass_count,
+            "failed": fail_count,
+            "partial": partial_count,
+            "errors": error_count,
+            "results": []
+        }
+
+        for name, result, error in results:
+            if error:
+                batch_report["results"].append({
+                    "file": name,
+                    "verdict": "ERROR",
+                    "error": error
+                })
+            else:
+                batch_report["results"].append({
+                    "file": name,
+                    "verdict": result.verdict.name,
+                    "compilation_succeeded": result.compilation_succeeded,
+                    "differences_count": len(result.categorized_differences) if result.categorized_differences else 0,
+                    "semantic_differences": sum(1 for d in result.categorized_differences
+                                               if d.category.name == 'SEMANTIC') if result.categorized_differences else 0
+                })
+
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(batch_report, f, indent=2)
+
+        print(f"Detailed report saved to: {report_path}")
+        print()
+
+    # Exit with appropriate code
+    if args.regression and regression_report:
+        # In regression mode, exit 1 if regressions detected
+        if regression_report.has_regressions:
+            sys.exit(1)
+        else:
+            sys.exit(0)
+    else:
+        # Normal mode
+        if pass_count == total:
+            sys.exit(0)  # All passed
+        elif error_count > 0 or fail_count > 0:
+            sys.exit(1)  # Some failures
+        else:
+            sys.exit(0)  # All passed or partial
 
 
 if __name__ == '__main__':
