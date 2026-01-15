@@ -9,12 +9,15 @@ structured C-like output from decompiled code.
 from __future__ import annotations
 
 from typing import Dict, Set, List, Optional
+import logging
 
 from ..ssa import SSAFunction
 from ..expr import ExpressionFormatter
 from ..cfg import find_loops_in_function
 from ..parenthesization import ExpressionContext, is_simple_expression
 from ...disasm import opcodes
+
+logger = logging.getLogger(__name__)
 
 # Import from extracted modules
 from .utils.helpers import (
@@ -31,6 +34,41 @@ from .patterns.loops import _detect_for_loop
 from .analysis.variables import _collect_local_variables
 from .emit.block_formatter import _format_block_lines
 from .emit.code_emitter import _render_blocks_with_loops
+
+
+def _find_reachable_blocks(cfg, entry_block: int) -> Set[int]:
+    """
+    Find all blocks reachable from entry_block using DFS.
+
+    This function performs a depth-first search to identify all blocks
+    that can be reached from the entry point, filtering out dead code
+    that appears after returns or unconditional jumps.
+
+    Args:
+        cfg: Control flow graph
+        entry_block: Entry block ID
+
+    Returns:
+        Set of reachable block IDs
+    """
+    reachable = set()
+    stack = [entry_block]
+
+    while stack:
+        block_id = stack.pop()
+        if block_id in reachable:
+            continue
+
+        reachable.add(block_id)
+
+        # Add successors
+        block = cfg.blocks.get(block_id)
+        if block:
+            for succ in block.successors:
+                if succ not in reachable:
+                    stack.append(succ)
+
+    return reachable
 
 
 def format_structured_function(ssa_func: SSAFunction) -> str:
@@ -183,11 +221,31 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             if end_addr is None or block.start <= end_addr:
                 func_block_ids.add(block_id)
 
+    # Filter out unreachable blocks (dead code elimination)
+    reachable_blocks = _find_reachable_blocks(cfg, entry_block)
+    func_block_ids = func_block_ids & reachable_blocks
+    logger.debug(f"{func_name}: {len(func_block_ids)} reachable blocks (out of {len([b for b in cfg.blocks.values() if entry_addr <= b.start <= (end_addr or float('inf'))])})")
+
     # FIX 2: Variable name collision resolution
     # Run variable renaming BEFORE creating formatter to detect and resolve collisions
     from ..variable_renaming import VariableRenamer
     renamer = VariableRenamer(ssa_func, func_block_ids)
     rename_map = renamer.analyze_and_rename()
+
+    # SSA LOWERING: Collapse versioned SSA variables to unversioned C variables
+    # This transforms rename_map: {"t100_0": "sideA", "t200_0": "sideB"} → {"t100_0": "side", "t200_0": "side"}
+    from ..ssa_lowering import SSALowerer
+    lowerer = SSALowerer(
+        rename_map=rename_map,
+        variable_versions=renamer.variable_versions,
+        cfg=cfg,
+        ssa_func=ssa_func,
+        loops=[]  # Will be populated with func_loops after loop detection
+    )
+    lowering_result = lowerer.lower()
+
+    # Use lowered rename_map for expression formatting
+    rename_map = lowering_result.lowered_rename_map
 
     # Create per-function formatter with function boundaries for accurate structure detection
     # FÁZE 3.3: Pass parameter info for correct aliasing
@@ -235,10 +293,34 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     lines.append(f"{signature} {{")
 
-    # Collect local variable declarations
-    local_vars = _collect_local_variables(ssa_func, func_block_ids, formatter)
+    # Use SSA lowering variable declarations
+    # These are already de-duplicated and properly typed
+    local_vars = []
+    lowered_var_names = set()
+    for var_type, var_name in lowering_result.variable_declarations:
+        local_vars.append(f"{var_type} {var_name}")
+        lowered_var_names.add(var_name)
+
+    # Also collect array declarations and struct types from old system
+    # (TODO: Merge this logic into SSA lowering)
+    old_vars = _collect_local_variables(ssa_func, func_block_ids, formatter)
+    for var_decl in old_vars:
+        # Only add arrays (have []) and structs (complex types with multiple spaces)
+        if "[" in var_decl or (var_decl.count(" ") > 1):
+            # Extract variable name from declaration for duplicate check
+            parts = var_decl.split()
+            if len(parts) >= 2:
+                # Get last part (variable name), strip array brackets if present
+                var_name = parts[-1].split('[')[0]
+
+                # Skip if already declared by lowering
+                if var_name in lowered_var_names:
+                    continue
+
+            local_vars.append(var_decl)
+
     if local_vars:
-        for var_decl in sorted(local_vars):
+        for var_decl in sorted(set(local_vars)):  # De-duplicate
             lines.append(f"    {var_decl};")
         lines.append("")  # Empty line after declarations
 
@@ -271,20 +353,37 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if block_id in emitted_blocks:
             continue
 
+        # ORPHANED BLOCK VALIDATION: Check if block is unreachable (no predecessors)
+        # This prevents rendering unreachable code after return statements
+        if block_id != entry_block:
+            # Get predecessors that are in the current function
+            predecessors = [p for p in cfg.blocks[block_id].predecessors if p in func_block_ids]
+            if not predecessors:
+                logger.warning(
+                    f"Skipping orphaned block {block_id} at address {addr} "
+                    f"in function {func_name} - no predecessors (unreachable code)"
+                )
+                continue
+
         # Skip blocks that are part of a switch pattern (except header)
         if block_id in block_to_switch:
             switch = block_to_switch[block_id]
-            # If this is not the header, and we've already emitted the switch, skip it
+            # Only skip non-header blocks if the switch has already been emitted
             if block_id != switch.header_block and switch.header_block in emitted_switches:
                 continue
-            # If this is a switch block but not the header, skip for now
-            if block_id != switch.header_block:
-                continue
+            # CHANGED: Allow if/else detection inside switch case bodies
+            # Only skip if this is the switch header itself (which will be rendered as switch/case)
+            if block_id == switch.header_block:
+                # Skip if/else detection for switch headers (they're rendered as switch statements)
+                pass  # Will be handled by switch rendering below
+            # For non-header blocks (case bodies), allow if/else detection
 
         # FÁZE 2B: Runtime if/else detection (moved from pre-processing)
-        # Try to detect if/else pattern if not already known and not part of switch
+        # Try to detect if/else pattern if not already known
         # NEW: Pass ssa_func and formatter for compound condition detection
-        if block_id not in block_to_if and block_id not in block_to_switch:
+        # CHANGED: Removed "and block_id not in block_to_switch" to allow nested if/else inside cases
+        is_switch_header = block_id in block_to_switch and block_to_switch[block_id].header_block == block_id
+        if block_id not in block_to_if and not is_switch_header:
             if_pattern = _detect_if_else_pattern(cfg, block_id, start_to_block, resolver, visited_ifs, func_loops, ssa_func=ssa_func, formatter=formatter)
             if if_pattern:
                 # Register this pattern
@@ -687,5 +786,273 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         indent = "    " + "    " * len(active_loops)
         lines.append(f"{indent}}}")
 
+    # FIX #4: Add return statement if function ends without one
+    # Check if there are any RET instructions in exit blocks that weren't emitted
+    needs_return = False
+    return_value = None
+
+    # Find blocks that end with RET but weren't emitted (e.g., after switch)
+    for block_id, block in cfg.blocks.items():
+        if block_id in emitted_blocks:
+            continue  # Skip already emitted blocks
+
+        if block.instructions:
+            last_instr = block.instructions[-1]
+            if resolver.is_return(last_instr.opcode):
+                needs_return = True
+
+                # Try to extract return value from SSA
+                ssa_block = ssa_func.instructions.get(block_id, [])
+                for ssa_instr in reversed(ssa_block):
+                    if ssa_instr.mnemonic == "RET":
+                        # Check if RET has input (return value)
+                        if ssa_instr.inputs:
+                            return_value = formatter.render_value(ssa_instr.inputs[0])
+                        break
+                break  # Use first found RET
+
+    # Alternative: Check if last emitted line already has a return
+    last_line_has_return = False
+    for line in reversed(lines):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("//"):
+            if stripped.startswith("return"):
+                last_line_has_return = True
+            break
+
+    # Add return statement if needed and not already present
+    if needs_return and not last_line_has_return:
+        if return_value:
+            lines.append(f"    return {return_value};")
+        else:
+            lines.append(f"    return;")
+
     lines.append("}")
+
+    # PRIORITY 2 FIX: Enhanced undefined variable detection and declaration with type inference
+    # This catches edge cases where SSA lowering missed declarations (e.g., undefined temporaries, struct variables)
+    import re
+    from typing import Set, Dict, Optional, List as ListType, Tuple
+
+    # Helper function to scan all variables used in code
+    def _scan_all_variables(lines: ListType[str]) -> Set[str]:
+        """Extract ALL variable names used in code."""
+        used_vars = set()
+        identifier_pattern = re.compile(r'\b([a-zA-Z_]\w*)\b')
+
+        for line in lines:
+            # Skip comments and string literals
+            code_part = line.split('//')[0]  # Remove line comments
+            code_part = re.sub(r'/\*.*?\*/', '', code_part)  # Remove block comments
+            # TODO: Could also skip string literals, but less critical
+
+            for match in identifier_pattern.finditer(code_part):
+                var_name = match.group(1)
+                used_vars.add(var_name)
+
+        return used_vars
+
+    # Helper function to infer struct type from field access patterns
+    def _infer_struct_type_from_fields(var_name: str, lines: ListType[str]) -> Optional[str]:
+        """Try to determine struct type from field access patterns."""
+        # Extract field names accessed on this variable
+        field_pattern = re.compile(rf'{re.escape(var_name)}[.-]>?(\w+)')
+        fields_accessed = set()
+
+        for line in lines:
+            matches = field_pattern.findall(line)
+            fields_accessed.update(matches)
+
+        # Match against known struct types based on field names
+        # Quick heuristics for common cases
+        if 'watchfulness' in fields_accessed or 'zerodist' in fields_accessed or 'watchfulness_zerodist' in fields_accessed:
+            return "s_SC_P_AI_props"
+        if 'side' in fields_accessed and 'master_nod' in fields_accessed:
+            return "s_SC_P_info"
+        if fields_accessed and any(f.startswith('field') for f in fields_accessed):
+            # Generic struct with fieldN members
+            return "dword"
+
+        return None
+
+    # Helper function to infer variable type from usage patterns
+    def _infer_type_from_usage(var_name: str, lines: ListType[str]) -> str:
+        """Infer variable type from how it's used in code."""
+
+        # Check for struct member access: var.field* or var->field*
+        struct_access_pattern = re.compile(rf'\b{re.escape(var_name)}[.-]>?\w+')
+        for line in lines:
+            if struct_access_pattern.search(line):
+                # It's a struct - try to find which one
+                struct_type = _infer_struct_type_from_fields(var_name, lines)
+                return struct_type if struct_type else "dword"  # Fallback to generic
+
+        # Check for pointer dereference: (*var) or *var
+        pointer_deref_pattern = re.compile(rf'\(\*{re.escape(var_name)}\)|\*{re.escape(var_name)}\b')
+        for line in lines:
+            if pointer_deref_pattern.search(line):
+                return "int*"
+
+        # Check for array access: var[index]
+        array_access_pattern = re.compile(rf'{re.escape(var_name)}\[')
+        for line in lines:
+            if array_access_pattern.search(line):
+                return "int"  # Array element access implies int type
+
+        # Check for float operations
+        float_keywords = ['frnd', 'fabs', 'sqrt', 'sin', 'cos']
+        for line in lines:
+            if var_name in line:
+                for keyword in float_keywords:
+                    if keyword in line:
+                        return "float"
+
+        # Default to int
+        return "int"
+
+    # Define C keywords and built-in identifiers to skip
+    c_keywords = {
+        'if', 'else', 'while', 'for', 'return', 'break', 'continue', 'switch', 'case', 'default',
+        'int', 'float', 'double', 'void', 'char', 'short', 'long', 'unsigned', 'signed',
+        'struct', 'union', 'enum', 'typedef', 'sizeof', 'const', 'static', 'extern',
+        'true', 'false', 'TRUE', 'FALSE', 'NULL',
+        'dword', 'BOOL', 'byte'
+    }
+
+    # Built-in type names that might appear in code
+    builtin_types = {
+        'c_Vector3', 's_SC_P_info', 's_SC_P_AI_props', 's_SC_OBJ_info', 's_SC_MP_hud',
+        's_SC_MP_SRV_settings', 's_SC_L_info', 's_SC_P_Create'
+    }
+
+    # 1. Collect already declared variables
+    declared_vars = set()
+
+    # Add parameters from function signature
+    # Extract parameter names from signature string (e.g., "int func(int param0, float param1)")
+    # The signature was already generated earlier, so we parse it from the first line
+    if lines and '(' in lines[0]:
+        sig_line = lines[0]
+        # Extract params between ( and {
+        params_start = sig_line.find('(')
+        params_end = sig_line.find(')')
+        if params_start > 0 and params_end > params_start:
+            params_str = sig_line[params_start+1:params_end].strip()
+            if params_str and params_str != 'void':
+                # Parse "int param0, float param1" or "s_SC_OBJ_info *info"
+                param_parts = params_str.split(',')
+                for param_part in param_parts:
+                    # Each part is "type name", take the last word as name
+                    # Handle pointers: "s_SC_OBJ_info *info" -> "info"
+                    words = param_part.strip().split()
+                    if words:
+                        param_name = words[-1]
+                        # Strip pointer prefix if present
+                        param_name = param_name.lstrip('*')
+                        # Handle array params like "int arr[]" - strip brackets
+                        param_name = param_name.split('[')[0]
+                        declared_vars.add(param_name)
+
+    # Add variables from SSA lowering
+    for var_type, var_name in lowering_result.variable_declarations:
+        clean_name = var_name.lstrip('&')  # Remove & prefix if present
+        declared_vars.add(clean_name)
+
+    # Scan lines for existing declarations (type keyword followed by identifier)
+    type_keywords = {'int', 'float', 'double', 'void', 'char', 'short', 'long', 'dword', 'BOOL', 'byte'}
+    for line in lines:
+        # Match patterns like "int foo;" or "c_Vector3 bar;"
+        decl_match = re.search(r'\b(\w+)\s+([a-zA-Z_]\w*)\s*[;=\[]', line)
+        if decl_match:
+            type_name = decl_match.group(1)
+            var_name = decl_match.group(2)
+            if type_name in type_keywords or type_name.startswith('s_') or type_name.startswith('c_'):
+                declared_vars.add(var_name)
+
+    # 2. Scan for all used variables
+    used_vars = _scan_all_variables(lines)
+
+    # 3. Filter to find undefined variables
+    undefined_vars = set()
+    for var_name in used_vars:
+        # Skip if already declared
+        if var_name in declared_vars:
+            continue
+
+        # Skip C keywords and built-in types
+        if var_name in c_keywords or var_name in builtin_types:
+            continue
+
+        # Skip function names (SC_*, func_*)
+        if var_name.startswith('SC_') or var_name.startswith('func_'):
+            continue
+
+        # Skip constants and macros (all caps, optionally with underscores)
+        if var_name.isupper():
+            continue
+
+        # Skip type names (s_*, c_*)
+        if var_name.startswith('s_') or var_name.startswith('c_'):
+            continue
+
+        # Now check if this variable SHOULD be declared
+        # Include all remaining identifiers that aren't obviously constants/types
+        needs_declaration = False
+
+        # Pattern 1: local_X (stack variables)
+        if var_name.startswith('local_'):
+            needs_declaration = True
+
+        # Pattern 2: tXXX_X (SSA temporaries)
+        elif var_name.startswith('t') and '_' in var_name and var_name[1:].split('_')[0].isdigit():
+            needs_declaration = True
+
+        # Pattern 3: Single letter variables (i, j, k, tmp, etc.)
+        elif len(var_name) == 1 and var_name in 'ijklmnxyz':
+            needs_declaration = True
+
+        # Pattern 4: Common variable names (tmp, retval, props, etc.)
+        elif var_name in {'tmp', 'tmp1', 'tmp2', 'retval', 'result', 'idx', 'index'}:
+            needs_declaration = True
+
+        # Pattern 5: Variables with struct field access (detected by _infer_type_from_usage)
+        elif any(f'{var_name}.' in line or f'{var_name}->' in line for line in lines):
+            needs_declaration = True
+
+        # Pattern 6: Pointer dereferences
+        elif any(f'(*{var_name})' in line or f'*{var_name}' in line for line in lines):
+            needs_declaration = True
+
+        # Pattern 7: Variables that look like semantic names from variable renaming
+        elif var_name in {'ai_props', 'player_info', 'obj_info', 'srv_settings', 'hudinfo',
+                          'side', 'sideA', 'sideB', 'master', 'nod', 'enemy'}:
+            needs_declaration = True
+
+        if needs_declaration:
+            undefined_vars.add(var_name)
+
+    # 4. Infer types for undefined variables
+    var_declarations_to_add: ListType[Tuple[str, str]] = []
+    for var_name in sorted(undefined_vars):
+        var_type = _infer_type_from_usage(var_name, lines)
+        var_declarations_to_add.append((var_type, var_name))
+
+    # 5. Insert declarations after function signature
+    if var_declarations_to_add:
+        # Find the insertion point (after opening brace, before first code)
+        insert_pos = 1
+        for i, line in enumerate(lines):
+            if line.strip().endswith('{'):
+                insert_pos = i + 1
+                break
+
+        # Add declarations
+        for var_type, var_name in var_declarations_to_add:
+            lines.insert(insert_pos, f"    {var_type} {var_name};  // Auto-generated")
+            insert_pos += 1
+
+        # Add blank line after auto-generated declarations
+        if var_declarations_to_add:
+            lines.insert(insert_pos, "")
+
     return "\n".join(lines)

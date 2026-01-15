@@ -35,7 +35,7 @@ class FunctionSignature:
                 params = ", ".join(self.param_types)
             else:
                 # Fallback: use generic int/float based on count
-                params = ", ".join([f"int param{i}" for i in range(self.param_count)])
+                params = ", ".join([f"int param_{i}" for i in range(self.param_count)])
 
         return f"{self.return_type} {func_name}({params})"
 
@@ -103,9 +103,6 @@ def detect_function_signature(
                 orig_instr = instr.instruction.instruction
                 stack_offset = orig_instr.arg1
 
-                if debug:
-                    print(f"[SIG DEBUG] LCP at block {block_id}, offset={stack_offset}", file=sys.stderr)
-
                 # CRITICAL FIX: Check if this is a signed offset
                 # The stack offset might be stored as unsigned int, but represents signed
                 # If offset > 2^31, it's actually negative (two's complement)
@@ -126,12 +123,6 @@ def detect_function_signature(
                         next_instr = ssa_instrs[i + 1]
                         if next_instr.mnemonic in {"FADD", "FSUB", "FMUL", "FDIV", "FGRE", "FLES", "FEQU"}:
                             is_float = True
-                            if debug:
-                                print(f"[SIG DEBUG] Found float usage after LCP", file=sys.stderr)
-
-                    if debug:
-                        print(f"[SIG DEBUG] Detected parameter at offset {param_offset}, is_float={is_float}", file=sys.stderr)
-
                     param_accesses[param_offset] = is_float
 
             # Check for RET instruction to detect return type
@@ -151,12 +142,12 @@ def detect_function_signature(
         sig.param_count = len(sorted_offsets)
 
         # Build parameter type list
-        for offset in sorted_offsets:
+        for param_index, offset in enumerate(sorted_offsets):
             is_float = param_accesses[offset]
             if is_float:
-                sig.param_types.append("float time")  # Common parameter name
+                sig.param_types.append(f"float param_{param_index}")
             else:
-                sig.param_types.append("int param")
+                sig.param_types.append(f"int param_{param_index}")
 
     return sig
 
