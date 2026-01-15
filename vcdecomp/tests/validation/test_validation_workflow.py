@@ -90,10 +90,6 @@ class TestValidationWorkflowBasic(unittest.TestCase):
             )
 
     @unittest.skipUnless(
-        len(TestValidationWorkflowBasic.__dict__.get('test_fixtures', [])) > 0,
-        "No test fixtures found in Compiler-testruns"
-    )
-    @unittest.skipUnless(
         Path(__file__).parent.parent.parent.parent / "original-resources" / "compiler" / "SCMP.exe",
         "Compiler tools not available"
     )

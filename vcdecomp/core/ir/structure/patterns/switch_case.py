@@ -17,7 +17,140 @@ from ...expr import ExpressionFormatter
 
 from .models import CaseInfo, SwitchPattern
 from ..analysis.flow import _find_case_body_blocks
-from ..analysis.value_trace import _trace_value_to_parameter, _trace_value_to_global
+from ..analysis.value_trace import (
+    _trace_value_to_parameter,
+    _trace_value_to_parameter_field,
+    _trace_value_to_global
+)
+
+
+def _case_has_break(
+    cfg: CFG,
+    case: CaseInfo,
+    exit_block: Optional[int],
+    resolver: opcodes.OpcodeResolver
+) -> bool:
+    """
+    Determine if a case ends with a break statement.
+
+    Returns:
+        True if case ends with JMP to switch exit (has break)
+        False if case ends with RET (has return, no break needed)
+        False if case falls through to next case (rare, no break)
+    """
+    if not case.body_blocks or exit_block is None:
+        return True  # Default to True if we can't determine
+
+    # Find the last block(s) in the case body
+    # A case can have multiple exit points (e.g., if/else branches)
+    # We need to check all of them
+    last_blocks = []
+    for block_id in case.body_blocks:
+        block = cfg.blocks.get(block_id)
+        if not block or not block.instructions:
+            continue
+
+        # A block is a "last block" if it jumps outside the case body
+        last_instr = block.instructions[-1]
+        mnem = resolver.get_mnemonic(last_instr.opcode)
+
+        # Check if this block exits the case
+        if mnem == "JMP":
+            target = last_instr.arg1
+            # Find target block ID
+            target_block_id = None
+            for bid, b in cfg.blocks.items():
+                if b.start == target:
+                    target_block_id = bid
+                    break
+
+            # If JMP goes outside case body, this is a last block
+            if target_block_id is not None and target_block_id not in case.body_blocks:
+                last_blocks.append((block_id, mnem, target_block_id))
+
+        elif mnem == "RET":
+            # RET is always a last block
+            last_blocks.append((block_id, mnem, None))
+
+        elif resolver.is_conditional_jump(last_instr.opcode):
+            # Conditional jump might exit the case
+            target = last_instr.arg1
+            fall_through = last_instr.address + 1
+
+            target_block_id = None
+            fall_through_block_id = None
+
+            for bid, b in cfg.blocks.items():
+                if b.start == target:
+                    target_block_id = bid
+                if b.start == fall_through:
+                    fall_through_block_id = bid
+
+            # If either branch goes outside case body, this could be a last block
+            exits_case = False
+            if target_block_id is not None and target_block_id not in case.body_blocks:
+                exits_case = True
+            if fall_through_block_id is not None and fall_through_block_id not in case.body_blocks:
+                exits_case = True
+
+            if exits_case:
+                last_blocks.append((block_id, "JZ/JNZ", target_block_id or fall_through_block_id))
+
+    # CRITICAL FIX: Check if there are "break blocks" immediately after case body
+    # These are single-instruction JMP blocks that jump to exit, representing "break;"
+    # They're not included in case.body_blocks but follow the last block
+    for block_id, mnem, target in list(last_blocks):
+        if mnem == "RET":
+            continue  # Skip RET blocks
+
+        # Check if target is a simple JMP block (break block)
+        if target is not None and target not in case.body_blocks:
+            target_block = cfg.blocks.get(target)
+            if target_block and len(target_block.instructions) == 1:
+                target_instr = target_block.instructions[0]
+                target_mnem = resolver.get_mnemonic(target_instr.opcode)
+                if target_mnem == "JMP":
+                    # This is a break block! Follow it to see where it goes
+                    break_target = target_instr.arg1
+                    break_target_id = None
+                    for bid, b in cfg.blocks.items():
+                        if b.start == break_target:
+                            break_target_id = bid
+                            break
+                    # Update the target to point to the actual destination
+                    last_blocks.append((target, "JMP (break)", break_target_id))
+
+    # Now check what these last blocks do:
+    # - If ALL last blocks RET → no break needed (return False)
+    # - If ANY last block JMPs to exit_block → has break (return True)
+    # - Otherwise → fall-through or complex control flow (return True as default)
+
+    if not last_blocks:
+        return True  # No clear exit found, assume break
+
+    all_ret = True
+    any_jmp_to_exit = False
+
+    for block_id, mnem, target in last_blocks:
+        if mnem == "RET":
+            # This path returns, no break needed on this path
+            pass
+        else:
+            all_ret = False
+            # Check if this jumps to switch exit
+            if target == exit_block:
+                any_jmp_to_exit = True
+
+    # If all paths return, no break needed
+    if all_ret:
+        return False
+
+    # If any path jumps to exit, we have a break
+    if any_jmp_to_exit:
+        return True
+
+    # Otherwise, assume break (safe default)
+    return True
 
 
 def _find_switch_variable_from_nearby_gcp(
@@ -165,8 +298,50 @@ def _detect_switch_patterns(
                     var_value = equ_inst.inputs[0]
                     const_value = equ_inst.inputs[1]
 
-                    # Get variable name - try to trace back to parameter first, then global
-                    var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+                    # FIX #3: Filter out float switches - check if constant is a float
+                    # If comparing to 0.0f or other float literals, skip this switch
+                    if const_value.alias and const_value.alias.startswith("data_"):
+                        try:
+                            offset = int(const_value.alias[5:])
+                            if ssa_func.scr and ssa_func.scr.data_segment:
+                                const_raw = ssa_func.scr.data_segment.get_dword(offset * 4)
+                                # Check if this is a float constant by trying to interpret as float
+                                # Common float patterns: 0.0f, 1.0f, etc. have specific bit patterns
+                                # 0.0f = 0x00000000, other small floats have exponent bits set
+                                # For now, check if it's 0 and the previous/next values suggest floats
+                                # Better heuristic: if value is very large (> 1000) it's likely int
+                                # If value is 0-100 and used in other float contexts, might be float
+                                # For safety, check if this appears to be a float comparison
+                                import struct
+                                try:
+                                    float_val = struct.unpack('f', struct.pack('I', const_raw & 0xFFFFFFFF))[0]
+                                    # If the float interpretation makes sense (not NaN, reasonable range)
+                                    # and the integer interpretation doesn't make sense as a switch case,
+                                    # this might be a float switch
+                                    if not (float_val != float_val) and -1000.0 < float_val < 1000.0:
+                                        # Check if this looks like a float literal (e.g., 0.0, 10.5, 11.0)
+                                        # Switch cases are typically small integers (0-20 for message enums)
+                                        if float_val == float(int(float_val)) and 0 <= int(float_val) <= 20:
+                                            # This could be either int or float - ambiguous
+                                            # Don't filter based on this alone
+                                            pass
+                                        elif abs(float_val - round(float_val)) > 0.01:
+                                            # Has decimal part - definitely float, not switch case
+                                            found_equ = False
+                                            break
+                                except:
+                                    pass
+                        except (ValueError, AttributeError):
+                            pass
+
+                    # FIX #1: Get variable name - try parameter field FIRST (highest priority)
+                    var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
+
+                    # Then try regular parameter access
+                    if not var_name:
+                        var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+
+                    # Then try global variables
                     if not var_name:
                         var_name = _trace_value_to_global(var_value, formatter)
 
@@ -298,6 +473,41 @@ def _detect_switch_patterns(
             if current_block is not None:
                 stop_blocks.add(current_block)
 
+                # FIX #1 PART 2: Find the actual default entry block
+                # current_block is the last test block (e.g., block 18 at 091)
+                # The default entry is typically the fall-through or jump target
+                default_entry = None
+                curr_blk = cfg.blocks.get(current_block)
+                if curr_blk and curr_blk.instructions:
+                    last_test_instr = curr_blk.instructions[-1]
+                    test_mnem = resolver.get_mnemonic(last_test_instr.opcode)
+
+                    # If it's a conditional jump (JZ), default is either target or fall-through
+                    if resolver.is_conditional_jump(last_test_instr.opcode):
+                        # JZ jumps on false (zero), so target is next test or default
+                        target_addr = last_test_instr.arg1
+                        fall_through_addr = last_test_instr.address + 1
+
+                        # Find which one is the default (not in chain_blocks)
+                        for bid, b in cfg.blocks.items():
+                            if b.start == target_addr and bid not in chain_blocks:
+                                default_entry = bid
+                                break
+                            elif b.start == fall_through_addr and bid not in chain_blocks:
+                                default_entry = bid
+                                break
+                    elif test_mnem == "JMP":
+                        # Direct JMP to default
+                        target_addr = last_test_instr.arg1
+                        for bid, b in cfg.blocks.items():
+                            if b.start == target_addr:
+                                default_entry = bid
+                                break
+
+                # Add default entry to stop blocks so cases don't leak into default
+                if default_entry is not None:
+                    stop_blocks.add(default_entry)
+
             # For each case, find all blocks in its body
             for case in cases:
                 case.body_blocks = _find_case_body_blocks(
@@ -311,10 +521,21 @@ def _detect_switch_patterns(
             # Also find body blocks for default case if present
             default_body = None
             if current_block is not None:
+                # FIX #1 PART 3: Use default_entry if found, otherwise use current_block
+                # Remove default_entry from stop_blocks temporarily so BFS can include it
+                default_body_entry = default_entry if default_entry is not None else current_block
+                if default_entry is not None and default_entry in stop_blocks:
+                    stop_blocks.remove(default_entry)
+
                 default_body = _find_case_body_blocks(
-                    cfg, current_block, stop_blocks, resolver
+                    cfg, default_body_entry, stop_blocks, resolver
                 )
                 all_blocks.update(default_body)
+
+            # FIX #1: Detect break statements in each case
+            # Analyze each case's exit behavior to determine if it has break
+            for case in cases:
+                case.has_break = _case_has_break(cfg, case, exit_block, resolver)
 
             switch = SwitchPattern(
                 test_var=test_var,
@@ -327,5 +548,53 @@ def _detect_switch_patterns(
             )
             switches.append(switch)
             processed_blocks.update(chain_blocks)
+
+    # FIX #2: Prioritize switches by importance
+    # Parameter field switches (e.g., info->message) are most important
+    # Global variable switches are medium priority
+    # Local variable switches are lowest priority
+    def _rank_switch_importance(sw: SwitchPattern) -> int:
+        """
+        Rank switch importance for prioritization.
+
+        Returns:
+            Higher number = higher priority
+            100+ = Parameter field access (info->message, info->param1, etc.)
+            50-99 = Global variable (gphase, g_dialog, etc.)
+            0-49 = Local variable or unknown
+        """
+        var_name = sw.test_var
+
+        # Parameter field access = highest priority (most likely main switch)
+        if "->" in var_name:
+            # Check if it's a parameter field (starts with param name like "info", "data", etc.)
+            # Common parameter names: info, data, param, msg
+            param_prefixes = ["info->", "data->", "param->", "msg->", "event->"]
+            if any(var_name.startswith(prefix) for prefix in param_prefixes):
+                return 100
+            # Other struct field access
+            return 90
+
+        # Global variable = medium priority
+        # Globals typically start with 'g' or have specific prefixes
+        if var_name.startswith("g") or var_name.startswith("_g"):
+            return 50
+
+        # Check for common global patterns
+        global_patterns = ["phase", "state", "mode", "flag", "status"]
+        if any(pattern in var_name.lower() for pattern in global_patterns):
+            return 45
+
+        # Local variable or unknown = lowest priority
+        # These include local_, tmp, var, etc.
+        if var_name.startswith("local_") or var_name.startswith("tmp") or var_name.startswith("var"):
+            return 10
+
+        # Unknown/other = low-medium priority
+        return 30
+
+    # Sort switches by importance (highest priority first)
+    if len(switches) > 1:
+        switches.sort(key=_rank_switch_importance, reverse=True)
 
     return switches

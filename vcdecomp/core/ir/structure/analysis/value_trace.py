@@ -198,6 +198,126 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) 
     return None
 
 
+def _trace_value_to_parameter_field(
+    value,
+    formatter: ExpressionFormatter,
+    ssa_func: SSAFunction,
+    visited: Optional[Set[int]] = None
+) -> Optional[str]:
+    """
+    Trace an SSA value back to a parameter field access pattern.
+
+    Pattern to detect (Pilot script):
+        LADR [sp-4]   -> Load address of parameter (info)
+        DADR offset   -> Add field offset (0 for ->message, 4 for ->param1, etc.)
+        DCP           -> Dereference to get field value
+
+    This is different from _trace_value_to_parameter which handles direct LCP loads.
+
+    Args:
+        value: SSA value to trace
+        formatter: Expression formatter
+        ssa_func: SSA function containing the value
+        visited: Set of visited value IDs to prevent infinite recursion
+
+    Returns:
+        Parameter field access string (e.g., "info->message") if found, None otherwise
+    """
+    if not value:
+        return None
+
+    # Prevent infinite recursion
+    if visited is None:
+        visited = set()
+    if id(value) in visited:
+        return None
+    visited.add(id(value))
+
+    if not value.producer_inst:
+        return None
+
+    producer = value.producer_inst
+
+    # Pattern: DCP (dereference pointer)
+    if producer.mnemonic == "DCP":
+        if len(producer.inputs) == 0:
+            return None
+
+        # The input to DCP is the pointer (result of LADR+DADR)
+        ptr_value = producer.inputs[0]
+
+        if not ptr_value.producer_inst:
+            return None
+
+        ptr_producer = ptr_value.producer_inst
+
+        # Pattern: DADR (add offset to address)
+        if ptr_producer.mnemonic == "DADR":
+            if len(ptr_producer.inputs) == 0:
+                return None
+
+            # Get the field offset from DADR instruction
+            field_offset = None
+            if ptr_producer.instruction and ptr_producer.instruction.instruction:
+                field_offset = ptr_producer.instruction.instruction.arg1
+
+            # The input to DADR is the base address (result of LADR)
+            base_addr_value = ptr_producer.inputs[0]
+
+            if not base_addr_value.producer_inst:
+                return None
+
+            base_producer = base_addr_value.producer_inst
+
+            # Pattern: LADR [sp-4] (load address of parameter)
+            if base_producer.mnemonic == "LADR":
+                if base_producer.instruction and base_producer.instruction.instruction:
+                    stack_offset = base_producer.instruction.instruction.arg1
+
+                    # [sp-4] is the first parameter in VC compiler convention
+                    # Negative offsets are function parameters
+                    if stack_offset < 0:
+                        # Map field offsets to field names for s_SC_L_info struct
+                        # typedef struct{ dword message,param1,param2,param3; float elapsed_time; float next_exe_time; c_Vector3 param4; }s_SC_L_info;
+                        field_map = {
+                            0: "message",       # offset 0
+                            4: "param1",        # offset 4
+                            8: "param2",        # offset 8
+                            12: "param3",       # offset 12
+                            16: "elapsed_time", # offset 16
+                            20: "next_exe_time",# offset 20
+                            # param4 (c_Vector3) starts at offset 24
+                        }
+
+                        field_name = field_map.get(field_offset)
+                        if field_name:
+                            # Default parameter name
+                            param_name = "info"
+
+                            # Try to get parameter name from function signature
+                            if hasattr(formatter, '_func_signature') and formatter._func_signature:
+                                func_sig = formatter._func_signature
+                                # For level scripts, first parameter is typically s_SC_L_info
+                                # For network scripts, first parameter is s_SC_NET_info
+                                if func_sig.param_types and len(func_sig.param_types) > 0:
+                                    param_type = func_sig.param_types[0]
+                                    # Extract parameter name from "s_SC_L_info *info"
+                                    parts = param_type.split()
+                                    if parts:
+                                        param_name = parts[-1].rstrip('*')
+
+                            return f"{param_name}->{field_name}"
+
+    # Try to trace through PHI nodes
+    if producer.mnemonic == "PHI":
+        for inp in producer.inputs:
+            result = _trace_value_to_parameter_field(inp, formatter, ssa_func, visited)
+            if result:
+                return result
+
+    return None
+
+
 def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: SSAFunction) -> Optional[str]:
     """
     Trace an SSA value back to its parameter source.

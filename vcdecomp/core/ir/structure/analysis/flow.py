@@ -8,10 +8,13 @@ short-circuit evaluation patterns.
 
 from __future__ import annotations
 
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple, TYPE_CHECKING
 
 from ...cfg import CFG, NaturalLoop, BasicBlock
 from ....disasm import opcodes
+
+if TYPE_CHECKING:
+    from ..patterns.models import CompoundCondition
 
 
 def _get_loop_for_block(block_id: int, loops: List[NaturalLoop]) -> Optional[NaturalLoop]:
@@ -246,3 +249,142 @@ def _find_case_body_blocks(cfg: CFG, case_entry: int, stop_blocks: Set[int], res
                     worklist.append(succ)
 
     return body_blocks
+
+
+def _find_compound_merge_point(
+    cfg: CFG,
+    compound: "CompoundCondition",
+    true_body: Set[int],
+    false_body: Set[int]
+) -> Optional[int]:
+    """
+    Find merge point for compound condition using proper CFG analysis.
+
+    For compound conditions like ((A && B) || (C && D)), the merge point is where
+    the TRUE and FALSE branches rejoin after executing their respective bodies.
+
+    Algorithm:
+    1. Find all exit blocks from true_body (blocks with successors outside body)
+    2. Find all exit blocks from false_body (blocks with successors outside body)
+    3. Find smallest common successor of all exits (first block reachable from all)
+    4. Exclude blocks that are part of compound pattern itself
+
+    Args:
+        cfg: Control flow graph
+        compound: Compound condition with involved_blocks
+        true_body: Set of blocks in TRUE branch body
+        false_body: Set of blocks in FALSE branch body
+
+    Returns:
+        Block ID of merge point, or None if no clear merge point
+    """
+    def get_exit_blocks(body: Set[int]) -> Set[int]:
+        """Find blocks in body that have successors outside body."""
+        exits = set()
+        for block_id in body:
+            block = cfg.blocks.get(block_id)
+            if block:
+                for succ in block.successors:
+                    if succ not in body:
+                        exits.add(block_id)
+                        break
+        return exits
+
+    # Find exit blocks from both bodies
+    true_exits = get_exit_blocks(true_body) if true_body else set()
+    false_exits = get_exit_blocks(false_body) if false_body else set()
+
+    # If no exits, no merge point
+    if not true_exits and not false_exits:
+        return None
+
+    # Collect all successors of exit blocks (potential merge points)
+    potential_merge = set()
+    for exit_block in true_exits | false_exits:
+        block = cfg.blocks.get(exit_block)
+        if block:
+            potential_merge.update(block.successors)
+
+    # Remove blocks that are part of the bodies or compound pattern
+    potential_merge -= true_body
+    potential_merge -= false_body
+    if compound.involved_blocks:
+        potential_merge -= compound.involved_blocks
+
+    if not potential_merge:
+        return None
+
+    # Find the block with smallest address (closest merge point)
+    candidates = [(bid, cfg.blocks[bid].start) for bid in potential_merge if bid in cfg.blocks]
+    if not candidates:
+        return None
+
+    return min(candidates, key=lambda x: x[1])[0]
+
+
+def _find_compound_body_blocks(
+    cfg: CFG,
+    compound: "CompoundCondition",
+    resolver: opcodes.OpcodeResolver
+) -> Tuple[Set[int], Set[int], Optional[int]]:
+    """
+    Find body blocks for compound condition.
+
+    This function properly detects the TRUE and FALSE body blocks for compound
+    conditions (AND/OR patterns), ensuring that pattern infrastructure blocks
+    (blocks that test conditions) are NOT included in the body.
+
+    Key differences from _find_if_body_blocks:
+    - Starts from compound.true_target (NOT compound.involved_blocks)
+    - Excludes ALL compound.involved_blocks from body using stop_blocks
+    - Computes proper merge point for compound patterns
+    - Validates that bodies are non-empty
+
+    Algorithm:
+    1. Run BFS from true_target with stop_blocks = involved_blocks | {false_target}
+    2. Remove any pattern blocks that leaked into body: true_body -= involved_blocks
+    3. Run BFS from false_target with stop_blocks = involved_blocks | true_body
+    4. Remove pattern blocks from false_body
+    5. Find merge point using _find_compound_merge_point
+
+    Args:
+        cfg: Control flow graph
+        compound: CompoundCondition with targets and involved_blocks
+        resolver: Opcode resolver
+
+    Returns:
+        Tuple of (true_body, false_body, merge_point)
+        - true_body: Set of blocks in TRUE branch
+        - false_body: Set of blocks in FALSE branch (may be empty)
+        - merge_point: Block where branches rejoin (may be None)
+    """
+    # Prepare stop blocks for TRUE body: pattern blocks + false target
+    stop_blocks_true = compound.involved_blocks.copy() if compound.involved_blocks else set()
+    if compound.false_target:
+        stop_blocks_true.add(compound.false_target)
+
+    # Find TRUE body using BFS
+    true_body = _find_if_body_blocks(cfg, compound.true_target, stop_blocks_true, resolver)
+
+    # CRITICAL: Remove any pattern blocks that leaked into body
+    if compound.involved_blocks:
+        true_body = true_body - compound.involved_blocks
+
+    # Find FALSE body (if false_target exists)
+    false_body = set()
+    if compound.false_target:
+        # Stop blocks: pattern blocks + true_target + true_body
+        stop_blocks_false = compound.involved_blocks.copy() if compound.involved_blocks else set()
+        stop_blocks_false.add(compound.true_target)
+        stop_blocks_false.update(true_body)
+
+        false_body = _find_if_body_blocks(cfg, compound.false_target, stop_blocks_false, resolver)
+
+        # Remove pattern blocks from false body
+        if compound.involved_blocks:
+            false_body = false_body - compound.involved_blocks
+
+    # Find merge point
+    merge_point = _find_compound_merge_point(cfg, compound, true_body, false_body)
+
+    return (true_body, false_body, merge_point)

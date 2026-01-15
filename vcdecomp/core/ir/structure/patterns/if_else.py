@@ -155,12 +155,37 @@ def _detect_short_circuit_pattern(
 
     # Step 3: Create AND compound (or single condition if len==1)
     if len(and_conditions) > 1:
-        and_compound = CompoundCondition(
+        # Import here to avoid circular dependency
+        from ..analysis.flow import _find_compound_body_blocks
+
+        # Create temporary compound to calculate bodies
+        temp_compound = CompoundCondition(
             operator="&&",
             conditions=and_conditions,
             true_target=true_target if true_target is not None else -1,
             false_target=false_target if false_target is not None else -1,
             involved_blocks=set(and_blocks)
+        )
+
+        # Calculate bodies for this AND compound
+        true_body, false_body, merge_point = _find_compound_body_blocks(
+            cfg, temp_compound, resolver
+        )
+
+        # VALIDATION: Empty body means bad detection
+        if not true_body:
+            return None  # Don't create compound with empty body
+
+        # Create final compound with calculated bodies
+        and_compound = CompoundCondition(
+            operator="&&",
+            conditions=and_conditions,
+            true_target=true_target if true_target is not None else -1,
+            false_target=false_target if false_target is not None else -1,
+            involved_blocks=set(and_blocks),
+            true_body=true_body,
+            false_body=false_body,
+            merge_point=merge_point
         )
     else:
         # Single condition - might still be part of OR
@@ -181,6 +206,9 @@ def _detect_short_circuit_pattern(
 
     # Step 6: If next branch jumps to same TRUE target, combine with OR
     if next_branch and next_branch.true_target == true_target:
+        # Import here to avoid circular dependency
+        from ..analysis.flow import _find_compound_body_blocks
+
         # Build OR compound
         or_conditions = []
         or_involved_blocks = set()
@@ -197,12 +225,34 @@ def _detect_short_circuit_pattern(
         or_conditions.append(next_branch)
         or_involved_blocks.update(next_branch.involved_blocks)
 
-        return CompoundCondition(
+        # Create temporary OR compound to calculate bodies
+        temp_or_compound = CompoundCondition(
             operator="||",
             conditions=or_conditions,
             true_target=true_target,
             false_target=next_branch.false_target,  # Use last branch's false target
             involved_blocks=or_involved_blocks
+        )
+
+        # Calculate bodies for OR compound
+        true_body, false_body, merge_point = _find_compound_body_blocks(
+            cfg, temp_or_compound, resolver
+        )
+
+        # VALIDATION: Empty body means bad detection
+        if not true_body:
+            return None  # Don't create compound with empty body
+
+        # Return final OR compound with calculated bodies
+        return CompoundCondition(
+            operator="||",
+            conditions=or_conditions,
+            true_target=true_target,
+            false_target=next_branch.false_target,  # Use last branch's false target
+            involved_blocks=or_involved_blocks,
+            true_body=true_body,
+            false_body=false_body,
+            merge_point=merge_point
         )
 
     # No OR detected, return the AND compound
@@ -343,6 +393,15 @@ def _detect_if_else_pattern(
     # BUG FIX #4: Add context stop blocks (e.g., switch case boundaries)
     if context_stop_blocks:
         stop_blocks.update(context_stop_blocks)
+
+    # FIX #2: Add loop body blocks to stop blocks to prevent if/else from capturing loop code
+    # This prevents if/else BFS from crossing into loop bodies that should be rendered inside loops
+    if func_loops:
+        for loop in func_loops:
+            # Add all blocks in loop body (including header) to stop blocks
+            stop_blocks.update(loop.body)
+            # Also add the loop header itself
+            stop_blocks.add(loop.header)
 
     # For true branch, exclude false branch entry to prevent crossing
     true_stop = stop_blocks | {false_block} if false_block else stop_blocks

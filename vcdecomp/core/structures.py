@@ -160,6 +160,23 @@ STRUCT_S_SC_L_INFO = StructDef(
     ]
 )
 
+# ============================================================================
+# Multiplayer/Network script info structure (for MP scripts like TDM)
+# ============================================================================
+
+STRUCT_S_SC_NET_INFO = StructDef(
+    name="s_SC_NET_info",
+    size=24,
+    fields=[
+        StructField(0, "message", "dword", 4),
+        StructField(4, "param1", "dword", 4),
+        StructField(8, "param2", "dword", 4),
+        StructField(12, "param3", "dword", 4),
+        StructField(16, "elapsed_time", "float", 4),
+        StructField(20, "fval1", "float", 4),
+    ]
+)
+
 
 # ============================================================================
 # AI properties structure (very large - 128 bytes)
@@ -301,6 +318,69 @@ STRUCT_S_SC_INITGROUP = StructDef(
 
 
 # ============================================================================
+# Multiplayer structures (TDM, CTF, etc.)
+# ============================================================================
+
+STRUCT_S_SC_MP_SRV_SETTINGS = StructDef(
+    name="s_SC_MP_SRV_settings",
+    size=28,  # 4 + 4 + 4 + 6*4 = 28 bytes
+    fields=[
+        StructField(0, "coop_respawn_time", "dword", 4),
+        StructField(4, "coop_respawn_limit", "dword", 4),
+        StructField(8, "dm_weap_resp_time", "dword", 4),
+        StructField(12, "atg_class_limit", "dword", 4, is_array=True, array_count=6),
+    ]
+)
+
+STRUCT_S_SC_MP_HUD = StructDef(
+    name="s_SC_MP_hud",
+    size=60,  # 4 + 4 + 4 + 4 + 8 + 8 + 4 + 4 + 20 = 60 bytes
+    fields=[
+        StructField(0, "title", "dword", 4),
+        StructField(4, "use_sides", "BOOL", 4),
+        StructField(8, "disableUSside", "BOOL", 4),
+        StructField(12, "disableVCside", "BOOL", 4),
+        StructField(16, "side_name", "dword", 4, is_array=True, array_count=2),
+        StructField(24, "side_color", "dword", 4, is_array=True, array_count=2),
+        StructField(32, "pl_mask", "dword", 4),
+        StructField(36, "side_mask", "dword", 4),
+        StructField(40, "sort_by", "dword", 4, is_array=True, array_count=5),
+    ]
+)
+
+STRUCT_S_SC_HUD_MP_ICON = StructDef(
+    name="s_SC_HUD_MP_icon",
+    size=16,
+    fields=[
+        StructField(0, "icon_id", "dword", 4),
+        StructField(4, "type", "dword", 4),
+        StructField(8, "value", "int", 4),
+        StructField(12, "color", "dword", 4),
+    ]
+)
+
+STRUCT_S_SC_MP_ENUMPAYERS = StructDef(
+    name="s_SC_MP_EnumPlayers",
+    size=16,  # 4 + 4 + 4 + 4 = 16 bytes
+    fields=[
+        StructField(0, "id", "dword", 4),
+        StructField(4, "side", "dword", 4),
+        StructField(8, "status", "dword", 4),
+        StructField(12, "name", "char*", 4, is_pointer=True),
+    ]
+)
+
+STRUCT_S_SC_MP_RECOVER = StructDef(
+    name="s_SC_MP_Recover",
+    size=16,
+    fields=[
+        StructField(0, "pos", "c_Vector3", 12),
+        StructField(12, "rz", "float", 4),
+    ]
+)
+
+
+# ============================================================================
 # Registry - all structures by name and size
 # ============================================================================
 
@@ -311,6 +391,7 @@ ALL_STRUCTURES: Dict[str, StructDef] = {
     "s_SC_P_CreateEqp": STRUCT_S_SC_P_CREATEEQP,
     "s_SC_P_Create": STRUCT_S_SC_P_CREATE,
     "s_SC_L_info": STRUCT_S_SC_L_INFO,
+    "s_SC_NET_info": STRUCT_S_SC_NET_INFO,
     "s_SC_P_AI_props": STRUCT_S_SC_P_AI_PROPS,
     "s_SC_P_getinfo": STRUCT_S_SC_P_GETINFO,
     "s_SC_P_Ai_BattleProps": STRUCT_S_SC_P_AI_BATTLEPROPS,
@@ -318,6 +399,11 @@ ALL_STRUCTURES: Dict[str, StructDef] = {
     "s_SC_Objective": STRUCT_S_SC_OBJECTIVE,
     "s_SC_initside": STRUCT_S_SC_INITSIDE,
     "s_SC_initgroup": STRUCT_S_SC_INITGROUP,
+    "s_SC_MP_SRV_settings": STRUCT_S_SC_MP_SRV_SETTINGS,
+    "s_SC_MP_hud": STRUCT_S_SC_MP_HUD,
+    "s_SC_HUD_MP_icon": STRUCT_S_SC_HUD_MP_ICON,
+    "s_SC_MP_EnumPlayers": STRUCT_S_SC_MP_ENUMPAYERS,
+    "s_SC_MP_Recover": STRUCT_S_SC_MP_RECOVER,
 }
 
 # Map size -> possible structures (for heuristic detection)
@@ -370,6 +456,11 @@ FUNCTION_STRUCT_PARAMS: Dict[str, Dict[int, str]] = {
     "SC_NOD_GetWorldPos": {1: "c_Vector3"},
     # ZeroMem - need size analysis
     "SC_ZeroMem": {},  # First arg is pointer, second is size
+    # FIX #5: Multiplayer/networking functions
+    "SC_MP_GetSRVsettings": {0: "s_SC_MP_SRV_settings"},
+    "SC_MP_HUD_SetTabInfo": {0: "s_SC_MP_hud"},
+    "SC_MP_SetIconHUD": {0: "s_SC_HUD_MP_icon"},
+    "SC_MP_EnumPlayers": {0: "s_SC_MP_EnumPlayers"},
 }
 
 

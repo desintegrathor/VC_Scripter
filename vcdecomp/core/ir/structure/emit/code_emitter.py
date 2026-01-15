@@ -68,6 +68,21 @@ def _render_if_else_recursive(
     # NEW: Check if this is a compound condition pattern
     compound = getattr(if_pattern, 'compound', None)
     if compound is not None:
+        # VALIDATION: Check if compound has calculated bodies
+        if hasattr(compound, 'true_body') and compound.true_body:
+            # Use calculated bodies from detection phase
+            true_body = compound.true_body
+        else:
+            # Fallback to old behavior (single target)
+            true_body = {compound.true_target}
+
+        # CRITICAL VALIDATION: Empty body means bad detection - skip rendering
+        if not true_body or (len(true_body) == 1 and compound.true_target in compound.involved_blocks):
+            import sys
+            print(f"WARNING: Empty body for compound at block {if_pattern.header_block}, skipping",
+                  file=sys.stderr)
+            return []  # Don't render empty if blocks
+
         # This is a compound condition (AND/OR chain)
         # Render using _combine_conditions helper
         cond_text = _combine_conditions(
@@ -76,23 +91,54 @@ def _render_if_else_recursive(
             preserve_style=True  # Match original formatting
         )
 
-        # Mark all involved blocks as emitted to prevent duplicate rendering
+        # FIX #8: Extract header code from the first block in the compound chain
+        # The header block (if_pattern.header_block) may have code BEFORE the compound condition
+        # We need to emit that code first
+        header_block_id = if_pattern.header_block
+        header_code_lines = []
+
+        # Only emit header code if this is the actual header block (not a nested involved block)
+        if header_block_id not in emitted_blocks:
+            # Get all expressions from the header block
+            from ...expr import format_block_expressions
+            header_exprs = format_block_expressions(ssa_func, header_block_id, formatter=formatter)
+
+            # Filter out comparison/jump expressions that are part of the compound condition
+            # These typically include EQU, JZ/JNZ instructions
+            # We want to keep XCALL, ASGN, and other "real" code
+            for expr in header_exprs:
+                expr_text = expr.text.strip()
+                # Skip if it's a goto or empty
+                if expr_text.startswith("goto ") or not expr_text:
+                    continue
+                # Skip if it's a simple comparison assignment (part of condition chain)
+                # Pattern: "tmp = value == constant;"
+                if " == " in expr_text and expr_text.endswith(";") and expr_text.count("=") == 2:
+                    continue
+                # Keep everything else (function calls, assignments, etc.)
+                header_code_lines.append(f"{indent}{expr_text}")
+
+        # Emit header code before the if statement
+        lines.extend(header_code_lines)
+
+        # Mark all involved blocks (condition testing blocks) as emitted first
         for involved_block in compound.involved_blocks:
             emitted_blocks.add(involved_block)
 
         # Render the if statement with compound condition
         lines.append(f"{indent}if ({cond_text}) {{")
 
-        # Render true body
-        true_block_lines = _format_block_lines(
-            ssa_func, compound.true_target, indent + "    ", formatter,
-            block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-            early_returns
-        )
-        lines.extend(true_block_lines)
-
-        # Mark TRUE body as emitted to prevent duplication
-        emitted_blocks.add(compound.true_target)
+        # Render true body - iterate over ALL body blocks, not just target
+        for body_block_id in sorted(true_body, key=lambda b: cfg.blocks[b].start if b in cfg.blocks else b):
+            if body_block_id not in emitted_blocks:
+                true_block_lines = _format_block_lines(
+                    ssa_func, body_block_id, indent + "    ", formatter,
+                    block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                    early_returns
+                )
+                lines.extend(true_block_lines)
+                # Mark this body block as emitted
+                emitted_blocks.add(body_block_id)
 
         lines.append(f"{indent}}}")
 
@@ -169,6 +215,7 @@ def _render_if_else_recursive(
         None, None, None, None, None, None,  # Disable recursion for header itself
         early_returns
     )
+
     # Remove last line if it's the conditional jump
     if header_lines and ("goto" in header_lines[-1] or "if (" in header_lines[-1]):
         header_lines = header_lines[:-1]

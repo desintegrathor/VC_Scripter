@@ -22,11 +22,10 @@ def _to_signed(val: int) -> int:
 def _stack_alias_from_offset(offset: int) -> str:
     signed = _to_signed(offset)
     if signed < 0:
-        # Special case: -3 is return value slot
-        if signed == -3:
-            return "retval"
-        # Parameters: -4=param_0, -8=param_1, -12=param_2, etc.
-        param_idx = (abs(signed) - 4) // 4
+        # Parameters: [sp-3]=param_0, [sp-4]=param_1, [sp-5]=param_2, etc.
+        # Note: [sp-3] is FIRST parameter, NOT return slot
+        # Return slot is only used by LLD before RET (context-dependent, handled elsewhere)
+        param_idx = abs(signed) - 3  # -3→0, -4→1, -5→2, etc.
         return f"param_{param_idx}"
     # FIX 2: Use BYTE offset, not dword index!
     # Compiler uses byte-level addressing (offset 8, 9, 10, 11, ...)

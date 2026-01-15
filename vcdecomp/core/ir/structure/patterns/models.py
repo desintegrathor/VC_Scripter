@@ -83,6 +83,11 @@ class CompoundCondition:
     false_target: int                      # Block to execute if FALSE
     involved_blocks: Set[int] = None      # All blocks involved in this compound condition
 
+    # Body tracking (added for proper nested if/else detection)
+    true_body: Set[int] = None            # All blocks in TRUE branch body
+    false_body: Set[int] = None           # All blocks in FALSE branch body
+    merge_point: Optional[int] = None     # Block where branches rejoin
+
     def __post_init__(self):
         if self.involved_blocks is None:
             self.involved_blocks = set()

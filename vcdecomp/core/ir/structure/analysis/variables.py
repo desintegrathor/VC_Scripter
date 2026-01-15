@@ -27,6 +27,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # P0.3: Track local arrays detected from usage patterns
     local_arrays: Dict[str, Tuple[str, int]] = {}  # var_name -> (element_type, size)
 
+    # FIX #5: Track struct types inferred from function calls
+    # Maps variable name -> struct type (e.g., "local_5" -> "s_SC_P_getinfo")
+    inferred_struct_types: Dict[str, str] = {}
+
     def process_value(value, default_type="int"):
         """Process a value to extract variable names and types."""
         if not value:
@@ -66,8 +70,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # Determine type from instruction or value type
         var_type = default_type
 
+        # FIX #5: First check if we inferred a struct type from function calls
+        # Try both display_name and var_name since semantic names might differ
+        if display_name in inferred_struct_types:
+            var_type = inferred_struct_types[display_name]
+        elif var_name in inferred_struct_types:
+            var_type = inferred_struct_types[var_name]
         # Check if this is a structure variable (has field access)
-        if var_name.startswith("local_"):
+        elif var_name.startswith("local_"):
             # Check if formatter knows this is a struct
             struct_info = formatter._struct_ranges.get(var_name)
             if struct_info:
@@ -98,6 +108,149 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
 
         # Store variable type
         var_types[display_name] = var_type
+
+    # FIX #5: FIRST pass - infer struct types from function calls
+    # This must run BEFORE array detection so array detection can use struct types
+    from ....structures import infer_struct_from_function
+
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            # Look for XCALL instructions (external function calls)
+            if inst.mnemonic != "XCALL" or not inst.inputs:
+                continue
+
+            # Get function name from XFN table
+            call_name = None
+            if inst.instruction and inst.instruction.instruction:
+                xfn_idx = inst.instruction.instruction.arg1
+                xfn_entry = ssa_func.scr.get_xfn(xfn_idx) if ssa_func.scr else None
+                if xfn_entry:
+                    full_name = xfn_entry.name
+                    paren_idx = full_name.find("(")
+                    call_name = full_name[:paren_idx] if paren_idx > 0 else full_name
+
+            if not call_name:
+                continue
+
+            # Check each argument to see if it's a struct pointer parameter
+            for arg_idx, arg_value in enumerate(inst.inputs):
+                # Infer struct type from function signature
+                struct_type = infer_struct_from_function(call_name, arg_idx)
+                if not struct_type:
+                    continue
+
+                # Extract variable name from &local_X or local_X
+                var_name = arg_value.alias or arg_value.name
+                if not var_name:
+                    continue
+
+                # Strip & prefix if present
+                if var_name.startswith("&"):
+                    var_name = var_name[1:]
+
+                # Only process local variables
+                if not var_name.startswith("local_"):
+                    continue
+
+                # Store the inferred struct type
+                # Store using both local_X name AND semantic name if it exists
+                inferred_struct_types[var_name] = struct_type
+
+                # Also store for semantic name if it exists
+                semantic_name = formatter._semantic_names.get(var_name)
+                if semantic_name:
+                    inferred_struct_types[semantic_name] = struct_type
+
+    # FIX 1.3: New pass - detect arrays from indexed access patterns
+    # Track variables used in array indexing (MUL with struct size)
+    array_index_vars: Dict[str, Set[str]] = {}  # array_var -> {index_vars}
+    array_max_indices: Dict[str, int] = {}  # array_var -> max_index_seen
+    
+    # Scan for array indexing patterns: ADD(base, MUL(index, element_size))
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            # Look for ADD instructions (used in array indexing)
+            if inst.mnemonic == "ADD" and len(inst.inputs) == 2:
+                left = inst.inputs[0]
+                right = inst.inputs[1]
+                
+                # Check if left is a base address (&local_X, &data_X)
+                base_var = None
+                if left.alias and left.alias.startswith("&"):
+                    base_var = left.alias[1:]  # Strip &
+                    # Only track local variables for array inference
+                    if not base_var.startswith("local_"):
+                        base_var = None
+                
+                if base_var and right.producer_inst:
+                    # Check if right is MUL (index * element_size)
+                    if right.producer_inst.mnemonic == "MUL" and len(right.producer_inst.inputs) == 2:
+                        # Found array indexing pattern!
+                        mul_left = right.producer_inst.inputs[0]
+                        mul_right = right.producer_inst.inputs[1]
+                        
+                        # Extract index variable (usually left operand of MUL)
+                        index_var = mul_left.alias or mul_left.name
+                        if index_var:
+                            if base_var not in array_index_vars:
+                                array_index_vars[base_var] = set()
+                            array_index_vars[base_var].add(index_var)
+    
+    # For each detected array, try to infer size from loop bounds
+    from ...cfg import find_loops_in_function
+    cfg = ssa_func.cfg
+    
+    # Get loops in this function (need entry block)
+    entry_block = None
+    for block_id in func_block_ids:
+        block = cfg.blocks.get(block_id)
+        if block and len(block.predecessors) == 0:
+            entry_block = block_id
+            break
+    
+    if entry_block is not None:
+        func_loops = find_loops_in_function(cfg, func_block_ids, entry_block)
+        
+        # For each array, find loops that use its index variables
+        for array_var, index_vars in array_index_vars.items():
+            max_bound = 0
+            
+            # Search loops for bounds on index variables
+            for loop in func_loops:
+                for block_id in loop.body:
+                    ssa_block = ssa_func.instructions.get(block_id, [])
+                    for inst in ssa_block:
+                        # Look for comparison instructions with index variables
+                        if inst.mnemonic in ("LES", "LEQ", "GRE", "GEQ", "ULES", "ULEQ"):
+                            for inp in inst.inputs:
+                                inp_name = inp.alias or inp.name
+                                if inp_name in index_vars:
+                                    # Found comparison with index variable
+                                    # Try to extract the bound (other operand)
+                                    other_inp = inst.inputs[1] if inst.inputs[0] == inp else inst.inputs[0]
+                                    
+                                    # Try to get constant bound
+                                    bound_val = None
+                                    if other_inp.alias and other_inp.alias.isdigit():
+                                        bound_val = int(other_inp.alias)
+                                    elif hasattr(other_inp, 'constant_value') and other_inp.constant_value is not None:
+                                        bound_val = other_inp.constant_value
+                                    
+                                    if bound_val is not None and bound_val > max_bound:
+                                        max_bound = bound_val
+            
+            # If we found a reasonable bound, mark this as an array
+            if max_bound > 0 and max_bound <= 1000:  # Sanity check
+                # Get the struct type if known
+                struct_type = inferred_struct_types.get(array_var)
+                if struct_type:
+                    local_arrays[array_var] = (struct_type, max_bound)
+                    # Also mark for semantic name if it exists
+                    semantic_name = formatter._semantic_names.get(array_var)
+                    if semantic_name:
+                        local_arrays[semantic_name] = (struct_type, max_bound)
 
     # P0.3: First pass - detect local arrays from usage patterns
     for block_id in func_block_ids:
@@ -162,6 +315,60 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                             element_type = "dword"
                             array_size = size // 4
                             local_arrays[var_name] = (element_type, array_size)
+
+    # FIX #5: Second pass - infer struct types from function calls
+    # Import struct type mapping from structures module
+    from ....structures import infer_struct_from_function
+
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            # Look for XCALL instructions (external function calls)
+            if inst.mnemonic != "XCALL" or not inst.inputs:
+                continue
+
+            # Get function name from XFN table
+            call_name = None
+            if inst.instruction and inst.instruction.instruction:
+                xfn_idx = inst.instruction.instruction.arg1
+                xfn_entry = ssa_func.scr.get_xfn(xfn_idx) if ssa_func.scr else None
+                if xfn_entry:
+                    full_name = xfn_entry.name
+                    paren_idx = full_name.find("(")
+                    call_name = full_name[:paren_idx] if paren_idx > 0 else full_name
+
+            if not call_name:
+                continue
+
+            # Check each argument to see if it's a struct pointer parameter
+            for arg_idx, arg_value in enumerate(inst.inputs):
+                # Infer struct type from function signature
+                struct_type = infer_struct_from_function(call_name, arg_idx)
+                if not struct_type:
+                    continue
+
+                # Extract variable name from &local_X or local_X
+                var_name = arg_value.alias or arg_value.name
+                if not var_name:
+                    continue
+
+                # Strip & prefix if present
+                if var_name.startswith("&"):
+                    var_name = var_name[1:]
+
+                # Only process local variables
+                if not var_name.startswith("local_"):
+                    continue
+
+                # Store the inferred struct type
+                # Store using both local_X name AND semantic name if it exists
+                inferred_struct_types[var_name] = struct_type
+
+                # Also store for semantic name if it exists
+                semantic_name = formatter._semantic_names.get(var_name)
+                if semantic_name:
+                    inferred_struct_types[semantic_name] = struct_type
+
 
     # Process all instructions in function blocks
     for block_id in func_block_ids:

@@ -137,7 +137,16 @@ def build_cfg(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -
                 block.add_successor(start_to_block.get(fallthrough, -1))
         else:
             fallthrough = last_instr.address + 1
-            block.add_successor(start_to_block.get(fallthrough, -1))
+            # Only add fallthrough successor if this is sequential code (not after RET)
+            # If fallthrough address is NOT a leader, it's sequential code
+            # If it IS a leader, it's a new separate section (after RET), so don't link
+            if fallthrough in start_to_block:
+                # Fallthrough is a leader - this means the previous instruction was RET
+                # Don't add as successor (separate code sections)
+                pass
+            else:
+                # Sequential code - add fallthrough successor
+                block.add_successor(start_to_block.get(fallthrough, -1))
 
     # Populate predecessors
     for block in blocks.values():

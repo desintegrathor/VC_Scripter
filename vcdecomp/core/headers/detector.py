@@ -53,25 +53,45 @@ class HeaderDetector:
         return ordered
 
     def _detect_from_xfn(self):
-        """Detect headers based on XFN table function names."""
-        if not self.scr.xfn_table:
+        """Detect headers based on XFN functions that are ACTUALLY CALLED in the code."""
+        if not self.scr.xfn_table or not self.scr.code_segment:
             return
 
-        # Collect all function names
+        # Get XCALL opcode for the current resolver
+        xcall_opcode = None
+        for opcode, mnemonic in self.scr.opcode_resolver.opcode_map.items():
+            if mnemonic == "XCALL":
+                xcall_opcode = opcode
+                break
+        
+        if xcall_opcode is None:
+            return
+
+        # Scan code segment to find which XFN functions are actually called
+        called_xfn_indices = set()
+        for instr in self.scr.code_segment.instructions:
+            if instr.opcode == xcall_opcode:
+                # arg1 contains the XFN index
+                xfn_index = instr.arg1
+                # Handle signed integers (shouldn't be negative, but be safe)
+                if xfn_index < 0x80000000:
+                    called_xfn_indices.add(xfn_index)
+
+        # Collect function names that are ACTUALLY called
         func_names = set()
-        # XFNTable has entries attribute
         xfn_entries = getattr(self.scr.xfn_table, 'entries', [])
         for xfn in xfn_entries:
-            if xfn.name:
+            if xfn.index in called_xfn_indices and xfn.name:
                 # Extract function name (before parentheses)
                 paren_idx = xfn.name.find('(')
                 func_name = xfn.name[:paren_idx] if paren_idx > 0 else xfn.name
                 func_names.add(func_name)
 
-        # Multiplayer functions
-        mp_functions = {'SC_MP_', 'SC_NET_'}
-        if any(any(func.startswith(prefix) for prefix in mp_functions) for func in func_names):
-            self.headers.add("<inc\\mplevel.inc>")
+        # Now detect headers based on ACTUALLY CALLED functions
+        # Note: SC_MP_* functions like SC_MP_EnumPlayers are in sc_global.h, not mplevel.inc
+        # Only add mplevel.inc for truly multiplayer-specific level functions
+        # For now, disable this detection to avoid false positives
+        # TODO: Add detection for specific multiplayer level functions if needed
 
         # Equipment functions
         if any('Equip_US_' in func or 'EQUIP_US_' in func for func in func_names):

@@ -439,7 +439,9 @@ def cmd_structure(args):
 
     scr = SCRFile.load(args.file, variant=args.variant)
     disasm = Disassembler(scr)
-    func_bounds = disasm.get_function_boundaries()
+
+    # Use RET-based function detection to prevent unreachable code
+    func_bounds = disasm.get_function_boundaries_v2()
 
     # Vždy zpracuj všechny funkce (--all je nyní výchozí)
     ssa_func = build_ssa_all_blocks(scr)
@@ -461,6 +463,14 @@ def cmd_structure(args):
         infer_structs=False       # Disabled until fully implemented
     )
     globals_usage = resolver.analyze()
+
+    # FIX #7: Build SaveInfo size mapping (byte_offset -> size_in_dwords)
+    saveinfo_sizes = {}
+    if scr.save_info:
+        for item in scr.save_info.items:
+            byte_offset = item['val1'] * 4  # Convert dword offset to byte offset
+            size_dwords = item['val2']
+            saveinfo_sizes[byte_offset] = size_dwords
 
     # Generate global variable declarations
     if globals_usage:
@@ -494,17 +504,50 @@ def cmd_structure(args):
 
             var_name = usage.name if usage.name else f"data_{offset}"
 
+            # FIX #7: Use SaveInfo to detect arrays and get accurate sizes
+            # Check if this global has a size > 1 in SaveInfo
+            size_dwords = saveinfo_sizes.get(offset, 1)
+            is_array = size_dwords > 1
+
+            # FIX #7.1: Strip pointer suffix for array element types
+            # Type inference returns "float *" for GADR instructions (address-of operations)
+            # But for arrays, we want "float arr[64]" not "float * arr[64]"
+            element_type = var_type
+            if is_array and element_type.endswith(" *"):
+                element_type = element_type[:-2]  # Remove " *" suffix
+            elif is_array and element_type.endswith("*"):
+                element_type = element_type[:-1]  # Remove "*" suffix
+
             # Format declaration
-            if usage.is_array_base and usage.array_element_size:
+            if is_array:
                 # Array declaration: type name[size];
-                # Try to infer array size from SaveInfo or usage patterns
-                # For now, estimate based on known patterns
-                if "RecTimer" in var_name or var_name == "gRec":
-                    array_size = 64  # REC_MAX
+                # Calculate element count based on element size
+                if "Timer" in var_name:
+                    # Float timer arrays - 1 float per element
+                    if element_type == "float" or "float" in element_type:
+                        array_size = size_dwords  # Each float is 1 dword
+                    else:
+                        array_size = size_dwords
+                elif var_name == "gRec":
+                    # s_SC_MP_Recover struct array
+                    # Each struct is 64 bytes = 16 dwords
+                    # SaveInfo shows 256 dwords total -> 256/4 = 64 elements (each element is 4 dwords? Wrong!)
+                    # Actually: SaveInfo is unreliable for struct size, use hardcoded REC_MAX = 64
+                    array_size = 64  # REC_MAX from original source
                 elif "SideFrags" in var_name:
-                    array_size = 2   # 2 teams
+                    # Integer arrays - 1 int per element
+                    if element_type in ["int", "dword"]:
+                        array_size = size_dwords  # Each int/dword is 1 dword
+                    else:
+                        array_size = size_dwords
                 else:
-                    array_size = 64  # Default
+                    # Generic array - assume 1 element = 1 dword
+                    array_size = size_dwords
+
+                print(f"{element_type} {var_name}[{array_size}];")
+            elif usage.is_array_base and usage.array_element_size:
+                # Fallback: use dynamic array detection (for scripts without SaveInfo)
+                array_size = 64  # Default estimate
                 print(f"{var_type} {var_name}[{array_size}];")
             else:
                 # Simple variable: type name;

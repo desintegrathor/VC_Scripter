@@ -251,7 +251,23 @@ def _collect_and_chain(
             )
             if rest_chain:
                 chain_blocks.extend(rest_chain)
-                return (chain_blocks, true_target, false_target)
+                # CRITICAL FIX: If recursive call returned true_target=None,
+                # use the fallthrough block of the last condition as the true target
+                if true_target is None:
+                    # Find the last block's fallthrough
+                    last_block = cfg.blocks.get(chain_blocks[-1])
+                    if last_block and last_block.instructions:
+                        last_addr = last_block.instructions[-1].address
+                        last_fallthrough_addr = last_addr + 1
+                        true_target = start_to_block.get(last_fallthrough_addr)
 
-    # Fallthrough doesn't continue the AND chain
-    return (chain_blocks, None, false_target)
+                return (chain_blocks, true_target, false_target)
+        else:
+            # Fallthrough is a conditional jump but to DIFFERENT target (not AND chain)
+            # This could be OR pattern or something else - return None for true_target
+            return (chain_blocks, None, false_target)
+
+    # Fallthrough doesn't continue the AND chain and is not a conditional jump
+    # The fallthrough block itself is the TRUE target (when all conditions pass)
+    # This is the common case for AND chains ending with normal code
+    return (chain_blocks, fallthrough_block_id, false_target)

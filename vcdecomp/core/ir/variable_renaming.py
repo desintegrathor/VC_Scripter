@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Dict, List, Set, Tuple, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
+import re
 
 from .ssa import SSAFunction, SSAValue
 
@@ -20,8 +21,75 @@ class VariableVersion:
     version: int    # 0, 1, 2, ...
     first_def: int  # Address prvního přiřazení
     last_use: int   # Address posledního použití
-    semantic_type: str = "general"  # loop_counter, side_value, temp, general
+    semantic_type: str = "general"  # loop_counter, side_value, temp, general, struct_value
     assigned_name: str = ""  # Finální pojmenování (i, sideA, tmp1, ...)
+    struct_type: Optional[str] = None  # FIX #5 Phase 2: Detected struct type (e.g., "s_SC_MP_SRV_settings")
+
+
+def extract_struct_name_from_type(struct_type: str) -> str:
+    """
+    Generate a short variable name from a struct type.
+
+    FIX #5 Phase 2: Generate meaningful names from struct types.
+
+    Examples:
+        s_SC_MP_SRV_settings → SRVset
+        s_SC_MP_EnumPlayers → enum_pl
+        s_SC_HUD_MP_icon → icon
+        s_SC_P_getinfo → plinfo
+        s_SC_MP_hud → hudinfo
+
+    Args:
+        struct_type: Full struct type name
+
+    Returns:
+        Short variable name
+    """
+    if not struct_type:
+        return ""
+
+    # Remove s_ prefix if present
+    if struct_type.startswith("s_"):
+        struct_type = struct_type[2:]
+
+    # Remove SC_ prefix if present
+    if struct_type.startswith("SC_"):
+        struct_type = struct_type[3:]
+
+    # Pattern 1: MP_SRV_settings → SRVset
+    if "_SRV_settings" in struct_type:
+        return "SRVset"
+
+    # Pattern 2: MP_EnumPlayers → enum_pl
+    if "EnumPlayers" in struct_type:
+        return "enum_pl"
+
+    # Pattern 3: HUD_MP_icon → icon
+    if "icon" in struct_type.lower():
+        return "icon"
+
+    # Pattern 4: P_getinfo → plinfo (player info)
+    if "P_getinfo" in struct_type:
+        return "plinfo"
+
+    # Pattern 5: MP_hud → hudinfo
+    if struct_type == "MP_hud":
+        return "hudinfo"
+
+    # Pattern 6: MP_Recover → precov (pointer to recovery)
+    if "Recover" in struct_type:
+        return "precov"
+
+    # Fallback: Use last component and lowercase
+    # Example: MP_Some_Type → type
+    parts = struct_type.split('_')
+    if len(parts) > 0:
+        last_part = parts[-1].lower()
+        if len(last_part) > 2:
+            return last_part
+
+    # Final fallback: use whole thing lowercase
+    return struct_type.lower()[:8]  # Limit to 8 chars
 
 
 class VariableRenamer:
@@ -128,10 +196,6 @@ class VariableRenamer:
                         # Only update last_use if this is truly a READ operation
                         # Check next instruction to see if it's ASGN
                         is_address_for_write = False
-                        if var_name in ('local_10', 'local_11', 'local_12'):
-                            import sys
-                            print(f"[DEBUG LOAD INIT] @{addr} {inst.mnemonic} is_address_for_write={is_address_for_write}", file=sys.stderr)
-                            sys.stderr.flush()
 
                         if inst.mnemonic == 'LADR':
                             # Find next instruction
@@ -141,48 +205,19 @@ class VariableRenamer:
                                     next_inst = future_inst
                                     break
 
-                            import sys
                             if next_inst:
                                 mnem = str(next_inst.mnemonic).strip()
                                 is_asgn_check = (mnem == 'ASGN')
-                                if var_name in ('local_10', 'local_11', 'local_12'):
-                                    print(f"[DEBUG LADR] @{addr} mnem={repr(mnem)} is_asgn={is_asgn_check}", file=sys.stderr)
-                                    sys.stderr.flush()
 
                                 # Check if next is ASGN
-                                import sys
-                                print(f"[DEBUG LADR BEFORE IF] @{addr} is_asgn_check={is_asgn_check}", file=sys.stderr)
-                                sys.stderr.flush()
                                 if is_asgn_check:
-                                    print(f"[DEBUG LADR] → ENTERED is_asgn_check block @{addr}", file=sys.stderr)
-                                    sys.stderr.flush()
                                     # This LADR is for write, not read
                                     is_address_for_write = True
-                                    if var_name in ('local_10', 'local_11', 'local_12'):
-                                        print(f"[DEBUG LADR] → SKIP last_use (is write)", file=sys.stderr)
-                                        sys.stderr.flush()
-                            else:
-                                if var_name in ('local_10', 'local_11', 'local_12'):
-                                    print(f"[DEBUG LADR] @{addr} next=NONE", file=sys.stderr)
-
-                        if var_name in ('local_10', 'local_11', 'local_12'):
-                            import sys
-                            print(f"[DEBUG LOAD] @{addr} BEFORE last_use check, is_address_for_write={is_address_for_write}", file=sys.stderr)
-                            sys.stderr.flush()
 
                         if not is_address_for_write:
                             # Update last_use for this version (true READ)
                             if var_name in self.variable_versions and version < len(self.variable_versions[var_name]):
                                 self.variable_versions[var_name][version].last_use = addr
-                                import sys
-                                if var_name in ('local_10', 'local_11', 'local_12'):
-                                    print(f"[DEBUG LOAD] → UPDATE last_use={addr}", file=sys.stderr)
-                                    sys.stderr.flush()
-
-                        if var_name in ('local_10', 'local_11', 'local_12'):
-                            import sys
-                            print(f"[DEBUG LOAD] @{addr} BEFORE continue", file=sys.stderr)
-                            sys.stderr.flush()
 
                         continue  # Skip version creation
 
@@ -233,25 +268,15 @@ class VariableRenamer:
 
                     var_name = self._extract_local_name(addr_value)
 
-                    import sys
-                    if var_name and var_name in ('local_10', 'local_11', 'local_12'):
-                        print(f"[DEBUG ASGN] @{addr} ASGN to {var_name}, inputs={[(inp.name, inp.alias) for inp in inst.inputs]}, current_version={current_version.get(var_name, 0)}", file=sys.stderr)
-
                     if var_name:
                         # This is an assignment to local_X
                         version = current_version[var_name]
 
                         # Check if we need new version
                         if var_name in last_assignment:
-                            import sys
-                            if var_name in ('local_10', 'local_11', 'local_12'):
-                                print(f"[DEBUG ASGN CHECK] {var_name}: last_assignment={last_assignment[var_name]}, last_use={last_use.get(var_name, 'NONE')}, addr={addr}", file=sys.stderr)
                             if var_name in last_use and last_use[var_name] > last_assignment[var_name]:
                                 version += 1
                                 current_version[var_name] = version
-                                import sys
-                                if var_name in ('local_10', 'local_11', 'local_12'):
-                                    print(f"[DEBUG ASGN CHECK] → NEW VERSION {version}", file=sys.stderr)
 
                         # Record version
                         if version >= len(self.variable_versions[var_name]):
@@ -291,11 +316,23 @@ class VariableRenamer:
         if var_name.startswith("&"):
             var_name = var_name[1:]
 
-        # Jen local_ proměnné
-        if not var_name.startswith("local_"):
-            return None
+        # PRIORITY 2 FIX: Expand to handle SSA temporaries and data references
+        # Accept: local_X, t*_*, data_*, param_* patterns
+        if var_name.startswith("local_"):
+            return var_name
+        elif var_name.startswith("t") and "_" in var_name:
+            # Handle tXXX_X pattern (SSA temporaries)
+            parts = var_name.split("_")
+            if len(parts) >= 2 and parts[0][1:].isdigit():
+                return var_name
+        elif var_name.startswith("data_"):
+            # Handle data segment references
+            return var_name
+        elif var_name.startswith("param_"):
+            # Handle parameter references (though these are usually handled differently)
+            return var_name
 
-        return var_name
+        return None
 
     def _track_phi_nodes(self):
         """
@@ -321,8 +358,6 @@ class VariableRenamer:
                 phi_output = inst.outputs[0]
                 phi_var_name = self._extract_local_name(phi_output)
 
-                import sys
-                print(f"[DEBUG PHI ALL] @{inst.address} PHI {phi_output.name} (alias={phi_output.alias}), var_name={phi_var_name}, inputs={[(inp.name, inp.alias) for inp in inst.inputs]}", file=sys.stderr)
 
                 if not phi_var_name:
                     continue
@@ -335,8 +370,108 @@ class VariableRenamer:
                     original_alias = phi_output.alias or ""
                     self.value_to_version[phi_output.name] = (phi_var_name, chosen_version, original_alias)
 
-                    import sys
-                    print(f"[DEBUG PHI] {phi_var_name}: PHI {phi_output.name} → version {chosen_version}, inputs={[inp.name for inp in inst.inputs]}", file=sys.stderr)
+
+    def _detect_struct_types(self):
+        """
+        FIX #5 Phase 2: Detect struct types from XCALL function arguments.
+
+        Analyzes XCALL instructions to determine which variables are passed to functions
+        expecting specific struct types. Sets struct_type field on VariableVersion.
+
+        Example:
+            SC_MP_GetSRVsettings(&tmp31) → tmp31 is s_SC_MP_SRV_settings → name it "SRVset"
+        """
+        if not self.ssa_func.scr or not self.ssa_func.scr.xfn_table:
+            return
+
+        xfn_entries = getattr(self.ssa_func.scr.xfn_table, 'entries', [])
+        if not xfn_entries:
+            return
+
+        # Scan all XCALL instructions
+        for block_id in self.func_block_ids:
+            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+            for inst in ssa_instrs:
+                if inst.mnemonic != 'XCALL':
+                    continue
+
+                # Get XFN index from instruction
+                if not inst.instruction or not inst.instruction.instruction:
+                    continue
+
+                xfn_index = inst.instruction.instruction.arg1
+                if xfn_index >= len(xfn_entries):
+                    continue
+
+                xfn_entry = xfn_entries[xfn_index]
+                if not xfn_entry.name or '(' not in xfn_entry.name:
+                    continue
+
+                # Parse function signature to extract parameter types
+                # Format: "SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void"
+                func_signature = xfn_entry.name
+                self._parse_and_apply_signature(inst, func_signature)
+
+    def _parse_and_apply_signature(self, inst, func_signature: str):
+        """
+        Parse function signature and apply struct types to variables.
+
+        FIX #5 Phase 2: Improved to only mark the SPECIFIC SSA value used in the call,
+        not all versions of the variable.
+
+        Args:
+            inst: XCALL SSA instruction
+            func_signature: Full signature like "SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void"
+        """
+        # Extract parameter types from signature
+        # Format: FuncName(type1,type2,...)returntype
+        if '(' not in func_signature or ')' not in func_signature:
+            return
+
+        # Extract parameter list
+        params_start = func_signature.index('(') + 1
+        params_end = func_signature.index(')')
+        params_str = func_signature[params_start:params_end]
+
+        if not params_str:
+            return
+
+        # Split parameters
+        param_types = [p.strip() for p in params_str.split(',')]
+
+        # Match XCALL inputs to parameter types
+        # Note: XCALL inputs may be in reverse order depending on calling convention
+        for i, input_val in enumerate(inst.inputs):
+            if not input_val or not input_val.name:
+                continue
+
+            # Determine parameter index (may need to reverse)
+            param_idx = i if i < len(param_types) else len(param_types) - 1
+
+            if param_idx >= len(param_types):
+                continue
+
+            param_type = param_types[param_idx]
+
+            # Check if parameter is a struct pointer (starts with * and contains s_)
+            if param_type.startswith('*') and 's_' in param_type:
+                # Extract struct name: "*s_SC_MP_SRV_settings" → "s_SC_MP_SRV_settings"
+                struct_type = param_type[1:]  # Remove * prefix
+
+                # FIX #5 Phase 2: Map this specific SSA value to the struct type
+                # Store it in value_to_version with struct type info
+                # We'll check this later when assigning names
+                if input_val.name in self.value_to_version:
+                    var_name, version_num, orig_alias = self.value_to_version[input_val.name]
+
+                    # Find the specific version and mark it
+                    if var_name in self.variable_versions:
+                        for ver in self.variable_versions[var_name]:
+                            if ver.version == version_num:
+                                # Only set struct_type if not already set or if this is more specific
+                                if not ver.struct_type:
+                                    ver.struct_type = struct_type
+                                break
 
     def _resolve_phi_version(self, phi_inst, var_name: str) -> Optional[int]:
         """
@@ -372,16 +507,13 @@ class VariableRenamer:
         import sys
         for inp, version_num in input_mappings:
             # Check if this input comes from constant assignment
-            print(f"[DEBUG PHI RESOLVE] {var_name} v{version_num}: inp={inp.name}, producer={inp.producer_inst.mnemonic if inp.producer_inst else None}", file=sys.stderr)
             if inp.producer_inst:
                 # GCP/LCP/ICP = constant load
                 if inp.producer_inst.mnemonic in {'GCP', 'LCP', 'ICP', 'FCP', 'DCP'}:
                     # Check if it loads a small constant value (heuristic for -1, 0, 1, etc.)
                     # Skip this version (it's likely the constant branch)
-                    print(f"[DEBUG PHI RESOLVE]   SKIPPING constant producer {inp.producer_inst.mnemonic}", file=sys.stderr)
                     continue
             non_constant_versions.append(version_num)
-            print(f"[DEBUG PHI RESOLVE]   KEEPING version {version_num}", file=sys.stderr)
 
         if non_constant_versions:
             # Return first non-constant version
@@ -401,7 +533,11 @@ class VariableRenamer:
         - Přiřazena z .side fieldu → side_value
         - Použita jen 1-2x → temp
         - První dvě verze v blízké vzdálenosti → pravděpodobně sideA/sideB pattern
+        - FIX #5 Phase 2: Passed to function expecting struct → struct_value
         """
+        # First pass: Detect struct types from function calls
+        self._detect_struct_types()
+
         for var_name, versions in self.variable_versions.items():
             # FIX P0.4.2: REMOVED overly aggressive special case
             # Old logic assumed "2 versions close together = sideA/sideB" which caused false positives
@@ -411,33 +547,108 @@ class VariableRenamer:
                 # Check semantic type from usage patterns (even for single-version vars!)
                 ver.semantic_type = self._guess_semantic_type(var_name, ver)
 
+    def _is_used_in_field_access(self, ssa_value_name: str) -> bool:
+        """
+        Check if SSA value is used in pointer+offset (PNT) operations, indicating struct field access.
+
+        This is used to PROTECT struct variables from being renamed to short names like 'i', 'j'.
+        If a variable is used for field access (e.g., ai_props.watchfulness), it should keep
+        its semantic name to maintain code readability.
+
+        Args:
+            ssa_value_name: SSA value name to check (e.g., "t456_0")
+
+        Returns:
+            True if this value is used as base pointer in PNT operations
+        """
+        for block_id in self.func_block_ids:
+            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+            for inst in ssa_instrs:
+                if inst.mnemonic == "PNT":
+                    # PNT (pointer + offset) indicates struct field access
+                    # Check if this value is the base pointer (first input)
+                    if inst.inputs and len(inst.inputs) > 0:
+                        base_input = inst.inputs[0]
+                        # Check both name and alias
+                        if base_input.name == ssa_value_name or base_input.alias == ssa_value_name:
+                            return True
+        return False
+
     def _guess_semantic_type(self, var_name: str, ver: VariableVersion) -> str:
         """
         Hádej sémantický typ z usage patterns.
 
         Detekované typy:
+        - struct_value: Passed to function expecting specific struct type (FIX #5 Phase 2)
         - loop_counter: Inkrementováno/dekrementováno v loop
         - side_value: Přiřazeno z .side nebo .field2 struktury
         - temp: Použito jen 1-2x
         - general: Default
         """
+        # FIX #5 Phase 2: Check if struct type was detected
+        if ver.struct_type:
+            return "struct_value"
+
+        # NEW: PROTECT variables used in field access from being renamed to short names
+        # Check if any SSA name in this version is used as base pointer in PNT operations
+        # Find all SSA names that belong to this version
+        for ssa_name, (vname, vnum, _) in self.value_to_version.items():
+            if vname == var_name and vnum == ver.version:
+                if self._is_used_in_field_access(ssa_name):
+                    # This variable is used for struct field access (e.g., ai_props.watchfulness)
+                    # Return struct_value to prevent renaming to 'i', 'j', 'k'
+                    return "struct_value"
+
         # Prozkoumej instrukce mezi first_def a last_use
         uses = []
         mnemonics_used = []
 
+        # FIX #5 Phase 2: Handle PHI nodes with negative addresses
+        # PHI nodes have negative addresses, so we can't use simple range check
+        # Instead, collect ALL uses of this variable within the function
         for block_id in self.func_block_ids:
             ssa_instrs = self.ssa_func.instructions.get(block_id, [])
             for inst in ssa_instrs:
-                if ver.first_def <= inst.address <= ver.last_use:
-                    # Check zda používá tuto proměnnou
-                    for inp in inst.inputs:
-                        if self._extract_local_name(inp) == var_name:
+                # Skip PHI nodes for mnemonic analysis (they don't represent real operations)
+                if inst.mnemonic == 'PHI':
+                    continue
+
+                # Check if this instruction uses the variable
+                for inp in inst.inputs:
+                    if self._extract_local_name(inp) == var_name:
+                        # For versioned variables, check if this is the right version
+                        # by checking if address is in reasonable range
+                        # (after first_def, allowing for negative last_use from PHI)
+                        if inst.address >= ver.first_def or (ver.last_use < 0 and inst.address >= 0):
                             uses.append(inst)
                             mnemonics_used.append(inst.mnemonic)
 
         # Pattern 1: Loop counter detection
+        # Check for INC/DEC instructions
         if "INC" in mnemonics_used or "DEC" in mnemonics_used:
             return "loop_counter"
+
+        # FIX #5 Phase 2: Also detect ADD/SUB pattern (i = i + 1)
+        # Loop counters are characterized by:
+        # 1. Used in ADD/SUB operation
+        # 2. Used in comparison operation (ULE, UGE, etc.)
+        # 3. Short lifetime (typical for loop counters)
+        has_add_sub = any(m in mnemonics_used for m in {"ADD", "SUB", "IADD", "ISUB"})
+        has_comparison = any(m in mnemonics_used for m in {"ULE", "UGE", "ULT", "UGT", "ILE", "IGE", "ILT", "IGT", "EQU", "NEQ", "ULES", "UGES", "ULTS", "UGTS"})
+
+        if has_add_sub and has_comparison:
+            # Very likely a loop counter
+            return "loop_counter"
+
+        # FIX #5 Phase 2: Alternative - detect variables used only in tight loops
+        # If a variable is used in ADD and then immediately in comparison, it's likely a loop counter
+        if has_add_sub and len(uses) <= 10:
+            # Check if this variable is modified within its own lifetime (classic loop counter pattern)
+            # Variable is loaded, incremented, stored back, and compared - all in small range
+            address_range = ver.last_use - ver.first_def if ver.last_use > ver.first_def else 0
+            if address_range < 50 and has_comparison:
+                # Tight loop with comparison - likely loop counter
+                return "loop_counter"
 
         # Pattern 2: Side value detection (player_info.field2 → side)
         # MUST check BEFORE temp check! Many side values are used sparingly.
@@ -533,6 +744,14 @@ class VariableRenamer:
 
     def _generate_name(self, ver: VariableVersion) -> str:
         """Vygeneruj pojmenování pro verzi."""
+        # FIX #5 Phase 2: Handle struct_value type first
+        if ver.semantic_type == "struct_value" and ver.struct_type:
+            # Generate name from struct type
+            base_name = extract_struct_name_from_type(ver.struct_type)
+            # Check if we need a numeric suffix (multiple variables of same struct type)
+            # For now, just return the base name
+            return base_name
+
         if ver.semantic_type == "loop_counter":
             # i, j, k
             counter_names = ['i', 'j', 'k']

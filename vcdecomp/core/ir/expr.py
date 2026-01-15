@@ -926,16 +926,19 @@ class ExpressionFormatter:
         context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
         parent_operator: Optional[str] = None
     ) -> str:
-        # FIX 2: ABSOLUTE HIGHEST PRIORITY - Check rename_map for variable collision resolution
-        # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
-        # This allows sideA and sideB to have different names even though both have alias="local_2"
-        if self._rename_map and value.name in self._rename_map:
-            return self._rename_map[value.name]
-
-        # NEW: Check if value represents struct field access (HIGHEST PRIORITY)
+        # PRIORITY 1: Check if value represents struct field access (ABSOLUTE HIGHEST)
+        # This MUST come before rename_map to preserve field expressions like "ai_props.watchfulness"
+        # Otherwise, if rename_map contains {"t456_0": "j"}, we'd return "j" and lose field access
         field_expr = self._field_tracker.get_field_expression(value)
         if field_expr:
-            return field_expr  # Return field expression (e.g., "info->master_nod")
+            return field_expr  # Return field expression (e.g., "info->master_nod", "ai_props.watchfulness_zerodist")
+
+        # PRIORITY 2: Check rename_map for variable collision resolution
+        # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
+        # This allows sideA and sideB to have different names even though both have alias="local_2"
+        # NOTE: This comes AFTER field_expr check to avoid losing struct field accesses
+        if self._rename_map and value.name in self._rename_map:
+            return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
         string_literal = self._check_string_literal(value)
@@ -1217,6 +1220,10 @@ class ExpressionFormatter:
         # String literal address is NOT a writable address (it's a string pointer value)
         if self._is_string_literal(rendered):
             return False
+        # FIX #3: Float literals are NOT addresses (even though they contain '.')
+        # Check this BEFORE struct field access detection
+        if rendered.endswith('f') and rendered.replace('.', '').replace('-', '').replace('e', '').replace('+', '')[:-1].isdigit():
+            return False
         # Direct address reference (but not string address)
         if rendered.startswith("&"):
             return True
@@ -1493,6 +1500,23 @@ class ExpressionFormatter:
         array_notation = self._detect_array_indexing(value)
         if array_notation:
             return array_notation
+
+        # FIX: Detect DADR(LADR(param)) pattern for struct field access
+        # Pattern: LADR loads &param, DADR adds field offset
+        if value.producer_inst and value.producer_inst.mnemonic == "DADR":
+            dadr_inst = value.producer_inst
+            if len(dadr_inst.inputs) > 0:
+                base_value = dadr_inst.inputs[0]
+                # Check if base is address (starts with &)
+                if base_value.alias and base_value.alias.startswith("&"):
+                    # Extract base name (remove &)
+                    base_name = base_value.alias[1:]
+                    # Get field offset from the original instruction
+                    # dadr_inst.instruction is LiftedInstruction, which has .instruction (Instruction)
+                    if dadr_inst.instruction and dadr_inst.instruction.instruction:
+                        field_offset = dadr_inst.instruction.instruction.arg1
+                        # Format as base->field_offset (later Fix #6 will resolve field names)
+                        return f"{base_name}->field_{field_offset}"
 
         rendered = self._render_value(value)
 
@@ -1851,8 +1875,68 @@ class ExpressionFormatter:
                 is_left_operand=True
             )
             expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
-        elif inst.mnemonic in CAST_OPS and len(inst.inputs) == 1:
-            expr = f"{inst.mnemonic}({self._render_value(inst.inputs[0])})"
+        elif inst.mnemonic in CAST_OPS and len(inst.inputs) >= 1:
+            # FIX #4: Handle double-precision conversions specially
+            if inst.mnemonic == "FTOD":
+                # Float to double conversion
+                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
+                expr = f"(double){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+            elif inst.mnemonic == "DTOF":
+                # Double to float conversion
+                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
+                expr = f"(float){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+            elif inst.mnemonic == "ITOD":
+                # Int to double conversion
+                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
+                expr = f"(double){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+            elif inst.mnemonic == "DTOI":
+                # Double to int conversion
+                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
+                expr = f"(int){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+            else:
+                # Other cast operations (keep existing behavior)
+                expr = f"{inst.mnemonic}({self._render_value(inst.inputs[0])})"
+        # FIX #4: Handle double-precision arithmetic operations
+        # These operations have 4 inputs (2 doubles = 4 dwords) but should render as binary operators
+        elif inst.mnemonic in {"DMUL", "DADD", "DSUB", "DDIV"} and len(inst.inputs) >= 2:
+            # Use first 2 inputs as left and right operands
+            # (inputs 2-3 are high dwords, handled internally by stack)
+            current_op = INFIX_OPS.get(inst.mnemonic, inst.mnemonic)
+            left_operand = self._render_value(inst.inputs[0], parent_operator=current_op)
+            right_operand = self._render_value(inst.inputs[1], parent_operator=current_op)
+
+            # Apply smart parenthesization
+            left_inst = inst.inputs[0].producer_inst
+            left_op = INFIX_OPS.get(left_inst.mnemonic) if left_inst else None
+            left_needs_parens = needs_parens(
+                child_expr=left_operand,
+                child_operator=left_op,
+                parent_operator=current_op,
+                context=context,
+                is_left_operand=True
+            )
+            left_wrapped = wrap_if_needed(left_operand, left_needs_parens)
+
+            right_inst = inst.inputs[1].producer_inst
+            right_op = INFIX_OPS.get(right_inst.mnemonic) if right_inst else None
+            right_needs_parens = needs_parens(
+                child_expr=right_operand,
+                child_operator=right_op,
+                parent_operator=current_op,
+                context=context,
+                is_left_operand=False
+            )
+            right_wrapped = wrap_if_needed(right_operand, right_needs_parens)
+
+            expr_without_parens = f"{left_wrapped} {current_op} {right_wrapped}"
+            expr_needs_parens = needs_parens(
+                child_expr=expr_without_parens,
+                child_operator=current_op,
+                parent_operator=parent_operator,
+                context=context,
+                is_left_operand=True
+            )
+            expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
         elif inst.mnemonic == "PNT" and len(inst.inputs) >= 1:
             # PNT (pointer with offset) - render as address expression or struct field
             # The offset is stored in the instruction's arg1, NOT on the stack
@@ -2295,7 +2379,7 @@ def _is_degenerate_phi(inst: SSAInstruction, ssa_func: Optional[SSAFunction] = N
 ADDRESS_LOAD_OPS = {"LADR", "GADR", "DADR"}
 
 # Constant/value loading - values are inlined via alias, no statement needed
-CONST_LOAD_OPS = {"GCP", "LCP", "LLD", "GLD"}  # Various load operations
+CONST_LOAD_OPS = {"GCP", "LCP", "LLD", "GLD", "DLD"}  # Various load operations
 
 # Stack manipulation and side-effect only instructions - no output needed
 STACK_OPS = {"SSP", "ASP"}  # Stack pointer manipulation
@@ -2344,6 +2428,7 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                             break
 
     formatted: List[FormattedExpression] = []
+
     for inst in instructions:
         # WORKAROUND: Track DCP with array patterns for later use
         if inst.mnemonic == "DCP" and len(inst.inputs) > 0:
@@ -2387,6 +2472,7 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
         )
         if not should_emit:
             continue
+
         store_text = formatter._format_store(inst)
         if store_text:
             formatted.append(

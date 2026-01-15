@@ -1,3 +1,0 @@
-usage: vcdecomp [-h]
-                {info,disasm,strings,hex,lift,cfg,ssa,expr,structure,symbols,gui} ...
-vcdecomp: error: argument command: invalid choice: 'Compiler-testruns/Testrun1/tdm.scr' (choose from info, disasm, strings, hex, lift, cfg, ssa, expr, structure, symbols, gui)

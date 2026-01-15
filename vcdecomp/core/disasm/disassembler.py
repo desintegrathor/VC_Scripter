@@ -367,8 +367,11 @@ class Disassembler:
 
     def get_function_boundaries(self) -> Dict[str, tuple]:
         """
-        Detekuje hranice funkcí na základě CALL cílů a RET instrukcí.
+        Detekuje hranice funkcí na základě CALL cílů (legacy method).
         Vrací dict: function_name -> (start_addr, end_addr)
+
+        Note: This method only considers CALL targets and may miss orphan functions.
+        Consider using get_function_boundaries_v2() for more accurate detection.
         """
         boundaries = {}
 
@@ -385,3 +388,20 @@ class Disassembler:
             boundaries[func_name] = (start_addr, end_addr)
 
         return boundaries
+
+    def get_function_boundaries_v2(self) -> Dict[str, tuple]:
+        """
+        Detekuje hranice funkcí na základě RET instrukcí (improved method).
+        Vrací dict: function_name -> (start_addr, end_addr)
+
+        This method uses RET instructions to accurately detect function boundaries,
+        including orphan functions that aren't called internally. This prevents
+        unreachable code from appearing after return statements.
+
+        Returns:
+            Dict mapping function_name -> (start_addr, end_addr)
+        """
+        from vcdecomp.core.ir.function_detector import detect_function_boundaries_v2
+
+        entry_point = self.scr.header.enter_ip
+        return detect_function_boundaries_v2(self.scr, self.resolver, entry_point)
