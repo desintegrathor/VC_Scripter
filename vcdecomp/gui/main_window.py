@@ -354,6 +354,32 @@ class MainWindow(QMainWindow):
             )
             return
 
+        # Check if compiler directory is configured
+        # Read from same QSettings namespace that ValidationPanel uses
+        settings = QSettings("VCDecompiler", "ValidationSettings")
+        compiler_dir = settings.value("compiler_dir", "")
+
+        if not compiler_dir or not Path(compiler_dir).exists():
+            result = QMessageBox.question(
+                self,
+                "Configure Compiler",
+                "Compiler directory not configured. Would you like to configure validation settings now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+
+            if result == QMessageBox.StandardButton.Yes:
+                self.show_validation_settings()
+
+                # Check again after settings dialog
+                settings = QSettings("VCDecompiler", "ValidationSettings")
+                compiler_dir = settings.value("compiler_dir", "")
+                if not compiler_dir or not Path(compiler_dir).exists():
+                    QMessageBox.warning(self, "Validation Cancelled", "Cannot validate without valid compiler directory.")
+                    return
+            else:
+                return
+
         # Get decompiled text from the decompilation view
         decompiled_text = self.decomp_view.toPlainText()
 
