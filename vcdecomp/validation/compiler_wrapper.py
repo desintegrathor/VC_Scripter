@@ -539,6 +539,22 @@ class SCMPWrapper(BaseCompiler):
             'sasm.err': 'assembler',
         }
 
+        # Also clean up any leftover source .c files (from previous validation runs)
+        for c_file in compiler_dir.glob("*_decompiled.c"):
+            try:
+                c_file.unlink()
+                logger.debug(f"Removed old source: {c_file.name}")
+            except Exception as e:
+                logger.debug(f"Could not delete {c_file.name}: {e}")
+
+        # Clean up any leftover output .scr files
+        for scr_file in compiler_dir.glob("*_recompiled.scr"):
+            try:
+                scr_file.unlink()
+                logger.debug(f"Removed old output: {scr_file.name}")
+            except Exception as e:
+                logger.debug(f"Could not delete {scr_file.name}: {e}")
+
         # Remove old intermediate files
         for filename in intermediate_names_cleanup.keys():
             file_path = compiler_dir / filename
@@ -645,16 +661,9 @@ class SCMPWrapper(BaseCompiler):
                 shutil.copy2(work_header, output_header)
                 intermediate_files['header'] = output_header
 
-        # Clean up only the source file copy (leave intermediate files for debugging)
-        try:
-            if work_source.exists():
-                work_source.unlink()
-                logger.debug(f"Removed source copy: {work_source.name}")
-        except Exception as e:
-            logger.debug(f"Could not delete source copy: {e}")
-
-        # NOTE: Intermediate files, error files, and output .scr are NOT cleaned up here
+        # NOTE: Source file, intermediate files, error files, and output .scr are NOT cleaned up
         # They will be cleaned up BEFORE the next compilation starts (see cleanup above)
+        # This allows debugging of compilation issues
 
         # Create result
         result = CompilationResult(
