@@ -12,7 +12,7 @@ This roadmap transforms the VC-Script-Decompiler from producing broken output to
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: GUI Validation Integration** - One-click compile button in GUI
+- [x] **Phase 1: GUI Validation Integration** - One-click compile button in GUI
 - [ ] **Phase 2: Test Suite Automation** - Automated test suite with pytest integration
 - [ ] **Phase 3: CI/CD Pipeline** - Continuous integration with regression detection
 - [ ] **Phase 4: Error Analysis System** - Systematic error classification and pattern detection
@@ -33,11 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Compilation failures show .err file content in GUI with clear error messages
   3. Compilation successes show bytecode comparison results in GUI with match/diff details
   4. Validation runs against decompiler output directly without requiring file save
+**Status**: COMPLETE
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Validation Menu and Trigger Implementation
-- [ ] 01-02-PLAN.md — Settings Integration and End-to-End Testing
+- [x] 01-01-PLAN.md — Validation Menu and Trigger Implementation
+- [x] 01-02-PLAN.md — Settings Integration and End-to-End Testing
 
 ### Phase 2: Test Suite Automation
 **Goal**: Automated test suite validates all test cases with pytest integration
@@ -49,10 +50,10 @@ Plans:
   3. Test suite compares bytecode and reports semantic equivalence
   4. Test suite categorizes failures by error type (syntax, semantic, control flow)
   5. Developer can run `pytest vcdecomp/tests/test_validation.py` to validate entire suite
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: TBD during planning
+- [ ] 02-01-PLAN.md — Pytest validation test suite with parametrization
 
 ### Phase 3: CI/CD Pipeline
 **Goal**: Every commit is automatically validated with regression detection
@@ -166,8 +167,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. GUI Validation Integration | 0/2 | Planned | - |
-| 2. Test Suite Automation | 0/TBD | Not started | - |
+| 1. GUI Validation Integration | 2/2 | Complete | 2026-01-17 |
+| 2. Test Suite Automation | 0/1 | Planned | - |
 | 3. CI/CD Pipeline | 0/TBD | Not started | - |
 | 4. Error Analysis System | 0/TBD | Not started | - |
 | 5. Metrics Dashboard | 0/TBD | Not started | - |
