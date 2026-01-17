@@ -263,10 +263,12 @@ class ValidationOrchestrator:
             timeout=self.timeout,
         )
 
-        # Compile
+        # Compile (with header output like .bat files do)
+        output_header = output_scr.parent / f"{source_file.stem}.h"
         result = wrapper.compile(
             source_file=source_file,
             output_scr=output_scr,
+            output_header=output_header,
         )
 
         logger.debug(f"Compilation {'succeeded' if result.success else 'failed'}")
