@@ -590,7 +590,12 @@ class ValidationPanel(QWidget):
         summary_lines.append("")
         summary_lines.append(f"Original SCR: {Path(self.original_scr_path).name}")
         summary_lines.append(f"Decompiled Source: {Path(self.decompiled_source_path).name}")
-        summary_lines.append(f"Recompiled SCR: {Path(result.recompiled_scr or 'N/A').name if result.recompiled_scr else 'N/A'}")
+
+        # Show recompiled SCR if compilation succeeded
+        if result.compilation_result and result.compilation_result.output_file:
+            summary_lines.append(f"Recompiled SCR: {result.compilation_result.output_file.name}")
+        else:
+            summary_lines.append(f"Recompiled SCR: N/A")
         summary_lines.append("")
         summary_lines.append(f"Compilation: {'Success' if result.compilation_succeeded else 'Failed'}")
 
