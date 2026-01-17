@@ -490,6 +490,45 @@ class SCMPWrapper(BaseCompiler):
                     shutil.copy2(header_file, dest)
                     logger.debug(f"Copied include: {header_file.name}")
 
+        # Clean up any leftover files from previous compilation BEFORE starting new one
+        logger.debug("Cleaning up previous compilation artifacts")
+        intermediate_names_cleanup = {
+            'spp.c': 'preprocessed',
+            'spp.syn': 'preprocessor_symbols',
+            'spp.dbg': 'preprocessor_debug',
+            'sasm.sca': 'assembly',
+            'scc.syn': 'compiler_symbols',
+            'scc.dbg': 'compiler_debug',
+            'sasm.syn': 'assembler_symbols',
+            'sasm.dbg': 'assembler_debug',
+        }
+
+        error_files_cleanup = {
+            'spp.err': 'preprocessor',
+            'scc.err': 'compiler',
+            'sasm.err': 'assembler',
+        }
+
+        # Remove old intermediate files
+        for filename in intermediate_names_cleanup.keys():
+            file_path = compiler_dir / filename
+            if file_path.exists():
+                try:
+                    file_path.unlink()
+                    logger.debug(f"Removed old {filename}")
+                except Exception as e:
+                    logger.debug(f"Could not delete {filename}: {e}")
+
+        # Remove old error files
+        for filename in error_files_cleanup.keys():
+            file_path = compiler_dir / filename
+            if file_path.exists():
+                try:
+                    file_path.unlink()
+                    logger.debug(f"Removed old {filename}")
+                except Exception as e:
+                    logger.debug(f"Could not delete {filename}: {e}")
+
         # Copy source file to compiler directory
         source_name = source_file.name
         work_source = compiler_dir / source_name
@@ -563,34 +602,16 @@ class SCMPWrapper(BaseCompiler):
                 shutil.copy2(work_header, output_header)
                 intermediate_files['header'] = output_header
 
-        # Clean up temporary files in compiler directory
+        # Clean up only the source file copy (leave intermediate files for debugging)
         try:
             if work_source.exists():
                 work_source.unlink()
-            if work_scr.exists():
-                work_scr.unlink()
-            if work_header and work_header.exists():
-                work_header.unlink()
-
-            # Clean up intermediate files in compiler directory
-            for filename in intermediate_names.keys():
-                file_path = compiler_dir / filename
-                if file_path.exists():
-                    try:
-                        file_path.unlink()
-                    except Exception as e:
-                        logger.debug(f"Could not delete {filename}: {e}")
-
-            # Clean up error files
-            for error_file in error_files.values():
-                if error_file.exists():
-                    try:
-                        error_file.unlink()
-                    except Exception as e:
-                        logger.debug(f"Could not delete {error_file.name}: {e}")
-
+                logger.debug(f"Removed source copy: {work_source.name}")
         except Exception as e:
-            logger.warning(f"Error during cleanup: {e}")
+            logger.debug(f"Could not delete source copy: {e}")
+
+        # NOTE: Intermediate files, error files, and output .scr are NOT cleaned up here
+        # They will be cleaned up BEFORE the next compilation starts (see cleanup above)
 
         # Create result
         result = CompilationResult(
