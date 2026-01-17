@@ -443,7 +443,7 @@ class ValidationPanel(QWidget):
         settings = QSettings("VCDecompiler", "ValidationSettings")
 
         # Get settings or use defaults
-        compiler_dir = settings.value("compiler_dir", "./original-resources/compiler")
+        compiler_dir = settings.value("compiler_dir", "./vcdecomp/compiler")
         include_dirs = settings.value("include_dirs", [])
         timeout = settings.value("timeout", 30, type=int)
         opcode_variant = settings.value("opcode_variant", "auto")
@@ -598,6 +598,19 @@ class ValidationPanel(QWidget):
             summary_lines.append(f"Recompiled SCR: N/A")
         summary_lines.append("")
         summary_lines.append(f"Compilation: {'Success' if result.compilation_succeeded else 'Failed'}")
+
+        # Show compilation errors if any
+        if result.compilation_result and result.compilation_result.errors:
+            summary_lines.append("")
+            summary_lines.append("=== COMPILATION ERRORS ===")
+            summary_lines.append("")
+            for error in result.compilation_result.errors:
+                summary_lines.append(f"[{error.stage.value.upper()}] {error.severity.value.upper()}: {error.message}")
+                if error.line_number:
+                    summary_lines.append(f"  Line {error.line_number}")
+                if error.context:
+                    summary_lines.append(f"  Context: {error.context}")
+                summary_lines.append("")
 
         if result.difference_summary:
             summary_lines.append(f"Total Differences: {result.difference_summary.total_count}")

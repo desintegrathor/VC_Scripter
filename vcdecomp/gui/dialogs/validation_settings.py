@@ -98,7 +98,7 @@ class ValidationSettingsDialog(QDialog):
 
         desc_label = QLabel(
             "Directory containing SCMP.exe, SPP.exe, SCC.exe, and SASM.exe.\n"
-            "Usually: original-resources/compiler/"
+            "Usually: vcdecomp/compiler/"
         )
         desc_label.setFont(QFont("Consolas", 9))
         desc_label.setStyleSheet("color: #888888;")
@@ -502,7 +502,7 @@ class ValidationSettingsDialog(QDialog):
         """Load settings from persistent storage"""
         # Compiler settings
         self.compiler_dir_edit.setText(
-            self.settings.value("compiler_dir", "./original-resources/compiler")
+            self.settings.value("compiler_dir", "./vcdecomp/compiler")
         )
         self.timeout_spin.setValue(
             int(self.settings.value("timeout", 30))
@@ -560,7 +560,7 @@ class ValidationSettingsDialog(QDialog):
             self.settings.clear()
 
             # Reload defaults
-            self.compiler_dir_edit.setText("./original-resources/compiler")
+            self.compiler_dir_edit.setText("./vcdecomp/compiler")
             self.timeout_spin.setValue(30)
             self.include_dirs_list.clear()
             self.opcode_variant_combo.setCurrentText("auto")
