@@ -229,20 +229,7 @@ class MainWindow(QMainWindow):
         expr_layout.addWidget(self.expr_view, 1)
         self.central_tabs.addTab(self.expr_tab, "Expressions")
 
-        # Create menus first (needed for toolbar actions)
-        self.create_menus()
-
-        # Create toolbar
-        self.toolbar = self.addToolBar("Main")
-        self.toolbar.addAction(self.open_action)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.validate_action)
-
-        # Set icons for toolbar actions
-        self.open_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
-        self.validate_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
-
-        # Dock widgets
+        # Dock widgets (create before menus so View menu can reference them)
         # Functions dock
         self.func_dock = QDockWidget("Functions", self)
         self.func_list = FunctionListWidget()
@@ -267,6 +254,19 @@ class MainWindow(QMainWindow):
         self.validation_panel = ValidationPanel()
         self.validation_dock.setWidget(self.validation_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.validation_dock)
+
+        # Create menus (after docks so View menu can reference them)
+        self.create_menus()
+
+        # Create toolbar
+        self.toolbar = self.addToolBar("Main")
+        self.toolbar.addAction(self.open_action)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.validate_action)
+
+        # Set icons for toolbar actions
+        self.open_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
+        self.validate_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
 
         # Status bar
         self.statusBar().showMessage("Ready")
