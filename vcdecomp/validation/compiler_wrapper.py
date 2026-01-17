@@ -136,14 +136,20 @@ class BaseCompiler:
             timeout = self.timeout
 
         # Build full command
-        # On Windows, use just the executable name (not full path) when cwd is set
-        # This matches how the .bat files work and avoids path issues
-        if cwd and self.executable_path.parent == Path(cwd):
-            # Executable is in the working directory, use just the name without .exe
-            exe_name = self.executable_path.stem.lower()  # Gets 'scmp' from 'SCMP.exe' or 'scmp.exe'
-            cmd = [exe_name] + args
+        # On Windows, wrap in cmd.exe /c to avoid Git Bash subprocess issues
+        # This matches how .bat files work (they run through cmd.exe)
+        import platform
+        if platform.system() == 'Windows':
+            if cwd and self.executable_path.parent == Path(cwd):
+                # Executable is in the working directory, use just the name
+                exe_name = self.executable_path.stem.lower()
+                # Use cmd.exe to invoke the compiler
+                cmd = ['cmd.exe', '/c', exe_name] + args
+            else:
+                # Use full path with cmd.exe
+                cmd = ['cmd.exe', '/c', str(self.executable_path)] + args
         else:
-            # Use full path if executable is elsewhere
+            # Non-Windows: use direct execution
             cmd = [str(self.executable_path)] + args
 
         import sys
