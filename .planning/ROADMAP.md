@@ -33,10 +33,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Compilation failures show .err file content in GUI with clear error messages
   3. Compilation successes show bytecode comparison results in GUI with match/diff details
   4. Validation runs against decompiler output directly without requiring file save
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD during planning
+- [ ] 01-01-PLAN.md — Validation Menu and Trigger Implementation
+- [ ] 01-02-PLAN.md — Settings Integration and End-to-End Testing
 
 ### Phase 2: Test Suite Automation
 **Goal**: Automated test suite validates all test cases with pytest integration
@@ -148,10 +149,11 @@ Plans:
 **Requirements**: VALID-07, TEST-05
 **Success Criteria** (what must be TRUE):
   1. Validation reports export to HTML with syntax highlighting
-  2. Reports export to JSON for programmatic analysis
-  3. Reports include full bytecode comparison details
-  4. Test corpus expands beyond 3 test cases to 10+ comprehensive cases
-  5. Reports are readable and actionable for debugging decompiler issues
+  2. Reports export to HTML with syntax highlighting
+  3. Reports export to JSON for programmatic analysis
+  4. Reports include full bytecode comparison details
+  5. Test corpus expands beyond 3 test cases to 10+ comprehensive cases
+  6. Reports are readable and actionable for debugging decompiler issues
 **Plans**: TBD
 
 Plans:
@@ -164,7 +166,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. GUI Validation Integration | 0/TBD | Not started | - |
+| 1. GUI Validation Integration | 0/2 | Planned | - |
 | 2. Test Suite Automation | 0/TBD | Not started | - |
 | 3. CI/CD Pipeline | 0/TBD | Not started | - |
 | 4. Error Analysis System | 0/TBD | Not started | - |
