@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Optional, List
@@ -23,6 +24,10 @@ from .validation_types import ValidationResult, ValidationVerdict
 from .cache import ValidationCache
 
 logger = logging.getLogger(__name__)
+
+# Global lock to serialize compiler access across all ValidationOrchestrator instances
+# The original SCMP.exe compiler cannot run multiple instances simultaneously
+_compiler_lock = threading.Lock()
 
 
 class ValidationOrchestrator:
@@ -263,13 +268,21 @@ class ValidationOrchestrator:
             timeout=self.timeout,
         )
 
-        # Compile (with header output like .bat files do)
-        output_header = output_scr.parent / f"{source_file.stem}.h"
-        result = wrapper.compile(
-            source_file=source_file,
-            output_scr=output_scr,
-            output_header=output_header,
-        )
+        # CRITICAL: Serialize compiler access with global lock
+        # The original SCMP.exe cannot run multiple instances simultaneously
+        # This prevents concurrent execution across pytest workers and test cases
+        with _compiler_lock:
+            logger.debug(f"Acquired compiler lock for {source_file.name}")
+
+            # Compile (with header output like .bat files do)
+            output_header = output_scr.parent / f"{source_file.stem}.h"
+            result = wrapper.compile(
+                source_file=source_file,
+                output_scr=output_scr,
+                output_header=output_header,
+            )
+
+            logger.debug(f"Released compiler lock for {source_file.name}")
 
         logger.debug(f"Compilation {'succeeded' if result.success else 'failed'}")
         return result
