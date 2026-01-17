@@ -606,10 +606,12 @@ class ValidationPanel(QWidget):
             summary_lines.append("")
             for error in result.compilation_result.errors:
                 summary_lines.append(f"[{error.stage.value.upper()}] {error.severity.value.upper()}: {error.message}")
-                if error.line_number:
-                    summary_lines.append(f"  Line {error.line_number}")
-                if error.context:
-                    summary_lines.append(f"  Context: {error.context}")
+                if error.file:
+                    summary_lines.append(f"  File: {error.file.name}")
+                if error.line:
+                    summary_lines.append(f"  Line: {error.line}")
+                if error.column:
+                    summary_lines.append(f"  Column: {error.column}")
                 summary_lines.append("")
 
         # Show compilation debug info
