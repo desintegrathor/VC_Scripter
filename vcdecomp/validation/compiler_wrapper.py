@@ -143,11 +143,14 @@ class BaseCompiler:
             if cwd and self.executable_path.parent == Path(cwd):
                 # Executable is in the working directory, use just the name
                 exe_name = self.executable_path.stem.lower()
-                # Use cmd.exe to invoke the compiler
-                cmd = ['cmd.exe', '/c', exe_name] + args
+                # Build the command string for cmd.exe
+                # cmd.exe /c needs the entire command as a single quoted string
+                command_str = f'{exe_name} {" ".join(args)}'
+                cmd = ['cmd.exe', '/c', command_str]
             else:
                 # Use full path with cmd.exe
-                cmd = ['cmd.exe', '/c', str(self.executable_path)] + args
+                command_str = f'"{str(self.executable_path)}" {" ".join(args)}'
+                cmd = ['cmd.exe', '/c', command_str]
         else:
             # Non-Windows: use direct execution
             cmd = [str(self.executable_path)] + args
