@@ -556,7 +556,20 @@ class SCMPWrapper(BaseCompiler):
         # Copy source file to compiler directory
         source_name = source_file.name
         work_source = compiler_dir / source_name
+
+        import sys
+        print(f"\n=== FILE COPY DEBUG ===", file=sys.stderr)
+        print(f"Source file: {source_file}", file=sys.stderr)
+        print(f"Source exists: {source_file.exists()}", file=sys.stderr)
+        print(f"Dest file: {work_source}", file=sys.stderr)
+        print(f"Compiler dir: {compiler_dir}", file=sys.stderr)
+
         shutil.copy2(source_file, work_source)
+
+        print(f"After copy - dest exists: {work_source.exists()}", file=sys.stderr)
+        if work_source.exists():
+            print(f"Dest file size: {work_source.stat().st_size} bytes", file=sys.stderr)
+        print(f"======================\n", file=sys.stderr)
 
         # Determine output paths in compiler directory
         scr_name = output_scr.name if output_scr.name.endswith('.scr') else f"{output_scr.stem}.scr"
