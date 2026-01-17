@@ -143,6 +143,7 @@ class BaseCompiler:
 
         try:
             # Execute process
+            # Use shell=True on Windows to properly handle .exe files
             result = subprocess.run(
                 cmd,
                 cwd=str(cwd),
@@ -151,6 +152,7 @@ class BaseCompiler:
                 text=True,
                 timeout=timeout,
                 errors='replace',  # Handle encoding errors gracefully
+                shell=True,  # Required for Windows .exe executables
             )
 
             success = result.returncode == 0
