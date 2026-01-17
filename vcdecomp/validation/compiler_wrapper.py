@@ -136,7 +136,15 @@ class BaseCompiler:
             timeout = self.timeout
 
         # Build full command
-        cmd = [str(self.executable_path)] + args
+        # On Windows, use just the executable name (not full path) when cwd is set
+        # This matches how the .bat files work and avoids path issues
+        if cwd and self.executable_path.parent == Path(cwd):
+            # Executable is in the working directory, use just the name without .exe
+            exe_name = self.executable_path.stem  # Gets 'scmp' from 'scmp.exe'
+            cmd = [exe_name] + args
+        else:
+            # Use full path if executable is elsewhere
+            cmd = [str(self.executable_path)] + args
 
         import sys
         print(f"\n=== COMPILER EXECUTION DEBUG ===", file=sys.stderr)
