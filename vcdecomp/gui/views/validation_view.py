@@ -612,6 +612,23 @@ class ValidationPanel(QWidget):
                     summary_lines.append(f"  Context: {error.context}")
                 summary_lines.append("")
 
+        # Show compilation debug info
+        if result.compilation_result:
+            summary_lines.append("")
+            summary_lines.append("=== DEBUG INFO ===")
+            summary_lines.append(f"Return code: {result.compilation_result.returncode}")
+            summary_lines.append(f"Working dir: {result.compilation_result.working_dir}")
+            if result.compilation_result.stdout:
+                summary_lines.append(f"STDOUT: {result.compilation_result.stdout[:500]}")
+            if result.compilation_result.stderr:
+                summary_lines.append(f"STDERR: {result.compilation_result.stderr[:500]}")
+
+        # Show error message if validation failed
+        if result.error_message:
+            summary_lines.append("")
+            summary_lines.append("=== ERROR MESSAGE ===")
+            summary_lines.append(result.error_message)
+
         if result.difference_summary:
             summary_lines.append(f"Total Differences: {result.difference_summary.total_count}")
             summary_lines.append(f"  Semantic: {result.difference_summary.semantic_count}")
