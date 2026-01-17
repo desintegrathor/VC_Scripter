@@ -3,6 +3,7 @@ Main window for VC Script Decompiler GUI
 """
 
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -266,10 +267,10 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
 
-        open_action = QAction("&Open...", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self.open_file)
-        file_menu.addAction(open_action)
+        self.open_action = QAction("&Open...", self)
+        self.open_action.setShortcut("Ctrl+O")
+        self.open_action.triggered.connect(self.open_file)
+        file_menu.addAction(self.open_action)
 
         file_menu.addSeparator()
 
@@ -299,10 +300,52 @@ class MainWindow(QMainWindow):
             self.variant_group.addAction(action)
             variant_menu.addAction(action)
 
+        # Tools menu
+        tools_menu = menubar.addMenu("&Tools")
+
+        self.validate_action = QAction("&Validate Current Script", self)
+        self.validate_action.setShortcut("Ctrl+Shift+V")
+        self.validate_action.triggered.connect(self.validate_current_script)
+        tools_menu.addAction(self.validate_action)
+
     def set_variant(self, variant: str):
         """Set opcode resolver variant"""
         self.variant = variant
         self.statusBar().showMessage(f"Opcode variant set to {variant}")
+
+    def validate_current_script(self):
+        """Validate the currently loaded script"""
+        # Check if a script is loaded
+        if self.scr is None:
+            QMessageBox.warning(
+                self,
+                "No Script Loaded",
+                "No script loaded. Open a .scr file first."
+            )
+            return
+
+        # Get decompiled text from the decompilation view
+        decompiled_text = self.decomp_view.toPlainText()
+
+        # Create temp directory for validation
+        temp_dir = Path(tempfile.gettempdir()) / "vcdecomp_validation"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save decompiled code to temp file
+        temp_source = temp_dir / f"{Path(self.scr.filepath).stem}_decompiled.c"
+        temp_source.write_text(decompiled_text, encoding='utf-8')
+
+        # Show validation dock
+        self.validation_dock.show()
+
+        # Switch to validation dock (raise it if tabbed with other docks)
+        self.validation_dock.raise_()
+
+        # Start validation
+        self.validation_panel.start_validation(
+            original_scr=self.scr.filepath,
+            decompiled_source=str(temp_source)
+        )
 
     def open_file(self, filename: str = None):
         """Open SCR file"""
