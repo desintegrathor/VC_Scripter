@@ -135,25 +135,9 @@ class BaseCompiler:
         if timeout is None:
             timeout = self.timeout
 
-        # Build full command
-        # On Windows, wrap in cmd.exe /c to avoid Git Bash subprocess issues
-        # This matches how .bat files work (they run through cmd.exe)
-        import platform
-        if platform.system() == 'Windows':
-            if cwd and self.executable_path.parent == Path(cwd):
-                # Executable is in the working directory, use just the name
-                exe_name = self.executable_path.stem.lower()
-                # Build the command string for cmd.exe
-                # cmd.exe /c needs the entire command as a single quoted string
-                command_str = f'{exe_name} {" ".join(args)}'
-                cmd = ['cmd.exe', '/c', command_str]
-            else:
-                # Use full path with cmd.exe
-                command_str = f'"{str(self.executable_path)}" {" ".join(args)}'
-                cmd = ['cmd.exe', '/c', command_str]
-        else:
-            # Non-Windows: use direct execution
-            cmd = [str(self.executable_path)] + args
+        # Build full command - use absolute path to executable
+        # This ensures the executable can be found regardless of shell environment
+        cmd = [str(self.executable_path.absolute())] + args
 
         import sys
         print(f"\n=== COMPILER EXECUTION DEBUG ===", file=sys.stderr)
@@ -170,7 +154,8 @@ class BaseCompiler:
 
         try:
             # Execute process
-            # Use shell=True on Windows to properly handle .exe files
+            # Don't use shell=True - causes issues with cmd.exe in Git Bash
+            # Use direct execution with proper working directory
             result = subprocess.run(
                 cmd,
                 cwd=str(cwd),
@@ -179,7 +164,7 @@ class BaseCompiler:
                 text=True,
                 timeout=timeout,
                 errors='replace',  # Handle encoding errors gracefully
-                shell=True,  # Required for Windows .exe executables
+                shell=False,  # Direct execution, no shell wrapper
             )
 
             success = result.returncode == 0
