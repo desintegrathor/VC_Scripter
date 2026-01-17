@@ -13,7 +13,7 @@ This roadmap transforms the VC-Script-Decompiler from producing broken output to
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: GUI Validation Integration** - One-click compile button in GUI
-- [ ] **Phase 2: Test Suite Automation** - Automated test suite with pytest integration
+- [x] **Phase 2: Test Suite Automation** - Automated test suite with pytest integration
 - [ ] **Phase 3: CI/CD Pipeline** - Continuous integration with regression detection
 - [ ] **Phase 4: Error Analysis System** - Systematic error classification and pattern detection
 - [ ] **Phase 5: Metrics Dashboard** - Progress tracking and compilation rate monitoring
@@ -65,10 +65,12 @@ Plans:
   2. CI pipeline alerts when previously-passing scripts fail
   3. Test results persist as baseline for regression comparison
   4. Pull requests show validation status before merge
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD during planning
+- [ ] 03-01-PLAN.md — Self-hosted Windows runner configuration
+- [ ] 03-02-PLAN.md — CI pipeline implementation with pytest integration
+- [ ] 03-03-PLAN.md — Branch protection and end-to-end integration testing
 
 ### Phase 4: Error Analysis System
 **Goal**: Errors are systematically classified with pattern detection
@@ -170,7 +172,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. GUI Validation Integration | 2/2 | Complete | 2026-01-17 |
 | 2. Test Suite Automation | 1/1 | Complete | 2026-01-17 |
-| 3. CI/CD Pipeline | 0/TBD | Not started | - |
+| 3. CI/CD Pipeline | 0/3 | Ready for execution | - |
 | 4. Error Analysis System | 0/TBD | Not started | - |
 | 5. Metrics Dashboard | 0/TBD | Not started | - |
 | 6. Expression Reconstruction Fixes | 0/TBD | Not started | - |
