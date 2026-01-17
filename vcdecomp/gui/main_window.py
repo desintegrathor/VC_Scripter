@@ -12,7 +12,7 @@ try:
         QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
         QSplitter, QTextEdit, QPlainTextEdit, QTabWidget, QMenuBar,
         QMenu, QFileDialog, QStatusBar, QLabel, QListWidget, QListWidgetItem,
-        QDockWidget, QMessageBox, QComboBox
+        QDockWidget, QMessageBox, QComboBox, QStyle
     )
     from PyQt6.QtGui import QAction, QActionGroup, QFont, QColor, QTextCharFormat, QSyntaxHighlighter
     from PyQt6.QtCore import Qt, QRegularExpression
@@ -229,6 +229,19 @@ class MainWindow(QMainWindow):
         expr_layout.addWidget(self.expr_view, 1)
         self.central_tabs.addTab(self.expr_tab, "Expressions")
 
+        # Create menus first (needed for toolbar actions)
+        self.create_menus()
+
+        # Create toolbar
+        self.toolbar = self.addToolBar("Main")
+        self.toolbar.addAction(self.open_action)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.validate_action)
+
+        # Set icons for toolbar actions
+        self.open_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
+        self.validate_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
+
         # Dock widgets
         # Functions dock
         self.func_dock = QDockWidget("Functions", self)
@@ -254,9 +267,6 @@ class MainWindow(QMainWindow):
         self.validation_panel = ValidationPanel()
         self.validation_dock.setWidget(self.validation_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.validation_dock)
-
-        # Create menus
-        self.create_menus()
 
         # Status bar
         self.statusBar().showMessage("Ready")
