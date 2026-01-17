@@ -138,6 +138,16 @@ class BaseCompiler:
         # Build full command
         cmd = [str(self.executable_path)] + args
 
+        import sys
+        print(f"\n=== COMPILER EXECUTION DEBUG ===", file=sys.stderr)
+        print(f"FULL COMMAND: {cmd}", file=sys.stderr)
+        print(f"COMMAND STRING: {' '.join(cmd)}", file=sys.stderr)
+        print(f"EXECUTABLE: {self.executable_path}", file=sys.stderr)
+        print(f"EXECUTABLE EXISTS: {self.executable_path.exists()}", file=sys.stderr)
+        print(f"WORKING DIR: {cwd}", file=sys.stderr)
+        print(f"ENV: {env}", file=sys.stderr)
+        print(f"================================\n", file=sys.stderr)
+
         logger.debug(f"Executing: {' '.join(cmd)}")
         logger.debug(f"Working directory: {cwd}")
 
@@ -156,6 +166,12 @@ class BaseCompiler:
             )
 
             success = result.returncode == 0
+
+            print(f"\n=== COMPILER EXECUTION RESULT ===", file=sys.stderr)
+            print(f"Return code: {result.returncode}", file=sys.stderr)
+            print(f"STDOUT: {result.stdout[:200] if result.stdout else '(empty)'}", file=sys.stderr)
+            print(f"STDERR: {result.stderr[:200] if result.stderr else '(empty)'}", file=sys.stderr)
+            print(f"=================================\n", file=sys.stderr)
 
             logger.debug(f"Process exited with code: {result.returncode}")
             if not success:
