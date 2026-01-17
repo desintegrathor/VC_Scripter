@@ -140,7 +140,7 @@ class BaseCompiler:
         # This matches how the .bat files work and avoids path issues
         if cwd and self.executable_path.parent == Path(cwd):
             # Executable is in the working directory, use just the name without .exe
-            exe_name = self.executable_path.stem  # Gets 'scmp' from 'scmp.exe'
+            exe_name = self.executable_path.stem.lower()  # Gets 'scmp' from 'SCMP.exe' or 'scmp.exe'
             cmd = [exe_name] + args
         else:
             # Use full path if executable is elsewhere
