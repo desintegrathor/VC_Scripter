@@ -135,18 +135,18 @@ class BaseCompiler:
         if timeout is None:
             timeout = self.timeout
 
-        # Build command to match how .bat files work
-        # .bat files run through cmd.exe, which properly handles the executable
+        # Build command using .bat file wrapper
+        # Direct .exe calls don't work from subprocess, but .bat files do
         import platform
         if platform.system() == 'Windows' and cwd and self.executable_path.parent == Path(cwd):
-            # On Windows, when executable is in working directory, use cmd.exe like .bat files
-            # Use just the name without .exe (Windows adds it automatically)
-            exe_name = self.executable_path.stem
-            # Build command as: cmd.exe /c "scmp arg1 arg2 arg3"
-            # Quote each argument to handle spaces
-            quoted_args = [f'"{arg}"' if ' ' in arg else arg for arg in args]
-            command_line = f'{exe_name} {" ".join(quoted_args)}'
-            cmd = ['cmd.exe', '/c', command_line]
+            # On Windows, use the .bat wrapper in the compiler directory
+            bat_file = self.executable_path.parent / "compile_script.bat"
+            if bat_file.exists():
+                # Call the .bat file with arguments
+                cmd = [str(bat_file.absolute())] + args
+            else:
+                # Fallback to direct call
+                cmd = [str(self.executable_path.absolute())] + args
         else:
             # Use absolute path for other cases
             cmd = [str(self.executable_path.absolute())] + args
