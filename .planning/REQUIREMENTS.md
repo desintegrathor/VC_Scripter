@@ -9,9 +9,9 @@ Requirements for systematically improving decompiler from "broken output" to "co
 
 ### Validation Infrastructure
 
-- [ ] **VALID-01**: User can click "Compile" button in GUI to validate currently-open script
-- [ ] **VALID-02**: Compilation failures show .err file content in GUI
-- [ ] **VALID-03**: Compilation successes show bytecode comparison results in GUI
+- [x] **VALID-01**: User can click "Compile" button in GUI to validate currently-open script
+- [x] **VALID-02**: Compilation failures show .err file content in GUI
+- [x] **VALID-03**: Compilation successes show bytecode comparison results in GUI
 - [ ] **VALID-04**: System tracks compilation success rate over time (coverage metrics)
 - [ ] **VALID-05**: CI/CD pipeline runs validation on all commits (GitHub Actions)
 - [ ] **VALID-06**: Regression detection alerts when previously-passing scripts fail
@@ -19,13 +19,13 @@ Requirements for systematically improving decompiler from "broken output" to "co
 
 ### Test Suite Automation
 
-- [ ] **TEST-01**: Automated test suite runs decompilation on all test cases
-- [ ] **TEST-02**: Test suite validates each decompiled output compiles
-- [ ] **TEST-03**: Test suite compares bytecode for semantic equivalence
-- [ ] **TEST-04**: Test suite categorizes failures by error type
+- [x] **TEST-01**: Automated test suite runs decompilation on all test cases
+- [x] **TEST-02**: Test suite validates each decompiled output compiles
+- [x] **TEST-03**: Test suite compares bytecode for semantic equivalence
+- [x] **TEST-04**: Test suite categorizes failures by error type
 - [ ] **TEST-05**: Test corpus expands beyond 3 current test cases to 10+ cases
 - [ ] **TEST-06**: Test results persist as baseline for regression detection
-- [ ] **TEST-07**: pytest integration allows running `pytest vcdecomp/tests/test_validation.py`
+- [x] **TEST-07**: pytest integration allows running `pytest vcdecomp/tests/test_validation.py`
 
 ### Error Analysis & Classification
 
@@ -99,20 +99,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VALID-01 | Phase 1 | Pending |
-| VALID-02 | Phase 1 | Pending |
-| VALID-03 | Phase 1 | Pending |
+| VALID-01 | Phase 1 | Complete |
+| VALID-02 | Phase 1 | Complete |
+| VALID-03 | Phase 1 | Complete |
 | VALID-04 | Phase 5 | Pending |
 | VALID-05 | Phase 3 | Pending |
 | VALID-06 | Phase 3 | Pending |
 | VALID-07 | Phase 9 | Pending |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
-| TEST-04 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Complete |
+| TEST-02 | Phase 2 | Complete |
+| TEST-03 | Phase 2 | Complete |
+| TEST-04 | Phase 2 | Complete |
 | TEST-05 | Phase 9 | Pending |
 | TEST-06 | Phase 3 | Pending |
-| TEST-07 | Phase 2 | Pending |
+| TEST-07 | Phase 2 | Complete |
 | ERROR-01 | Phase 4 | Pending |
 | ERROR-02 | Phase 4 | Pending |
 | ERROR-03 | Phase 4 | Pending |
