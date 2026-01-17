@@ -99,43 +99,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VALID-01 | TBD | Pending |
-| VALID-02 | TBD | Pending |
-| VALID-03 | TBD | Pending |
-| VALID-04 | TBD | Pending |
-| VALID-05 | TBD | Pending |
-| VALID-06 | TBD | Pending |
-| VALID-07 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
-| TEST-05 | TBD | Pending |
-| TEST-06 | TBD | Pending |
-| TEST-07 | TBD | Pending |
-| ERROR-01 | TBD | Pending |
-| ERROR-02 | TBD | Pending |
-| ERROR-03 | TBD | Pending |
-| ERROR-04 | TBD | Pending |
-| ERROR-05 | TBD | Pending |
-| DECOMP-01 | TBD | Pending |
-| DECOMP-02 | TBD | Pending |
-| DECOMP-03 | TBD | Pending |
-| DECOMP-04 | TBD | Pending |
-| DECOMP-05 | TBD | Pending |
-| DECOMP-06 | TBD | Pending |
-| DECOMP-07 | TBD | Pending |
-| METRIC-01 | TBD | Pending |
-| METRIC-02 | TBD | Pending |
-| METRIC-03 | TBD | Pending |
-| METRIC-04 | TBD | Pending |
-| METRIC-05 | TBD | Pending |
+| VALID-01 | Phase 1 | Pending |
+| VALID-02 | Phase 1 | Pending |
+| VALID-03 | Phase 1 | Pending |
+| VALID-04 | Phase 5 | Pending |
+| VALID-05 | Phase 3 | Pending |
+| VALID-06 | Phase 3 | Pending |
+| VALID-07 | Phase 9 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Pending |
+| TEST-04 | Phase 2 | Pending |
+| TEST-05 | Phase 9 | Pending |
+| TEST-06 | Phase 3 | Pending |
+| TEST-07 | Phase 2 | Pending |
+| ERROR-01 | Phase 4 | Pending |
+| ERROR-02 | Phase 4 | Pending |
+| ERROR-03 | Phase 4 | Pending |
+| ERROR-04 | Phase 4 | Pending |
+| ERROR-05 | Phase 4 | Pending |
+| DECOMP-01 | Phase 6 | Pending |
+| DECOMP-02 | Phase 7 | Pending |
+| DECOMP-03 | Phase 7 | Pending |
+| DECOMP-04 | Phase 7 | Pending |
+| DECOMP-05 | Phase 8 | Pending |
+| DECOMP-06 | Phase 7 | Pending |
+| DECOMP-07 | Phase 7 | Pending |
+| METRIC-01 | Phase 5 | Pending |
+| METRIC-02 | Phase 5 | Pending |
+| METRIC-03 | Phase 5 | Pending |
+| METRIC-04 | Phase 5 | Pending |
+| METRIC-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 32 total
-- Mapped to phases: 0
-- Unmapped: 32 ⚠️
+- Mapped to phases: 32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-17 after initial definition*
+*Last updated: 2026-01-17 after roadmap creation*
