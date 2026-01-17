@@ -9,29 +9,30 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 1 of 9 (GUI Validation Integration)
-Plan: 02 of 2 (completed)
-Status: Phase complete
-Last activity: 2026-01-17 - Completed 01-02-PLAN.md (Settings Integration and End-to-End Testing)
+Phase: 2 of 9 (Test Suite Automation)
+Plan: 01 of 3 (completed)
+Status: In progress
+Last activity: 2026-01-17 - Completed 02-01-PLAN.md (Pytest Validation Test Suite)
 
-Progress: [██░░░░░░░░] 100% (2/2 phase plans complete)
+Progress: [███░░░░░░░] 30% (3/10 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 25 min
-- Total execution time: 0.83 hours
+- Total plans completed: 3
+- Average duration: 20 min
+- Total execution time: 1.00 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01    | 2/2   | 50min | 25min    |
+| 02    | 1/3   | 10min | 10min    |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (15min), 01-02 (35min)
-- Trend: Plan 02 required extensive Windows subprocess fixes, longer than typical
+- Last 5 plans: 01-01 (15min), 01-02 (35min), 02-01 (10min)
+- Trend: Phase 02 plan 01 very fast - test infrastructure straightforward, critical fix discovered at checkpoint
 
 *Updated after each plan completion*
 
@@ -65,6 +66,16 @@ Recent decisions affecting current work:
 | .bat wrapper for SCMP.exe execution | Windows subprocess requires specific handling for DOS-era executables | 01-02 |
 | Clean temp files BEFORE compilation | Preserves failed compilation artifacts for debugging | 01-02 |
 
+**From 02-01 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Sequential test execution (no pytest-xdist) | Clearer output for debugging, avoids concurrency complexity | 02-01 |
+| cache_enabled=False for tests | Always-fresh decompilation ensures tests measure current state | 02-01 |
+| PARTIAL verdict doesn't fail tests | User wants complete picture of all results, not fail-fast | 02-01 |
+| Programmatic error categorization | Enables automated quality analysis and trend tracking | 02-01 |
+| Global threading lock for SCMP.exe | DOS-era compiler cannot handle concurrent execution | 02-01 |
+
 ### Pending Todos
 
 None yet.
@@ -79,12 +90,18 @@ None yet.
 - Windows compiler execution requires .bat wrapper pattern
 - Temp file preservation strategy helps debugging but may accumulate files
 
+**Phase 2 (Test Suite Automation) - IN PROGRESS:**
+- Plan 01 complete: Pytest validation test suite with parametrization
+- SCMP.exe requires serialization via threading.Lock() (DOS-era concurrency issue)
+- Test suite provides fast feedback loop for iterative improvement
+- Error categorization foundation in place for quality measurement
+
 ## Session Continuity
 
-Last session: 2026-01-17T15:42:58Z (plan 01-02 completion)
-Stopped at: Completed 01-02-PLAN.md - Phase 1 COMPLETE
+Last session: 2026-01-17T17:39:21+01:00 (plan 02-01 completion)
+Stopped at: Completed 02-01-PLAN.md - Pytest validation test suite
 Resume file: None
-Next: Ready for Phase 2 (Test Suite Development) or Phase 3 (CI/CD Integration)
+Next: Ready for Phase 2 Plan 02 (Error categorization and reporting) or Plan 03 (Batch validation)
 
 ## Technical Context
 
@@ -94,9 +111,20 @@ Next: Ready for Phase 2 (Test Suite Development) or Phase 3 (CI/CD Integration)
 - **Temp file pattern:** Create temp directory vcdecomp_validation/, save decompiled code, pass path to validator
 - **Validation trigger pattern:** Check script loaded → save to temp → show dock → call ValidationPanel.start_validation()
 
+**From 02-01:**
+- **Test parametrization pattern:** Case-sensitive filesystem paths (test1/test2 lowercase, test3 UPPERCASE)
+- **Three-step test flow:** Decompile → validate → report with programmatic categorization
+- **Error categorization pattern:** Group errors by type (syntax, type, undefined, include, other) for quality measurement
+- **Compiler serialization pattern:** Use threading.Lock() to serialize SCMP.exe access
+
 ### Key Files Modified
 
 **Phase 01 complete:**
 - `vcdecomp/gui/main_window.py` - Validation menu, toolbar, temp file handling, settings integration, first-run prompt (01-01, 01-02)
 - `vcdecomp/validation/runner.py` - Windows subprocess fixes, .bat wrapper, debug output (01-02)
 - `vcdecomp/gui/views/validation_view.py` - CompilationError attribute fixes (01-02)
+
+**Phase 02 in progress:**
+- `vcdecomp/tests/test_validation.py` - Parametrized pytest tests (02-01)
+- `vcdecomp/tests/conftest.py` - Shared pytest fixtures (02-01)
+- `vcdecomp/validation/validator.py` - Compiler concurrency lock (02-01)
