@@ -443,6 +443,7 @@ class ValidationPanel(QWidget):
         settings = QSettings("VCDecompiler", "ValidationSettings")
 
         # Get settings or use defaults
+        compiler_dir = settings.value("compiler_dir", "./original-resources/compiler")
         include_dirs = settings.value("include_dirs", [])
         timeout = settings.value("timeout", 30, type=int)
         opcode_variant = settings.value("opcode_variant", "auto")
@@ -454,7 +455,7 @@ class ValidationPanel(QWidget):
         self.worker = ValidationWorker(
             original_scr,
             decompiled_source,
-            self.compiler_dir,
+            compiler_dir,
             include_dirs=include_dirs,
             timeout=timeout,
             opcode_variant=opcode_variant,
