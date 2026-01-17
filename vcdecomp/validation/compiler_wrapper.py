@@ -135,9 +135,21 @@ class BaseCompiler:
         if timeout is None:
             timeout = self.timeout
 
-        # Build full command - use absolute path to executable
-        # This ensures the executable can be found regardless of shell environment
-        cmd = [str(self.executable_path.absolute())] + args
+        # Build command to match how .bat files work
+        # .bat files run through cmd.exe, which properly handles the executable
+        import platform
+        if platform.system() == 'Windows' and cwd and self.executable_path.parent == Path(cwd):
+            # On Windows, when executable is in working directory, use cmd.exe like .bat files
+            # Use just the name without .exe (Windows adds it automatically)
+            exe_name = self.executable_path.stem
+            # Build command as: cmd.exe /c "scmp arg1 arg2 arg3"
+            # Quote each argument to handle spaces
+            quoted_args = [f'"{arg}"' if ' ' in arg else arg for arg in args]
+            command_line = f'{exe_name} {" ".join(quoted_args)}'
+            cmd = ['cmd.exe', '/c', command_line]
+        else:
+            # Use absolute path for other cases
+            cmd = [str(self.executable_path.absolute())] + args
 
         import sys
         print(f"\n=== COMPILER EXECUTION DEBUG ===", file=sys.stderr)
