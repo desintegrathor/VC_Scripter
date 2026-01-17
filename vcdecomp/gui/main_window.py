@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
         temp_dir.mkdir(parents=True, exist_ok=True)
 
         # Save decompiled code to temp file
-        temp_source = temp_dir / f"{Path(self.scr.filepath).stem}_decompiled.c"
+        temp_source = temp_dir / f"{Path(self.scr.filename).stem}_decompiled.c"
         temp_source.write_text(decompiled_text, encoding='utf-8')
 
         # Show validation dock
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
 
         # Start validation
         self.validation_panel.start_validation(
-            original_scr=self.scr.filepath,
+            original_scr=self.scr.filename,
             decompiled_source=str(temp_source)
         )
 
