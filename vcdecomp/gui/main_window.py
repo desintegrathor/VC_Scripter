@@ -12,10 +12,10 @@ try:
         QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
         QSplitter, QTextEdit, QPlainTextEdit, QTabWidget, QMenuBar,
         QMenu, QFileDialog, QStatusBar, QLabel, QListWidget, QListWidgetItem,
-        QDockWidget, QMessageBox, QComboBox, QStyle
+        QDockWidget, QMessageBox, QComboBox, QStyle, QDialog
     )
     from PyQt6.QtGui import QAction, QActionGroup, QFont, QColor, QTextCharFormat, QSyntaxHighlighter
-    from PyQt6.QtCore import Qt, QRegularExpression
+    from PyQt6.QtCore import Qt, QRegularExpression, QSettings
 except ImportError:
     print("PyQt6 not installed. Install with: pip install PyQt6")
     sys.exit(1)
@@ -26,6 +26,7 @@ from ..core.ir.ssa import build_ssa, build_ssa_all_blocks
 from ..core.ir.expr import format_block_expressions
 from ..core.ir.structure import format_structured_function_named
 from .views import ValidationPanel
+from .dialogs import ValidationSettingsDialog
 
 
 class SyntaxHighlighter(QSyntaxHighlighter):
@@ -318,10 +319,29 @@ class MainWindow(QMainWindow):
         self.validate_action.triggered.connect(self.validate_current_script)
         tools_menu.addAction(self.validate_action)
 
+        tools_menu.addSeparator()
+
+        settings_action = QAction("&Settings...", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self.show_validation_settings)
+        tools_menu.addAction(settings_action)
+
     def set_variant(self, variant: str):
         """Set opcode resolver variant"""
         self.variant = variant
         self.statusBar().showMessage(f"Opcode variant set to {variant}")
+
+    def show_validation_settings(self):
+        """Show validation settings dialog"""
+        dialog = ValidationSettingsDialog(self)
+
+        # Dialog loads its own settings internally via QSettings
+        # (see validation_settings.py line 45: self.settings = QSettings("VCDecompiler", "ValidationSettings"))
+        # Dialog also saves automatically when user clicks OK (line 473: save_settings())
+
+        # Just show the dialog - no need to manually load/save
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.statusBar().showMessage("Validation settings saved", 3000)
 
     def validate_current_script(self):
         """Validate the currently loaded script"""
