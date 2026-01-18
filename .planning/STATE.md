@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 3 of 9 (CI/CD Pipeline)
-Plan: 01 of 3 (complete)
+Plan: 02 of 3 (complete)
 Status: In progress
-Last activity: 2026-01-18 - Completed 03-01-PLAN.md
+Last activity: 2026-01-18 - Completed 03-02-PLAN.md
 
-Progress: [████████░░] 11% (4/36 phase plans complete)
+Progress: [█████████░] 14% (5/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 19 min
-- Total execution time: 1.25 hours
+- Total plans completed: 5
+- Average duration: 15.8 min
+- Total execution time: 1.32 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [████████░░] 11% (4/36 phase plans complete)
 |-------|-------|-------|----------|
 | 01    | 2/2   | 50min | 25min    |
 | 02    | 1/1   | 10min | 10min    |
-| 03    | 1/3   | 15min | 15min    |
+| 03    | 2/3   | 19min | 9.5min   |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (15min), 01-02 (35min), 02-01 (10min), 03-01 (15min)
-- Trend: Phase 3 plan 01 efficient - one-time infrastructure setup with checkpoints for manual steps
+- Last 5 plans: 01-02 (35min), 02-01 (10min), 03-01 (15min), 03-02 (4min)
+- Trend: Phase 3 plans efficient - infrastructure setup (03-01: 15min) followed by rapid configuration (03-02: 4min)
 
 *Updated after each plan completion*
 
@@ -86,6 +86,15 @@ Recent decisions affecting current work:
 | Service installation via PowerShell | Standard Windows service management with sc.exe commands | 03-01 |
 | Runner labels: self-hosted, windows, x64 | Enables workflow targeting with runs-on specification | 03-01 |
 
+**From 03-02 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Trigger on ALL push/PR events | Satisfies VALID-05 "runs validation on all commits", not limited to main branch | 03-02 |
+| Baseline storage in .planning/baselines/ | Satisfies TEST-06 "baselines stored in Git", enables version-controlled regression tracking | 03-02 |
+| continue-on-error + if: always() | Ensures test artifacts upload even when tests fail (per RESEARCH.md Pattern 3) | 03-02 |
+| Dual test strategy (original + baseline) | Original test provides immediate output, baseline test detects regressions | 03-02 |
+
 ### Pending Todos
 
 None yet.
@@ -112,12 +121,20 @@ None yet.
 - Machine must remain online for CI job execution
 - Compiler (SCMP.exe) accessible to runner service account
 
+**Phase 3 Plan 02 (Create CI Workflow) - COMPLETE:**
+- GitHub Actions workflow triggers on all commits (push + pull_request)
+- Pytest validation suite runs on self-hosted Windows runner
+- Test results upload as artifacts (JUnit XML + JSON) with 30-day retention
+- Baseline regression tracking configured in .planning/baselines/
+- Inline PR annotations enabled via pytest-github-actions-annotate-failures
+- continue-on-error ensures artifacts upload even on test failure
+
 ## Session Continuity
 
-Last session: 2026-01-18T13:45:00Z (phase 3 plan 01 completion)
-Stopped at: Completed 03-01-PLAN.md (Self-Hosted Runner Setup)
+Last session: 2026-01-18T06:38:32Z (phase 3 plan 02 completion)
+Stopped at: Completed 03-02-PLAN.md (Create CI Workflow)
 Resume file: None
-Next: Execute Phase 3 Plan 02 (Create CI Workflow)
+Next: Execute Phase 3 Plan 03 (Test CI Pipeline)
 
 ## Technical Context
 
@@ -138,6 +155,12 @@ Next: Execute Phase 3 Plan 02 (Create CI Workflow)
 - **Service installation pattern:** PowerShell script with sc.exe for Windows service management
 - **Runner verification pattern:** GitHub API (gh api repos/.../actions/runners) to check online status
 
+**From 03-02:**
+- **CI workflow pattern:** Trigger on all push/PR events, run tests, upload artifacts on all outcomes
+- **Baseline regression pattern:** pytest-regressions with data_regression.check() for automated baseline comparison
+- **Artifact resilience pattern:** continue-on-error + if: always() ensures upload even on test failure
+- **Dual test pattern:** Original test (immediate output) + baseline test (regression detection)
+
 ### Key Files Modified
 
 **Phase 01 complete:**
@@ -154,3 +177,10 @@ Next: Execute Phase 3 Plan 02 (Create CI Workflow)
 - `C:\actions-runner\install-service.ps1` - Windows service installation script for GitHub Actions runner (03-01)
 - `C:\actions-runner\.runner` - Runner registration metadata (agentId, poolName, gitHubUrl) (03-01)
 - Runner service: `actions.runner.desintegrathor-VC_Scripter.VC-Scripter-Windows-Runner` (Running, Automatic)
+
+**Phase 03 Plan 02 complete:**
+- `.github/workflows/validation.yml` - GitHub Actions workflow for automated validation (03-02)
+- `vcdecomp/requirements.txt` - Added pytest plugins (pytest-github-actions-annotate-failures, pytest-json-report, pytest-regressions) (03-02)
+- `vcdecomp/tests/conftest.py` - Added pytest_regressions_data_dir fixture for baseline storage (03-02)
+- `vcdecomp/tests/test_validation.py` - Added test_decompilation_validation_with_baseline test (03-02)
+- `.planning/baselines/.gitkeep` - Baseline storage directory for regression tracking (03-02)
