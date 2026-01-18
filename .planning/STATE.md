@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 3 of 9 (CI/CD Pipeline)
-Plan: 01 of 3 (in progress)
-Status: Executing
-Last activity: 2026-01-17 - Executing Phase 3 (CI/CD Pipeline)
+Plan: 01 of 3 (complete)
+Status: In progress
+Last activity: 2026-01-18 - Completed 03-01-PLAN.md
 
-Progress: [██████░░░░] 100% (1/1 phase plans complete)
+Progress: [████████░░] 11% (4/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 20 min
-- Total execution time: 1.00 hours
+- Total plans completed: 4
+- Average duration: 19 min
+- Total execution time: 1.25 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [██████░░░░] 100% (1/1 phase plans complete)
 |-------|-------|-------|----------|
 | 01    | 2/2   | 50min | 25min    |
 | 02    | 1/1   | 10min | 10min    |
+| 03    | 1/3   | 15min | 15min    |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (15min), 01-02 (35min), 02-01 (10min)
-- Trend: Phase 2 completed efficiently with single comprehensive plan
-- Trend: Phase 02 plan 01 very fast - test infrastructure straightforward, critical fix discovered at checkpoint
+- Last 5 plans: 01-01 (15min), 01-02 (35min), 02-01 (10min), 03-01 (15min)
+- Trend: Phase 3 plan 01 efficient - one-time infrastructure setup with checkpoints for manual steps
 
 *Updated after each plan completion*
 
@@ -77,13 +77,21 @@ Recent decisions affecting current work:
 | Programmatic error categorization | Enables automated quality analysis and trend tracking | 02-01 |
 | Global threading lock for SCMP.exe | DOS-era compiler cannot handle concurrent execution | 02-01 |
 
+**From 03-01 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Self-hosted runner required | SCMP.exe is Windows-only DOS-era executable, cannot run on GitHub-hosted runners | 03-01 |
+| Runner installed as Windows service | Ensures runner auto-starts on reboot, runs as background service | 03-01 |
+| Service installation via PowerShell | Standard Windows service management with sc.exe commands | 03-01 |
+| Runner labels: self-hosted, windows, x64 | Enables workflow targeting with runs-on specification | 03-01 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 3 (CI/CD):** Requires Windows runner for SCMP.exe (original compiler is Windows-only)
 **Phase 6-8 (Decompiler Fixes):** Success depends on comprehensive error classification from Phase 4
 
 **Phase 1 (GUI Validation Integration) - COMPLETE:**
@@ -98,12 +106,18 @@ None yet.
 - Test suite provides fast feedback loop for iterative improvement
 - Error categorization foundation in place for quality measurement
 
+**Phase 3 Plan 01 (Self-Hosted Runner Setup) - COMPLETE:**
+- Runner online and idle, ready to accept CI jobs
+- Service configured for automatic startup on reboot
+- Machine must remain online for CI job execution
+- Compiler (SCMP.exe) accessible to runner service account
+
 ## Session Continuity
 
-Last session: 2026-01-17T18:20:00Z (phase 3 execution)
-Stopped at: Executing Phase 3 (CI/CD Pipeline)
+Last session: 2026-01-18T13:45:00Z (phase 3 plan 01 completion)
+Stopped at: Completed 03-01-PLAN.md (Self-Hosted Runner Setup)
 Resume file: None
-Next: Complete Phase 3 Wave 1
+Next: Execute Phase 3 Plan 02 (Create CI Workflow)
 
 ## Technical Context
 
@@ -119,6 +133,11 @@ Next: Complete Phase 3 Wave 1
 - **Error categorization pattern:** Group errors by type (syntax, type, undefined, include, other) for quality measurement
 - **Compiler serialization pattern:** Use threading.Lock() to serialize SCMP.exe access
 
+**From 03-01:**
+- **GitHub runner registration pattern:** Web UI token generation with 1-hour expiry
+- **Service installation pattern:** PowerShell script with sc.exe for Windows service management
+- **Runner verification pattern:** GitHub API (gh api repos/.../actions/runners) to check online status
+
 ### Key Files Modified
 
 **Phase 01 complete:**
@@ -130,4 +149,8 @@ Next: Complete Phase 3 Wave 1
 - `vcdecomp/tests/test_validation.py` - Parametrized pytest tests with decompile-compile-compare workflow (02-01)
 - `vcdecomp/tests/conftest.py` - Shared pytest fixtures for compiler paths and orchestrator (02-01)
 - `vcdecomp/validation/validator.py` - Threading lock for SCMP.exe serialization (02-01 fix)
-- `vcdecomp/validation/validator.py` - Compiler concurrency lock (02-01)
+
+**Phase 03 Plan 01 complete:**
+- `C:\actions-runner\install-service.ps1` - Windows service installation script for GitHub Actions runner (03-01)
+- `C:\actions-runner\.runner` - Runner registration metadata (agentId, poolName, gitHubUrl) (03-01)
+- Runner service: `actions.runner.desintegrathor-VC_Scripter.VC-Scripter-Windows-Runner` (Running, Automatic)
