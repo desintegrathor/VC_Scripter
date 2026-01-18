@@ -382,6 +382,42 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             for inp in inst.inputs:
                 process_value(inp, default_type="int")
 
+    # FIX (Pattern 5 - 06-02): Collect all variable references from formatted expressions
+    # This catches variables that appear in generated code but weren't tracked by SSA
+    # (e.g., semantic names that were resolved but never registered)
+    from ...expr import format_block_expressions
+    import re
+    for block_id in func_block_ids:
+        block_exprs = format_block_expressions(ssa_func, block_id, formatter=formatter)
+        for expr in block_exprs:
+            # Extract address-of references: &varname
+            # These are the most common cause of undeclared variables
+            addr_of_vars = re.findall(r'&(\w+)', expr.text)
+            for var_name in addr_of_vars:
+                # Skip if already declared
+                if var_name in var_types:
+                    continue
+                # Skip param_, data_, local_ (should be handled elsewhere)
+                if var_name.startswith('param_') or var_name.startswith('data_'):
+                    continue
+                # Skip constants and keywords
+                if var_name.isupper() or var_name.isdigit():
+                    continue
+
+                # This is an undeclared variable that needs declaration
+                # Determine type - check if it's in inferred structs first
+                var_type = "int"  # Default
+                if var_name in inferred_struct_types:
+                    var_type = inferred_struct_types[var_name]
+                # Check if this is a vector/array-like name pattern
+                elif var_name in ('vec', 'pos', 'rot', 'dir'):
+                    var_type = "s_SC_vector"  # Common vector struct
+                elif 'enum' in var_name.lower():
+                    var_type = "s_SC_MP_EnumPlayers"  # Common enum struct
+
+                # Add to var_types
+                var_types[var_name] = var_type
+
     # P0.3: Generate declarations (arrays first, then regular variables)
     declarations = []
 

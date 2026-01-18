@@ -760,7 +760,24 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         cond_text = f"cond_{block_id}"
 
                     # FIX 1B: Skip rendering if jumping to switch header
-                    if not is_switch_header_jump:
+                    # FIX (Pattern 1 - 06-02): Skip goto to orphaned blocks (unreachable blocks with no predecessors)
+                    # Check if target block exists and is reachable
+                    is_orphaned_target = False
+                    # Check if target_block is valid (>= 0) and exists in CFG
+                    if target_block < 0 or target_block not in cfg.blocks:
+                        # Target block doesn't exist - skip goto
+                        is_orphaned_target = True
+                    elif target_block not in func_block_ids:
+                        # Target block is outside this function's scope - skip goto
+                        is_orphaned_target = True
+                    elif target_block != entry_block:
+                        # Check if target block has predecessors (excluding entry block)
+                        target_cfg_block = cfg.blocks[target_block]
+                        predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
+                        if not predecessors:
+                            is_orphaned_target = True
+
+                    if not is_switch_header_jump and not is_orphaned_target:
                         if is_back_edge:
                             lines.append(f"{base_indent}if ({cond_text}) continue;  // back to loop header @{target}")
                         elif is_loop_exit:
@@ -770,7 +787,24 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 else:
                     # Unconditional jump
                     # FIX 1B: Skip rendering if jumping to switch header
-                    if not is_switch_header_jump:
+                    # FIX (Pattern 1 - 06-02): Skip goto to orphaned blocks
+                    # Check if target block exists and is reachable
+                    is_orphaned_target = False
+                    # Check if target_block is valid (>= 0) and exists in CFG
+                    if target_block < 0 or target_block not in cfg.blocks:
+                        # Target block doesn't exist - skip goto
+                        is_orphaned_target = True
+                    elif target_block not in func_block_ids:
+                        # Target block is outside this function's scope - skip goto
+                        is_orphaned_target = True
+                    elif target_block != entry_block:
+                        # Check if target block has predecessors (excluding entry block)
+                        target_cfg_block = cfg.blocks[target_block]
+                        predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
+                        if not predecessors:
+                            is_orphaned_target = True
+
+                    if not is_switch_header_jump and not is_orphaned_target:
                         # FIX 3C: Skip goto if target is already emitted (unreachable code)
                         if target_block not in emitted_blocks:
                             if is_back_edge:
