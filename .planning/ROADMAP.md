@@ -116,10 +116,12 @@ Plans:
   3. Type casts are generated where needed for type mismatches
   4. Complex expressions with multiple operators render correctly
   5. Regression tests confirm previously-working expressions still work
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD during planning
+- [ ] 06-01-PLAN.md — Baseline Error Analysis
+- [ ] 06-02-PLAN.md — Fix High-Priority Expression Bugs
+- [ ] 06-03-PLAN.md — Regression Validation
 
 ### Phase 7: Variable Declaration Fixes
 **Goal**: Variables are declared correctly with proper types and scoping
@@ -179,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. CI/CD Pipeline | 3/3 | Complete | 2026-01-18 |
 | 4. Error Analysis System | 3/3 | Complete | 2026-01-18 |
 | 5. Metrics Dashboard | 0/TBD | Not started | - |
-| 6. Expression Reconstruction Fixes | 0/TBD | Not started | - |
+| 6. Expression Reconstruction Fixes | 0/3 | Not started | - |
 | 7. Variable Declaration Fixes | 0/TBD | Not started | - |
 | 8. Control Flow Fixes | 0/TBD | Not started | - |
 | 9. Validation Reporting | 0/TBD | Not started | - |
