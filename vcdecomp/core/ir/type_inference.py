@@ -13,9 +13,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 from enum import Enum
+import logging
 
 from .ssa import SSAFunction, SSAValue, SSAInstruction
 from ..headers.database import HeaderDatabase, get_header_database
+from ..disasm import opcodes
+
+logger = logging.getLogger(__name__)
 
 
 class TypeSource(Enum):
@@ -25,6 +29,7 @@ class TypeSource(Enum):
     STRUCT_ACCESS = "struct_access"
     CONSTANT_VALUE = "constant_value"
     ASSIGNMENT = "assignment"
+    SSA_INITIAL = "ssa_initial"  # From stack_lifter opcode inference
 
 
 @dataclass
@@ -190,6 +195,93 @@ class TypeInferenceEngine:
 
         # Resolve final types
         return self._resolve_all_types()
+
+    def integrate_with_ssa_values(self) -> None:
+        """
+        Two-pass integration: collect initial types from SSA, refine via dataflow, write back.
+
+        This method:
+        1. Collects initial types from SSA value.value_type fields (from stack_lifter)
+        2. Runs full type inference with dataflow propagation
+        3. Writes refined types back to SSA value.value_type fields
+
+        The integration uses SSA initial types as evidence with confidence 0.85
+        (lower than conversions 0.99 but higher than propagation 0.70).
+        """
+        # Phase 1: Collect initial types from SSA values as evidence
+        self._collect_ssa_initial_types()
+
+        # Phase 2: Run full inference (includes instructions, function calls, propagation)
+        inferred_types = self.infer_types()
+
+        # Phase 3: Write refined types back to SSA values
+        self._update_ssa_value_types(inferred_types)
+
+    def _collect_ssa_initial_types(self) -> None:
+        """Collect initial types from SSA value.value_type fields as evidence."""
+        for block_id, instructions in self.ssa.instructions.items():
+            for inst in instructions:
+                # Collect types from outputs
+                for value in inst.outputs:
+                    if value and value.name and value.value_type != opcodes.ResultType.UNKNOWN:
+                        # Map ResultType enum to type string
+                        type_str = self._result_type_to_string(value.value_type)
+                        if type_str:
+                            info = self._get_or_create_type_info(value.name)
+                            info.add_evidence(TypeEvidence(
+                                confidence=0.85,  # Higher than propagation, lower than conversions
+                                source=TypeSource.SSA_INITIAL,
+                                inferred_type=type_str,
+                                reason=f'Initial type from stack_lifter: {value.value_type.name}'
+                            ))
+
+    def _result_type_to_string(self, result_type: opcodes.ResultType) -> Optional[str]:
+        """Map opcodes.ResultType enum to type string."""
+        mapping = {
+            opcodes.ResultType.VOID: None,  # Don't add evidence for void
+            opcodes.ResultType.CHAR: 'char',
+            opcodes.ResultType.SHORT: 'short',
+            opcodes.ResultType.INT: 'int',
+            opcodes.ResultType.FLOAT: 'float',
+            opcodes.ResultType.DOUBLE: 'double',
+            opcodes.ResultType.POINTER: 'void*',  # Generic pointer
+            opcodes.ResultType.UNKNOWN: None,  # Don't add evidence for unknown
+        }
+        return mapping.get(result_type)
+
+    def _update_ssa_value_types(self, inferred_types: Dict[str, str]) -> None:
+        """Write refined types back to SSA value.value_type fields."""
+        # Reverse mapping: type string to ResultType enum
+        type_to_enum = {
+            'char': opcodes.ResultType.CHAR,
+            'short': opcodes.ResultType.SHORT,
+            'int': opcodes.ResultType.INT,
+            'float': opcodes.ResultType.FLOAT,
+            'double': opcodes.ResultType.DOUBLE,
+        }
+
+        for block_id, instructions in self.ssa.instructions.items():
+            for inst in instructions:
+                for value in inst.outputs:
+                    if value and value.name and value.name in inferred_types:
+                        inferred_type_str = inferred_types[value.name]
+                        initial_type = value.value_type
+
+                        # Map string type to ResultType enum
+                        refined_type = type_to_enum.get(inferred_type_str, opcodes.ResultType.UNKNOWN)
+
+                        # Update if different and refined is more specific
+                        if refined_type != initial_type and refined_type != opcodes.ResultType.UNKNOWN:
+                            # Get confidence for logging
+                            info = self.type_info.get(value.name)
+                            confidence = info.evidence[-1].confidence if info and info.evidence else 0.0
+
+                            logger.info(
+                                f"Type inference refined {value.name}: "
+                                f"{initial_type.name} → {refined_type.name} "
+                                f"(confidence {confidence:.2f})"
+                            )
+                            value.value_type = refined_type
 
     def _get_or_create_type_info(self, var_name: str) -> TypeInfo:
         """Get or create TypeInfo for a variable."""
