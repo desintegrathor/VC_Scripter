@@ -139,10 +139,12 @@ Plans:
   3. Arrays are declared with correct dimensions and types
   4. Struct field access reconstructs member names correctly
   5. Function parameters have correct types and names in signatures
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD during planning
+- [ ] 07-01-PLAN.md — Stack Lifter and Type Inference Integration
+- [ ] 07-02-PLAN.md — Variable Declaration with Refined Types
+- [ ] 07-03-PLAN.md — Global Variable Detection and Naming
 
 ### Phase 8: Control Flow Fixes
 **Goal**: Control flow patterns emit compilable, correct C code
@@ -188,6 +190,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Error Analysis System | 3/3 | Complete | 2026-01-18 |
 | 5. Metrics Dashboard | 0/TBD | Skipped | - |
 | 6. Expression Reconstruction Fixes | 7/7 | Partial | 2026-01-18 |
-| 7. Variable Declaration Fixes | 0/TBD | Not started | - |
+| 7. Variable Declaration Fixes | 0/3 | Not started | - |
 | 8. Control Flow Fixes | 0/TBD | Not started | - |
 | 9. Validation Reporting | 0/TBD | Not started | - |
