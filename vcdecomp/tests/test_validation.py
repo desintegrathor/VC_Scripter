@@ -26,6 +26,7 @@ from vcdecomp.core.headers.detector import generate_include_block
 from vcdecomp.core.ir.global_resolver import GlobalResolver
 from vcdecomp.validation.validation_types import ValidationVerdict
 from vcdecomp.validation.difference_types import DifferenceCategory
+from vcdecomp.validation.error_analyzer import categorize_compilation_errors
 
 
 # Test corpus with exact case-sensitive paths (verified on filesystem)
@@ -150,23 +151,9 @@ def test_decompilation_validation(test_id, scr_path, original_c, validation_orch
         print("COMPILATION ERROR ANALYSIS")
         print("="*80)
 
-        # Group errors by type for programmatic analysis
-        error_types = {}
-        for error in result.compilation_result.errors:
-            # Extract error type from message (heuristic)
-            msg_lower = error.message.lower()
-            if "syntax" in msg_lower or "expected" in msg_lower:
-                error_type = "syntax"
-            elif "undefined" in msg_lower or "undeclared" in msg_lower:
-                error_type = "undefined"
-            elif "type" in msg_lower:
-                error_type = "type"
-            elif "include" in msg_lower or "cannot open" in msg_lower:
-                error_type = "include"
-            else:
-                error_type = "other"
-
-            error_types[error_type] = error_types.get(error_type, 0) + 1
+        # Categorize errors using error_analyzer module
+        categorized_errors = categorize_compilation_errors(result.compilation_result.errors)
+        error_types = {error_type: len(errors) for error_type, errors in categorized_errors.items()}
 
         print(f"\nError breakdown: {error_types}")
         print(f"Total errors: {len(result.compilation_result.errors)}")
