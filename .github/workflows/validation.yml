@@ -10,16 +10,19 @@ jobs:
   validate:
     runs-on: [self-hosted, windows, x64]
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: cmd
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Setup Python 3.13
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-        cache: 'pip'
+      shell: cmd
+      run: |
+        set PATH=C:\Python313;C:\Python313\Scripts;%PATH%
+        python --version
 
     - name: Install dependencies
       run: |
