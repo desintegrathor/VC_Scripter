@@ -1,0 +1,12 @@
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 3: NOT ORPHANED (has 1 predecessors: [1])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_3
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 46: NOT ORPHANED (has 1 predecessors: [44])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_46
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 48: NOT ORPHANED (has 1 predecessors: [46])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_48
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 3: NOT ORPHANED (has 1 predecessors: [1])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_3
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 46: NOT ORPHANED (has 1 predecessors: [44])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_46
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 48: NOT ORPHANED (has 1 predecessors: [46])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_48

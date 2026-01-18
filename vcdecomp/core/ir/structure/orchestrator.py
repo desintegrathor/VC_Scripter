@@ -770,15 +770,20 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (invalid or not in CFG)")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (outside function scope)")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
                         if not predecessors:
                             is_orphaned_target = True
+                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (no predecessors)")
+                        else:
+                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: NOT ORPHANED (has {len(predecessors)} predecessors: {predecessors})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         if is_back_edge:
@@ -786,6 +791,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         elif is_loop_exit:
                             lines.append(f"{base_indent}if ({cond_text}) break;  // exit loop @{target}")
                         else:
+                            logger.warning(f"[PATTERN1_DEBUG] EMITTING CONDITIONAL GOTO: block_{target_block}")
                             lines.append(f"{base_indent}if ({cond_text}) goto block_{target_block}; // @{target}")
                 else:
                     # Unconditional jump
@@ -798,15 +804,20 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (invalid or not in CFG)")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (outside function scope)")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
                         if not predecessors:
                             is_orphaned_target = True
+                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (no predecessors)")
+                        else:
+                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: NOT ORPHANED (has {len(predecessors)} predecessors: {predecessors})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         # FIX 3C: Skip goto if target is already emitted (unreachable code)
@@ -816,6 +827,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                             elif is_loop_exit:
                                 lines.append(f"{base_indent}break;  // exit loop @{target}")
                             else:
+                                logger.warning(f"[PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_{target_block}")
                                 lines.append(f"{base_indent}goto block_{target_block}; // @{target}")
 
     # Close any remaining active loops
