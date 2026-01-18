@@ -139,7 +139,7 @@ Plans:
   3. Arrays are declared with correct dimensions and types
   4. Struct field access reconstructs member names correctly
   5. Function parameters have correct types and names in signatures
-**Plans**: 6 plans
+**Plans**: 7 plans
 
 Plans:
 - [ ] 07-01-PLAN.md — Stack Lifter and Type Inference Integration
@@ -147,7 +147,8 @@ Plans:
 - [ ] 07-03-PLAN.md — Global Variable Detection and Naming
 - [ ] 07-04-PLAN.md — Array Dimension Reconstruction
 - [ ] 07-05-PLAN.md — Struct Field Access Reconstruction
-- [ ] 07-06-PLAN.md — Function Signature Reconstruction
+- [ ] 07-06a-PLAN.md — Function Signature Reconstruction
+- [ ] 07-06b-PLAN.md — Phase 7 Complete Validation
 
 ### Phase 8: Control Flow Fixes
 **Goal**: Control flow patterns emit compilable, correct C code
