@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 7 of 9 (Variable Declaration Fixes)
-Plan: 6 of 6 (Function signature reconstruction)
-Status: Phase 7 COMPLETE (6/6 plans executed)
-Last activity: 2026-01-18 - Completed 07-06a-PLAN.md (function signature reconstruction with parameter types and names)
+Plan: 7 of 7 (Gap closure - confidence scoring and unreachable code)
+Status: Phase 7 COMPLETE (7/7 plans executed including gap closure)
+Last activity: 2026-01-18 - Completed 07-07-PLAN.md (gap closure for Pattern 2 and unreachable code)
 
-Progress: [█████████░] 56% (20/36 phase plans complete)
+Progress: [█████████░] 58% (21/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 9.5 min
-- Total execution time: 3.2 hours
-- Latest plans (07-01/02/03/04/05/06a): 64min + 13min + 14min + 11min + 7min + 5min = 114min (type system completion)
+- Total plans completed: 21
+- Average duration: 10.9 min
+- Total execution time: 3.8 hours (232 minutes)
+- Latest plans (07-01/02/03/04/05/06a/07): 64min + 13min + 14min + 11min + 7min + 5min + 59min = 173min (type system + gap closure)
 
 **By Phase:**
 
@@ -33,14 +33,15 @@ Progress: [█████████░] 56% (20/36 phase plans complete)
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
 | 06    | 7/7   | 83min | 11.9min  |
-| 07    | 6/6   | 114min | 19.0min  |
+| 07    | 7/7   | 173min | 24.7min  |
 
 **Recent Trend:**
-- Last 6 plans: 07-01 (64min), 07-02 (13min), 07-03 (14min), 07-04 (11min), 07-05 (7min), 07-06a (5min)
-- Phase 7 progress: 6 plans in 114min, avg 19.0min/plan (velocity stabilized)
+- Last 7 plans: 07-01 (64min), 07-02 (13min), 07-03 (14min), 07-04 (11min), 07-05 (7min), 07-06a (5min), 07-07 (59min)
+- Phase 7 progress: 7 plans in 173min, avg 24.7min/plan (including gap closure)
 - 07-01 lengthy (64min) due to root cause investigation and two-pass integration
-- 07-02/03/04/05/06a fast (13min, 14min, 11min, 7min, 5min) - building on established patterns, accelerating
-- **Phase 7 COMPLETE** - All variable declaration fixes implemented
+- 07-02/03/04/05/06a fast (13min, 14min, 11min, 7min, 5min) - building on established patterns
+- 07-07 gap closure (59min) - confidence scoring implementation and validation
+- **Phase 7 COMPLETE** - All variable declaration fixes + gap closure implemented
 
 *Updated after each plan completion*
 
@@ -222,25 +223,45 @@ Recent decisions affecting current work:
 | Three-tier declaration priority | Multi-dim > 1D > scalar ensures arrays formatted correctly before fallback | 07-04 |
 | Accept partial success, document limitations | Infrastructure complete but global array detection needs future work (documented in ARRAY_RECONSTRUCTION.md) | 07-04 |
 
+**From 07-07 execution (Gap Closure):**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Disable function signature struct inference | Variables passed to functions are frequently reused for different purposes (stack reuse pattern) - confidence 0.9→0.6→0.4→disabled to prevent false positives | 07-07 |
+| Opcode-based types have HIGHEST priority | IADD, FADD, IMUL provide concrete evidence that trumps all struct inferences - prevents Pattern 2 type mismatches | 07-07 |
+| LOW confidence structs (<0.5) ignored | Only HIGH (0.8+) and MEDIUM (0.5-0.8) confidence struct types applied - weak hints fall through to safe defaults | 07-07 |
+| Silently omit unreachable code | DOS compiler crashes on dead code - detect returns and stop emitting subsequent statements for clean output | 07-07 |
+| Accept 60% Pattern 2 reduction | Remaining instances from _struct_ranges (field access) tracked for Phase 8 - significant improvement achieved | 07-07 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
+**Phase 7 (Variable Declaration Fixes) - COMPLETE:**
+- 7 plans complete: stack lifter integration, priority refinement, global naming, arrays, structs, signatures, gap closure
+- Pattern 2 (type mismatches): PARTIALLY FIXED - 60% reduction via confidence scoring
+  - 07-07: Disabled function signature struct inference (too many false positives)
+  - Opcode-based types (IADD→int, FADD→float) now highest priority
+  - Remaining instances from _struct_ranges (field access heuristics) tracked for Phase 8
+- Unreachable code after returns: FIXED - silently omitted for DOS compiler compatibility
+- Confidence scoring infrastructure: COMPLETE - StructTypeInfo with 3-tier system
+- **Phase 7 complete** - Type system mature, compilation compatibility improved
+- Next: Phase 8 - Advanced Type System Features (or final gap closure for remaining Pattern 2)
+
 **Phase 6 (Expression Reconstruction Fixes) - COMPLETE:**
 - 7 plans complete: baseline, attempts, validation, diagnostic, fixes, root-cause analysis, implementation
 - Pattern 3 (missing return values): FIXED - synthesize `return 0;` for non-void functions (~15 instances)
 - Pattern 5 (undeclared variables): FIXED - removed overly restrictive filter in orchestrator.py
-- Pattern 2 (type mismatches): DEFERRED to Phase 7 - requires stack_lifter.py refactoring (HIGH complexity)
+- Pattern 2 (type mismatches): ADDRESSED in Phase 7 (60% reduction)
 - **Pattern 1 (undefined goto labels): FIXED** - 98% reduction (50 instances → 1 edge case)
   - 06-06b: Implemented goto_targets tracking and multi-point label emission
   - Test1 fully fixed: blocks 3, 46, 48 now have labels (0/3 undefined)
   - Test2 no regression: 0/0 undefined gotos
   - Test3 vastly improved: multiple → 1 edge case (cross-function goto, different root cause)
   - Fix: Track goto_targets set, emit labels at switch/if/regular block headers
-- **Phase 6 complete** - 3/6 patterns fixed, ready for Phase 7
-- Next: Phase 7 - Type System Fixes (Pattern 2 type mismatches, cross-function goto handling)
+- **Phase 6 complete** - 3/6 patterns fixed, Pattern 2 addressed in Phase 7
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
@@ -440,3 +461,10 @@ Next: Phase 8 - Advanced Type System Features (or Phase 7 wrap-up verification)
 - `vcdecomp/core/ir/structure/orchestrator.py` (+11 lines, -14 lines) - Type inference before signature generation (07-06a)
 - `.planning/phases/07-variable-declaration-fixes/07-06a-SUMMARY.md` - Plan completion summary (07-06a)
 - `.test_artifacts_07-06a/FUNCTION_SIGNATURE_VALIDATION.md` - Function signature validation report (07-06a)
+
+**Phase 07 Plan 07 complete (Gap Closure):**
+- `vcdecomp/core/ir/structure/analysis/variables.py` (+66 lines, -34 lines) - StructTypeInfo with confidence scoring, opcode-first priority, function signature inference disabled (07-07)
+- `vcdecomp/core/ir/structure/emit/block_formatter.py` (+27 lines, -1 line) - Unreachable code detection and elimination after returns (07-07)
+- `.planning/phases/07-variable-declaration-fixes/07-07-PLAN.md` - Gap closure plan for Pattern 2 and unreachable code (07-07)
+- `.planning/phases/07-variable-declaration-fixes/07-07-SUMMARY.md` - Comprehensive gap closure summary with deviations (07-07)
+- `.planning/phases/07-variable-declaration-fixes/07-07-VALIDATION.md` - Validation report with before/after analysis (07-07)
