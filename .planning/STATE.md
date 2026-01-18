@@ -9,20 +9,20 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: COMPLETE (all 7 plans executed)
-Status: Phase 6 PARTIAL (2/5 success criteria verified, Pattern 2 deferred to Phase 7)
-Last activity: 2026-01-18 - Phase 6 complete, Pattern 1 fix verified working (4/4 gotos have labels)
+Phase: 7 of 9 (Variable Declaration Fixes)
+Plan: 3 of 6 (Global variable fixes)
+Status: Phase 7 IN PROGRESS (3/6 plans executed)
+Last activity: 2026-01-18 - Completed 07-03-PLAN.md (global offset validation, save_info/SGI naming, type inference)
 
-Progress: [█████████░] 44% (16/36 phase plans complete)
+Progress: [█████████░] 47% (17/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
-- Average duration: 9.8 min
-- Total execution time: 2.6 hours
-- Latest plans (06-06a/b): 5min + 22min = 27min (diagnostic + fix)
+- Total plans completed: 17
+- Average duration: 10.1 min
+- Total execution time: 2.9 hours
+- Latest plans (07-01/02/03): 64min + 13min + 14min = 91min (type inference integration)
 
 **By Phase:**
 
@@ -33,12 +33,13 @@ Progress: [█████████░] 44% (16/36 phase plans complete)
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
 | 06    | 7/7   | 83min | 11.9min  |
+| 07    | 3/6   | 91min | 30.3min  |
 
 **Recent Trend:**
-- Last 4 plans: 06-04 (29min), 06-05 (7min), 06-06a (5min), 06-06b (22min)
-- Phase 6 complete: 7 plans in 83min, avg 11.9min/plan
-- Diagnostic methodology (06-06a → 06-06b): Evidence-based fixes more efficient than speculation
-- 06-06b successful fix implementation (22min) - 98% reduction in undefined goto labels
+- Last 4 plans: 06-06b (22min), 07-01 (64min), 07-02 (13min), 07-03 (14min)
+- Phase 7 progress: 3 plans in 91min, avg 30.3min/plan (higher due to complex type inference work)
+- 07-01 lengthy (64min) due to root cause investigation and two-pass integration
+- 07-02/03 fast (13min, 14min) - building on established patterns
 
 *Updated after each plan completion*
 
@@ -189,6 +190,16 @@ Recent decisions affecting current work:
 | Cross-function goto edge case deferred | Block 88 in test3 is cross-function goto (different root cause) - 1 instance vs 50 baseline, acceptable for Phase 6 | 06-06b |
 | Accept 98% reduction as success | Pattern 1 fix reduces undefined gotos from ~50 to 1 - edge case documented for Phase 7 investigation | 06-06b |
 
+**From 07-03 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| DWORD-to-BYTE conversion validation | Add debug logging and 4-byte alignment assertions - critical bug identified in RESEARCH.md (offset confusion) | 07-03 |
+| Extend type inference to GST | Store operations also reveal global types, not just load operations (GCP/GLD/GADR) | 07-03 |
+| SGI constant resolution from headers | SGI constants are game engine globals defined in sc_def.h - separate method improves readability | 07-03 |
+| Source tracking for global names | Add source field to GlobalUsage for debugging - know where each name came from (save_info, SGI, synthetic) | 07-03 |
+| INFO logging for user-facing names | save_info and SGI names logged at INFO (user benefit), synthetic at DEBUG (internal) | 07-03 |
+
 ### Pending Todos
 
 None yet.
@@ -251,10 +262,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T11:54:16Z (Phase 6 complete - Pattern 1 fix implemented)
-Stopped at: Completed 06-06b-PLAN.md (Pattern 1 fix: 98% reduction in undefined goto labels)
+Last session: 2026-01-18T13:51:38Z (Phase 7 Plan 03 complete - Global variable fixes)
+Stopped at: Completed 07-03-PLAN.md (Global offset validation, save_info/SGI naming, type inference integration)
 Resume file: None
-Next: Phase 7 - Type System Fixes (Pattern 2 type mismatches, cross-function goto detection)
+Next: Phase 7 Plan 04 - Array reconstruction (detect multi-dimensional arrays, proper sizing)
 
 ## Technical Context
 
@@ -383,3 +394,8 @@ Next: Phase 7 - Type System Fixes (Pattern 2 type mismatches, cross-function got
 **Phase 06 Plan 06b complete:**
 - `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 1 fix: goto_targets tracking and label emission (lines 352, 357, 428-429, 573-574, 688-689, 792, 824) (06-06b)
 - `.planning/phases/06-expression-reconstruction-fixes/PATTERN1_FIX_VALIDATION.md` - Comprehensive validation results (206 lines) (06-06b)
+
+**Phase 07 Plan 03 complete:**
+- `vcdecomp/core/ir/global_resolver.py` (+182 lines, -50 lines) - Global offset validation, GST type inference, _resolve_sgi_constants(), source tracking (07-03)
+- `.planning/phases/07-variable-declaration-fixes/07-03-SUMMARY.md` - Plan completion summary (07-03)
+- `.test_artifacts_07-03_test1_decompiled.c` - Test output showing save_info names and SGI constants (07-03)
