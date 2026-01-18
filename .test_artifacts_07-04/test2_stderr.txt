@@ -1,0 +1,1 @@
+Skipping orphaned block 2 at address 13 in function func_0010 - no predecessors (unreachable code)
