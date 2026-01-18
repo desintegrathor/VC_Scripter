@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 7 of 9 (Variable Declaration Fixes)
-Plan: 3 of 6 (Global variable fixes)
-Status: Phase 7 IN PROGRESS (3/6 plans executed)
-Last activity: 2026-01-18 - Completed 07-03-PLAN.md (global offset validation, save_info/SGI naming, type inference)
+Plan: 5 of 6 (Struct field reconstruction)
+Status: Phase 7 IN PROGRESS (5/6 plans executed)
+Last activity: 2026-01-18 - Completed 07-05-PLAN.md (struct field lookup from headers, 44 structs with 287 fields)
 
-Progress: [█████████░] 47% (17/36 phase plans complete)
+Progress: [█████████░] 53% (19/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 10.1 min
-- Total execution time: 2.9 hours
-- Latest plans (07-01/02/03): 64min + 13min + 14min = 91min (type inference integration)
+- Total plans completed: 19
+- Average duration: 9.7 min
+- Total execution time: 3.1 hours
+- Latest plans (07-01/02/03/04/05): 64min + 13min + 14min + 11min + 7min = 109min (type system completion)
 
 **By Phase:**
 
@@ -33,13 +33,13 @@ Progress: [█████████░] 47% (17/36 phase plans complete)
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
 | 06    | 7/7   | 83min | 11.9min  |
-| 07    | 3/6   | 91min | 30.3min  |
+| 07    | 5/6   | 109min | 21.8min  |
 
 **Recent Trend:**
-- Last 4 plans: 06-06b (22min), 07-01 (64min), 07-02 (13min), 07-03 (14min)
-- Phase 7 progress: 3 plans in 91min, avg 30.3min/plan (higher due to complex type inference work)
+- Last 5 plans: 07-01 (64min), 07-02 (13min), 07-03 (14min), 07-04 (11min), 07-05 (7min)
+- Phase 7 progress: 5 plans in 109min, avg 21.8min/plan (improving velocity)
 - 07-01 lengthy (64min) due to root cause investigation and two-pass integration
-- 07-02/03 fast (13min, 14min) - building on established patterns
+- 07-02/03/04/05 fast (13min, 14min, 11min, 7min) - building on established patterns, accelerating
 
 *Updated after each plan completion*
 
@@ -200,6 +200,27 @@ Recent decisions affecting current work:
 | Source tracking for global names | Add source field to GlobalUsage for debugging - know where each name came from (save_info, SGI, synthetic) | 07-03 |
 | INFO logging for user-facing names | save_info and SGI names logged at INFO (user benefit), synthetic at DEBUG (internal) | 07-03 |
 
+**From 07-05 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Parse struct definitions from headers instead of hardcoding | Headers are ground truth from SDK, automatic sync with engine updates, no manual maintenance | 07-05 |
+| Use regex for typedef struct parsing | Simple pattern matching sufficient for well-formatted headers, no need for full C parser | 07-05 |
+| 4-byte alignment for field offsets | Vietcong engine uses 32-bit architecture with 4-byte struct alignment | 07-05 |
+| Integrate via get_field_at_offset() | Central function used by FieldAccessTracker and expr.py - one change propagates everywhere | 07-05 |
+| Priority: HeaderDatabase → Hardcoded → Fallback | Dynamic headers first, legacy hardcoded structures as safety net, generic field_N as last resort | 07-05 |
+
+**From 07-04 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Loop bound detection from comparison instructions | LES, LEQ, ICL, ICLE opcodes provide array dimension evidence from loop patterns | 07-04 |
+| MUL+ADD pattern for multi-dimensional arrays | arr[i*width + j] is canonical multi-dimensional pattern in C bytecode | 07-04 |
+| Confidence scoring with TODO comments | Uncertain bounds (< 0.70) flagged for manual review prevents silent errors | 07-04 |
+| Target local variables for multi-dim detection | Initial implementation focuses on local arrays (base_var.startswith("local_")) | 07-04 |
+| Three-tier declaration priority | Multi-dim > 1D > scalar ensures arrays formatted correctly before fallback | 07-04 |
+| Accept partial success, document limitations | Infrastructure complete but global array detection needs future work (documented in ARRAY_RECONSTRUCTION.md) | 07-04 |
+
 ### Pending Todos
 
 None yet.
@@ -262,10 +283,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T13:51:38Z (Phase 7 Plan 03 complete - Global variable fixes)
-Stopped at: Completed 07-03-PLAN.md (Global offset validation, save_info/SGI naming, type inference integration)
+Last session: 2026-01-18T14:01:56Z (Phase 7 Plan 04 complete - Array reconstruction)
+Stopped at: Completed 07-04-PLAN.md (Array reconstruction, loop bounds, multi-dimensional detection infrastructure)
 Resume file: None
-Next: Phase 7 Plan 04 - Array reconstruction (detect multi-dimensional arrays, proper sizing)
+Next: Phase 7 Plan 05 - Struct field naming and access pattern inference
 
 ## Technical Context
 
@@ -399,3 +420,15 @@ Next: Phase 7 Plan 04 - Array reconstruction (detect multi-dimensional arrays, p
 - `vcdecomp/core/ir/global_resolver.py` (+182 lines, -50 lines) - Global offset validation, GST type inference, _resolve_sgi_constants(), source tracking (07-03)
 - `.planning/phases/07-variable-declaration-fixes/07-03-SUMMARY.md` - Plan completion summary (07-03)
 - `.test_artifacts_07-03_test1_decompiled.c` - Test output showing save_info names and SGI constants (07-03)
+
+**Phase 07 Plan 04 complete:**
+- `vcdecomp/core/ir/structure/analysis/value_trace.py` (+183 lines) - Multi-dimensional array detection, loop bound tracing, MUL+ADD pattern recognition (07-04)
+- `vcdecomp/core/ir/structure/analysis/variables.py` (+48 lines, -7 lines) - Multi-dim array declaration formatting, three-tier priority (07-04)
+- `.planning/phases/07-variable-declaration-fixes/07-04-SUMMARY.md` - Plan completion summary (07-04)
+- `.test_artifacts_07-04/ARRAY_RECONSTRUCTION.md` - Array detection validation report (07-04)
+
+**Phase 07 Plan 05 complete:**
+- `vcdecomp/core/headers/database.py` (+202 lines) - Struct field parsing, FieldInfo dataclass, field lookup methods (07-05)
+- `vcdecomp/core/structures.py` (+20 lines, -1 line) - HeaderDatabase integration with priority system (07-05)
+- `.planning/phases/07-variable-declaration-fixes/07-05-SUMMARY.md` - Plan completion summary (07-05)
+- `.test_artifacts_07-05/STRUCT_FIELD_RECONSTRUCTION.md` - Struct field validation report with 44 structs, 287 fields (07-05)
