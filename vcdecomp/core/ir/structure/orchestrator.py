@@ -762,20 +762,34 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     # FIX 1B: Skip rendering if jumping to switch header
                     # FIX (Pattern 1 - 06-02): Skip goto to orphaned blocks (unreachable blocks with no predecessors)
                     # Check if target block exists and is reachable
+
+                    # DEBUG (06-04): Log goto decision for diagnosis
+                    logger.warning(f"[GOTO DEBUG] Conditional jump to block {target_block} in function {func_block_ids[:5]}...")
+                    logger.warning(f"[GOTO DEBUG] Target in CFG: {target_block in cfg.blocks}, Target in func: {target_block in func_block_ids}")
+
                     is_orphaned_target = False
                     # Check if target_block is valid (>= 0) and exists in CFG
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: not in CFG or negative")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: outside function scope")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} predecessors: {predecessors}")
                         if not predecessors:
                             is_orphaned_target = True
+                            logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: no predecessors")
+
+                    if is_orphaned_target:
+                        logger.warning(f"[GOTO DEBUG] SKIPPING goto to block {target_block} - marked orphaned")
+                    else:
+                        logger.warning(f"[GOTO DEBUG] EMITTING goto to block {target_block} - not orphaned (is_switch={is_switch_header_jump})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         if is_back_edge:
@@ -789,20 +803,34 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     # FIX 1B: Skip rendering if jumping to switch header
                     # FIX (Pattern 1 - 06-02): Skip goto to orphaned blocks
                     # Check if target block exists and is reachable
+
+                    # DEBUG (06-04): Log goto decision for diagnosis
+                    logger.warning(f"[GOTO DEBUG] Unconditional jump to block {target_block} in function {func_block_ids[:5]}...")
+                    logger.warning(f"[GOTO DEBUG] Target in CFG: {target_block in cfg.blocks}, Target in func: {target_block in func_block_ids}")
+
                     is_orphaned_target = False
                     # Check if target_block is valid (>= 0) and exists in CFG
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: not in CFG or negative")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: outside function scope")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
+                        logger.warning(f"[GOTO DEBUG] Block {target_block} predecessors: {predecessors}")
                         if not predecessors:
                             is_orphaned_target = True
+                            logger.warning(f"[GOTO DEBUG] Block {target_block} marked orphaned: no predecessors")
+
+                    if is_orphaned_target:
+                        logger.warning(f"[GOTO DEBUG] SKIPPING goto to block {target_block} - marked orphaned")
+                    else:
+                        logger.warning(f"[GOTO DEBUG] EMITTING goto to block {target_block} - not orphaned (is_switch={is_switch_header_jump})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         # FIX 3C: Skip goto if target is already emitted (unreachable code)

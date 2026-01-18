@@ -387,21 +387,34 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # (e.g., semantic names that were resolved but never registered)
     from ...expr import format_block_expressions
     import re
+    import logging
+    logger = logging.getLogger(__name__)
+
+    logger.warning(f"[VAR DEBUG] Starting regex variable extraction for function with {len(func_block_ids)} blocks")
+
     for block_id in func_block_ids:
         block_exprs = format_block_expressions(ssa_func, block_id, formatter=formatter)
         for expr in block_exprs:
             # Extract address-of references: &varname
             # These are the most common cause of undeclared variables
             addr_of_vars = re.findall(r'&(\w+)', expr.text)
+            if addr_of_vars:
+                logger.warning(f"[VAR DEBUG] Found addr_of variables: {addr_of_vars} in expression: {expr.text[:80]}")
+
             for var_name in addr_of_vars:
+                logger.warning(f"[VAR DEBUG] Processing variable '{var_name}'")
+
                 # Skip if already declared
                 if var_name in var_types:
+                    logger.warning(f"[VAR DEBUG] Variable '{var_name}' already in var_types as {var_types[var_name]}")
                     continue
                 # Skip param_, data_, local_ (should be handled elsewhere)
                 if var_name.startswith('param_') or var_name.startswith('data_'):
+                    logger.warning(f"[VAR DEBUG] Skipping '{var_name}' - param/data prefix")
                     continue
                 # Skip constants and keywords
                 if var_name.isupper() or var_name.isdigit():
+                    logger.warning(f"[VAR DEBUG] Skipping '{var_name}' - uppercase or digit")
                     continue
 
                 # This is an undeclared variable that needs declaration
@@ -409,14 +422,23 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 var_type = "int"  # Default
                 if var_name in inferred_struct_types:
                     var_type = inferred_struct_types[var_name]
+                    logger.warning(f"[VAR DEBUG] Found '{var_name}' in inferred_struct_types: {var_type}")
                 # Check if this is a vector/array-like name pattern
                 elif var_name in ('vec', 'pos', 'rot', 'dir'):
                     var_type = "s_SC_vector"  # Common vector struct
+                    logger.warning(f"[VAR DEBUG] Inferred type s_SC_vector for '{var_name}'")
                 elif 'enum' in var_name.lower():
                     var_type = "s_SC_MP_EnumPlayers"  # Common enum struct
+                    logger.warning(f"[VAR DEBUG] Inferred type s_SC_MP_EnumPlayers for '{var_name}'")
+                else:
+                    logger.warning(f"[VAR DEBUG] Defaulted to int for '{var_name}'")
 
                 # Add to var_types
                 var_types[var_name] = var_type
+                logger.warning(f"[VAR DEBUG] Added '{var_name}' to var_types as {var_type}")
+
+    logger.warning(f"[VAR DEBUG] After regex extraction: var_types has {len(var_types)} variables")
+    logger.warning(f"[VAR DEBUG] var_types keys: {sorted(var_types.keys())}")
 
     # P0.3: Generate declarations (arrays first, then regular variables)
     declarations = []
@@ -426,11 +448,15 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         if var_name in local_arrays:
             element_type, array_size = local_arrays[var_name]
             declarations.append(f"{element_type} {var_name}[{array_size}]")
+            logger.warning(f"[VAR DEBUG] Generated array declaration: {element_type} {var_name}[{array_size}]")
 
     # Then, declare regular variables (skip arrays)
     for var_name in sorted(var_types.keys()):
         if var_name not in local_arrays:
             var_type = var_types[var_name]
             declarations.append(f"{var_type} {var_name}")
+            logger.warning(f"[VAR DEBUG] Generated declaration: {var_type} {var_name}")
+
+    logger.warning(f"[VAR DEBUG] Total declarations generated: {len(declarations)}")
 
     return declarations
