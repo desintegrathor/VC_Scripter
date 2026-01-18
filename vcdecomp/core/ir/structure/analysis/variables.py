@@ -7,6 +7,7 @@ from SSA function instructions and generating properly-typed declarations.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, Optional
 import logging
 
@@ -14,6 +15,15 @@ from ....disasm import opcodes
 from ...ssa import SSAFunction
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ArrayDims:
+    """Information about array dimensions detected from usage patterns."""
+    dimensions: List[int]  # List of dimension sizes [rows, cols] or [size] for 1D
+    element_type: str  # Element type (int, float, struct name, etc.)
+    element_size: int  # Size in bytes of each element
+    confidence: float  # Confidence in the dimension calculation (0.0-1.0)
 
 
 def result_type_to_c_type(result_type: opcodes.ResultType) -> Optional[str]:
@@ -42,6 +52,134 @@ def result_type_to_c_type(result_type: opcodes.ResultType) -> Optional[str]:
     return c_type
 
 
+def _is_mul_add_pattern(inst) -> Tuple[bool, Optional[int], Optional[str], Optional[str]]:
+    """
+    Detect arr[i*width + j] pattern for multi-dimensional arrays.
+
+    Pattern: ADD(MUL(index1, const_width), index2)
+    Example: i*4 + j where i=[0,3), j=[0,4) → arr[3][4]
+
+    Args:
+        inst: SSA instruction to check
+
+    Returns:
+        Tuple of (is_pattern, stride, outer_index_var, inner_index_var)
+    """
+    if inst.mnemonic != "ADD" or len(inst.inputs) < 2:
+        return (False, None, None, None)
+
+    left = inst.inputs[0]
+    right = inst.inputs[1]
+
+    # Check if left is MUL instruction
+    if left.producer_inst and left.producer_inst.mnemonic in {"MUL", "IMUL"}:
+        mul_inst = left.producer_inst
+        if len(mul_inst.inputs) >= 2:
+            mul_left = mul_inst.inputs[0]
+            mul_right = mul_inst.inputs[1]
+
+            # Extract stride (width) from MUL constant
+            stride = None
+            if hasattr(mul_right, 'constant_value') and mul_right.constant_value is not None:
+                stride = mul_right.constant_value
+            elif mul_right.alias and mul_right.alias.isdigit():
+                stride = int(mul_right.alias)
+
+            if stride:
+                outer_idx = mul_left.alias or mul_left.name
+                inner_idx = right.alias or right.name
+                return (True, stride, outer_idx, inner_idx)
+
+    return (False, None, None, None)
+
+
+def _detect_multidim_arrays(
+    ssa_func: SSAFunction,
+    func_block_ids: Set[int],
+    inferred_struct_types: Dict[str, str],
+    loop_bounds: Dict[str, 'BoundInfo']
+) -> Dict[str, ArrayDims]:
+    """
+    Detect multi-dimensional arrays from memory access patterns.
+
+    Pattern: arr[i*width + j] → arr[i][j] where stride reveals inner dimension
+
+    Args:
+        ssa_func: SSA function to analyze
+        func_block_ids: Block IDs in this function
+        inferred_struct_types: Struct types inferred from function calls
+        loop_bounds: Loop bound information from trace_loop_bounds()
+
+    Returns:
+        Dict mapping variable name to ArrayDims
+    """
+    multidim_arrays: Dict[str, ArrayDims] = {}
+
+    # Scan for multi-dimensional indexing patterns
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            # Look for memory access operations that might use multi-dim indexing
+            if inst.mnemonic in {"LST", "LLD", "SSP", "ASP"}:
+                # Check if offset calculation uses MUL+ADD pattern
+                if len(inst.inputs) >= 1:
+                    offset_val = inst.inputs[0]
+                    if offset_val.producer_inst:
+                        is_pattern, stride, outer_idx, inner_idx = _is_mul_add_pattern(offset_val.producer_inst)
+
+                        if is_pattern and stride and outer_idx and inner_idx:
+                            # Found multi-dimensional pattern!
+                            # Extract base variable name
+                            base_var = None
+                            if len(inst.inputs) >= 2:
+                                base_val = inst.inputs[1]
+                                if base_val.alias and base_val.alias.startswith("&"):
+                                    base_var = base_val.alias[1:]  # Strip &
+                                elif base_val.alias:
+                                    base_var = base_val.alias
+
+                            if base_var and base_var.startswith("local_"):
+                                # Calculate dimensions from stride and loop bounds
+                                # Stride = inner_dimension * element_size
+                                # Example: stride=16, element_size=4 → inner_dim=4
+
+                                # Get element type and size
+                                element_type = inferred_struct_types.get(base_var, "int")
+                                element_size = 4  # Default for int/float/pointer
+
+                                # Calculate inner dimension from stride
+                                inner_dim = stride // element_size
+
+                                # Get outer dimension from loop bounds
+                                outer_dim = None
+                                if outer_idx in loop_bounds:
+                                    outer_dim = loop_bounds[outer_idx].max_value + 1
+
+                                # Get inner dimension confirmation from loop bounds
+                                if inner_idx in loop_bounds:
+                                    loop_inner_dim = loop_bounds[inner_idx].max_value + 1
+                                    # Use loop bound if it matches stride calculation
+                                    if loop_inner_dim == inner_dim:
+                                        confidence = 0.95  # High confidence - stride and loop match
+                                    else:
+                                        # Prefer loop bound if available
+                                        inner_dim = loop_inner_dim
+                                        confidence = 0.85  # Medium-high confidence
+                                else:
+                                    confidence = 0.75  # Medium confidence - stride only
+
+                                if outer_dim and inner_dim:
+                                    multidim_arrays[base_var] = ArrayDims(
+                                        dimensions=[outer_dim, inner_dim],
+                                        element_type=element_type,
+                                        element_size=element_size,
+                                        confidence=confidence
+                                    )
+                                    logger.info(f"Multi-dimensional array detected: {base_var}[{outer_dim}][{inner_dim}] (confidence={confidence:.2f})")
+
+    return multidim_arrays
+
+
 def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter) -> List[str]:
     """
     Collect local variable declarations for a function.
@@ -59,6 +197,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # FIX #5: Track struct types inferred from function calls
     # Maps variable name -> struct type (e.g., "local_5" -> "s_SC_P_getinfo")
     inferred_struct_types: Dict[str, str] = {}
+
+    # FIX (07-04): Track loop bounds for array dimension inference
+    from .value_trace import trace_loop_bounds
+    loop_bounds = trace_loop_bounds(ssa_func)
+
+    # FIX (07-04): Track multi-dimensional arrays detected from indexing patterns
+    multidim_arrays: Dict[str, ArrayDims] = {}
 
     def process_value(value, default_type="int"):
         """Process a value to extract variable names and types."""
@@ -394,6 +539,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if semantic_name:
                     inferred_struct_types[semantic_name] = struct_type
 
+    # FIX (07-04): Detect multi-dimensional arrays from indexing patterns
+    multidim_arrays = _detect_multidim_arrays(
+        ssa_func,
+        func_block_ids,
+        inferred_struct_types,
+        loop_bounds
+    )
 
     # Process all instructions in function blocks
     for block_id in func_block_ids:
@@ -445,18 +597,44 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # Add to var_types
                 var_types[var_name] = var_type
 
-    # P0.3: Generate declarations (arrays first, then regular variables)
+    # FIX (07-04): Generate declarations (multi-dim arrays, 1D arrays, then regular variables)
     declarations = []
 
-    # First, declare arrays
+    # First, declare multi-dimensional arrays
     for var_name in sorted(var_types.keys()):
-        if var_name in local_arrays:
+        if var_name in multidim_arrays:
+            array_info = multidim_arrays[var_name]
+            dims = array_info.dimensions
+            element_type = array_info.element_type
+            confidence = array_info.confidence
+
+            # Format declaration based on number of dimensions
+            if len(dims) == 1:
+                decl = f"{element_type} {var_name}[{dims[0]}]"
+            elif len(dims) == 2:
+                decl = f"{element_type} {var_name}[{dims[0]}][{dims[1]}]"
+            elif len(dims) == 3:
+                decl = f"{element_type} {var_name}[{dims[0]}][{dims[1]}][{dims[2]}]"
+            else:
+                # Fallback for 4D+ (rare)
+                dim_str = "][".join(str(d) for d in dims)
+                decl = f"{element_type} {var_name}[{dim_str}]"
+
+            # Add TODO comment for low confidence
+            if confidence < 0.70:
+                decl += f" /* TODO: verify array size (confidence={confidence:.2f}) */"
+
+            declarations.append(decl)
+
+    # Second, declare 1D arrays (not in multidim_arrays)
+    for var_name in sorted(var_types.keys()):
+        if var_name in local_arrays and var_name not in multidim_arrays:
             element_type, array_size = local_arrays[var_name]
             declarations.append(f"{element_type} {var_name}[{array_size}]")
 
-    # Then, declare regular variables (skip arrays)
+    # Finally, declare regular variables (skip all arrays)
     for var_name in sorted(var_types.keys()):
-        if var_name not in local_arrays:
+        if var_name not in local_arrays and var_name not in multidim_arrays:
             var_type = var_types[var_name]
             declarations.append(f"{var_type} {var_name}")
 
