@@ -472,8 +472,13 @@ class GlobalResolver:
         if self.type_inference is None:
             self.type_inference = TypeInferenceEngine(self.ssa_func, aggressive=self.aggressive_typing)
 
-        # Run type inference
-        inferred_types = self.type_inference.infer_types()
+        # Run two-pass type inference integration (Phase 7-01 enhancement)
+        # This collects initial types from SSA values, runs dataflow propagation,
+        # and writes refined types back to SSA values before we use them
+        self.type_inference.integrate_with_ssa_values()
+
+        # Get inferred types dictionary for global variable matching
+        inferred_types = {name: info.final_type for name, info in self.type_inference.type_info.items() if info.final_type}
 
         # Match inferred types to global variables
         for block_id, ssa_instrs in self.ssa_func.instructions.items():
