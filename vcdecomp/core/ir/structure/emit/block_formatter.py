@@ -249,4 +249,30 @@ def _format_block_lines(
 
     # Regular block formatting
     expressions = format_block_expressions(ssa_func, block_id, formatter=formatter)
-    return [f"{indent}{expr.text}" for expr in expressions]
+
+    # TASK 2 (07-07): Detect and remove unreachable code after returns
+    # Scan through expressions and stop emitting after an unconditional return
+    filtered_lines = []
+    found_return = False
+
+    for expr in expressions:
+        expr_text = expr.text.strip()
+
+        # If we already found a return, this statement is unreachable - skip it
+        if found_return:
+            # Skip emitting (silently omit for clean output)
+            # Alternative: emit as comment for debugging
+            # filtered_lines.append(f"{indent}// UNREACHABLE: {expr.text}")
+            continue
+
+        # Emit the statement
+        filtered_lines.append(f"{indent}{expr.text}")
+
+        # Check if this is an unconditional return
+        # Pattern: "return;" or "return <value>;"
+        if expr_text.startswith("return"):
+            # Check if it's truly unconditional (not inside a ternary or complex expression)
+            # Simple heuristic: if line starts with "return", it's unconditional
+            found_return = True
+
+    return filtered_lines
