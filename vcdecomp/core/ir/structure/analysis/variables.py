@@ -7,10 +7,39 @@ from SSA function instructions and generating properly-typed declarations.
 
 from __future__ import annotations
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Optional
+import logging
 
 from ....disasm import opcodes
 from ...ssa import SSAFunction
+
+logger = logging.getLogger(__name__)
+
+
+def result_type_to_c_type(result_type: opcodes.ResultType) -> Optional[str]:
+    """
+    Map ResultType enum values from opcodes.py to C type strings.
+
+    Args:
+        result_type: ResultType enum value from SSA value.value_type
+
+    Returns:
+        C type string (e.g., "float", "int", "double") or None if unmapped
+    """
+    mapping = {
+        opcodes.ResultType.FLOAT: "float",
+        opcodes.ResultType.INT: "int",
+        opcodes.ResultType.DOUBLE: "double",
+        opcodes.ResultType.CHAR: "char",
+        opcodes.ResultType.SHORT: "short",
+        opcodes.ResultType.UNKNOWN: None,  # Fallback to default_type
+        opcodes.ResultType.VOID: None,  # Don't declare void types
+        opcodes.ResultType.POINTER: None,  # Pointers need more context, use default
+    }
+    c_type = mapping.get(result_type)
+    if c_type is None and result_type not in [opcodes.ResultType.UNKNOWN, opcodes.ResultType.VOID, opcodes.ResultType.POINTER]:
+        logger.warning(f"Unmapped ResultType: {result_type}, using fallback")
+    return c_type
 
 
 def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter) -> List[str]:
@@ -76,6 +105,16 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             var_type = inferred_struct_types[display_name]
         elif var_name in inferred_struct_types:
             var_type = inferred_struct_types[var_name]
+        # FIX (07-02): Check SSA refined type from type inference BEFORE struct ranges
+        # Type inference provides high-confidence opcode-based types (FADD→float, IADD→int)
+        # This prevents low-confidence struct guesses from overriding concrete type evidence
+        elif value.value_type != opcodes.ResultType.UNKNOWN:
+            refined_type = result_type_to_c_type(value.value_type)
+            if refined_type is not None:
+                var_type = refined_type
+            else:
+                # Fallback path for unmapped types
+                var_type = default_type
         # Check if this is a structure variable (has field access)
         elif var_name.startswith("local_"):
             # Check if formatter knows this is a struct
@@ -88,23 +127,9 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 else:
                     var_type = str(struct_info)
             else:
-                # Infer from value type
-                if value.value_type == opcodes.ResultType.FLOAT:
-                    var_type = "float"
-                elif value.value_type == opcodes.ResultType.DOUBLE:
-                    var_type = "double"
-                # Don't use void* unless we're sure it's a pointer
-                # Most POINTER types in SSA are actually int addresses
-                else:
-                    var_type = default_type
-        else:
-            # Simple variables (i, j, etc.)
-            if value.value_type == opcodes.ResultType.FLOAT:
-                var_type = "float"
-            elif value.value_type == opcodes.ResultType.DOUBLE:
-                var_type = "double"
-            else:
                 var_type = default_type
+        else:
+            var_type = default_type
 
         # Store variable type
         var_types[display_name] = var_type
