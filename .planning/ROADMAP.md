@@ -139,8 +139,8 @@ Plans:
   3. Arrays are declared with correct dimensions and types
   4. Struct field access reconstructs member names correctly
   5. Function parameters have correct types and names in signatures
-**Status**: GAPS FOUND (Gap closure in progress)
-**Plans**: 9 plans (7 complete, 2 gap closure)
+**Status**: GAPS FOUND (Gap closure in progress - 4 additional plans created)
+**Plans**: 13 plans (9 complete, 4 gap closure)
 **Verification**: .planning/phases/07-variable-declaration-fixes/07-VERIFICATION.md
 
 Plans:
@@ -151,9 +151,13 @@ Plans:
 - [x] 07-05-PLAN.md — Struct Field Access Reconstruction
 - [x] 07-06a-PLAN.md — Function Signature Reconstruction
 - [x] 07-06b-PLAN.md — Phase 7 End-to-End Validation
-- [x] 07-07-PLAN.md — Critical Compilation Fixes (Gap Closure - Confidence Scoring)
-- [ ] 07-08-PLAN.md — Pattern 2 Elimination (Gap Closure - Opcode-First Priority)
-- [ ] 07-09-PLAN.md — Compilation Validation (Gap Closure - Verify Success)
+- [x] 07-07-PLAN.md — Gap Closure: Confidence Scoring and Unreachable Code
+- [x] 07-08-PLAN.md — Gap Closure: Pattern 2 Elimination (Opcode-First Priority)
+- [x] 07-09-PLAN.md — Gap Closure: Compilation Blocker Identification
+- [ ] 07-10-PLAN.md — Gap Closure: Debug Pollution + ScriptMain Fix (Categories 1 & 2)
+- [ ] 07-11-PLAN.md — Gap Closure: Void Return Elimination (Category 3)
+- [ ] 07-12-PLAN.md — Gap Closure: Uninitialized Vars + Unreachable Code (Categories 4 & 5)
+- [ ] 07-13-PLAN.md — Gap Closure: Final Compilation Validation
 
 ### Phase 8: Control Flow Fixes
 **Goal**: Control flow patterns emit compilable, correct C code
@@ -199,6 +203,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. Error Analysis System | 3/3 | Complete | 2026-01-18 |
 | 5. Metrics Dashboard | 0/TBD | Skipped | - |
 | 6. Expression Reconstruction Fixes | 7/7 | Partial | 2026-01-18 |
-| 7. Variable Declaration Fixes | 7/9 | Gap closure | 2026-01-18 |
+| 7. Variable Declaration Fixes | 9/13 | Gap closure | 2026-01-18 |
 | 8. Control Flow Fixes | 0/TBD | Not started | - |
 | 9. Validation Reporting | 0/TBD | Not started | - |
