@@ -26,6 +26,7 @@ from ..core.ir.ssa import build_ssa, build_ssa_all_blocks
 from ..core.ir.expr import format_block_expressions
 from ..core.ir.structure import format_structured_function_named
 from .views import ValidationPanel
+from .views.error_analysis_view import ErrorAnalysisPanel
 from .dialogs import ValidationSettingsDialog
 
 
@@ -256,6 +257,14 @@ class MainWindow(QMainWindow):
         self.validation_dock.setWidget(self.validation_panel)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.validation_dock)
 
+        # Error Analysis dock
+        self.error_analysis_dock = QDockWidget("Error Analysis", self)
+        self.error_analysis_panel = ErrorAnalysisPanel()
+        self.error_analysis_dock.setWidget(self.error_analysis_panel)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.error_analysis_dock)
+        # Initially hidden (user opens when needed)
+        self.error_analysis_dock.hide()
+
         # Create menus (after docks so View menu can reference them)
         self.create_menus()
 
@@ -297,6 +306,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.strings_dock.toggleViewAction())
         view_menu.addAction(self.xfn_dock.toggleViewAction())
         view_menu.addAction(self.validation_dock.toggleViewAction())
+        view_menu.addAction(self.error_analysis_dock.toggleViewAction())
 
         # Options menu
         options_menu = menubar.addMenu("&Options")
