@@ -116,9 +116,9 @@ Plans:
   3. Type casts are generated where needed for type mismatches
   4. Complex expressions with multiple operators render correctly
   5. Regression tests confirm previously-working expressions still work
-**Status**: GAP CLOSURE (3/6 patterns fixed, Pattern 1 fix verification pending)
-**Plans**: 7 plans (06-06 split into 06-06a diagnostic + 06-06b fix)
-**Verification**: .planning/phases/06-expression-reconstruction-fixes/06-VERIFICATION-FINAL.md
+**Status**: PARTIAL (2/5 success criteria verified, Pattern 2 deferred to Phase 7)
+**Plans**: 7 plans complete
+**Verification**: .planning/phases/06-expression-reconstruction-fixes/06-VERIFICATION.md
 
 Plans:
 - [x] 06-01-PLAN.md — Baseline Error Analysis
@@ -126,8 +126,8 @@ Plans:
 - [x] 06-03-PLAN.md — Regression Validation
 - [x] 06-04-PLAN.md — Debug Ineffective Fixes (Patterns 1 & 5)
 - [x] 06-05-PLAN.md — Pattern 3 Fix and Corrected Fixes
-- [ ] 06-06a-PLAN.md — Pattern 1 Diagnosis (orphaned block detection)
-- [ ] 06-06b-PLAN.md — Pattern 1 Fix and Validation
+- [x] 06-06a-PLAN.md — Pattern 1 Diagnosis (orphaned block detection)
+- [x] 06-06b-PLAN.md — Pattern 1 Fix and Validation
 
 ### Phase 7: Variable Declaration Fixes
 **Goal**: Variables are declared correctly with proper types and scoping
@@ -187,7 +187,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. CI/CD Pipeline | 3/3 | Complete | 2026-01-18 |
 | 4. Error Analysis System | 3/3 | Complete | 2026-01-18 |
 | 5. Metrics Dashboard | 0/TBD | Skipped | - |
-| 6. Expression Reconstruction Fixes | 5/7 | Gap closure | 2026-01-18 |
+| 6. Expression Reconstruction Fixes | 7/7 | Partial | 2026-01-18 |
 | 7. Variable Declaration Fixes | 0/TBD | Not started | - |
 | 8. Control Flow Fixes | 0/TBD | Not started | - |
 | 9. Validation Reporting | 0/TBD | Not started | - |

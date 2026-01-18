@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 06b of 6 (Pattern 1 fix implemented and verified)
-Status: Phase 6 COMPLETE - 3/6 patterns fixed (Pattern 1, 3, 5), Pattern 2 deferred to Phase 7
-Last activity: 2026-01-18 - Completed 06-06b-PLAN.md (Pattern 1 fix: 98% reduction in undefined goto labels)
+Plan: COMPLETE (all 7 plans executed)
+Status: Phase 6 PARTIAL (2/5 success criteria verified, Pattern 2 deferred to Phase 7)
+Last activity: 2026-01-18 - Phase 6 complete, Pattern 1 fix verified working (4/4 gotos have labels)
 
 Progress: [█████████░] 44% (16/36 phase plans complete)
 
@@ -22,6 +22,7 @@ Progress: [█████████░] 44% (16/36 phase plans complete)
 - Total plans completed: 16
 - Average duration: 9.8 min
 - Total execution time: 2.6 hours
+- Latest plans (06-06a/b): 5min + 22min = 27min (diagnostic + fix)
 
 **By Phase:**
 
@@ -34,8 +35,9 @@ Progress: [█████████░] 44% (16/36 phase plans complete)
 | 06    | 7/7   | 83min | 11.9min  |
 
 **Recent Trend:**
-- Last 5 plans: 06-04 (29min), 06-05 (7min), 06-06a (5min), 06-06b (22min)
-- Phase 6 gap closure: 7 plans in 83min (baseline, attempt, validation, diagnostic, fixes, root-cause, implementation)
+- Last 4 plans: 06-04 (29min), 06-05 (7min), 06-06a (5min), 06-06b (22min)
+- Phase 6 complete: 7 plans in 83min, avg 11.9min/plan
+- Diagnostic methodology (06-06a → 06-06b): Evidence-based fixes more efficient than speculation
 - 06-06b successful fix implementation (22min) - 98% reduction in undefined goto labels
 
 *Updated after each plan completion*
@@ -175,20 +177,17 @@ Recent decisions affecting current work:
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
-| Evidence-based diagnosis methodology | Instrument code, capture output, analyze evidence - avoids speculation, reveals true root causes with clear proof | 06-06a |
-| Diagnostic logging at WARNING level | Appear in pytest --log-cli-level=WARNING without changing test infrastructure | 06-06a |
-| [PATTERN1_DEBUG] prefix pattern | Enables grep filtering and clear identification of diagnostic vs production logs | 06-06a |
-| Root cause: Blocks marked emitted but never rendered | Evidence shows blocks NOT ORPHANED (have predecessors), gotos emitted, but blocks absent from output | 06-06a |
-| Recommended fix: Track goto_targets set | Option 1 is simplest (~10 lines) - force label emission for blocks referenced by gotos | 06-06a |
+| Evidence-based diagnosis over speculation | Diagnostic logging revealed true root cause - blocks not orphaned but labels never emitted due to pattern detection marking them "emitted" | 06-06a |
+| Pattern 1 root cause: rendering logic | Blocks 3, 46, 48 have predecessors, gotos emitted, but labels skipped by switch/if-else rendering - NOT an orphaned detection issue | 06-06a |
+| Fix Option 1 chosen (goto_targets tracking) | Simplest fix - track goto targets, force label emission for any block referenced by goto | 06-06a |
 
 **From 06-06b execution:**
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
-| Track goto targets in separate set instead of modifying emitted_blocks | Clean separation of concerns - emitted_blocks tracks pattern rendering, goto_targets tracks control flow requirements | 06-06b |
-| Three-point label emission strategy | Labels must appear before blocks rendered by any pattern (switch, if/else, regular) - single emission point would place labels after content | 06-06b |
-| Defer cross-function goto to Phase 7 | Edge case (1 instance out of ~50), different root cause (outside function scope), Phase 6 scope is syntax fixes | 06-06b |
-| 98% success threshold acceptable | Primary pattern fully resolved, remaining edge case documented, compilation error clear - 100% unrealistic for edge cases | 06-06b |
+| Multi-point label emission | Emit labels at switch (lines 428-429), if-else (577-578), and regular blocks (696-697) to ensure all goto targets covered | 06-06b |
+| Cross-function goto edge case deferred | Block 88 in test3 is cross-function goto (different root cause) - 1 instance vs 50 baseline, acceptable for Phase 6 | 06-06b |
+| Accept 98% reduction as success | Pattern 1 fix reduces undefined gotos from ~50 to 1 - edge case documented for Phase 7 investigation | 06-06b |
 
 ### Pending Todos
 
