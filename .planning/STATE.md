@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 7 of 9 (Variable Declaration Fixes)
-Plan: 7 of 7 (Gap closure - confidence scoring and unreachable code)
-Status: Phase 7 GAPS FOUND (7/7 plans executed, verification found 3 gaps blocking compilation)
-Last activity: 2026-01-18 - Phase 7 verification complete, gaps identified (Pattern 2 residual, compilation failures, function signature validation incomplete)
+Plan: 9 of 9 (Compilation validation - blocker identification)
+Status: Phase 7 INCOMPLETE (9/9 plans executed, Gap 2 remains OPEN - 7 critical compilation blockers identified)
+Last activity: 2026-01-18 - Completed 07-09-PLAN.md (Gap 2 validation found critical blockers: debug pollution, broken ScriptMain, void returns)
 
-Progress: [█████████░] 58% (21/36 phase plans complete)
+Progress: [█████████░] 61% (22/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 10.9 min
-- Total execution time: 3.8 hours (232 minutes)
-- Latest plans (07-01/02/03/04/05/06a/07): 64min + 13min + 14min + 11min + 7min + 5min + 59min = 173min (type system + gap closure)
+- Total plans completed: 22
+- Average duration: 11.0 min
+- Total execution time: 4.1 hours (251 minutes)
+- Latest plans (07-01 through 07-09): 64min + 13min + 14min + 11min + 7min + 5min + 59min + 14min + 5min = 192min (type system + gap closure + validation)
 
 **By Phase:**
 
@@ -33,15 +33,16 @@ Progress: [█████████░] 58% (21/36 phase plans complete)
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
 | 06    | 7/7   | 83min | 11.9min  |
-| 07    | 7/7   | 173min | 24.7min  |
+| 07    | 9/9   | 192min | 21.3min  |
 
 **Recent Trend:**
-- Last 7 plans: 07-01 (64min), 07-02 (13min), 07-03 (14min), 07-04 (11min), 07-05 (7min), 07-06a (5min), 07-07 (59min)
-- Phase 7 progress: 7 plans in 173min, avg 24.7min/plan (including gap closure)
+- Last 9 plans: 07-01 (64min), 07-02 (13min), 07-03 (14min), 07-04 (11min), 07-05 (7min), 07-06a (5min), 07-07 (59min), 07-08 (14min), 07-09 (5min)
+- Phase 7 progress: 9 plans in 192min, avg 21.3min/plan (type system + gap closure + validation)
 - 07-01 lengthy (64min) due to root cause investigation and two-pass integration
 - 07-02/03/04/05/06a fast (13min, 14min, 11min, 7min, 5min) - building on established patterns
 - 07-07 gap closure (59min) - confidence scoring implementation and validation
-- **Phase 7 COMPLETE** - All variable declaration fixes + gap closure implemented
+- 07-08/09 gap closure validation (14min + 5min) - Pattern 2 elimination + blocker identification
+- **Phase 7 INCOMPLETE** - Gap 2 remains OPEN (7 critical compilation blockers identified)
 
 *Updated after each plan completion*
 
@@ -233,22 +234,46 @@ Recent decisions affecting current work:
 | Silently omit unreachable code | DOS compiler crashes on dead code - detect returns and stop emitting subsequent statements for clean output | 07-07 |
 | Accept 60% Pattern 2 reduction | Remaining instances from _struct_ranges (field access) tracked for Phase 8 - significant improvement achieved | 07-07 |
 
+**From 07-08 execution (Pattern 2 Elimination):**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Opcode-first ABSOLUTE priority | Concrete opcode evidence (IADD→int, FADD→float) is ground truth, must override all heuristics - eliminates Pattern 2 at source | 07-08 |
+| Disabled ALL struct inference | Even HIGH confidence (0.8+) had false positives from stack reuse - correctness > completeness trade-off | 07-08 |
+| Two-stage enforcement | SSA lowering generates declarations BEFORE variables.py runs - both stages must enforce opcode-first | 07-08 |
+| Post-processing cleanup | Safety net for residual struct types on tmp* variables - 100% elimination guarantee | 07-08 |
+
+**From 07-09 execution (Compilation Validation):**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Gap 2 remains OPEN | Pattern 2 fix necessary but insufficient - 7 critical blocker categories prevent compilation | 07-09 |
+| 7-category blocker taxonomy | Systematic diagnosis: debug pollution, ScriptMain, void returns, uninitialized vars, unreachable code, goto patterns, float literals | 07-09 |
+| Debug logging must be removed | [POST-PROCESS] and orphaned block messages in output prevent compilation parsing | 07-09 |
+| Phase 8 required | Cannot mark Phase 7 complete until compilation blockers addressed | 07-09 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 7 (Variable Declaration Fixes) - COMPLETE:**
-- 7 plans complete: stack lifter integration, priority refinement, global naming, arrays, structs, signatures, gap closure
-- Pattern 2 (type mismatches): PARTIALLY FIXED - 60% reduction via confidence scoring
-  - 07-07: Disabled function signature struct inference (too many false positives)
-  - Opcode-based types (IADD→int, FADD→float) now highest priority
-  - Remaining instances from _struct_ranges (field access heuristics) tracked for Phase 8
-- Unreachable code after returns: FIXED - silently omitted for DOS compiler compatibility
-- Confidence scoring infrastructure: COMPLETE - StructTypeInfo with 3-tier system
-- **Phase 7 complete** - Type system mature, compilation compatibility improved
-- Next: Phase 8 - Advanced Type System Features (or final gap closure for remaining Pattern 2)
+**Phase 7 (Variable Declaration Fixes) - INCOMPLETE:**
+- 9 plans complete: stack lifter, priority, global naming, arrays, structs, signatures, gap closure (07-07), Pattern 2 elimination (07-08), validation (07-09)
+- Pattern 2 (type mismatches): FIXED - 100% elimination via opcode-first priority (07-08)
+  - 07-08: Disabled ALL struct inference, opcode-derived types (IADD→int, FADD→float) take absolute priority
+  - Two-stage enforcement: SSA lowering + variable collection both enforce opcode-first
+  - Post-processing cleanup as safety net for residual struct types
+- **Gap 2 (Compilation Validation): OPEN** - 7 critical blockers identified (07-09)
+  - Category 1: Debug logging pollution (lines 1-63 in test1_final.c) - CRITICAL BLOCKER
+  - Category 2: Broken ScriptMain (entry block not found) - CRITICAL BLOCKER
+  - Category 3: Void functions returning values (func_0050, func_0119, func_0155) - COMPILER ERROR
+  - Category 4: Uninitialized variables (tmp1, tmp2 used before assignment) - SEMANTIC ERROR
+  - Category 5: Unreachable code after returns (residual instances despite 07-07 fix) - NON-CRITICAL
+  - Category 6: Meaningless goto patterns (goto block_3; block_3:) - CODE SMELL
+  - Category 7: Raw int literals for floats (1106247680 instead of 20.0f) - SEMANTIC ERROR
+- **Phase 7 status: INCOMPLETE** - Cannot mark complete until Gap 2 addressed
+- Next: Phase 8 - Compilation Blocker Elimination (3 plans recommended: debug removal, void returns, unreachable code)
 
 **Phase 6 (Expression Reconstruction Fixes) - COMPLETE:**
 - 7 plans complete: baseline, attempts, validation, diagnostic, fixes, root-cause analysis, implementation
@@ -305,10 +330,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T14:11:27Z (Phase 7 Plan 06a complete - Function signature reconstruction)
-Stopped at: Completed 07-06a-PLAN.md (Function signatures with parameter types and save_info names)
+Last session: 2026-01-18T15:57:59Z (Phase 7 Plan 09 complete - Compilation validation and blocker identification)
+Stopped at: Completed 07-09-PLAN.md (Gap 2 validation found 7 critical compilation blockers)
 Resume file: None
-Next: Phase 8 - Advanced Type System Features (or Phase 7 wrap-up verification)
+Next: Phase 8 - Compilation Blocker Elimination (debug logging removal, ScriptMain fix, void return elimination)
 
 ## Technical Context
 
