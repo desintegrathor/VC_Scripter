@@ -349,10 +349,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     emitted_switches: Set[int] = set()  # Track which switches we've rendered
     emitted_ifs: Set[int] = set()       # Track which if/else patterns we've rendered
     emitted_blocks: Set[int] = set()    # Track all blocks we've rendered
+    goto_targets: Set[int] = set()      # Track blocks referenced by goto statements (Pattern 1 fix)
 
     for idx, (addr, block_id, block) in enumerate(func_blocks):
-        # Skip blocks that have already been rendered
-        if block_id in emitted_blocks:
+        # Skip blocks that have already been rendered (unless they're goto targets - Pattern 1 fix)
+        # If a block is a goto target, we need to emit its label even if it was "emitted" by pattern detection
+        if block_id in emitted_blocks and block_id not in goto_targets:
             continue
 
         # ORPHANED BLOCK VALIDATION: Check if block is unreachable (no predecessors)
@@ -421,6 +423,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if block_id in block_to_switch and block_id == block_to_switch[block_id].header_block:
             switch = block_to_switch[block_id]
             base_indent = "    " + "    " * len(active_loops)
+
+            # Pattern 1 fix: Emit label for goto targets before switch rendering
+            if block_id in goto_targets:
+                lines.append(f"{base_indent}block_{block_id}:")
 
             # Render switch statement
             lines.append(f"{base_indent}switch ({switch.test_var}) {{")
@@ -567,6 +573,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             if_pattern = block_to_if[block_id]
             base_indent = "    " + "    " * len(active_loops)
 
+            # Pattern 1 fix: Emit label for goto targets before if/else rendering
+            if block_id in goto_targets:
+                lines.append(f"{base_indent}block_{block_id}:")
+
             # Get condition from SSA
             cond_text = None
             ssa_block = ssa_blocks.get(block_id, [])
@@ -682,6 +692,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Calculate current indentation based on active loops
         base_indent = "    " + "    " * len(active_loops)
 
+        # Pattern 1 fix: Emit label for goto targets
+        if block_id in goto_targets:
+            lines.append(f"{base_indent}block_{block_id}:")
+
         # FIX 3C: Only add comment if block has actual statements
         ssa_block = ssa_blocks.get(block_id, [])
         if not _is_control_flow_only(ssa_block, resolver):
@@ -770,20 +784,15 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
-                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (invalid or not in CFG)")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
-                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (outside function scope)")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
                         if not predecessors:
                             is_orphaned_target = True
-                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (no predecessors)")
-                        else:
-                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: NOT ORPHANED (has {len(predecessors)} predecessors: {predecessors})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         if is_back_edge:
@@ -791,7 +800,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         elif is_loop_exit:
                             lines.append(f"{base_indent}if ({cond_text}) break;  // exit loop @{target}")
                         else:
-                            logger.warning(f"[PATTERN1_DEBUG] EMITTING CONDITIONAL GOTO: block_{target_block}")
+                            # Pattern 1 fix: Track this block as a goto target
+                            goto_targets.add(target_block)
                             lines.append(f"{base_indent}if ({cond_text}) goto block_{target_block}; // @{target}")
                 else:
                     # Unconditional jump
@@ -804,20 +814,15 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
-                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (invalid or not in CFG)")
                     elif target_block not in func_block_ids:
                         # Target block is outside this function's scope - skip goto
                         is_orphaned_target = True
-                        logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (outside function scope)")
                     elif target_block != entry_block:
                         # Check if target block has predecessors (excluding entry block)
                         target_cfg_block = cfg.blocks[target_block]
                         predecessors = [p for p in target_cfg_block.predecessors if p in func_block_ids]
                         if not predecessors:
                             is_orphaned_target = True
-                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: ORPHANED (no predecessors)")
-                        else:
-                            logger.warning(f"[PATTERN1_DEBUG] Block {target_block}: NOT ORPHANED (has {len(predecessors)} predecessors: {predecessors})")
 
                     if not is_switch_header_jump and not is_orphaned_target:
                         # FIX 3C: Skip goto if target is already emitted (unreachable code)
@@ -827,7 +832,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                             elif is_loop_exit:
                                 lines.append(f"{base_indent}break;  // exit loop @{target}")
                             else:
-                                logger.warning(f"[PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_{target_block}")
+                                # Pattern 1 fix: Track this block as a goto target
+                                goto_targets.add(target_block)
                                 lines.append(f"{base_indent}goto block_{target_block}; // @{target}")
 
     # Close any remaining active loops
