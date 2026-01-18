@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 01 of 4
+Plan: 02 of 4
 Status: In progress
-Last activity: 2026-01-18 - Completed 06-01-PLAN.md (Expression Error Baseline)
+Last activity: 2026-01-18 - Completed 06-02-PLAN.md (Priority 1 Fixes - Undefined Goto & Undeclared Variables)
 
-Progress: [█████████░] 28% (10/36 phase plans complete)
+Progress: [█████████░] 31% (11/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 10.4 min
-- Total execution time: 1.73 hours
+- Total plans completed: 11
+- Average duration: 10.1 min
+- Total execution time: 1.88 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [█████████░] 28% (10/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
-| 06    | 1/4   | 6min  | 6min     |
+| 06    | 2/4   | 15min | 7.5min   |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (4min), 04-02 (4min), 04-03 (6min), 06-01 (6min)
-- Trend: Consistent efficiency - documentation/analysis tasks maintaining ~6min average
-- Phase 6 started: Error baseline established in 6 min (manual inspection + 357-line report)
+- Last 5 plans: 04-02 (4min), 04-03 (6min), 06-01 (6min), 06-02 (9min)
+- Trend: Implementation tasks (~9min) taking longer than analysis (~6min)
+- Phase 6 progress: Baseline + 2 pattern fixes attempted in 15min total
 
 *Updated after each plan completion*
 
@@ -143,22 +143,36 @@ Recent decisions affecting current work:
 | 3-tier priority system (CRITICAL/HIGH/MEDIUM) | Prioritize based on: 1) blocks compilation vs compiles-but-wrong, 2) frequency across test files, 3) fix complexity estimate | 06-01 |
 | Focus on static errors only | Runtime semantic errors (wrong bytecode output) require successful compilation - Phase 6 focuses on getting code to compile first | 06-01 |
 
+**From 06-02 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Multi-level orphaned check for goto targets | Check target_block >= 0, exists in CFG, in func_block_ids, and has predecessors - comprehensive validation prevents multiple failure modes | 06-02 |
+| Regex-based variable collection post-processing | Run after SSA processing to catch semantic names from formatted expressions - simple approach for missing variables | 06-02 |
+| Type inference from name patterns | vec/pos/rot/dir → s_SC_vector, enum_pl → s_SC_MP_EnumPlayers - heuristic for common Vietcong patterns | 06-02 |
+| Document unsuccessful fixes | Create FIX_RESULTS.md with root cause analysis and debugging strategies - unsuccessful execution provides valuable data | 06-02 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 6 Plan 01 (Error Baseline) - COMPLETE:**
-- Baseline established: 6 error patterns documented with 3-tier priority system
-- 100% test failure rate: All 3 scripts cause compiler crash (0xC0000005)
-- Manual inspection required: Compiler crashes prevent automated error categorization
-- Prioritized fix targets identified for Plans 02-04
-- Ready for Priority 1 fixes (undefined goto, undeclared variables)
+**Phase 6 Plan 02 (Priority 1 Fixes) - COMPLETE:**
+- Pattern 1 & 5 fixes implemented but compilation still fails (0/3 tests pass)
+- Fixes appear correct in theory but need debugging:
+  * goto block_88 still generated despite orphaned check
+  * vec/enum_pl still undeclared despite regex extraction
+- Compiler crashes prevent quantitative error measurement
+- FIX_RESULTS.md provides detailed debugging roadmap
+- Next: Debug existing fixes AND/OR implement Pattern 3 (missing returns)
 
-**Phase 6 Plans 02-04:**
-- Pattern 2 (type mismatches) is HIGH complexity - may require significant stack lifter refactoring
-- AttributeError failures in 4/15 functions suggest additional bugs outside Phase 6 scope
+**Phase 6 Plans 03-04:**
+- Pattern 1 fix needs debugging - verify orphaned check executes
+- Pattern 5 fix needs debugging - verify regex finds variables
+- Pattern 2 (type mismatches) is HIGH complexity - stack lifter refactoring required
+- Pattern 3 (missing returns) may be simpler - consider prioritizing
+- AttributeError failures in 2/10 LEVEL functions suggest additional bugs
 - Success criteria: Get at least 1/3 test files compiling (even with errors)
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
@@ -203,10 +217,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T09:39:57Z (phase 6 plan 01 complete)
-Stopped at: Completed 06-01-PLAN.md (Expression Error Baseline)
+Last session: 2026-01-18T09:52:51Z (phase 6 plan 02 complete)
+Stopped at: Completed 06-02-PLAN.md (Priority 1 Fixes - Undefined Goto & Undeclared Variables)
 Resume file: None
-Next: Begin Phase 6 Plan 02 (Priority 1 Fixes - Undefined Goto & Undeclared Variables)
+Next: Begin Phase 6 Plan 03 (Debug existing fixes or implement Pattern 3 - Missing Returns)
 
 ## Technical Context
 
@@ -306,3 +320,8 @@ Next: Begin Phase 6 Plan 02 (Priority 1 Fixes - Undefined Goto & Undeclared Vari
 
 **Phase 06 Plan 01 complete:**
 - `.planning/phases/06-expression-reconstruction-fixes/ERROR_BASELINE.md` - Comprehensive error baseline (357 lines, 6 patterns, 3-tier priority system) (06-01)
+
+**Phase 06 Plan 02 complete:**
+- `vcdecomp/core/ir/structure/orchestrator.py` - Orphaned block detection in goto generation (lines 763-815) (06-02)
+- `vcdecomp/core/ir/structure/analysis/variables.py` - Regex-based variable collection from expressions (lines 385-419) (06-02)
+- `.planning/phases/06-expression-reconstruction-fixes/FIX_RESULTS.md` - Fix analysis and debugging guide (06-02)
