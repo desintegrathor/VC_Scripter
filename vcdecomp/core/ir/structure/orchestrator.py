@@ -279,17 +279,31 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # Track which loop headers we've seen
     emitted_loop_headers: Set[int] = set()
 
-    # Determine function signature using bytecode analysis
+    # FIX (07-02): Run type inference BEFORE variable collection and signature generation
+    # This refines SSA value.value_type fields with dataflow analysis, enabling
+    # accurate type declarations (float/int/struct) instead of generic "dword"
+    # ENHANCEMENT (07-06a): Also used for parameter type inference in function signatures
+    type_engine = None
+    try:
+        type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        type_engine.integrate_with_ssa_values()
+        logger.info(f"Type inference completed for {func_name}")
+    except Exception as e:
+        logger.warning(f"Type inference failed for {func_name}: {e}. Continuing with SSA initial types.")
+
+    # Determine function signature using bytecode analysis and type inference
     from ..function_signature import get_function_signature_string
     scr = ssa_func.scr
 
     # Get complete signature (handles both entry points and internal functions)
+    # Plan 07-06a: Pass type_engine for parameter type and return type inference
     signature = get_function_signature_string(
         ssa_func,
         func_name,
         entry_addr,
         end_addr,
-        scr_header_enter_size=scr.header.enter_size
+        scr_header_enter_size=scr.header.enter_size,
+        type_engine=type_engine
     )
 
     lines.append(f"{signature} {{")
@@ -301,16 +315,6 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     for var_type, var_name in lowering_result.variable_declarations:
         local_vars.append(f"{var_type} {var_name}")
         lowered_var_names.add(var_name)
-
-    # FIX (07-02): Run type inference BEFORE variable collection
-    # This refines SSA value.value_type fields with dataflow analysis, enabling
-    # accurate type declarations (float/int/struct) instead of generic "dword"
-    try:
-        type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
-        type_engine.integrate_with_ssa_values()
-        logger.info(f"Type inference completed for {func_name}")
-    except Exception as e:
-        logger.warning(f"Type inference failed for {func_name}: {e}. Continuing with SSA initial types.")
 
     # Also collect array declarations and struct types from old system
     # (TODO: Merge this logic into SSA lowering)

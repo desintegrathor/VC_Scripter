@@ -157,7 +157,8 @@ def get_function_signature_string(
     func_name: str,
     func_start: int,
     func_end: Optional[int] = None,
-    scr_header_enter_size: int = 0
+    scr_header_enter_size: int = 0,
+    type_engine: Optional['TypeInferenceEngine'] = None
 ) -> str:
     """
     Get complete function signature string for C output.
@@ -168,6 +169,7 @@ def get_function_signature_string(
         func_start: Function start address
         func_end: Function end address (optional)
         scr_header_enter_size: Entry parameter size from SCR header (for ScriptMain)
+        type_engine: Optional TypeInferenceEngine for parameter type inference (Plan 07-06a)
 
     Returns:
         Complete C function signature like "int func_name(float time)"
@@ -181,8 +183,67 @@ def get_function_signature_string(
         ret_type = "int" if scr.header.ret_size > 0 else "void"
         return f"{ret_type} {func_name}({script_type} *info)"
 
-    # Detect signature from bytecode
+    # Plan 07-06a: Use type inference for parameter types and return type if available
+    if type_engine:
+        return _generate_function_signature_from_type_inference(
+            ssa_func, func_name, type_engine
+        )
+
+    # Fallback: Detect signature from bytecode patterns
     sig = detect_function_signature(ssa_func, func_start, func_end)
 
     # Convert to string
     return sig.to_c_signature(func_name)
+
+
+def _generate_function_signature_from_type_inference(
+    ssa_func: SSAFunction,
+    func_name: str,
+    type_engine: 'TypeInferenceEngine'
+) -> str:
+    """
+    Generate C function signature from type inference results.
+
+    This uses TypeInferenceEngine.infer_parameter_types() and infer_return_type()
+    to build semantic function signatures with correct types and names.
+
+    Args:
+        ssa_func: SSA function data
+        func_name: Function name
+        type_engine: Type inference engine with completed analysis
+
+    Returns:
+        Complete C function signature like "void process_node(c_Node* node, float damage)"
+    """
+    # Get parameter types from type inference (Plan 07-06a Task 1)
+    param_infos = type_engine.infer_parameter_types()
+
+    # Get return type from type inference
+    return_type = type_engine.infer_return_type()
+
+    # Build parameter list
+    params = []
+    low_confidence_params = []
+
+    for param_info in param_infos:
+        # Format: "type name"
+        params.append(f"{param_info.type} {param_info.name}")
+
+        # Track low confidence parameters for TODO comment
+        if param_info.confidence < 0.70:
+            low_confidence_params.append(param_info.name)
+
+    # Handle empty parameter list
+    if not params:
+        param_str = "void"
+    else:
+        param_str = ", ".join(params)
+
+    # Build full signature
+    signature = f"{return_type} {func_name}({param_str})"
+
+    # Add confidence annotation for uncertain signatures
+    if low_confidence_params:
+        signature += "  /* TODO: verify parameter types */"
+
+    return signature
