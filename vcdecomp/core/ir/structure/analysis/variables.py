@@ -26,6 +26,14 @@ class ArrayDims:
     confidence: float  # Confidence in the dimension calculation (0.0-1.0)
 
 
+@dataclass
+class StructTypeInfo:
+    """Information about inferred struct types with confidence scoring."""
+    struct_type: str  # Struct type name (e.g., "s_SC_MP_EnumPlayers")
+    confidence: float  # Confidence in the inference (0.0-1.0)
+    source: str  # Source of inference (e.g., "function_call", "field_access")
+
+
 def result_type_to_c_type(result_type: opcodes.ResultType) -> Optional[str]:
     """
     Map ResultType enum values from opcodes.py to C type strings.
@@ -96,7 +104,7 @@ def _is_mul_add_pattern(inst) -> Tuple[bool, Optional[int], Optional[str], Optio
 def _detect_multidim_arrays(
     ssa_func: SSAFunction,
     func_block_ids: Set[int],
-    inferred_struct_types: Dict[str, str],
+    inferred_struct_types: Dict[str, StructTypeInfo],
     loop_bounds: Dict[str, 'BoundInfo']
 ) -> Dict[str, ArrayDims]:
     """
@@ -144,7 +152,8 @@ def _detect_multidim_arrays(
                                 # Example: stride=16, element_size=4 → inner_dim=4
 
                                 # Get element type and size
-                                element_type = inferred_struct_types.get(base_var, "int")
+                                struct_info = inferred_struct_types.get(base_var)
+                                element_type = struct_info.struct_type if struct_info else "int"
                                 element_size = 4  # Default for int/float/pointer
 
                                 # Calculate inner dimension from stride
@@ -195,8 +204,8 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     local_arrays: Dict[str, Tuple[str, int]] = {}  # var_name -> (element_type, size)
 
     # FIX #5: Track struct types inferred from function calls
-    # Maps variable name -> struct type (e.g., "local_5" -> "s_SC_P_getinfo")
-    inferred_struct_types: Dict[str, str] = {}
+    # Maps variable name -> StructTypeInfo (with confidence scoring)
+    inferred_struct_types: Dict[str, StructTypeInfo] = {}
 
     # FIX (07-04): Track loop bounds for array dimension inference
     from .value_trace import trace_loop_bounds
@@ -244,23 +253,45 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # Determine type from instruction or value type
         var_type = default_type
 
-        # FIX #5: First check if we inferred a struct type from function calls
-        # Try both display_name and var_name since semantic names might differ
+        # TASK 1 (07-07): Confidence-based type priority with proper struct handling
+        # Priority order with confidence thresholds:
+        # 1. Opcode-based types (FLOAT/INT from FADD/IADD) - HIGHEST priority (concrete evidence)
+        # 2. HIGH confidence (0.8+) struct types from function signatures
+        # 3. MEDIUM confidence (0.5-0.8) struct types from heuristics
+        # 4. Field access patterns from formatter (legacy)
+        # 5. LOW confidence (0.0-0.5) struct types - ignored in favor of defaults
+
+        # Get struct type info if available
+        struct_type_info = None
         if display_name in inferred_struct_types:
-            var_type = inferred_struct_types[display_name]
+            struct_type_info = inferred_struct_types[display_name]
         elif var_name in inferred_struct_types:
-            var_type = inferred_struct_types[var_name]
-        # FIX (07-02): Check SSA refined type from type inference BEFORE struct ranges
-        # Type inference provides high-confidence opcode-based types (FADD→float, IADD→int)
-        # This prevents low-confidence struct guesses from overriding concrete type evidence
-        elif value.value_type != opcodes.ResultType.UNKNOWN:
+            struct_type_info = inferred_struct_types[var_name]
+
+        # Priority 1: Check SSA refined type from type inference (opcode-based - HIGHEST confidence)
+        # Opcodes like IADD, FADD, IMUL provide concrete type evidence that trumps everything
+        if value.value_type != opcodes.ResultType.UNKNOWN:
             refined_type = result_type_to_c_type(value.value_type)
             if refined_type is not None:
                 var_type = refined_type
+            # If no opcode type mapping but we have HIGH confidence struct (0.8+), use it
+            elif struct_type_info and struct_type_info.confidence >= 0.8:
+                var_type = struct_type_info.struct_type
+            # If no opcode type and we have MEDIUM confidence struct (0.5-0.8), use it
+            elif struct_type_info and struct_type_info.confidence >= 0.5:
+                var_type = struct_type_info.struct_type
+            # LOW confidence structs (<0.5) are ignored - fall through to default
             else:
                 # Fallback path for unmapped types
                 var_type = default_type
-        # Check if this is a structure variable (has field access)
+        # Priority 2: If no opcode type, check HIGH confidence struct types (0.8+)
+        elif struct_type_info and struct_type_info.confidence >= 0.8:
+            var_type = struct_type_info.struct_type
+        # Priority 3: Check MEDIUM confidence struct types (0.5-0.8)
+        elif struct_type_info and struct_type_info.confidence >= 0.5:
+            var_type = struct_type_info.struct_type
+        # LOW confidence structs (<0.5) are ignored - fall through to legacy/default
+        # Priority 4: Check if this is a structure variable (has field access) - legacy path
         elif var_name.startswith("local_"):
             # Check if formatter knows this is a struct
             struct_info = formatter._struct_ranges.get(var_name)
@@ -323,14 +354,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if not var_name.startswith("local_"):
                     continue
 
-                # Store the inferred struct type
-                # Store using both local_X name AND semantic name if it exists
-                inferred_struct_types[var_name] = struct_type
+                # SKIP storing struct types from function calls - TOO MANY FALSE POSITIVES
+                # Variables passed to functions are frequently reused for other purposes
+                # Only trust field access patterns and explicit opcode types
+                # This prevents Pattern 2 type mismatches (int assigned to struct)
 
-                # Also store for semantic name if it exists
-                semantic_name = formatter._semantic_names.get(var_name)
-                if semantic_name:
-                    inferred_struct_types[semantic_name] = struct_type
+                # Original logic (disabled):
+                # struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.4, source="function_call")
+                # inferred_struct_types[var_name] = struct_info
 
     # FIX 1.3: New pass - detect arrays from indexed access patterns
     # Track variables used in array indexing (MUL with struct size)
@@ -414,13 +445,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # If we found a reasonable bound, mark this as an array
             if max_bound > 0 and max_bound <= 1000:  # Sanity check
                 # Get the struct type if known
-                struct_type = inferred_struct_types.get(array_var)
-                if struct_type:
-                    local_arrays[array_var] = (struct_type, max_bound)
+                struct_info = inferred_struct_types.get(array_var)
+                if struct_info:
+                    local_arrays[array_var] = (struct_info.struct_type, max_bound)
                     # Also mark for semantic name if it exists
                     semantic_name = formatter._semantic_names.get(array_var)
                     if semantic_name:
-                        local_arrays[semantic_name] = (struct_type, max_bound)
+                        local_arrays[semantic_name] = (struct_info.struct_type, max_bound)
 
     # P0.3: First pass - detect local arrays from usage patterns
     for block_id in func_block_ids:
@@ -530,14 +561,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if not var_name.startswith("local_"):
                     continue
 
-                # Store the inferred struct type
-                # Store using both local_X name AND semantic name if it exists
-                inferred_struct_types[var_name] = struct_type
+                # SKIP storing struct types from function calls - TOO MANY FALSE POSITIVES
+                # Variables passed to functions are frequently reused for other purposes
+                # Only trust field access patterns and explicit opcode types
+                # This prevents Pattern 2 type mismatches (int assigned to struct)
 
-                # Also store for semantic name if it exists
-                semantic_name = formatter._semantic_names.get(var_name)
-                if semantic_name:
-                    inferred_struct_types[semantic_name] = struct_type
+                # Original logic (disabled):
+                # struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.4, source="function_call")
+                # inferred_struct_types[var_name] = struct_info
 
     # FIX (07-04): Detect multi-dimensional arrays from indexing patterns
     multidim_arrays = _detect_multidim_arrays(
@@ -586,9 +617,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # This is an undeclared variable that needs declaration
                 # Determine type - check if it's in inferred structs first
                 var_type = "int"  # Default
-                if var_name in inferred_struct_types:
-                    var_type = inferred_struct_types[var_name]
-                # Check if this is a vector/array-like name pattern
+                struct_info = inferred_struct_types.get(var_name)
+                if struct_info and struct_info.confidence >= 0.5:
+                    var_type = struct_info.struct_type
+                # Check if this is a vector/array-like name pattern (LOW confidence heuristic)
                 elif var_name in ('vec', 'pos', 'rot', 'dir'):
                     var_type = "s_SC_vector"  # Common vector struct
                 elif 'enum' in var_name.lower():
