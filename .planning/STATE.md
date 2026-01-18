@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 06a of 6 (Pattern 1 root cause diagnosed)
-Status: Gap closure wave 2 - root cause analysis complete, ready for 06-06b implementation
-Last activity: 2026-01-18 - Completed 06-06a-PLAN.md (Pattern 1 root cause identified: blocks marked emitted but never rendered)
+Plan: 06b of 6 (Pattern 1 fix implemented and verified)
+Status: Phase 6 COMPLETE - 3/6 patterns fixed (Pattern 1, 3, 5), Pattern 2 deferred to Phase 7
+Last activity: 2026-01-18 - Completed 06-06b-PLAN.md (Pattern 1 fix: 98% reduction in undefined goto labels)
 
-Progress: [█████████░] 42% (15/36 phase plans complete)
+Progress: [█████████░] 44% (16/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 9.2 min
-- Total execution time: 2.4 hours
+- Total plans completed: 16
+- Average duration: 9.8 min
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [█████████░] 42% (15/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
-| 06    | 6/6   | 61min | 10.2min  |
+| 06    | 7/7   | 83min | 11.9min  |
 
 **Recent Trend:**
-- Last 5 plans: 06-03 (5min), 06-04 (29min), 06-05 (7min), 06-06a (5min)
-- Phase 6 gap closure: 6 plans in 61min (baseline, attempt, validation, diagnostic, fixes, root-cause)
-- 06-06a efficient execution (5min) - focused diagnostic with clear evidence collection
+- Last 5 plans: 06-04 (29min), 06-05 (7min), 06-06a (5min), 06-06b (22min)
+- Phase 6 gap closure: 7 plans in 83min (baseline, attempt, validation, diagnostic, fixes, root-cause, implementation)
+- 06-06b successful fix implementation (22min) - 98% reduction in undefined goto labels
 
 *Updated after each plan completion*
 
@@ -181,25 +181,34 @@ Recent decisions affecting current work:
 | Root cause: Blocks marked emitted but never rendered | Evidence shows blocks NOT ORPHANED (have predecessors), gotos emitted, but blocks absent from output | 06-06a |
 | Recommended fix: Track goto_targets set | Option 1 is simplest (~10 lines) - force label emission for blocks referenced by gotos | 06-06a |
 
+**From 06-06b execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Track goto targets in separate set instead of modifying emitted_blocks | Clean separation of concerns - emitted_blocks tracks pattern rendering, goto_targets tracks control flow requirements | 06-06b |
+| Three-point label emission strategy | Labels must appear before blocks rendered by any pattern (switch, if/else, regular) - single emission point would place labels after content | 06-06b |
+| Defer cross-function goto to Phase 7 | Edge case (1 instance out of ~50), different root cause (outside function scope), Phase 6 scope is syntax fixes | 06-06b |
+| 98% success threshold acceptable | Primary pattern fully resolved, remaining edge case documented, compilation error clear - 100% unrealistic for edge cases | 06-06b |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 6 (Expression Reconstruction Fixes) - WAVE 2 IN PROGRESS:**
-- 6 plans complete: baseline, attempts, validation, diagnostic, fixes, root-cause analysis
+**Phase 6 (Expression Reconstruction Fixes) - COMPLETE:**
+- 7 plans complete: baseline, attempts, validation, diagnostic, fixes, root-cause analysis, implementation
 - Pattern 3 (missing return values): FIXED - synthesize `return 0;` for non-void functions (~15 instances)
 - Pattern 5 (undeclared variables): FIXED - removed overly restrictive filter in orchestrator.py
 - Pattern 2 (type mismatches): DEFERRED to Phase 7 - requires stack_lifter.py refactoring (HIGH complexity)
-- **Pattern 1 (orphaned goto): ROOT CAUSE IDENTIFIED** - blocks marked emitted but never rendered
-  - 06-06a: Diagnostic logging reveals blocks 3, 46, 48 have predecessors (NOT orphaned)
-  - Gotos emitted because orphaned check passes
-  - Labels never emitted because blocks marked as "emitted" by pattern detection but rendering skips them
-  - Fix proposed: Track goto_targets set, force label emission for referenced blocks (~10 line change)
-- **Current blocker**: Pattern 1 needs implementation (plan 06-06b ready)
-- PATTERN1_ROOT_CAUSE.md (258 lines) documents evidence, hypothesis, and fix proposal
-- Next: Implement Pattern 1 fix (06-06b), then proceed to Phase 7 for type system
+- **Pattern 1 (undefined goto labels): FIXED** - 98% reduction (50 instances → 1 edge case)
+  - 06-06b: Implemented goto_targets tracking and multi-point label emission
+  - Test1 fully fixed: blocks 3, 46, 48 now have labels (0/3 undefined)
+  - Test2 no regression: 0/0 undefined gotos
+  - Test3 vastly improved: multiple → 1 edge case (cross-function goto, different root cause)
+  - Fix: Track goto_targets set, emit labels at switch/if/regular block headers
+- **Phase 6 complete** - 3/6 patterns fixed, ready for Phase 7
+- Next: Phase 7 - Type System Fixes (Pattern 2 type mismatches, cross-function goto handling)
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
@@ -243,10 +252,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T11:29:01Z (phase 6 Pattern 1 root cause diagnosis complete)
-Stopped at: Completed 06-06a-PLAN.md (Pattern 1 root cause identified with fix proposal)
+Last session: 2026-01-18T11:54:16Z (Phase 6 complete - Pattern 1 fix implemented)
+Stopped at: Completed 06-06b-PLAN.md (Pattern 1 fix: 98% reduction in undefined goto labels)
 Resume file: None
-Next: Plan 06-06b - Implement Pattern 1 fix (track goto_targets, force label emission)
+Next: Phase 7 - Type System Fixes (Pattern 2 type mismatches, cross-function goto detection)
 
 ## Technical Context
 
@@ -371,3 +380,7 @@ Next: Plan 06-06b - Implement Pattern 1 fix (track goto_targets, force label emi
 - `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 1 diagnostic logging (lines 768-831) (06-06a)
 - `.planning/phases/06-expression-reconstruction-fixes/PATTERN1_ROOT_CAUSE.md` - Evidence-based root cause analysis (258 lines) (06-06a)
 - `pattern1_debug_output.txt` - Diagnostic output showing orphaned checks and goto emission (12 lines) (06-06a)
+
+**Phase 06 Plan 06b complete:**
+- `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 1 fix: goto_targets tracking and label emission (lines 352, 357, 428-429, 573-574, 688-689, 792, 824) (06-06b)
+- `.planning/phases/06-expression-reconstruction-fixes/PATTERN1_FIX_VALIDATION.md` - Comprehensive validation results (206 lines) (06-06b)
