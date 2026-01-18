@@ -222,3 +222,69 @@ def test_decompilation_validation(test_id, scr_path, original_c, validation_orch
     else:
         # Unexpected verdict
         pytest.fail(f"Unexpected verdict: {result.verdict}")
+
+
+@pytest.mark.parametrize("test_id,scr_path,original_c", TEST_SCRIPTS)
+def test_decompilation_validation_with_baseline(
+    test_id, scr_path, original_c, validation_orchestrator, tmp_path, data_regression
+):
+    """
+    Test decompilation with baseline regression detection.
+
+    NOTE: This test coexists with test_decompilation_validation.
+    - test_decompilation_validation: Always runs full validation
+    - test_decompilation_validation_with_baseline: Detects regressions from baseline
+
+    On first run: Generates baseline YAML with test outcomes
+    On subsequent runs: Compares against baseline, fails if regression detected
+    """
+    # Decompile script
+    scr = SCRFile.load(str(scr_path))
+
+    # Build SSA
+    ssa_func = build_ssa_all_blocks(scr)
+
+    # Get function boundaries
+    disasm = Disassembler(scr)
+    func_bounds = disasm.get_function_boundaries()
+
+    # Generate include block
+    include_block = generate_include_block(scr)
+
+    # Analyze globals
+    resolver = GlobalResolver(ssa_func, aggressive_typing=True, infer_structs=False)
+    resolver.analyze()
+
+    # Decompile all functions
+    function_outputs = []
+    for func_name, (start, end) in func_bounds.items():
+        try:
+            output = format_structured_function_named(
+                ssa_func, func_name, start, end, resolver
+            )
+            function_outputs.append(output)
+        except Exception:
+            # Track failures but continue
+            pass
+
+    # Assemble complete .c file
+    code = include_block + "\n\n" + "\n\n".join(function_outputs)
+
+    # Write decompiled code
+    decompiled_path = tmp_path / f"{test_id.replace('/', '_')}_decompiled.c"
+    decompiled_path.write_text(code, encoding="utf-8")
+
+    # Validate
+    result = validation_orchestrator.validate(scr_path, decompiled_path)
+
+    # Store regression-relevant metrics
+    baseline_data = {
+        "verdict": result.verdict.value,
+        "compilation_succeeded": result.compilation_succeeded,
+        "bytecode_identical": result.bytecode_identical,
+        "error_count": len(result.compilation_result.errors) if not result.compilation_succeeded else 0,
+        "semantic_diffs": len(result.get_differences_by_category(DifferenceCategory.SEMANTIC)),
+    }
+
+    # Compare against baseline (fails if regression detected)
+    data_regression.check(baseline_data)

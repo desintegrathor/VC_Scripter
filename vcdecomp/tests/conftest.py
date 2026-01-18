@@ -11,6 +11,14 @@ from pathlib import Path
 from vcdecomp.validation.validator import ValidationOrchestrator
 
 
+@pytest.fixture(scope='session')
+def pytest_regressions_data_dir():
+    """Configure pytest-regressions to store baselines in .planning/baselines/"""
+    # Get repository root (conftest.py is in vcdecomp/tests/)
+    repo_root = Path(__file__).parent.parent.parent
+    return repo_root / '.planning' / 'baselines'
+
+
 @pytest.fixture(scope="session")
 def compiler_paths():
     """
