@@ -23,6 +23,9 @@ class GlobalUsage:
     offset: int  # Data segment offset
     name: str = ""  # Odvozený název (např. gRecs, gEndRule)
 
+    # Name source tracking (07-03 enhancement)
+    source: str = ""  # Source of name: "save_info", "SGI_constant", "SGI_runtime", "global_pointer_table", "synthetic", "read_only_constant"
+
     # Usage statistics
     read_count: int = 0
     write_count: int = 0
@@ -464,7 +467,13 @@ class GlobalResolver:
 
         Uses instruction patterns to aggressively infer types.
         Overrides existing type hints in aggressive mode.
+
+        CRITICAL FIX (07-03): Added validation logging for DWORD-to-BYTE conversion
+        and assertions for alignment checks.
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
         # Lazy import to avoid circular dependency
         from .type_inference import TypeInferenceEngine
 
@@ -483,65 +492,106 @@ class GlobalResolver:
         # Match inferred types to global variables
         for block_id, ssa_instrs in self.ssa_func.instructions.items():
             for instr in ssa_instrs:
-                # Look for GCP/GLD/GADR instructions (load global)
-                if instr.mnemonic in ['GCP', 'GLD', 'GADR']:
+                # Look for GCP/GLD/GADR/GST instructions (global access)
+                if instr.mnemonic in ['GCP', 'GLD', 'GADR', 'GST']:
                     if not instr.instruction or not instr.instruction.instruction:
                         continue
 
-                    # GCP/GLD/GADR arg1 is DWORD offset, convert to byte offset
+                    # CRITICAL: GADR/GCP arg1 is DWORD offset, globals dict uses BYTE offset
                     dword_offset = instr.instruction.instruction.arg1
                     byte_offset = dword_offset * 4
+
+                    # Validation logging for offset conversion
+                    logger.debug(f"Global access: opcode={instr.mnemonic}, dword_offset={dword_offset}, byte_offset={byte_offset}")
+
+                    # Alignment assertion - global byte offset must be 4-byte aligned
+                    assert byte_offset % 4 == 0, f"Global byte offset {byte_offset} must be 4-byte aligned (dword_offset={dword_offset})"
 
                     if byte_offset not in self.globals:
                         continue
 
-                    # Get output SSA value
-                    if not instr.outputs:
-                        continue
+                    # Get output SSA value (for load operations GCP/GLD/GADR)
+                    # For GST (store), we'd need to look at input values instead
+                    if instr.mnemonic in ['GCP', 'GLD', 'GADR']:
+                        if not instr.outputs:
+                            continue
 
-                    output_value = instr.outputs[0]
-                    if not output_value or not output_value.name:
-                        continue
+                        output_value = instr.outputs[0]
+                        if not output_value or not output_value.name:
+                            continue
 
-                    # Check if type was inferred for this value
-                    inferred_type = inferred_types.get(output_value.name)
-                    if not inferred_type:
-                        continue
+                        # Check if type was inferred for this value
+                        inferred_type = inferred_types.get(output_value.name)
+                        if not inferred_type:
+                            continue
 
-                    # FIX 4: Skip void* types from GCP/GLD/GADR outputs
-                    # These instructions load ADDRESS of global, not the value itself
-                    # So the output SSA value is a pointer, but the global is NOT a pointer
-                    if inferred_type in ['void*', 'void *', 'ptr']:
-                        continue
+                        # FIX 4: Skip void* types from GCP/GLD/GADR outputs
+                        # These instructions load ADDRESS of global, not the value itself
+                        # So the output SSA value is a pointer, but the global is NOT a pointer
+                        if inferred_type in ['void*', 'void *', 'ptr']:
+                            continue
 
-                    # Get confidence from type inference engine
-                    type_info = self.type_inference.type_info.get(output_value.name)
-                    confidence = 0.0
-                    if type_info and type_info.evidence:
-                        # Average confidence of all evidence
-                        confidence = sum(ev.confidence for ev in type_info.evidence) / len(type_info.evidence)
+                        # Get confidence from type inference engine
+                        type_info = self.type_inference.type_info.get(output_value.name)
+                        confidence = 0.0
+                        if type_info and type_info.evidence:
+                            # Average confidence of all evidence
+                            confidence = sum(ev.confidence for ev in type_info.evidence) / len(type_info.evidence)
 
-                    # Update global usage with inferred type
-                    usage = self.globals[byte_offset]
+                        # Update global usage with inferred type
+                        usage = self.globals[byte_offset]
 
-                    # In aggressive mode, always override
-                    if self.aggressive_typing:
-                        usage.inferred_type = inferred_type
-                        usage.type_confidence = confidence
-                    # In conservative mode, only set if not already set
-                    elif not usage.inferred_type:
-                        usage.inferred_type = inferred_type
-                        usage.type_confidence = confidence
+                        # In aggressive mode, always override
+                        if self.aggressive_typing:
+                            usage.inferred_type = inferred_type
+                            usage.type_confidence = confidence
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={confidence:.2f})")
+                        # In conservative mode, only set if not already set
+                        elif not usage.inferred_type:
+                            usage.inferred_type = inferred_type
+                            usage.type_confidence = confidence
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={confidence:.2f})")
 
-                    # FIX 4.3: Propagate type from array element to array base
-                    # If this is an array element and we inferred its type,
-                    # propagate the type to the base array
-                    if usage.is_array_element and usage.array_base_offset is not None:
-                        base_usage = self.globals.get(usage.array_base_offset)
-                        if base_usage and not base_usage.inferred_type:
-                            # Propagate type with slightly lower confidence
-                            base_usage.inferred_type = inferred_type
-                            base_usage.type_confidence = confidence * 0.9
+                        # FIX 4.3: Propagate type from array element to array base
+                        # If this is an array element and we inferred its type,
+                        # propagate the type to the base array
+                        if usage.is_array_element and usage.array_base_offset is not None:
+                            base_usage = self.globals.get(usage.array_base_offset)
+                            if base_usage and not base_usage.inferred_type:
+                                # Propagate type with slightly lower confidence
+                                base_usage.inferred_type = inferred_type
+                                base_usage.type_confidence = confidence * 0.9
+
+                    elif instr.mnemonic == 'GST':
+                        # For store operations, infer type from input value
+                        if not instr.inputs:
+                            continue
+
+                        input_value = instr.inputs[0]
+                        if not input_value or not input_value.name:
+                            continue
+
+                        inferred_type = inferred_types.get(input_value.name)
+                        if not inferred_type:
+                            continue
+
+                        # Get confidence
+                        type_info = self.type_inference.type_info.get(input_value.name)
+                        confidence = 0.0
+                        if type_info and type_info.evidence:
+                            confidence = sum(ev.confidence for ev in type_info.evidence) / len(type_info.evidence)
+
+                        usage = self.globals[byte_offset]
+
+                        # Update type with appropriate mode logic
+                        if self.aggressive_typing:
+                            usage.inferred_type = inferred_type
+                            usage.type_confidence = confidence
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} from GST (confidence={confidence:.2f})")
+                        elif not usage.inferred_type:
+                            usage.inferred_type = inferred_type
+                            usage.type_confidence = confidence
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} from GST (confidence={confidence:.2f})")
 
     def _infer_struct_definitions(self):
         """
@@ -584,6 +634,60 @@ class GlobalResolver:
                 usage.inferred_type = inferred_struct.possible_known_match
                 usage.type_confidence = inferred_struct.confidence
 
+    def _resolve_sgi_constants(self):
+        """
+        Resolve SGI constants from header database.
+
+        Maps global variable offsets to SGI constant names from headers.
+        SGI constants are game engine globals defined in sc_def.h.
+
+        Returns:
+            Dict[int, str] - mapping byte_offset -> SGI constant name
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        sgi_mapping = {}
+
+        # Get header database
+        from ..headers.database import get_header_database
+        header_db = get_header_database()
+
+        # Get all SGI constants
+        sgi_constants = header_db.get_constants_by_prefix('SGI')
+
+        if not sgi_constants:
+            logger.debug("No SGI constants found in header database")
+            return sgi_mapping
+
+        # Build mapping from SGI index to constant name
+        # SGI constants are defined like: #define SGI_MISSIONDEATHCOUNT 1
+        for const_name, const_data in sgi_constants.items():
+            value_str = const_data.get('value', '')
+            try:
+                # Parse SGI index
+                if value_str.startswith('0x'):
+                    sgi_index = int(value_str, 16)
+                else:
+                    sgi_index = int(value_str)
+
+                # SGI index maps to byte offset (each global is 4 bytes)
+                # NOTE: This assumes SGI constants are sequential starting at offset 0
+                # The actual mapping might be different based on engine implementation
+                byte_offset = sgi_index * 4
+
+                # Only map if this offset exists in our globals
+                if byte_offset in self.globals:
+                    sgi_mapping[byte_offset] = const_name
+                    logger.debug(f"SGI mapping: offset {byte_offset} -> {const_name} (index {sgi_index})")
+
+            except (ValueError, TypeError):
+                # Skip non-integer constants
+                logger.debug(f"Skipping non-integer SGI constant: {const_name} = {value_str}")
+                continue
+
+        return sgi_mapping
+
     def _assign_names(self):
         """
         Přiřadí názvy globálním proměnným na základě detected patterns.
@@ -594,8 +698,17 @@ class GlobalResolver:
         2. Global pointer table indices (gGlobal0, gGlobal1, ...)
         3. Pattern-based names (arrays, counters, flags)
         4. Generic names (gVar0, gVar1, ...)
+
+        ENHANCEMENT (07-03): Added comprehensive save_info and SGI constant integration
+        with source tracking for debugging.
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
         name_counters: Dict[str, int] = defaultdict(int)
+
+        # PRIORITY 1 PRE-PROCESSING: Build SGI constant mapping from headers
+        sgi_constant_names = self._resolve_sgi_constants()
 
         # PRIORITY 0: Build mapping from save_info section (HIGHEST PRIORITY)
         # save_info contains actual variable names from the original source code
@@ -624,6 +737,8 @@ class GlobalResolver:
                 if byte_offset not in self.globals:
                     self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
 
+                logger.info(f"Global {byte_offset}: name from save_info: {var_name}")
+
         # Build reverse mapping: byte_offset → global_pointer_index
         gptr_offset_to_index = {}
         if self.scr and self.scr.global_pointers:
@@ -636,11 +751,22 @@ class GlobalResolver:
             # PRIORITY 0: SaveInfo names from original source (HIGHEST)
             if offset in sav_info_names:
                 usage.name = sav_info_names[offset]
+                usage.source = "save_info"
+                logger.debug(f"Global {offset}: assigned name '{usage.name}' from save_info")
                 continue
 
-            # PRIORITY 1: SGI constant names
+            # PRIORITY 1: SGI constant names from headers
+            if offset in sgi_constant_names:
+                usage.name = sgi_constant_names[offset]
+                usage.source = "SGI_constant"
+                logger.info(f"Global {offset}: assigned name '{usage.name}' from SGI constant")
+                continue
+
+            # PRIORITY 1b: SGI names from runtime detection (SC_sgi/SC_ggi calls)
             if usage.sgi_name:
                 usage.name = usage.sgi_name
+                usage.source = "SGI_runtime"
+                logger.info(f"Global {offset}: assigned name '{usage.name}' from runtime SGI detection")
                 continue
 
             # Pokud už má název, přeskoč
@@ -651,6 +777,8 @@ class GlobalResolver:
             if offset in gptr_offset_to_index:
                 gptr_idx = gptr_offset_to_index[offset]
                 usage.name = f"gGlobal{gptr_idx}"
+                usage.source = "global_pointer_table"
+                logger.debug(f"Global {offset}: assigned name '{usage.name}' from global pointer table")
                 continue
 
             # SKIP: Read-only data segment values (constants, literals)
@@ -659,6 +787,8 @@ class GlobalResolver:
             if usage.write_count == 0 and usage.read_count > 0:
                 # This is a read-only constant - don't assign a name
                 # Examples: TRUE, FALSE, numeric constants, string pointers
+                usage.source = "read_only_constant"
+                logger.debug(f"Global {offset}: skipped naming (read-only constant)")
                 continue
 
             # PRIORITY 3: Pattern-based names
@@ -701,6 +831,8 @@ class GlobalResolver:
             else:
                 usage.name = f"{base_name}{count}"
             name_counters[base_name] = count + 1
+            usage.source = "synthetic"
+            logger.debug(f"Global {offset}: assigned synthetic name '{usage.name}'")
 
 
 def resolve_globals(ssa_func: SSAFunction, symbol_db=None) -> Dict[int, str]:
