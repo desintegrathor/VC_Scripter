@@ -9,10 +9,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple, Callable
+import logging
 
 from ..loader.scr_loader import Instruction, SCRFile
 from ..disasm import opcodes
 from .cfg import CFG, build_cfg, BasicBlock
+
+logger = logging.getLogger(__name__)
 
 
 def _to_signed(val: int) -> int:
@@ -72,6 +75,99 @@ def _derive_alias(instr: Instruction, resolver: opcodes.OpcodeResolver) -> Optio
     # DADR pops address from stack, adds offset, pushes result
     # Alias will be derived from the input value's alias during lifting
     return None
+
+
+def _infer_type_from_opcode(mnemonic: str, resolver: opcodes.OpcodeResolver) -> opcodes.ResultType:
+    """
+    Infer result type from opcode mnemonic using opcode patterns.
+
+    This provides initial type hints during SSA construction, which will be
+    refined later by type_inference.py dataflow analysis.
+
+    Args:
+        mnemonic: Instruction mnemonic (e.g., 'FADD', 'IADD')
+        resolver: OpcodeResolver for looking up instruction info
+
+    Returns:
+        ResultType enum value based on opcode evidence
+    """
+    # Float operations - high confidence
+    float_ops = {
+        'FADD', 'FSUB', 'FMUL', 'FDIV', 'FNEG',
+        'FEQ', 'FNE', 'FGT', 'FGE', 'FLT', 'FLE',
+        'FSIN', 'FCOS', 'FTAN', 'FSQRT', 'FABS',
+    }
+    if mnemonic in float_ops:
+        return opcodes.ResultType.FLOAT
+
+    # Integer operations - high confidence
+    int_ops = {
+        'IADD', 'ISUB', 'IMUL', 'IDIV', 'IMOD', 'INEG',
+        'IEQ', 'INE', 'IGT', 'IGE', 'ILT', 'ILE',
+        'INC', 'DEC',
+    }
+    if mnemonic in int_ops:
+        return opcodes.ResultType.INT
+
+    # Character operations
+    char_ops = {
+        'CADD', 'CSUB', 'CMUL', 'CDIV',
+        'CEQ', 'CNE', 'CGT', 'CGE', 'CLT', 'CLE',
+    }
+    if mnemonic in char_ops:
+        return opcodes.ResultType.CHAR
+
+    # Short operations
+    short_ops = {
+        'SADD', 'SSUB', 'SMUL', 'SDIV',
+        'SEQ', 'SNE', 'SGT', 'SGE', 'SLT', 'SLE',
+    }
+    if mnemonic in short_ops:
+        return opcodes.ResultType.SHORT
+
+    # Double operations
+    double_ops = {
+        'DADD', 'DSUB', 'DMUL', 'DDIV', 'DNEG',
+        'DEQ', 'DNE', 'DGT', 'DGE', 'DLT', 'DLE',
+    }
+    if mnemonic in double_ops:
+        return opcodes.ResultType.DOUBLE
+
+    # Type conversion opcodes - explicit output type (99% confidence)
+    conversions = {
+        'ITOF': opcodes.ResultType.FLOAT,
+        'FTOI': opcodes.ResultType.INT,
+        'FTOD': opcodes.ResultType.DOUBLE,
+        'DTOF': opcodes.ResultType.FLOAT,
+        'ITOD': opcodes.ResultType.DOUBLE,
+        'DTOI': opcodes.ResultType.INT,
+        'CTOI': opcodes.ResultType.INT,
+        'ITOC': opcodes.ResultType.CHAR,
+        'STOI': opcodes.ResultType.INT,
+        'ITOS': opcodes.ResultType.SHORT,
+    }
+    if mnemonic in conversions:
+        return conversions[mnemonic]
+
+    # Comparison operations return int (boolean)
+    comparison_ops = {
+        'FCL', 'FEQ', 'FNE', 'FGT', 'FGE', 'FLT', 'FLE',
+        'ICL', 'IEQ', 'INE', 'IGT', 'IGE', 'ILT', 'ILE',
+        'CEQ', 'CNE', 'CGT', 'CGE', 'CLT', 'CLE',
+        'SEQ', 'SNE', 'SGT', 'SGE', 'SLT', 'SLE',
+        'DEQ', 'DNE', 'DGT', 'DGE', 'DLT', 'DLE',
+        'LES', 'GRE', 'EQL', 'NEQ',
+    }
+    if mnemonic in comparison_ops:
+        return opcodes.ResultType.INT
+
+    # Pointer operations
+    pointer_ops = {'LADR', 'GADR', 'DADR', 'PNT'}
+    if mnemonic in pointer_ops:
+        return opcodes.ResultType.POINTER
+
+    # Default to UNKNOWN for ambiguous operations (GCP, LCP, DCP without context)
+    return opcodes.ResultType.UNKNOWN
 
 
 @dataclass
@@ -184,8 +280,18 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
 
         outputs: List[StackValue] = []
         inferred_alias = _derive_alias(instr, resolver)
+        mnemonic = resolver.get_mnemonic(instr.opcode)
+
         for idx in range(pushes):
-            result_type = info.result_type if info else opcodes.ResultType.UNKNOWN
+            # Prefer opcode-based type inference over generic result_type
+            inferred_type = _infer_type_from_opcode(mnemonic, resolver)
+
+            # Fallback to info.result_type if inference returns UNKNOWN
+            if inferred_type == opcodes.ResultType.UNKNOWN and info:
+                result_type = info.result_type
+            else:
+                result_type = inferred_type
+
             alias = inferred_alias if idx == 0 else None
             stack_val = StackValue(
                 name=f"t{instr.address}_{idx}",
@@ -193,6 +299,11 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
                 value_type=result_type,
                 alias=alias,
             )
+
+            # Log type assignment for debugging
+            if result_type != opcodes.ResultType.UNKNOWN:
+                logger.info(f"Stack lifter assigned type {result_type.name} to {stack_val.name} based on opcode {mnemonic}")
+
             stack.append(stack_val)
             outputs.append(stack_val)
 
