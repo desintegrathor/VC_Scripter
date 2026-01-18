@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 4 of 9 (Error Analysis System)
-Plan: 03 of 3 (PHASE COMPLETE)
-Status: Complete
-Last activity: 2026-01-18 - Completed Phase 4 (Error Analysis System)
+Phase: 6 of 9 (Expression Reconstruction Fixes)
+Plan: 01 of 4
+Status: In progress
+Last activity: 2026-01-18 - Completed 06-01-PLAN.md (Expression Error Baseline)
 
-Progress: [█████████░] 25% (9/36 phase plans complete)
+Progress: [█████████░] 28% (10/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 10.9 min
-- Total execution time: 1.63 hours
+- Total plans completed: 10
+- Average duration: 10.4 min
+- Total execution time: 1.73 hours
 
 **By Phase:**
 
@@ -31,11 +31,12 @@ Progress: [█████████░] 25% (9/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
+| 06    | 1/4   | 6min  | 6min     |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (9min), 04-01 (4min), 04-02 (4min), 04-03 (6min)
-- Trend: Phase 4 complete - exceptional efficiency (4.7min average for complex GUI + module work)
-- Phase 4 delivered 3 modules, 570+ lines, full GUI integration in 14 min total
+- Last 5 plans: 04-01 (4min), 04-02 (4min), 04-03 (6min), 06-01 (6min)
+- Trend: Consistent efficiency - documentation/analysis tasks maintaining ~6min average
+- Phase 6 started: Error baseline established in 6 min (manual inspection + 357-line report)
 
 *Updated after each plan completion*
 
@@ -133,20 +134,38 @@ Recent decisions affecting current work:
 | Markdown format for failure logs | Human-readable, version-controllable, can be viewed in IDE or GitHub | 04-03 |
 | Vertical splitter for error tree + diff viewer | Standard Qt pattern for dual-pane views, user can customize layout | 04-03 |
 
+**From 06-01 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Manual source inspection for baseline | Compiler crashes (0xC0000005) prevent automated error file parsing - automated categorization requires parseable errors | 06-01 |
+| 6-pattern categorization scheme | Covers all observed error types: control flow (goto, unreachable), type system (mismatch), function contracts (return), variable tracking (undeclared), optimization (redundant assignments) | 06-01 |
+| 3-tier priority system (CRITICAL/HIGH/MEDIUM) | Prioritize based on: 1) blocks compilation vs compiles-but-wrong, 2) frequency across test files, 3) fix complexity estimate | 06-01 |
+| Focus on static errors only | Runtime semantic errors (wrong bytecode output) require successful compilation - Phase 6 focuses on getting code to compile first | 06-01 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
+**Phase 6 Plan 01 (Error Baseline) - COMPLETE:**
+- Baseline established: 6 error patterns documented with 3-tier priority system
+- 100% test failure rate: All 3 scripts cause compiler crash (0xC0000005)
+- Manual inspection required: Compiler crashes prevent automated error categorization
+- Prioritized fix targets identified for Plans 02-04
+- Ready for Priority 1 fixes (undefined goto, undeclared variables)
+
+**Phase 6 Plans 02-04:**
+- Pattern 2 (type mismatches) is HIGH complexity - may require significant stack lifter refactoring
+- AttributeError failures in 4/15 functions suggest additional bugs outside Phase 6 scope
+- Success criteria: Get at least 1/3 test files compiling (even with errors)
+
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
 - Error categorization module enables systematic analysis
 - GUI integration provides interactive error exploration
 - Diff viewer and test logger support debugging workflow
-- No blockers for Phase 5
-
-**Phase 6-8 (Decompiler Fixes):** Success depends on comprehensive error classification from Phase 4 (NOW COMPLETE)
 
 **Phase 1 (GUI Validation Integration) - COMPLETE:**
 - All requirements satisfied (VALID-01, VALID-02, VALID-03)
@@ -184,10 +203,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T08:38:27Z (phase 4 plan 03 complete)
-Stopped at: Completed 04-03-PLAN.md (Diff Viewer and Test Logging)
+Last session: 2026-01-18T09:39:57Z (phase 6 plan 01 complete)
+Stopped at: Completed 06-01-PLAN.md (Expression Error Baseline)
 Resume file: None
-Next: Begin Phase 5 Plan 01 (Quality Metrics Dashboard)
+Next: Begin Phase 6 Plan 02 (Priority 1 Fixes - Undefined Goto & Undeclared Variables)
 
 ## Technical Context
 
@@ -284,3 +303,6 @@ Next: Begin Phase 5 Plan 01 (Quality Metrics Dashboard)
 - `vcdecomp/gui/widgets/diff_viewer_widget.py` - Side-by-side diff viewer with assembly/bytecode comparison (359 lines) (04-03)
 - `vcdecomp/validation/test_case_logger.py` - Markdown failure report generator with reproducible steps (211 lines) (04-03)
 - `vcdecomp/gui/views/error_analysis_view.py` - Integrated diff viewer, export button, automatic bytecode comparison (04-03)
+
+**Phase 06 Plan 01 complete:**
+- `.planning/phases/06-expression-reconstruction-fixes/ERROR_BASELINE.md` - Comprehensive error baseline (357 lines, 6 patterns, 3-tier priority system) (06-01)
