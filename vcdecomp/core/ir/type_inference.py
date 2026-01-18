@@ -1052,3 +1052,210 @@ class TypeInferenceEngine:
         """
         info = self.type_info.get(var_name)
         return info.evidence if info else []
+
+    def infer_parameter_types(self) -> List['ParamInfo']:
+        """
+        Infer parameter types from function entry and usage patterns.
+
+        This analyzes how parameters are used throughout the function:
+        - Function call arguments reveal expected types (XCALL signature matching)
+        - Arithmetic operations reveal numeric types (FADD→float, IADD→int)
+        - Usage context provides additional evidence
+
+        Returns:
+            List of ParamInfo with inferred types, names, and confidence
+        """
+        # Run full type inference if not already done
+        if not self.type_info:
+            self.infer_types()
+
+        # Find entry block (usually block 0, but verify)
+        entry_block_id = None
+        for block_id in sorted(self.ssa.instructions.keys()):
+            if block_id >= 0:  # First non-negative block
+                entry_block_id = block_id
+                break
+
+        if entry_block_id is None:
+            return []
+
+        # Collect parameter values from entry block
+        # Parameters are identified by LCP instructions with negative offsets
+        param_values = self._collect_parameter_values(entry_block_id)
+
+        # Build ParamInfo for each parameter
+        param_infos = []
+        for idx, param_value in enumerate(param_values):
+            # Get inferred type from type inference
+            inferred_type = self.get_type_for_variable(param_value.name)
+            if not inferred_type:
+                inferred_type = 'int'  # Default fallback
+
+            # Get confidence from evidence
+            evidence = self.get_evidence_for_variable(param_value.name)
+            confidence = self._calculate_confidence(evidence)
+
+            # Get parameter name from save_info if available
+            param_name = self._get_parameter_name(idx, param_value.name)
+
+            param_infos.append(ParamInfo(
+                index=idx,
+                name=param_name,
+                type=inferred_type,
+                confidence=confidence
+            ))
+
+        return param_infos
+
+    def _collect_parameter_values(self, entry_block_id: int) -> List['SSAValue']:
+        """
+        Collect parameter values from entry block.
+
+        Parameters are loaded via LCP instructions with negative stack offsets.
+        """
+        param_values = []
+        param_offsets = {}  # offset -> SSAValue
+
+        if entry_block_id not in self.ssa.instructions:
+            return []
+
+        for inst in self.ssa.instructions[entry_block_id]:
+            # LCP with negative offset = parameter load
+            if inst.mnemonic == 'LCP' and inst.instruction:
+                orig_instr = inst.instruction.instruction
+                stack_offset = orig_instr.arg1
+
+                # Handle two's complement for negative offsets
+                if stack_offset >= 0x80000000:
+                    stack_offset = stack_offset - 0x100000000
+
+                # Negative offset = parameter
+                if stack_offset < 0 and inst.outputs:
+                    param_offset = abs(stack_offset)
+                    param_offsets[param_offset] = inst.outputs[0]
+
+        # Sort by offset to get parameter order
+        sorted_offsets = sorted(param_offsets.keys())
+        for offset in sorted_offsets:
+            param_values.append(param_offsets[offset])
+
+        return param_values
+
+    def _calculate_confidence(self, evidence: List[TypeEvidence]) -> float:
+        """Calculate overall confidence from evidence list."""
+        if not evidence:
+            return 0.0
+
+        # Use weighted average of top 3 evidence items
+        sorted_evidence = sorted(evidence, key=lambda e: e.confidence, reverse=True)
+        top_evidence = sorted_evidence[:3]
+
+        if not top_evidence:
+            return 0.0
+
+        return sum(e.confidence for e in top_evidence) / len(top_evidence)
+
+    def _get_parameter_name(self, param_index: int, ssa_name: str) -> str:
+        """
+        Get parameter name from save_info debug symbols if available.
+
+        Falls back to param_N if no debug info.
+        """
+        # Check if save_info exists on scr
+        scr = self.ssa.scr
+        if hasattr(scr, 'save_info') and scr.save_info and hasattr(scr.save_info, 'parameters'):
+            params = scr.save_info.parameters
+            if params and param_index < len(params):
+                param = params[param_index]
+                if hasattr(param, 'name') and param.name:
+                    return param.name
+
+        # Fallback: generic name
+        return f"param_{param_index}"
+
+    def infer_return_type(self) -> str:
+        """
+        Infer return type from return statements.
+
+        Analyzes all RET instructions to determine what type is being returned.
+        If no values returned, function is void. If values returned, infer
+        type from those values.
+
+        Returns:
+            Return type string ('void', 'int', 'float', etc.)
+        """
+        return_values = []
+
+        # Scan all blocks for RET instructions
+        for block_id, instructions in self.ssa.instructions.items():
+            for inst in instructions:
+                if inst.mnemonic == 'RET':
+                    # Check if RET has inputs (return value)
+                    if inst.inputs:
+                        return_values.append(inst.inputs[0])
+
+        # No return values = void function
+        if not return_values:
+            return 'void'
+
+        # Infer types of return values
+        return_types = []
+        for value in return_values:
+            inferred_type = self.get_type_for_variable(value.name)
+            if inferred_type:
+                return_types.append(inferred_type)
+
+        # Merge return types (find dominant type)
+        if not return_types:
+            return 'int'  # Default
+
+        return self._merge_types(return_types)
+
+    def _merge_types(self, types: List[str]) -> str:
+        """
+        Merge multiple types to find dominant type.
+
+        Rules:
+        - If all same, return that type
+        - If mix of int/float, prefer float (more general)
+        - If mix of pointer types, prefer void*
+        - Otherwise return most common type
+        """
+        if not types:
+            return 'int'
+
+        # Count occurrences
+        type_counts = {}
+        for t in types:
+            type_counts[t] = type_counts.get(t, 0) + 1
+
+        # If all same, return it
+        if len(type_counts) == 1:
+            return types[0]
+
+        # Special rules for numeric types
+        if 'float' in type_counts and 'int' in type_counts:
+            return 'float'  # Float is more general
+
+        if 'double' in type_counts:
+            return 'double'  # Double is most general numeric type
+
+        # Return most common type
+        return max(type_counts.items(), key=lambda x: x[1])[0]
+
+
+@dataclass
+class ParamInfo:
+    """Parameter information from type inference."""
+
+    index: int
+    """Parameter position (0, 1, 2...)"""
+
+    name: str
+    """Parameter name (from save_info or generic param_N)"""
+
+    type: str
+    """Inferred C type (float, int, c_Node*, etc.)"""
+
+    confidence: float
+    """Type inference confidence (0.0-1.0)"""
