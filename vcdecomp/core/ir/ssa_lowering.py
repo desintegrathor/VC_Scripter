@@ -299,22 +299,40 @@ class SSALowerer:
         declarations = []
 
         for base_var in base_vars:
+            # CRITICAL FIX (07-08): Opcode-first priority to eliminate Pattern 2
+            # Check if any version has opcode-derived type (IADD→int, FADD→float)
+            # These concrete types ALWAYS override struct inference
+            opcode_type = None
+            for version in base_var.versions:
+                # Check if this SSA value has a non-UNKNOWN type
+                if hasattr(version, 'ssa_value') and version.ssa_value:
+                    from ..disasm import opcodes
+                    if version.ssa_value.value_type != opcodes.ResultType.UNKNOWN:
+                        # Import helper from variables.py
+                        from .structure.analysis.variables import result_type_to_c_type
+                        opcode_type = result_type_to_c_type(version.ssa_value.value_type)
+                        if opcode_type:
+                            break
+
             # Infer type from semantic type and usage
             var_type = "int"  # Default
 
+            # Priority 1: Opcode-derived types (ABSOLUTE)
+            if opcode_type and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
+                var_type = opcode_type
+            # Priority 2: Struct types from function signatures (DISABLED - too many false positives)
             # FIX #5: Check if any version of this variable has an inferred struct type
             # First check base_name (for local_X variables that weren't renamed)
-            if base_var.base_name in versioned_struct_types:
-                var_type = versioned_struct_types[base_var.base_name]
-            else:
-                # Then check versioned names
-                for version in base_var.versions:
-                    if version.assigned_name in versioned_struct_types:
-                        var_type = versioned_struct_types[version.assigned_name]
-                        break
-
-            # Check if any version has float type
-            if var_type == "int" and any("float" in base_var.lowered_name.lower() for version in base_var.versions):
+            # elif base_var.base_name in versioned_struct_types:
+            #     var_type = versioned_struct_types[base_var.base_name]
+            # else:
+            #     # Then check versioned names
+            #     for version in base_var.versions:
+            #         if version.assigned_name in versioned_struct_types:
+            #             var_type = versioned_struct_types[version.assigned_name]
+            #             break
+            # Priority 3: Float heuristic (check variable name)
+            elif any("float" in base_var.lowered_name.lower() for version in base_var.versions):
                 var_type = "float"
 
             declarations.append((var_type, base_var.lowered_name))

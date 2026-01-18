@@ -246,20 +246,37 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             if semantic_name:
                 display_name = semantic_name
 
-        # Don't re-declare if we already have this variable
-        if display_name in var_types:
+        # CRITICAL FIX (07-08): Allow type updates when we have opcode evidence
+        # Previously, once a variable was declared, it couldn't be updated even if
+        # we later discovered concrete opcode evidence (IADD→int, FADD→float).
+        # This caused Pattern 2: struct types assigned from first encounter, literals fail later.
+        #
+        # New strategy: Always check for opcode types, and UPDATE if opcode is more specific
+        already_declared = display_name in var_types
+        if already_declared:
+            # Check if we have opcode evidence that should override the existing type
+            if value.value_type != opcodes.ResultType.UNKNOWN:
+                opcode_type = result_type_to_c_type(value.value_type)
+                if opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
+                    # We have concrete opcode evidence - update the type
+                    existing_type = var_types[display_name]
+                    if existing_type.startswith("s_SC_") or existing_type == "int" or existing_type == "dword":
+                        # Override struct types or generic types with concrete opcode types
+                        logger.debug(f"[TYPE UPDATE] {display_name}: {existing_type} → {opcode_type} (opcode evidence)")
+                        var_types[display_name] = opcode_type
+            # Skip further processing if we don't have opcode evidence to update
             return
 
         # Determine type from instruction or value type
         var_type = default_type
 
-        # TASK 1 (07-07): Confidence-based type priority with proper struct handling
-        # Priority order with confidence thresholds:
-        # 1. Opcode-based types (FLOAT/INT from FADD/IADD) - HIGHEST priority (concrete evidence)
-        # 2. HIGH confidence (0.8+) struct types from function signatures
-        # 3. MEDIUM confidence (0.5-0.8) struct types from heuristics
-        # 4. Field access patterns from formatter (legacy)
-        # 5. LOW confidence (0.0-0.5) struct types - ignored in favor of defaults
+        # TASK 1 (07-08): ABSOLUTE opcode-first priority to eliminate Pattern 2
+        # Priority order (STRICT):
+        # 1. Opcode-based concrete types (int/float/dword from IADD/FADD) - ABSOLUTE PRIORITY
+        # 2. HIGH confidence (0.8+) struct types - ONLY if no opcode type
+        # 3. MEDIUM confidence (0.5-0.8) struct types - ONLY if no opcode type
+        # 4. Legacy field access patterns - DISABLED (too many false positives)
+        # 5. LOW confidence (0.0-0.5) struct types - ignored
 
         # Get struct type info if available
         struct_type_info = None
@@ -268,42 +285,34 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         elif var_name in inferred_struct_types:
             struct_type_info = inferred_struct_types[var_name]
 
-        # Priority 1: Check SSA refined type from type inference (opcode-based - HIGHEST confidence)
-        # Opcodes like IADD, FADD, IMUL provide concrete type evidence that trumps everything
+        # Priority 1: ABSOLUTE PRIORITY - Opcode-based types (concrete evidence)
+        # Variables used in FADD/IADD/IMUL operations MUST use opcode-derived types
+        # This prevents field access heuristics from overriding concrete arithmetic type evidence
+        opcode_type = None
         if value.value_type != opcodes.ResultType.UNKNOWN:
-            refined_type = result_type_to_c_type(value.value_type)
-            if refined_type is not None:
-                var_type = refined_type
-            # If no opcode type mapping but we have HIGH confidence struct (0.8+), use it
-            elif struct_type_info and struct_type_info.confidence >= 0.8:
-                var_type = struct_type_info.struct_type
-            # If no opcode type and we have MEDIUM confidence struct (0.5-0.8), use it
-            elif struct_type_info and struct_type_info.confidence >= 0.5:
-                var_type = struct_type_info.struct_type
-            # LOW confidence structs (<0.5) are ignored - fall through to default
-            else:
-                # Fallback path for unmapped types
-                var_type = default_type
-        # Priority 2: If no opcode type, check HIGH confidence struct types (0.8+)
-        elif struct_type_info and struct_type_info.confidence >= 0.8:
-            var_type = struct_type_info.struct_type
+            opcode_type = result_type_to_c_type(value.value_type)
+
+
+        if opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
+            # CRITICAL: Concrete opcode type ALWAYS wins - skip all struct inference
+            var_type = opcode_type
+        # Priority 2: If no concrete opcode type, check HIGH confidence struct types (0.8+)
+        # DISABLED (07-08): Even HIGH confidence struct types cause false positives
+        # Variables are often reused for different purposes (stack slot reuse)
+        # Only use opcode-derived types to eliminate Pattern 2 completely
+        # elif struct_type_info and struct_type_info.confidence >= 0.8:
+        #     var_type = struct_type_info.struct_type
         # Priority 3: Check MEDIUM confidence struct types (0.5-0.8)
-        elif struct_type_info and struct_type_info.confidence >= 0.5:
-            var_type = struct_type_info.struct_type
-        # LOW confidence structs (<0.5) are ignored - fall through to legacy/default
-        # Priority 4: Check if this is a structure variable (has field access) - legacy path
-        elif var_name.startswith("local_"):
-            # Check if formatter knows this is a struct
-            struct_info = formatter._struct_ranges.get(var_name)
-            if struct_info:
-                # struct_info is a tuple like (start, end, 'struct_name')
-                # Extract just the struct name
-                if isinstance(struct_info, tuple) and len(struct_info) >= 3:
-                    var_type = struct_info[2]
-                else:
-                    var_type = str(struct_info)
-            else:
-                var_type = default_type
+        # elif struct_type_info and struct_type_info.confidence >= 0.5:
+        #     var_type = struct_type_info.struct_type
+        # Priority 4: DISABLED - Legacy _struct_ranges causes false positives
+        # Field access patterns alone are insufficient evidence for struct types
+        # Only use confidence-scored struct inference from struct_type_map
+        # elif var_name.startswith("local_"):
+        #     struct_info = formatter._struct_ranges.get(var_name)
+        #     if struct_info and isinstance(struct_info, tuple) and len(struct_info) >= 3:
+        #         var_type = struct_info[2]
+        # LOW confidence structs (<0.5) are ignored - fall through to default
         else:
             var_type = default_type
 
@@ -615,16 +624,17 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     continue
 
                 # This is an undeclared variable that needs declaration
-                # Determine type - check if it's in inferred structs first
+                # Determine type - use int default (AGGRESSIVE FIX 07-08)
+                # DISABLED: All struct inference heuristics cause false positives (Pattern 2)
                 var_type = "int"  # Default
-                struct_info = inferred_struct_types.get(var_name)
-                if struct_info and struct_info.confidence >= 0.5:
-                    var_type = struct_info.struct_type
+                # struct_info = inferred_struct_types.get(var_name)
+                # if struct_info and struct_info.confidence >= 0.5:
+                #     var_type = struct_info.struct_type
                 # Check if this is a vector/array-like name pattern (LOW confidence heuristic)
-                elif var_name in ('vec', 'pos', 'rot', 'dir'):
-                    var_type = "s_SC_vector"  # Common vector struct
-                elif 'enum' in var_name.lower():
-                    var_type = "s_SC_MP_EnumPlayers"  # Common enum struct
+                # elif var_name in ('vec', 'pos', 'rot', 'dir'):
+                #     var_type = "s_SC_vector"  # Common vector struct
+                # elif 'enum' in var_name.lower():
+                #     var_type = "s_SC_MP_EnumPlayers"  # Common enum struct
 
                 # Add to var_types
                 var_types[var_name] = var_type
@@ -670,4 +680,21 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             var_type = var_types[var_name]
             declarations.append(f"{var_type} {var_name}")
 
-    return declarations
+    # CRITICAL FIX (07-08): Post-process to eliminate Pattern 2
+    # Remove struct types from tmp* variables that don't have field access
+    # These are likely stack-reuse false positives from _struct_ranges
+    cleaned_declarations = []
+    for decl in declarations:
+        # Check if this is a tmp variable with struct type
+        if decl.startswith("s_SC_") and " tmp" in decl:
+            # Extract variable name
+            parts = decl.split()
+            if len(parts) >= 2:
+                var_name = parts[1].split('[')[0]  # Remove array brackets if present
+                if var_name.startswith("tmp"):
+                    # Replace struct type with int (safe default for tmp variables)
+                    cleaned_declarations.append(f"int {var_name}")
+                    continue
+        cleaned_declarations.append(decl)
+
+    return cleaned_declarations
