@@ -426,10 +426,29 @@ def get_struct_by_size(size: int) -> List[StructDef]:
 
 
 def get_field_at_offset(struct_name: str, offset: int) -> Optional[str]:
-    """Get field name at offset for named structure."""
+    """
+    Get field name at offset for named structure.
+
+    Tries HeaderDatabase first (dynamic parsing), falls back to hardcoded structures.
+    """
+    # PRIORITY 1: Try HeaderDatabase (parsed from sc_global.h/sc_def.h)
+    from .headers.database import get_header_database
+
+    try:
+        db = get_header_database()
+        field_name = db.lookup_field_name(struct_name, offset)
+
+        # Only use HeaderDatabase result if it's not a fallback generic name
+        if field_name and not field_name.startswith("field_"):
+            return field_name
+    except Exception:
+        pass  # Fallback to hardcoded structures
+
+    # PRIORITY 2: Hardcoded structures (legacy)
     struct = get_struct_by_name(struct_name)
     if struct:
         return struct.get_field_name_at_offset(offset)
+
     return None
 
 
