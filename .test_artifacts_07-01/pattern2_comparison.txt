@@ -1,0 +1,163 @@
+# Pattern 2 Type Mismatch Analysis - Phase 07-01
+
+**Date:** 2026-01-18
+**Purpose:** Measure Pattern 2 (type mismatch) reduction after integrating opcode-based type inference
+
+## Methodology
+
+Pattern 2 signatures from ERROR_BASELINE.md (lines 59-94):
+1. Struct-typed variables assigned primitive values (float/int literals or function returns)
+2. Primitive-typed variables assigned incompatible types (int assigned float)
+3. Pointer dereference mismatches (*int_var = float_value)
+
+## Test Files Analysis
+
+### test1_tt_decompiled.c
+
+**BEFORE (ERROR_BASELINE.md examples):**
+
+Example 1 (lines 67-72 in ERROR_BASELINE):
+```c
+tmp5 = SC_ggf(400);  // Function returns float
+tmp5 = 30.0f;         // Float literal
+return tmp5;
+```
+BUT tmp5 declared as `s_SC_MP_EnumPlayers` (struct type), not float!
+
+Example 2 (lines 88-90 in ERROR_BASELINE):
+```c
+tmp6 = tmp5;          // int to struct assignment
+tmp6 = 5.0f;          // float to struct assignment
+tmp6 = 10.0f;         // float to struct assignment
+```
+Variable tmp6 declared as `s_SC_MP_EnumPlayers` but assigned int and float values
+
+**AFTER (current output):**
+
+Line 64-72 (func_0119):
+```c
+s_SC_MP_EnumPlayers tmp5;
+
+tmp5 = SC_ggf(400);
+tmp5 = 1106247680;  // Raw hex value, not float literal
+return tmp5;
+```
+STILL WRONG: tmp5 is struct but assigned function return and int value
+
+Line 92-99 (func_0155):
+```c
+s_SC_MP_EnumPlayers tmp6;
+
+tmp6 = tmp5;
+tmp6 = 1084227584;  // Raw hex value
+tmp6 = 1092616192;  // Raw hex value
+return tmp6;
+```
+STILL WRONG: tmp6 is struct but assigned int values
+
+Line 120-128 (func_0213):
+```c
+s_SC_MP_EnumPlayers tmp;
+
+tmp = SC_ggf(402);
+tmp = 1139802112;  // Raw hex value
+return tmp;
+```
+STILL WRONG: tmp is struct but assigned function return and int value
+
+Line 206-211 (func_0752):
+```c
+s_SC_MP_EnumPlayers local_;
+
+local_ = SC_MP_SRV_GetTeamsNrDifference(1);
+return 7;
+```
+STILL WRONG: local_ is struct but assigned function return value
+
+Line 245-251 (func_0852):
+```c
+s_SC_MP_EnumPlayers enum_pl;
+s_SC_MP_EnumPlayers local_;
+
+local_ = SC_MP_SRV_GetTeamsNrDifference(tmp6);
+return 267;
+```
+STILL WRONG: local_ is struct but assigned function return value
+
+## Pattern 2 Instance Count
+
+**ERROR_BASELINE.md:**
+- Example 1: 1 struct-to-primitive mismatch
+- Example 2: 1 struct-to-primitive mismatch  
+- Total documented: 2 explicit examples
+- Actual count from Phase 6 data: ~15-20 instances across test1/test2/test3
+
+**Current output (test1_tt_decompiled.c):**
+- func_0119 (line 64-72): 1 instance (tmp5)
+- func_0155 (line 92-99): 1 instance (tmp6)
+- func_0213 (line 120-128): 1 instance (tmp)
+- func_0752 (line 206-211): 1 instance (local_)
+- func_0852 (line 245-251): 1 instance (local_)
+- **Total in test1: 5 instances**
+
+## Observations
+
+1. **Type inference not propagating to variable declarations:**
+   - Stack lifter correctly assigns FLOAT types to FADD/FSUB operations (verified in logs)
+   - Stack lifter correctly assigns INT types to arithmetic operations (verified in logs)
+   - However, variable declarations still use struct types (s_SC_MP_EnumPlayers)
+   
+2. **Root cause:**
+   - variables.py uses inferred_struct_types dict with HIGH priority (line 247-248 in RESEARCH.md)
+   - Struct type inference from function calls overrides opcode-based types
+   - Example: SC_MP_EnumPlayers(&enum_pl, ...) infers enum_pl as s_SC_MP_EnumPlayers
+   - This struct type then propagates to other tmp variables incorrectly
+
+3. **Stack lifter working as designed:**
+   - Logs show: "Stack lifter assigned type FLOAT to t63_0 based on opcode FADD"
+   - Logs show: "Stack lifter assigned type INT to t73_0 based on opcode ITOF"
+   - Initial type assignment from opcodes is CORRECT
+
+4. **Type inference write-back not reaching declarations:**
+   - No "Type inference refined..." logs in output
+   - This suggests either:
+     a) Initial types match final types (no refinement needed)
+     b) Write-back happens but variables.py doesn't use value.value_type
+     c) Struct type priority overrides SSA value types
+
+## Root Cause: Priority Order Issue
+
+From RESEARCH.md lines 239-255:
+```python
+# Priority order for type assignment:
+# 1. Inferred struct types (from function calls) - HIGHEST
+# 2. Struct ranges (from field tracker)
+# 3. SSA value type (opcodes.ResultType)
+# 4. Default (int)
+```
+
+**Problem:** Struct type inference has HIGHEST priority, overriding correct opcode-based types.
+
+**Example flow:**
+1. SC_MP_EnumPlayers(&enum_pl, ...) infers enum_pl as s_SC_MP_EnumPlayers (correct)
+2. Some tmp variable is used in same context, wrongly inferred as s_SC_MP_EnumPlayers
+3. Later, tmp is assigned float from FADD operation
+4. Stack lifter correctly sets value.value_type = FLOAT
+5. BUT variables.py priority (1) overrides with struct type
+6. Result: tmp declared as s_SC_MP_EnumPlayers, assigned float
+
+## Conclusion
+
+**Pattern 2 reduction: 0%**
+
+Phase 07-01 implementation is CORRECT but INSUFFICIENT:
+- Stack lifter opcode-based type inference: WORKING (verified in logs)
+- Type inference integration: WORKING (no errors)
+- **Missing link:** variables.py priority order needs adjustment
+
+**Next steps (Phase 07-02):**
+1. Review inferred_struct_types logic in variables.py
+2. Only apply struct types when high confidence (not heuristic guesses)
+3. Prefer value.value_type when it's concrete (FLOAT, INT) over struct guesses
+4. Add confidence scoring to struct type inference
+5. Test with adjusted priority: High-confidence types > Opcode types > Low-confidence structs > Default
