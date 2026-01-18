@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 03 of 3 (GAPS FOUND - verification incomplete)
-Status: Needs gap closure - 1/5 success criteria verified
-Last activity: 2026-01-18 - Phase 6 verification found gaps (0/3 tests compiling, 2 fixes ineffective)
+Plan: 04 of 4 (Gap closure diagnostic complete)
+Status: Gap closure in progress - Pattern 1 resolved, Pattern 5 emission bug identified
+Last activity: 2026-01-18 - Completed 06-04-PLAN.md (diagnostic findings documented)
 
-Progress: [█████████░] 33% (12/36 phase plans complete)
+Progress: [█████████░] 36% (13/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 9.2 min
-- Total execution time: 1.95 hours
+- Total plans completed: 13
+- Average duration: 10.1 min
+- Total execution time: 2.2 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [█████████░] 33% (12/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
-| 06    | 3/3   | 20min | 6.7min   |
+| 06    | 4/4   | 49min | 12.3min  |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (6min), 06-01 (6min), 06-02 (9min), 06-03 (5min)
-- Phase 6 complete: 3 plans in 20min (baseline analysis, fix attempts, validation)
-- Completion/validation tasks faster (5min) than implementation (9min)
+- Last 5 plans: 06-01 (6min), 06-02 (9min), 06-03 (5min), 06-04 (29min)
+- Phase 6 gap closure: 4 plans in 49min (baseline, fixes, validation, diagnostic)
+- Diagnostic task (06-04) took 29min - comprehensive logging and root cause analysis
 
 *Updated after each plan completion*
 
@@ -152,23 +152,31 @@ Recent decisions affecting current work:
 | Type inference from name patterns | vec/pos/rot/dir → s_SC_vector, enum_pl → s_SC_MP_EnumPlayers - heuristic for common Vietcong patterns | 06-02 |
 | Document unsuccessful fixes | Create FIX_RESULTS.md with root cause analysis and debugging strategies - unsuccessful execution provides valuable data | 06-02 |
 
+**From 06-04 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Debug logging with WARNING level | Appear in pytest --log-cli-level=WARNING output for diagnostic visibility without changing test infrastructure | 06-04 |
+| Evidence-based diagnosis methodology | Collect actual execution data before making hypotheses - avoids speculation, reveals true root causes | 06-04 |
+| [MODULE DEBUG] prefix pattern | Consistent logging format enables grep filtering and clear identification of debug vs production logs | 06-04 |
+| Pattern 1 fix confirmed working | Despite FIX_RESULTS.md claims, no undefined goto labels exist in current output - fix is 100% effective | 06-04 |
+| Pattern 5 has emission bug, not collection bug | Variable collection and declaration generation work correctly, but downstream code emission loses declarations | 06-04 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 6 (Expression Reconstruction Fixes) - COMPLETE (PARTIAL):**
-- All 3 plans complete: baseline analysis, fix attempts, regression validation
-- 0/3 tests compiling (unchanged from baseline) - fixes ineffective
+**Phase 6 (Expression Reconstruction Fixes) - GAP CLOSURE IN PROGRESS:**
+- 4 plans complete: baseline analysis, fix attempts, regression validation, diagnostic
+- 0/3 tests compiling (unchanged from baseline) - compilation still fails
 - 6 error patterns identified and categorized (CRITICAL/HIGH/MEDIUM priority)
-- 2 patterns attempted (Pattern 1: orphaned goto, Pattern 5: undeclared vars)
-- Fixes theoretically sound but ineffective in practice:
-  * goto block_88 still generated despite orphaned check
-  * vec/enum_pl still undeclared despite regex extraction
-- Regression baseline established (3 YAML files) for CI tracking
-- PHASE_COMPLETION.md provides comprehensive analysis and roadmap
-- Next phase: Debug existing fixes OR implement Pattern 3 (missing returns)
+- Pattern 1 (orphaned goto): FIX COMPLETE AND WORKING - all undefined gotos eliminated
+- Pattern 5 (undeclared variables): Fix partially working - collection/generation OK, emission BROKEN
+- Root cause identified: Code emission in orchestrator.py loses declarations between generation and file write
+- DEBUG_FINDINGS.md (255 lines) provides evidence-based diagnosis with execution traces
+- Next action: Plan 06-05 will fix Pattern 5 emission bug by tracing orchestrator code emission logic
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
@@ -212,10 +220,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T11:01:43Z (phase 6 complete)
-Stopped at: Completed 06-03-PLAN.md (Regression Validation and Phase Completion)
+Last session: 2026-01-18T11:00:00Z (phase 6 gap closure diagnostic complete)
+Stopped at: Completed 06-04-PLAN.md (Pattern 1 & 5 diagnostic with root cause analysis)
 Resume file: None
-Next: Phase 7 planning - Variable Declaration Fixes (or continue debugging Phase 6 patterns)
+Next: Plan 06-05 - Fix Pattern 5 emission bug in orchestrator.py code emission logic
 
 ## Technical Context
 
