@@ -29,11 +29,11 @@ Requirements for systematically improving decompiler from "broken output" to "co
 
 ### Error Analysis & Classification
 
-- [ ] **ERROR-01**: Compilation errors parsed and categorized (syntax, type, semantic)
-- [ ] **ERROR-02**: Error patterns identified and aggregated ("70% are switch/case bugs")
-- [ ] **ERROR-03**: Interactive error viewer shows original .asm vs decompiled .c side-by-side
-- [ ] **ERROR-04**: Bytecode differences highlighted at instruction level
-- [ ] **ERROR-05**: Failed test cases logged with reproducible steps
+- [x] **ERROR-01**: Compilation errors parsed and categorized (syntax, type, semantic)
+- [x] **ERROR-02**: Error patterns identified and aggregated ("70% are switch/case bugs")
+- [x] **ERROR-03**: Interactive error viewer shows original .asm vs decompiled .c side-by-side
+- [x] **ERROR-04**: Bytecode differences highlighted at instruction level
+- [x] **ERROR-05**: Failed test cases logged with reproducible steps
 
 ### Core Decompiler Fixes
 
@@ -113,11 +113,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-05 | Phase 9 | Pending |
 | TEST-06 | Phase 3 | Complete |
 | TEST-07 | Phase 2 | Complete |
-| ERROR-01 | Phase 4 | Pending |
-| ERROR-02 | Phase 4 | Pending |
-| ERROR-03 | Phase 4 | Pending |
-| ERROR-04 | Phase 4 | Pending |
-| ERROR-05 | Phase 4 | Pending |
+| ERROR-01 | Phase 4 | Complete |
+| ERROR-02 | Phase 4 | Complete |
+| ERROR-03 | Phase 4 | Complete |
+| ERROR-04 | Phase 4 | Complete |
+| ERROR-05 | Phase 4 | Complete |
 | DECOMP-01 | Phase 6 | Pending |
 | DECOMP-02 | Phase 7 | Pending |
 | DECOMP-03 | Phase 7 | Pending |
