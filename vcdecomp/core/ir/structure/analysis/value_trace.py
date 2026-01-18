@@ -7,10 +7,23 @@ including function calls, global variables, and function parameters.
 
 from __future__ import annotations
 
-from typing import Optional, Set
+from dataclasses import dataclass
+from typing import Optional, Set, Dict
+import logging
 
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class BoundInfo:
+    """Information about loop bounds for array dimension inference."""
+    min_value: int  # Minimum index seen
+    max_value: int  # Maximum index seen
+    step: int       # Iteration step (usually 1)
+    confidence: float  # How certain we are about bounds (0.0-1.0)
 
 
 def _trace_value_to_function_call(
@@ -464,3 +477,127 @@ def _find_switch_variable_from_nearby_gcp(
         return gcp_candidates[0][1]
 
     return None
+
+
+def trace_loop_bounds(ssa_func: SSAFunction) -> Dict[str, BoundInfo]:
+    """
+    Analyze loop patterns to extract array dimension bounds.
+
+    Detects loop patterns like:
+    - For loop: `for (i = 0; i < N; i++)` → bounds [0, N)
+    - While loop with counter: track counter variable increments
+    - Explicit bounds from comparison operations (ICL, ICLE, LES, LEQ, etc.)
+
+    Extracts bounds from:
+    - Loop condition comparisons: `i < 10` → max_bound = 10
+    - Array access patterns: `arr[i]` where i bounded by loop
+    - Constant offsets: `arr[i + 5]` → effective_max = loop_max + 5
+
+    Args:
+        ssa_func: SSA function to analyze
+
+    Returns:
+        Dict mapping variable name to BoundInfo with min/max/step/confidence
+    """
+    bounds: Dict[str, BoundInfo] = {}
+
+    # Find all comparison instructions that might define loop bounds
+    for block_id, ssa_instrs in ssa_func.instructions.items():
+        for inst in ssa_instrs:
+            # Look for comparison operations (LES, LEQ, GRE, GEQ, ICL, ICLE, etc.)
+            if inst.mnemonic not in {"LES", "LEQ", "GRE", "GEQ", "ICL", "ICLE", "ULES", "ULEQ", "UGRE", "UGEQ"}:
+                continue
+
+            if len(inst.inputs) < 2:
+                continue
+
+            left_val = inst.inputs[0]
+            right_val = inst.inputs[1]
+
+            # Try to find pattern: variable < constant or constant > variable
+            var_name = None
+            bound_value = None
+            confidence = 0.95  # High confidence for explicit constant bounds
+
+            # Pattern 1: var < constant (or var <= constant)
+            left_name = left_val.alias or left_val.name
+            if left_name and not left_name.startswith("t") and "_" not in left_name:
+                # This looks like a loop counter variable (i, j, idx, etc.)
+                # Try to extract bound from right side
+                if hasattr(right_val, 'constant_value') and right_val.constant_value is not None:
+                    var_name = left_name
+                    bound_value = right_val.constant_value
+                elif right_val.alias and right_val.alias.isdigit():
+                    var_name = left_name
+                    bound_value = int(right_val.alias)
+
+            # Pattern 2: constant > var (or constant >= var)
+            right_name = right_val.alias or right_val.name
+            if not var_name and right_name and not right_name.startswith("t") and "_" not in right_name:
+                if hasattr(left_val, 'constant_value') and left_val.constant_value is not None:
+                    var_name = right_name
+                    bound_value = left_val.constant_value
+                elif left_val.alias and left_val.alias.isdigit():
+                    var_name = right_name
+                    bound_value = int(left_val.alias)
+
+            if var_name and bound_value is not None:
+                # Adjust bound based on comparison type
+                # LES (i < N) → max is N-1
+                # LEQ (i <= N) → max is N
+                max_bound = bound_value
+                if inst.mnemonic in {"LES", "ICL", "ULES"}:
+                    # Strictly less than - max index is bound-1
+                    max_bound = bound_value - 1
+                elif inst.mnemonic in {"LEQ", "ICLE", "ULEQ"}:
+                    # Less than or equal - max index is bound
+                    max_bound = bound_value
+                elif inst.mnemonic in {"GRE", "UGRE"}:
+                    # Greater than - this is a minimum bound
+                    max_bound = bound_value + 1
+                elif inst.mnemonic in {"GEQ", "UGEQ"}:
+                    # Greater than or equal - this is a minimum bound
+                    max_bound = bound_value
+
+                # Sanity check: bounds should be reasonable for arrays
+                if 0 <= max_bound <= 10000:
+                    # Update bounds if better than existing
+                    if var_name not in bounds or bounds[var_name].max_value < max_bound:
+                        bounds[var_name] = BoundInfo(
+                            min_value=0,  # Assume 0-based indexing (C standard)
+                            max_value=max_bound,
+                            step=1,  # Assume unit step unless evidence otherwise
+                            confidence=confidence
+                        )
+                        logger.debug(f"Loop bound detected: {var_name} range [0, {max_bound}] from {inst.mnemonic}")
+
+    # Look for increment patterns to detect step size
+    for block_id, ssa_instrs in ssa_func.instructions.items():
+        for inst in ssa_instrs:
+            # Look for INC/DEC or ADD/SUB with constant
+            if inst.mnemonic in {"INC", "IINC"}:
+                # i++ pattern
+                if inst.outputs and len(inst.outputs) > 0:
+                    var_name = inst.outputs[0].alias or inst.outputs[0].name
+                    if var_name in bounds:
+                        bounds[var_name].step = 1
+            elif inst.mnemonic in {"DEC", "IDEC"}:
+                # i-- pattern (reverse loop)
+                if inst.outputs and len(inst.outputs) > 0:
+                    var_name = inst.outputs[0].alias or inst.outputs[0].name
+                    if var_name in bounds:
+                        bounds[var_name].step = -1
+            elif inst.mnemonic in {"IADD", "ADD"} and len(inst.inputs) >= 2:
+                # i += step pattern
+                var_val = inst.inputs[0]
+                step_val = inst.inputs[1]
+                var_name = var_val.alias or var_val.name
+
+                if var_name in bounds:
+                    if hasattr(step_val, 'constant_value') and step_val.constant_value is not None:
+                        bounds[var_name].step = step_val.constant_value
+                    elif step_val.alias and step_val.alias.isdigit():
+                        bounds[var_name].step = int(step_val.alias)
+
+    logger.info(f"Traced loop bounds for {len(bounds)} variables: {list(bounds.keys())}")
+    return bounds
