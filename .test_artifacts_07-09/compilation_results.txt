@@ -1,0 +1,20 @@
+=== Compiling Test1 (tt.scr) ===
+Source: test1_final.c from 07-08
+Exit code: 139
+No .err file (compilation may have succeeded or crashed)
+FAILURE: No .scr output file
+
+=== Compiling Test2 (tdm.scr) ===
+Exit code: 139
+No .err file
+FAILURE: No .scr output file
+
+=== Compiling Test3 (LEVEL.SCR) ===
+Exit code: 139
+No .err file
+FAILURE: No .scr output file
+
+=== SUMMARY ===
+Test1: Exit 139 (Segmentation Fault) - FAILED
+Test2: Exit 139 (Segmentation Fault) - FAILED
+Test3: Exit 139 (Segmentation Fault) - FAILED
