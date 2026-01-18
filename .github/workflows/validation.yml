@@ -28,7 +28,7 @@ jobs:
 
     - name: Run validation tests
       run: |
-        python -m pytest vcdecomp/tests/test_validation.py -v --tb=short --junit-xml=test-results.xml --json-report --json-report-file=test-report.json
+        python -m pytest vcdecomp/tests/test_validation.py -v --tb=short --junit-xml=test-results.xml --json-report --json-report-file=test-report.json --basetemp=.pytest_tmp
       continue-on-error: true
 
     - name: Upload test results
