@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 05 of 5 (Gap closure fixes applied - Patterns 3 & 5)
-Status: Gap closure wave 2 complete - 3/6 patterns fixed, 0 parse errors achieved
-Last activity: 2026-01-18 - Completed 06-05-PLAN.md (Pattern 3 & 5 fixes, Pattern 2 deferred to Phase 7)
+Plan: 06a of 6 (Pattern 1 root cause diagnosed)
+Status: Gap closure wave 2 - root cause analysis complete, ready for 06-06b implementation
+Last activity: 2026-01-18 - Completed 06-06a-PLAN.md (Pattern 1 root cause identified: blocks marked emitted but never rendered)
 
-Progress: [█████████░] 39% (14/36 phase plans complete)
+Progress: [█████████░] 42% (15/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 9.6 min
-- Total execution time: 2.3 hours
+- Total plans completed: 15
+- Average duration: 9.2 min
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [█████████░] 39% (14/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
-| 06    | 5/5   | 56min | 11.2min  |
+| 06    | 6/6   | 61min | 10.2min  |
 
 **Recent Trend:**
-- Last 5 plans: 06-02 (9min), 06-03 (5min), 06-04 (29min), 06-05 (7min)
-- Phase 6 gap closure: 5 plans in 56min (baseline, attempt, validation, diagnostic, fixes)
-- 06-05 efficient execution (7min) due to precise DEBUG_FINDINGS.md guidance
+- Last 5 plans: 06-03 (5min), 06-04 (29min), 06-05 (7min), 06-06a (5min)
+- Phase 6 gap closure: 6 plans in 61min (baseline, attempt, validation, diagnostic, fixes, root-cause)
+- 06-06a efficient execution (5min) - focused diagnostic with clear evidence collection
 
 *Updated after each plan completion*
 
@@ -171,23 +171,35 @@ Recent decisions affecting current work:
 | Two-phase Pattern 3 fix | End-of-function synthesis (line 861) + mid-function post-processing (line 889) to catch all bare returns | 06-05 |
 | Pattern 2 deferred to Phase 7 | Type mismatches require stack_lifter.py + expr.py refactoring (HIGH complexity, out of Phase 6 scope) | 06-05 |
 
+**From 06-06a execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Evidence-based diagnosis methodology | Instrument code, capture output, analyze evidence - avoids speculation, reveals true root causes with clear proof | 06-06a |
+| Diagnostic logging at WARNING level | Appear in pytest --log-cli-level=WARNING without changing test infrastructure | 06-06a |
+| [PATTERN1_DEBUG] prefix pattern | Enables grep filtering and clear identification of diagnostic vs production logs | 06-06a |
+| Root cause: Blocks marked emitted but never rendered | Evidence shows blocks NOT ORPHANED (have predecessors), gotos emitted, but blocks absent from output | 06-06a |
+| Recommended fix: Track goto_targets set | Option 1 is simplest (~10 lines) - force label emission for blocks referenced by gotos | 06-06a |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 6 (Expression Reconstruction Fixes) - WAVE 2 COMPLETE:**
-- 5 plans complete: baseline, attempts, validation, diagnostic, fixes
-- **MAJOR BREAKTHROUGH**: Parse errors reduced to 0 (down from ~50+) - code is syntactically valid C!
-- 3/6 error patterns FIXED: Pattern 1 (orphaned gotos), Pattern 3 (bare returns), Pattern 5 (undeclared vars)
-- Pattern 1 (orphaned goto): CONFIRMED WORKING - 0 undefined gotos in all tests
+**Phase 6 (Expression Reconstruction Fixes) - WAVE 2 IN PROGRESS:**
+- 6 plans complete: baseline, attempts, validation, diagnostic, fixes, root-cause analysis
 - Pattern 3 (missing return values): FIXED - synthesize `return 0;` for non-void functions (~15 instances)
 - Pattern 5 (undeclared variables): FIXED - removed overly restrictive filter in orchestrator.py
 - Pattern 2 (type mismatches): DEFERRED to Phase 7 - requires stack_lifter.py refactoring (HIGH complexity)
-- **Current blocker**: Compiler crashes during type checking phase (Pattern 2 type mismatches)
-- PATTERN3_FIX_RESULTS.md (390 lines) documents fixes, evidence, and Phase 7 recommendations
-- Next: Proceed to Phase 7 for type system implementation (only remaining blocker)
+- **Pattern 1 (orphaned goto): ROOT CAUSE IDENTIFIED** - blocks marked emitted but never rendered
+  - 06-06a: Diagnostic logging reveals blocks 3, 46, 48 have predecessors (NOT orphaned)
+  - Gotos emitted because orphaned check passes
+  - Labels never emitted because blocks marked as "emitted" by pattern detection but rendering skips them
+  - Fix proposed: Track goto_targets set, force label emission for referenced blocks (~10 line change)
+- **Current blocker**: Pattern 1 needs implementation (plan 06-06b ready)
+- PATTERN1_ROOT_CAUSE.md (258 lines) documents evidence, hypothesis, and fix proposal
+- Next: Implement Pattern 1 fix (06-06b), then proceed to Phase 7 for type system
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
@@ -231,10 +243,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T10:50:49Z (phase 6 gap closure fixes complete)
-Stopped at: Completed 06-05-PLAN.md (Pattern 3 & 5 fixes, 0 parse errors achieved)
+Last session: 2026-01-18T11:29:01Z (phase 6 Pattern 1 root cause diagnosis complete)
+Stopped at: Completed 06-06a-PLAN.md (Pattern 1 root cause identified with fix proposal)
 Resume file: None
-Next: Phase 7 - Variable Type Inference (resolve Pattern 2 type mismatches to enable compilation)
+Next: Plan 06-06b - Implement Pattern 1 fix (track goto_targets, force label emission)
 
 ## Technical Context
 
@@ -354,3 +366,8 @@ Next: Phase 7 - Variable Type Inference (resolve Pattern 2 type mismatches to en
 - `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 5 filter fix (lines 304-322), Pattern 3 synthesis (lines 861-913), debug logging removed (06-05)
 - `vcdecomp/core/ir/structure/analysis/variables.py` - Debug logging removed (lines 385-438) (06-05)
 - `.planning/phases/06-expression-reconstruction-fixes/PATTERN3_FIX_RESULTS.md` - Comprehensive fix analysis (390 lines) (06-05)
+
+**Phase 06 Plan 06a complete:**
+- `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 1 diagnostic logging (lines 768-831) (06-06a)
+- `.planning/phases/06-expression-reconstruction-fixes/PATTERN1_ROOT_CAUSE.md` - Evidence-based root cause analysis (258 lines) (06-06a)
+- `pattern1_debug_output.txt` - Diagnostic output showing orphaned checks and goto emission (12 lines) (06-06a)
