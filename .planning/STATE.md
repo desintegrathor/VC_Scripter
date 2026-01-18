@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 6 of 9 (Expression Reconstruction Fixes)
-Plan: 04 of 4 (Gap closure diagnostic complete)
-Status: Gap closure in progress - Pattern 1 resolved, Pattern 5 emission bug identified
-Last activity: 2026-01-18 - Completed 06-04-PLAN.md (diagnostic findings documented)
+Plan: 05 of 5 (Gap closure fixes applied - Patterns 3 & 5)
+Status: Gap closure wave 2 complete - 3/6 patterns fixed, 0 parse errors achieved
+Last activity: 2026-01-18 - Completed 06-05-PLAN.md (Pattern 3 & 5 fixes, Pattern 2 deferred to Phase 7)
 
-Progress: [█████████░] 36% (13/36 phase plans complete)
+Progress: [█████████░] 39% (14/36 phase plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 10.1 min
-- Total execution time: 2.2 hours
+- Total plans completed: 14
+- Average duration: 9.6 min
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
@@ -31,12 +31,12 @@ Progress: [█████████░] 36% (13/36 phase plans complete)
 | 02    | 1/1   | 10min | 10min    |
 | 03    | 3/3   | 28min | 9.3min   |
 | 04    | 3/3   | 14min | 4.7min   |
-| 06    | 4/4   | 49min | 12.3min  |
+| 06    | 5/5   | 56min | 11.2min  |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (6min), 06-02 (9min), 06-03 (5min), 06-04 (29min)
-- Phase 6 gap closure: 4 plans in 49min (baseline, fixes, validation, diagnostic)
-- Diagnostic task (06-04) took 29min - comprehensive logging and root cause analysis
+- Last 5 plans: 06-02 (9min), 06-03 (5min), 06-04 (29min), 06-05 (7min)
+- Phase 6 gap closure: 5 plans in 56min (baseline, attempt, validation, diagnostic, fixes)
+- 06-05 efficient execution (7min) due to precise DEBUG_FINDINGS.md guidance
 
 *Updated after each plan completion*
 
@@ -162,21 +162,32 @@ Recent decisions affecting current work:
 | Pattern 1 fix confirmed working | Despite FIX_RESULTS.md claims, no undefined goto labels exist in current output - fix is 100% effective | 06-04 |
 | Pattern 5 has emission bug, not collection bug | Variable collection and declaration generation work correctly, but downstream code emission loses declarations | 06-04 |
 
+**From 06-05 execution:**
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Pattern 1 needs no fix | DEBUG_FINDINGS.md evidence shows 0 undefined gotos in current output - fix from 06-02 is 100% effective | 06-05 |
+| Pattern 5 filter removal | Filter `"[" in var_decl or (var_decl.count(" ") > 1)` excluded simple struct types like `c_Vector3 vec` (only 1 space) | 06-05 |
+| Two-phase Pattern 3 fix | End-of-function synthesis (line 861) + mid-function post-processing (line 889) to catch all bare returns | 06-05 |
+| Pattern 2 deferred to Phase 7 | Type mismatches require stack_lifter.py + expr.py refactoring (HIGH complexity, out of Phase 6 scope) | 06-05 |
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-**Phase 6 (Expression Reconstruction Fixes) - GAP CLOSURE IN PROGRESS:**
-- 4 plans complete: baseline analysis, fix attempts, regression validation, diagnostic
-- 0/3 tests compiling (unchanged from baseline) - compilation still fails
-- 6 error patterns identified and categorized (CRITICAL/HIGH/MEDIUM priority)
-- Pattern 1 (orphaned goto): FIX COMPLETE AND WORKING - all undefined gotos eliminated
-- Pattern 5 (undeclared variables): Fix partially working - collection/generation OK, emission BROKEN
-- Root cause identified: Code emission in orchestrator.py loses declarations between generation and file write
-- DEBUG_FINDINGS.md (255 lines) provides evidence-based diagnosis with execution traces
-- Next action: Plan 06-05 will fix Pattern 5 emission bug by tracing orchestrator code emission logic
+**Phase 6 (Expression Reconstruction Fixes) - WAVE 2 COMPLETE:**
+- 5 plans complete: baseline, attempts, validation, diagnostic, fixes
+- **MAJOR BREAKTHROUGH**: Parse errors reduced to 0 (down from ~50+) - code is syntactically valid C!
+- 3/6 error patterns FIXED: Pattern 1 (orphaned gotos), Pattern 3 (bare returns), Pattern 5 (undeclared vars)
+- Pattern 1 (orphaned goto): CONFIRMED WORKING - 0 undefined gotos in all tests
+- Pattern 3 (missing return values): FIXED - synthesize `return 0;` for non-void functions (~15 instances)
+- Pattern 5 (undeclared variables): FIXED - removed overly restrictive filter in orchestrator.py
+- Pattern 2 (type mismatches): DEFERRED to Phase 7 - requires stack_lifter.py refactoring (HIGH complexity)
+- **Current blocker**: Compiler crashes during type checking phase (Pattern 2 type mismatches)
+- PATTERN3_FIX_RESULTS.md (390 lines) documents fixes, evidence, and Phase 7 recommendations
+- Next: Proceed to Phase 7 for type system implementation (only remaining blocker)
 
 **Phase 4 (Error Analysis System) - COMPLETE:**
 - All requirements satisfied (ERROR-01 through ERROR-05)
@@ -220,10 +231,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-18T11:00:00Z (phase 6 gap closure diagnostic complete)
-Stopped at: Completed 06-04-PLAN.md (Pattern 1 & 5 diagnostic with root cause analysis)
+Last session: 2026-01-18T10:50:49Z (phase 6 gap closure fixes complete)
+Stopped at: Completed 06-05-PLAN.md (Pattern 3 & 5 fixes, 0 parse errors achieved)
 Resume file: None
-Next: Plan 06-05 - Fix Pattern 5 emission bug in orchestrator.py code emission logic
+Next: Phase 7 - Variable Type Inference (resolve Pattern 2 type mismatches to enable compilation)
 
 ## Technical Context
 
@@ -333,3 +344,13 @@ Next: Plan 06-05 - Fix Pattern 5 emission bug in orchestrator.py code emission l
 - `.planning/phases/06-expression-reconstruction-fixes/PHASE_COMPLETION.md` - Comprehensive phase analysis (297 lines) (06-03)
 - `.planning/baselines/test_validation/test_decompilation_validation_with_baseline/*.yml` - Regression baseline files (3 YAML) (06-03)
 - `.planning/ROADMAP.md` - Updated Phase 6 status to PARTIAL (06-03)
+
+**Phase 06 Plan 04 complete:**
+- `.planning/phases/06-expression-reconstruction-fixes/DEBUG_FINDINGS.md` - Evidence-based diagnosis of Pattern 1 & 5 (255 lines) (06-04)
+- `vcdecomp/core/ir/structure/orchestrator.py` - Added debug logging for goto decisions (lines 766-833) (06-04)
+- `vcdecomp/core/ir/structure/analysis/variables.py` - Added debug logging for variable collection (lines 393-460) (06-04)
+
+**Phase 06 Plan 05 complete:**
+- `vcdecomp/core/ir/structure/orchestrator.py` - Pattern 5 filter fix (lines 304-322), Pattern 3 synthesis (lines 861-913), debug logging removed (06-05)
+- `vcdecomp/core/ir/structure/analysis/variables.py` - Debug logging removed (lines 385-438) (06-05)
+- `.planning/phases/06-expression-reconstruction-fixes/PATTERN3_FIX_RESULTS.md` - Comprehensive fix analysis (390 lines) (06-05)
