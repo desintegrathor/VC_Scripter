@@ -16,6 +16,7 @@ from ..expr import ExpressionFormatter
 from ..cfg import find_loops_in_function
 from ..parenthesization import ExpressionContext, is_simple_expression
 from ...disasm import opcodes
+from ..type_inference import TypeInferenceEngine
 
 logger = logging.getLogger(__name__)
 
@@ -300,6 +301,16 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     for var_type, var_name in lowering_result.variable_declarations:
         local_vars.append(f"{var_type} {var_name}")
         lowered_var_names.add(var_name)
+
+    # FIX (07-02): Run type inference BEFORE variable collection
+    # This refines SSA value.value_type fields with dataflow analysis, enabling
+    # accurate type declarations (float/int/struct) instead of generic "dword"
+    try:
+        type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        type_engine.integrate_with_ssa_values()
+        logger.info(f"Type inference completed for {func_name}")
+    except Exception as e:
+        logger.warning(f"Type inference failed for {func_name}: {e}. Continuing with SSA initial types.")
 
     # Also collect array declarations and struct types from old system
     # (TODO: Merge this logic into SSA lowering)
