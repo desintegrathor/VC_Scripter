@@ -1,0 +1,30 @@
+SSA block 92 in decompiler_source_tests/test3/LEVEL.SCR
+
+1057: ASP      | in: - -> out: -
+1058: ASP      | in: - -> out: -
+1059: ASP      | in: - -> out: -
+1060: ASP      | in: - -> out: -
+1061: ASP      | in: - -> out: -
+1062: ASP      | in: - -> out: -
+1063: ASP      | in: - -> out: -
+1064: ASP      | in: - -> out: -
+1065: ASP      | in: - -> out: -
+1066: ASP      | in: - -> out: -
+1067: ASP      | in: - -> out: -
+1068: ASP      | in: - -> out: -
+1069: ASP      | in: - -> out: -
+1070: ASP      | in: - -> out: -
+1071: ASP      | in: - -> out: -
+1072: ASP      | in: - -> out: -
+1073: ASP      | in: - -> out: -
+1074: ASP      | in: - -> out: -
+1075: ASP      | in: - -> out: -
+1076: ASP      | in: - -> out: -
+1077: ASP      | in: - -> out: -
+1078: ASP      | in: - -> out: -
+1079: ASP      | in: - -> out: -
+1080: ASP      | in: - -> out: -
+1081: LADR     | in: - -> out: t1081_0:POINTER
+1082: DADR     | in: t1081_0:POINTER -> out: t1082_0:POINTER
+1083: DCP      | in: t1082_0:POINTER -> out: t1083_0:INT
+1084: JMP      | in: - -> out: -

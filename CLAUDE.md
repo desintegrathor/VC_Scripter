@@ -10,8 +10,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Decompiler
 ```bash
-# Decompile a script (full structured output)
+# Decompile a script (full structured output with debug)
 python -m vcdecomp structure script.scr > output.c
+
+# Decompile without debug output (clean version)
+# Method 1: Filter out DEBUG lines with Python
+python -m vcdecomp structure script.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > output_clean.c
+
+# Method 2: Filter with grep (Linux/Mac/Git Bash)
+python -m vcdecomp structure script.scr | grep -v "^DEBUG" > output_clean.c
+
+# Method 3: Post-process existing file
+python -c "
+with open('output.c', 'r', encoding='utf-8') as f:
+    lines = [line for line in f if not line.startswith('DEBUG')]
+with open('output_clean.c', 'w', encoding='utf-8') as f:
+    f.writelines(lines)
+"
 
 # Show script info
 python -m vcdecomp info script.scr
@@ -55,12 +70,33 @@ PYTHONPATH=. python -m pytest vcdecomp/tests/ --cov=vcdecomp.core.ir.structure
 PYTHONPATH=. python -m pytest vcdecomp/tests/test_end_to_end_decompilation.py -v
 ```
 
-### Original Compiler (for validation)
+### Compiling Scripts (Original Compiler)
+The original SCMP compiler toolchain is in `original-resources/compiler/`. Due to WSL/Windows interop limitations, use the Python wrapper:
+
 ```bash
-# Located in: original-resources/compiler/
-# Compile C source to .scr bytecode
-cd original-resources/compiler
-./scmp.exe source.c output.scr header.h
+# Compile tt.c (the test file in compiler directory)
+py -3 compile_simple.py
+
+# This compiles: original-resources/compiler/tt.c
+# Output: original-resources/compiler/tt.scr (60KB)
+# Takes: ~2-3 seconds
+```
+
+**To compile other files:**
+1. Copy your `.c` file to `original-resources/compiler/`
+2. Edit `compile.bat` to reference your file:
+   ```batch
+   "%~dp0scmp" "your_file.c" "your_file.scr" "your_file.h"
+   ```
+3. Run: `py -3 compile_simple.py`
+
+**Alternative (manual):** Double-click `compile.bat` in Windows Explorer
+
+**See:** [COMPILING.md](COMPILING.md) for detailed documentation
+
+**Compilation pipeline:**
+```
+.c → [SPP preprocessor] → [SCC compiler] → [SASM assembler] → .scr
 ```
 
 ## Architecture Overview
@@ -146,7 +182,9 @@ Function prototypes are in `original-resources/h/sc_global.h`.
 
 ## Important Constraints
 
-### Validation System
+### Compilation & Validation
+- **Compiler usage:** Use `py -3 compile_simple.py` to compile scripts (see compilation section above)
+- **WSL limitation:** Cannot invoke Windows .exe files directly with arguments - use the Python wrapper
 - **ALWAYS test decompiled output** by recompiling with the original compiler (SCMP.exe)
 - Use `validate` command to compare bytecode differences
 - Focus on reducing **semantic differences** (different behavior)
@@ -167,6 +205,97 @@ When modifying control flow reconstruction:
 2. Verify switch/case jump tables are correctly identified
 3. Ensure for-loop patterns (init, condition, increment) are detected
 4. Check early return patterns don't break if/else chains
+
+## Clean Decompilation Output
+
+### Understanding Debug Output
+The decompiler outputs DEBUG lines to show its internal analysis process:
+- `DEBUG: Entry point = 9054` - Entry point identification
+- `DEBUG FieldTracker: ...` - Struct field detection
+- `DEBUG PNT: SUCCESS ...` - Pointer-to-field pattern recognition
+- `DEBUG SWITCH: ...` - Switch/case detection analysis
+- `DEBUG Propagate: ...` - Type propagation iterations
+
+These lines are helpful for debugging the decompiler itself, but clutter the decompiled code.
+
+### Removing Debug Output
+
+**Real-world example from TUNNELS01:**
+```bash
+# Original decompilation (with debug)
+py -3 -m vcdecomp structure level.scr > level_decompiled.c
+# Result: 9,825 lines (2,617 DEBUG lines + 7,208 code lines)
+
+py -3 -m vcdecomp structure player.scr > player_decompiled.c
+# Result: 4,045 lines (2,017 DEBUG lines + 2,028 code lines)
+
+# Clean decompilation (debug removed)
+py -3 -m vcdecomp structure level.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > level_clean.c
+# Result: 1,845 lines (clean code only)
+
+py -3 -m vcdecomp structure player.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > player_clean.c
+# Result: 401 lines (clean code only)
+```
+
+### Batch Processing Multiple Files
+
+**Python script for batch clean decompilation:**
+```python
+import os
+import subprocess
+from pathlib import Path
+
+def clean_decompile(scr_file, output_dir):
+    """Decompile .scr file and remove DEBUG lines"""
+    scr_path = Path(scr_file)
+    output_file = Path(output_dir) / f"{scr_path.stem}_clean.c"
+
+    # Run decompiler
+    result = subprocess.run(
+        ['python', '-m', 'vcdecomp', 'structure', str(scr_path)],
+        capture_output=True,
+        text=True,
+        encoding='utf-8'
+    )
+
+    # Filter DEBUG lines
+    clean_lines = [line for line in result.stdout.splitlines(keepends=True)
+                   if not line.startswith('DEBUG')]
+
+    # Write clean output
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.writelines(clean_lines)
+
+    print(f"Decompiled {scr_path.name} -> {output_file.name}")
+    print(f"  Original: {len(result.stdout.splitlines())} lines")
+    print(f"  Clean: {len(clean_lines)} lines")
+
+# Example usage:
+# clean_decompile('level.scr', 'output/')
+# clean_decompile('player.scr', 'output/')
+```
+
+### On Windows (PowerShell)
+```powershell
+# Single file
+py -3 -m vcdecomp structure script.scr | Where-Object { -not $_.StartsWith("DEBUG") } > output_clean.c
+
+# Multiple files
+Get-ChildItem *.scr | ForEach-Object {
+    $output = "$($_.BaseName)_clean.c"
+    py -3 -m vcdecomp structure $_.Name | Where-Object { -not $_.StartsWith("DEBUG") } > $output
+}
+```
+
+### File Size Comparison
+
+From TUNNELS01 analysis:
+| File | With DEBUG | Clean | Reduction |
+|------|-----------|-------|-----------|
+| level.scr | 925 KB | 50 KB | 94.6% smaller |
+| player.scr | 317 KB | 15 KB | 95.3% smaller |
+
+**Recommendation:** Always generate clean versions for code analysis, reconstruction, or recompilation. Keep debug versions only when troubleshooting decompiler issues.
 
 ## Common Development Tasks
 

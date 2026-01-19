@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Dict, Set, List, Optional
 import logging
+import sys
 
 from ..ssa import SSAFunction
 from ..expr import ExpressionFormatter
@@ -272,12 +273,17 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # Detect switch/case patterns
     switch_patterns = _detect_switch_patterns(ssa_func, func_block_ids, formatter, start_to_block)
+    print(f"DEBUG ORCHESTRATOR: _detect_switch_patterns returned {len(switch_patterns)} switches", file=sys.stderr)
+    for i, sw in enumerate(switch_patterns):
+        print(f"DEBUG ORCHESTRATOR: Switch {i}: {sw.test_var} with {len(sw.cases)} cases, header_block={sw.header_block}", file=sys.stderr)
 
     # Build map: block_id -> switch pattern (for quick lookup)
     block_to_switch: Dict[int, SwitchPattern] = {}
     for switch in switch_patterns:
+        print(f"DEBUG ORCHESTRATOR: Adding switch {switch.test_var} to map, all_blocks={switch.all_blocks}", file=sys.stderr)
         for block_id in switch.all_blocks:
             block_to_switch[block_id] = switch
+    print(f"DEBUG ORCHESTRATOR: block_to_switch contains {len(block_to_switch)} entries", file=sys.stderr)
 
     # FÁZE 2A: Removed if/else pre-detection - now done during rendering
     # This allows detection to work correctly after switch emission modifies CFG structure
@@ -461,6 +467,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             lines.append(f"{indent}}}")
 
         # Check if this is a switch header
+        if block_id in block_to_switch:
+            sw = block_to_switch[block_id]
+            print(f"DEBUG ORCHESTRATOR: Block {block_id} is in block_to_switch, header_block={sw.header_block}, is_header={block_id == sw.header_block}", file=sys.stderr)
         if block_id in block_to_switch and block_id == block_to_switch[block_id].header_block:
             switch = block_to_switch[block_id]
             base_indent = "    " + "    " * len(active_loops)
@@ -473,7 +482,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 lines.append(f"{base_indent}block_{block_id}:")
 
             # Render switch statement
-            lines.append(f"{base_indent}switch ({switch.test_var}) {{")
+            print(f"DEBUG ORCHESTRATOR: Rendering switch for {switch.test_var} with {len(switch.cases)} cases at block {block_id}", file=sys.stderr)
+            switch_line = f"{base_indent}switch ({switch.test_var}) {{"
+            lines.append(switch_line)
+            print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'", file=sys.stderr)
             for case in switch.cases:
                 lines.append(f"{base_indent}case {case.value}:")
                 # Render all blocks in case body (sorted by address) with loop support
@@ -1276,4 +1288,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 # Pattern: &varname followed by , or ) (function argument context)
                 lines[i] = re.sub(rf'&({arr_var})([,)])', r'\1\2', lines[i])
 
+    # DEBUG: Check if lines contain switches
+    switch_count = sum(1 for line in lines if "switch (" in line)
+    print(f"DEBUG ORCHESTRATOR FINAL: Returning {len(lines)} lines, {switch_count} contain 'switch ('", file=sys.stderr)
     return "\n".join(lines)

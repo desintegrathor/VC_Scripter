@@ -1,4 +1,4 @@
-=== SCR File Info: decompilation/TUNNELS01/SCRIPTS/LEVEL.SCR ===
+=== SCR File Info: decompilation_work_folder/TUNNELS01/SCRIPTS/LEVEL.SCR ===
 File size: 138279 bytes
 
 --- Header ---

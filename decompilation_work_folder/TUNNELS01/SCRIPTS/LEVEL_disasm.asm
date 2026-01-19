@@ -1,5 +1,5 @@
 ; ==========================================
-; Disassembly of: decompilation/TUNNELS01/SCRIPTS/LEVEL.SCR
+; Disassembly of: decompilation_work_folder/TUNNELS01/SCRIPTS/LEVEL.SCR
 ; Instructions: 10051
 ; External functions: 97
 ; ==========================================

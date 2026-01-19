@@ -1,0 +1,92 @@
+=== SCR File Info: decompilation_work_folder/TUNNELS01/SCRIPTS/PLAYER.SCR ===
+File size: 118614 bytes
+
+--- Header ---
+Entry parameters: 1
+Entry point (IP): 7113 
+Return values: 1
+Parameter types: [0]
+
+--- Data Segment ---
+Data words: 6486
+Data size: 25944 bytes
+Strings found: 649
+
+--- Global Pointers ---
+Count: 0
+
+--- Code Segment ---
+Instructions: 7334
+Code size: 88008 bytes
+
+--- External Functions (XFN) ---
+Count: 65
+Opcode variant: runtime [compiler=-1422.0, runtime=3627.0]
+  [  0] frnd(float)float
+  [  1] SC_P_Ai_SetMode(unsignedlong,unsignedlong)void
+  [  2] SC_P_Ai_EnableShooting(unsignedlong,int)void
+  [  3] SC_P_Ai_EnableSituationUpdate(unsignedlong,int)void
+  [  4] SC_Log(unsignedlong,*char,...)void
+  [  5] SC_P_Ai_Stop(unsignedlong)void
+  [  6] SC_P_ScriptMessage(unsignedlong,unsignedlong,unsignedlong)void
+  [  7] SC_P_GetBySideGroupMember(unsignedlong,unsignedlong,unsignedlong)unsignedlong
+  [  8] SC_P_Ai_GetSureEnemies(unsignedlong)unsignedlong
+  [  9] SC_P_Ai_GetDanger(unsignedlong)float
+  [ 10] SC_ZeroMem(*void,unsignedlong)void
+  [ 11] SC_P_Ai_GetProps(unsignedlong,*s_SC_P_AI_props)void
+  [ 12] SC_P_Ai_SetProps(unsignedlong,*s_SC_P_AI_props)void
+  [ 13] SC_ggi(unsignedlong)int
+  [ 14] SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void
+  [ 15] SC_PC_Get(void)unsignedlong
+  [ 16] SC_P_GetWeapons(unsignedlong,*s_SC_P_Create)int
+  [ 17] SC_sgi(unsignedlong,int)void
+  [ 18] SC_P_ReadHealthFromGlobalVar(unsignedlong,unsignedlong)void
+  [ 19] SC_P_WriteHealthToGlobalVar(unsignedlong,unsignedlong)void
+  [ 20] SC_P_ReadAmmoFromGlobalVar(unsignedlong,unsignedlong,unsignedlong)void
+  [ 21] SC_P_SetAmmoInWeap(unsignedlong,unsignedlong,unsignedlong)void
+  [ 22] SC_P_WriteAmmoToGlobalVar(unsignedlong,unsignedlong,unsignedlong)void
+  [ 23] SC_P_GetAmmoInWeap(unsignedlong,unsignedlong)unsignedlong
+  [ 24] SC_PC_GetIntel(*s_SC_P_intel)void
+  [ 25] SC_PC_SetIntel(*s_SC_P_intel)void
+  [ 26] SC_MissionCompleted(void)void
+  [ 27] SC_Osi(*char,...)void
+  [ 28] SC_MissionDone(void)void
+  [ 29] SC_ShowHelp(*unsignedlong,unsignedlong,float)void
+  [ 30] rand(void)int
+  [ 31] SC_P_GetPos(unsignedlong,*c_Vector3)void
+  [ 32] SC_MP_EnumPlayers(*s_SC_MP_EnumPlayers,*unsignedlong,unsignedlong)int
+  [ 33] SC_2VectorsDist(*c_Vector3,*c_Vector3)float
+  [ 34] SC_PC_GetPos(*c_Vector3)int
+  [ 35] SC_GetGroupPlayers(unsignedlong,unsignedlong)unsignedlong
+  [ 36] SC_P_IsReady(unsignedlong)int
+  [ 37] SC_P_GetActive(unsignedlong)int
+  [ 38] SC_NOD_Get(*void,*char)*void
+  [ 39] SC_NOD_GetWorldPos(*void,*c_Vector3)void
+  [ 40] SC_NOD_GetWorldRotZ(*void)float
+  [ 41] SC_P_Ai_GetPeaceMode(unsignedlong)unsignedlong
+  [ 42] SC_P_Ai_SetPeaceMode(unsignedlong,unsignedlong)void
+  [ 43] SC_DoExplosion(*c_Vector3,unsignedlong)void
+  [ 44] SC_message(*char,...)void
+  [ 45] cos(float)float
+  [ 46] sin(float)float
+  [ 47] SC_DUMMY_Set_DoNotRenHier2(*void,int)void
+  [ 48] SC_GetWp(*char,*c_Vector3)int
+  [ 49] SC_CreatePtc(unsignedlong,*c_Vector3)void
+  [ 50] SC_SND_PlaySound3D(unsignedlong,*c_Vector3)void
+  [ 51] SC_CreatePtc_Ext(unsignedlong,*void,float,float,float,float)void
+  [ 52] SC_CreatePtcVec_Ext(unsignedlong,*c_Vector3,float,float,float,float)void
+  [ 53] SC_P_Ai_SetBattleProps(unsignedlong,*s_SC_P_Ai_BattleProps)void
+  [ 54] SC_P_GetDir(unsignedlong,*c_Vector3)void
+  [ 55] SC_VectorLen(*c_Vector3)float
+  [ 56] SC_IsNear3D(*c_Vector3,*c_Vector3,float)int
+  [ 57] SC_GetPls(*s_sphere,*unsignedlong,*unsignedlong)void
+  [ 58] SC_P_SetSpecAnims(unsignedlong,*s_SC_P_SpecAnims)void
+  [ 59] SC_P_DoHit(unsignedlong,unsignedlong,float)void
+  [ 60] SC_SphereIsVisible(*s_sphere)int
+  [ 61] SC_P_Create(*s_SC_P_Create)unsignedlong
+  [ 62] SC_P_SetSpeachDist(unsignedlong,float)void
+  [ 63] SC_PC_EnablePronePosition(int)void
+  [ 64] SC_PC_EnableFlashLight(int)void
+
+--- Save Info ---
+Items: 1

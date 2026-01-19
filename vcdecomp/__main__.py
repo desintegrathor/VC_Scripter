@@ -654,8 +654,8 @@ def cmd_validate(args):
     # Run validation
     try:
         result = validator.validate(
-            original_scr_path=str(original_scr),
-            decompiled_source_path=str(source_file)
+            original_scr=str(original_scr),
+            decompiled_source=str(source_file)
         )
     except Exception as e:
         print(f"Error during validation: {e}", file=sys.stderr)
@@ -676,22 +676,22 @@ def cmd_validate(args):
         output_format = 'text'
 
     # Generate report
-    generator = ReportGenerator(result)
+    generator = ReportGenerator(use_colors=not args.no_color)
 
     if args.report_file:
         # Save to file
         report_path = Path(args.report_file)
-        generator.save_report(str(report_path), format=output_format)
+        generator.save_report(result, str(report_path), format=output_format)
         print(f"Report saved to: {report_path}")
         print()
 
     # Always print summary to console
     if output_format == 'json' and not args.report_file:
         # If JSON output to console, print the JSON
-        print(generator.generate_json())
+        print(generator.generate_json_report(result))
     else:
         # Print text summary to console
-        print(generator.generate_text(use_colors=not args.no_color))
+        print(generator.generate_text_report(result))
 
     # Exit with appropriate code
     if result.verdict == ValidationVerdict.PASS:
@@ -783,8 +783,8 @@ def cmd_validate_batch(args):
         scr_path, source_path = pair
         try:
             result = validator.validate(
-                original_scr_path=str(scr_path),
-                decompiled_source_path=str(source_path)
+                original_scr=str(scr_path),
+                decompiled_source=str(source_path)
             )
             return (source_path.name, result, None)
         except Exception as e:

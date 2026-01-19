@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Dict, Set, List, Optional
 import logging
 import sys
+import os
 
 from ...cfg import CFG
 from ....disasm import opcodes
@@ -22,10 +23,70 @@ from ..analysis.flow import _find_case_body_blocks
 from ..analysis.value_trace import (
     _trace_value_to_parameter,
     _trace_value_to_parameter_field,
-    _trace_value_to_global
+    _trace_value_to_global,
+    _trace_value_to_function_call,
+    _follow_ssa_value_across_blocks,
+    _check_ssa_value_equivalence
 )
+from .jump_table import _detect_binary_search_switch
 
 logger = logging.getLogger(__name__)
+
+# Environment-controlled debug logging for switch detection
+SWITCH_DEBUG = os.environ.get('VCDECOMP_SWITCH_DEBUG', '0') == '1'
+
+def _switch_debug(msg: str):
+    """
+    Output debug messages for switch detection when enabled.
+    Enable with: VCDECOMP_SWITCH_DEBUG=1
+    """
+    if SWITCH_DEBUG:
+        print(f"[SWITCH] {msg}", file=sys.stderr)
+
+
+def _find_mod_in_predecessors(block_id: int, ssa_func: SSAFunction, max_depth: int = 2, visited: Optional[Set[int]] = None) -> Optional[any]:
+    """
+    Search for a MOD instruction in the current block or predecessor blocks.
+
+    This handles the pattern where MOD leaves its result on the stack, and a subsequent
+    LCP instruction loads it for comparison.
+
+    Args:
+        block_id: Current block ID
+        ssa_func: SSA function
+        max_depth: Maximum depth to search (default: 2)
+        visited: Set of visited block IDs to prevent cycles
+
+    Returns:
+        MOD SSA instruction if found, None otherwise
+    """
+    if max_depth <= 0:
+        return None
+
+    if visited is None:
+        visited = set()
+
+    if block_id in visited:
+        return None
+    visited.add(block_id)
+
+    # Check current block for MOD
+    ssa_block = ssa_func.instructions.get(block_id)
+    if ssa_block:
+        for ssa_inst in ssa_block:
+            if ssa_inst.mnemonic == 'MOD':
+                return ssa_inst
+
+    # Search predecessors
+    cfg = ssa_func.cfg
+    block = cfg.get_block(block_id)
+    if block and block.predecessors:
+        for pred_id in block.predecessors:
+            result = _find_mod_in_predecessors(pred_id, ssa_func, max_depth - 1, visited)
+            if result:
+                return result
+
+    return None
 
 
 def _case_has_break(
@@ -215,6 +276,62 @@ def _find_switch_variable_from_nearby_gcp(
     return None
 
 
+def _find_equ_for_comparison(
+    current_block_id: int,
+    jump_ssa,
+    ssa_blocks: Dict[int, List],
+    cfg,
+    max_pred_search: int = 3
+):
+    """
+    Find EQU instruction producing jump condition.
+    Searches current block and up to max_pred_search predecessor levels.
+
+    Args:
+        current_block_id: Block ID to start search from
+        jump_ssa: The JZ/JNZ SSA instruction
+        ssa_blocks: Dictionary of block IDs to SSA instruction lists
+        cfg: Control flow graph
+        max_pred_search: Maximum predecessor depth to search (default: 3)
+
+    Returns:
+        Tuple of (equ_inst, var_value, const_value) or None
+    """
+    if not jump_ssa or not jump_ssa.inputs:
+        return None
+
+    condition_value = jump_ssa.inputs[0]
+
+    # Search current block for EQU
+    for ssa_inst in ssa_blocks.get(current_block_id, []):
+        if any(out.name == condition_value.name for out in ssa_inst.outputs):
+            if ssa_inst.mnemonic == "EQU" and len(ssa_inst.inputs) >= 2:
+                _switch_debug(f"Found EQU in current block {current_block_id}")
+                return (ssa_inst, ssa_inst.inputs[0], ssa_inst.inputs[1])
+
+    # Search predecessors if not found in current block
+    if max_pred_search > 0:
+        current_block = cfg.blocks.get(current_block_id)
+        if current_block:
+            for pred_id in current_block.predecessors:
+                _switch_debug(f"Searching for EQU in predecessor block {pred_id}")
+                # Search this predecessor
+                for ssa_inst in ssa_blocks.get(pred_id, []):
+                    if any(out.name == condition_value.name for out in ssa_inst.outputs):
+                        if ssa_inst.mnemonic == "EQU" and len(ssa_inst.inputs) >= 2:
+                            _switch_debug(f"Found EQU in predecessor block {pred_id}")
+                            return (ssa_inst, ssa_inst.inputs[0], ssa_inst.inputs[1])
+
+                # Recurse to predecessor's predecessors
+                result = _find_equ_for_comparison(
+                    pred_id, jump_ssa, ssa_blocks, cfg, max_pred_search - 1
+                )
+                if result:
+                    return result
+
+    return None
+
+
 def _detect_switch_patterns(
     ssa_func: SSAFunction,
     func_block_ids: Set[int],
@@ -266,28 +383,95 @@ def _detect_switch_patterns(
         logger.debug(f"Checking block {block_id} for switch pattern (start addr: {block.start})")
         print(f"DEBUG SWITCH: Checking block {block_id} for switch pattern (start addr: {block.start})", file=sys.stderr)
 
-        # Start collecting potential switch cases
+        # PHASE 8A: Try binary search detection first (for large switches)
+        binary_switch = _detect_binary_search_switch(
+            cfg, block_id, ssa_func, formatter, func_block_ids
+        )
+        if binary_switch and len(binary_switch.cases) >= 3:
+            _switch_debug(f"Detected binary search switch with {len(binary_switch.cases)} cases at block {block_id}")
+            switches.append(binary_switch)
+            processed_blocks.update(binary_switch.all_blocks)
+            continue
+
+        # Fall back to BFS-based detection for smaller switches
+        # This handles both linear chains AND non-linear patterns where
+        # case bodies are interleaved between comparison blocks
         test_var = None
         test_ssa_value = None  # Track the actual SSA value being tested (for aliasing detection)
         cases: List[CaseInfo] = []
         chain_blocks: List[int] = []
-        current_block = block_id
 
-        # Follow the chain of equality tests
-        while current_block is not None and current_block in func_block_ids:
+        # PHASE 2 FIX: Track ALL variables seen across ALL comparison blocks
+        # This allows us to pick the most consistent variable (highest occurrence)
+        # and handle cases where different blocks use different names for the same value
+        variable_frequency: Dict[str, int] = {}  # var_name -> count of blocks using it
+        variable_priority: Dict[str, int] = {}   # var_name -> priority score (param field=100, global=50, etc.)
+        variable_to_ssa: Dict[str, any] = {}      # var_name -> SSA value
+
+        # PHASE 3 FIX: Collect ALL potential cases first, then filter
+        # Structure: List[(var_name, var_priority, ssa_value, case_info)]
+        all_potential_cases: List[tuple] = []
+
+        # Chain tracking state for debug
+        chain_debug = {
+            'blocks_processed': [],
+            'break_reasons': [],
+            'variables_seen': [],
+            'ssa_values_seen': []
+        }
+
+        # BFS state: blocks to visit with their depth
+        visited_blocks = set()
+        to_visit = [(block_id, 0)]  # (block_id, depth)
+        max_bfs_depth = 15  # Reasonable limit to avoid exploring too far
+
+        # BFS exploration to find all comparison blocks
+        while to_visit:
+            current_block, depth = to_visit.pop(0)
+
+            _switch_debug(f"BFS: Visiting block {current_block} (depth={depth}, queue_size={len(to_visit)})")
+
+            # Depth limit
+            if depth > max_bfs_depth:
+                _switch_debug(f"  Skipping: depth {depth} > max {max_bfs_depth}")
+                continue
+
+            # Skip if already visited
+            if current_block in visited_blocks:
+                _switch_debug(f"  Skipping: already visited")
+                continue
+            visited_blocks.add(current_block)
+
+            # Skip if not in function scope
+            if current_block not in func_block_ids:
+                _switch_debug(f"  Skipping: not in function scope")
+                continue
+
+            # Skip already processed blocks (but don't break entire BFS)
             if current_block in processed_blocks:
-                break
+                _switch_debug(f"Block {current_block} already processed, skipping")
+                continue
 
             curr_block_obj = cfg.blocks.get(current_block)
             if not curr_block_obj or not curr_block_obj.instructions:
-                break
+                _switch_debug(f"Block {current_block} has no instructions, skipping")
+                continue
+
+            _switch_debug(f"Checking block {current_block} (addr: {curr_block_obj.start})")
+            chain_debug['blocks_processed'].append(current_block)
 
             last_instr = curr_block_obj.instructions[-1]
             opcode = last_instr.opcode
 
-            # Must be conditional jump
+            # Must be conditional jump for a comparison block
+            # If not, this block might be a case body - explore its successors
             if not resolver.is_conditional_jump(opcode):
-                break
+                _switch_debug(f"Block {current_block} has no conditional jump, might be case body")
+                # Add successors to BFS queue (this handles interleaved case bodies)
+                for succ in curr_block_obj.successors:
+                    if succ not in visited_blocks and succ in func_block_ids:
+                        to_visit.append((succ, depth + 1))
+                continue
 
 
             # Get SSA instructions for this block
@@ -304,220 +488,327 @@ def _detect_switch_patterns(
                     jump_ssa = ssa_inst
                     break
 
-            if jump_ssa and len(jump_ssa.inputs) > 0:
-                # The condition value is the first input to JZ/JNZ
-                condition_value = jump_ssa.inputs[0]
+            # Use multi-block EQU finder (searches current block and predecessors)
+            equ_result = _find_equ_for_comparison(
+                current_block, jump_ssa, ssa_blocks, cfg, max_pred_search=3
+            )
 
-                # Find the producer of this condition (should be EQU)
-                equ_inst = None
-                for ssa_inst in ssa_block:
-                    if any(out.name == condition_value.name for out in ssa_inst.outputs):
-                        equ_inst = ssa_inst
-                        break
+            _switch_debug(f"Block {current_block}: EQU search result: {equ_result is not None}")
+            if equ_result:
+                equ_inst, var_value, const_value = equ_result
+                _switch_debug(f"  EQU found: var={var_value.name if hasattr(var_value, 'name') else var_value}, const={const_value.name if hasattr(const_value, 'name') else const_value}")
 
-                if equ_inst and equ_inst.mnemonic == "EQU" and len(equ_inst.inputs) >= 2:
-                    var_value = equ_inst.inputs[0]
-                    const_value = equ_inst.inputs[1]
+                # FIX #3: Improved float filtering - check if constant is a float
+                # Message IDs are typically 0-1000, definitely integers
+                # Only filter if we have strong evidence this is a float switch
+                if const_value.alias and const_value.alias.startswith("data_"):
+                    try:
+                        offset = int(const_value.alias[5:])
+                        if ssa_func.scr and ssa_func.scr.data_segment:
+                            const_raw = ssa_func.scr.data_segment.get_dword(offset * 4)
+                            logger.debug(f"  Checking constant: data[{offset}] = {const_raw} (0x{const_raw:08X})")
 
-                    # FIX #3: Improved float filtering - check if constant is a float
-                    # Message IDs are typically 0-1000, definitely integers
-                    # Only filter if we have strong evidence this is a float switch
-                    if const_value.alias and const_value.alias.startswith("data_"):
-                        try:
-                            offset = int(const_value.alias[5:])
-                            if ssa_func.scr and ssa_func.scr.data_segment:
-                                const_raw = ssa_func.scr.data_segment.get_dword(offset * 4)
-                                logger.debug(f"  Checking constant: data[{offset}] = {const_raw} (0x{const_raw:08X})")
+                            # CRITICAL FIX: Integer range check for message IDs
+                            # Message IDs are typically 0-10000 (extended range for VC engine constants)
+                            # If value is in this range, treat as integer, NOT float
+                            if 0 <= const_raw < 10000:
+                                logger.debug(f"    -> In message ID range (0-10000), treating as integer")
+                                # Don't skip this case - it's likely a valid switch case
+                            else:
+                                # Outside message ID range - might be float
+                                import struct
+                                try:
+                                    float_val = struct.unpack('f', struct.pack('I', const_raw & 0xFFFFFFFF))[0]
+                                    logger.debug(f"    As float: {float_val}")
 
-                                # CRITICAL FIX: Integer range check for message IDs
-                                # Message IDs are typically 0-1000, definitely < 10000
-                                # If value is in this range, treat as integer, NOT float
-                                if 0 <= const_raw < 1000:
-                                    logger.debug(f"    -> In message ID range (0-1000), treating as integer")
-                                    # Don't skip this case - it's likely a valid switch case
-                                else:
-                                    # Outside message ID range - might be float
-                                    import struct
-                                    try:
-                                        float_val = struct.unpack('f', struct.pack('I', const_raw & 0xFFFFFFFF))[0]
-                                        logger.debug(f"    As float: {float_val}")
+                                    # Check if this is definitely a float by looking for fractional part
+                                    # OR if the value is very large and looks like a float bit pattern
+                                    if not (float_val != float_val):  # Not NaN
+                                        # Has fractional part? Definitely float
+                                        if abs(float_val - round(float_val)) > 0.01:
+                                            logger.debug(f"    -> Detected as float (has decimal part), skipping switch case")
+                                            found_equ = False
+                                            break
+                                        # Large value that doesn't make sense as message ID?
+                                        # Could still be integer constant, so be conservative
+                                        elif const_raw > 100000:
+                                            # Very large value - check if float interpretation is more sensible
+                                            if -10000.0 < float_val < 10000.0:
+                                                logger.debug(f"    -> Large value with reasonable float interpretation, might be float")
+                                                # Be conservative - don't filter unless we're sure
+                                except:
+                                    pass
+                    except (ValueError, AttributeError):
+                        pass
 
-                                        # Check if this is definitely a float by looking for fractional part
-                                        # OR if the value is very large and looks like a float bit pattern
-                                        if not (float_val != float_val):  # Not NaN
-                                            # Has fractional part? Definitely float
-                                            if abs(float_val - round(float_val)) > 0.01:
-                                                logger.debug(f"    -> Detected as float (has decimal part), skipping switch case")
-                                                found_equ = False
-                                                break
-                                            # Large value that doesn't make sense as message ID?
-                                            # Could still be integer constant, so be conservative
-                                            elif const_raw > 100000:
-                                                # Very large value - check if float interpretation is more sensible
-                                                if -10000.0 < float_val < 10000.0:
-                                                    logger.debug(f"    -> Large value with reasonable float interpretation, might be float")
-                                                    # Be conservative - don't filter unless we're sure
-                                    except:
-                                        pass
-                        except (ValueError, AttributeError):
-                            pass
+                # FIX #1: Get variable name - try parameter field FIRST (highest priority)
+                _switch_debug(f"Switch detection: Tracing var_value {var_value.name if hasattr(var_value, 'name') else var_value} (alias: {var_value.alias if hasattr(var_value, 'alias') else 'None'})")
+                _switch_debug(f"  Producer: {var_value.producer_inst.mnemonic if var_value.producer_inst else 'None'}")
+                _switch_debug(f"  Current test_var: {test_var}, test_ssa_value: {test_ssa_value.name if test_ssa_value and hasattr(test_ssa_value, 'name') else test_ssa_value}")
 
-                    # FIX #1: Get variable name - try parameter field FIRST (highest priority)
-                    logger.debug(f"Switch detection: Tracing var_value {var_value.name} (alias: {var_value.alias})")
-                    logger.debug(f"  Producer: {var_value.producer_inst.mnemonic if var_value.producer_inst else 'None'}")
+                var_name = None
 
+                # Phase 8B.1 FIX: Check for MOD operation FIRST before other traces
+                # This prevents parameter/global traces from hiding the modulo expression
+
+                # First, check if var_value itself is produced by MOD
+                actual_producer = var_value.producer_inst
+
+                # If producer is LCP (load from stack), search predecessor blocks for MOD
+                # This handles cases like: Block N: MOD -> Block N+1: LCP [sp+0] -> EQU
+                if actual_producer and actual_producer.mnemonic == 'LCP':
+                    # Search current block and predecessors for MOD instruction
+                    mod_inst = _find_mod_in_predecessors(current_block, ssa_func, max_depth=2)
+                    if mod_inst:
+                        actual_producer = mod_inst
+                        _switch_debug(f"  -> Found MOD in predecessor block")
+
+                if actual_producer and actual_producer.mnemonic == "MOD":
+                        # Extract: var % constant
+                        if len(actual_producer.inputs) >= 2:
+                            base_var = actual_producer.inputs[0]
+                            mod_value = actual_producer.inputs[1]
+
+                            # Try to get base variable name
+                            base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
+                            if not base_name:
+                                base_name = _trace_value_to_global(base_var, formatter)
+                            if not base_name:
+                                # Phase 8B.1: Use multi-block SSA tracing for complex cases
+                                producer = _follow_ssa_value_across_blocks(base_var, ssa_func, max_depth=10)
+                                if producer:
+                                    if producer.mnemonic == 'LCP':
+                                        # Parameter load - try to resolve again with producer context
+                                        base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
+                                    elif producer.mnemonic in {'GCP', 'GLD'}:
+                                        # Global load - try to resolve again with producer context
+                                        base_name = _trace_value_to_global(base_var, formatter)
+                            if not base_name:
+                                base_name = formatter.render_value(base_var)
+
+                            # Try to get modulo constant
+                            mod_const = None
+                            if mod_value.alias and mod_value.alias.startswith("data_"):
+                                try:
+                                    offset = int(mod_value.alias[5:])
+                                    if ssa_func.scr and ssa_func.scr.data_segment:
+                                        mod_const = ssa_func.scr.data_segment.get_dword(offset * 4)
+                                except (ValueError, AttributeError):
+                                    pass
+
+                            if mod_const is not None:
+                                var_name = f"{base_name}%{mod_const}"
+                                _switch_debug(f"  -> Detected modulo switch: {var_name}")
+
+                # If not MOD, try other variable resolution methods
+                if not var_name:
                     var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
                     if var_name:
-                        logger.debug(f"  -> Found parameter field: {var_name}")
+                        _switch_debug(f"  -> Found parameter field: {var_name}")
 
-                    # Then try regular parameter access
-                    if not var_name:
-                        var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
-                        if var_name:
-                            logger.debug(f"  -> Found parameter: {var_name}")
+                if not var_name:
+                    var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+                    if var_name:
+                        _switch_debug(f"  -> Found parameter: {var_name}")
 
-                    # Then try global variables
-                    if not var_name:
-                        var_name = _trace_value_to_global(var_value, formatter)
-                        if var_name:
-                            logger.debug(f"  -> Found global: {var_name}")
+                        # PHASE 8B Priority 1: If generic parameter name (param_0, param_1, etc.),
+                        # try to infer semantic name from function context
+                        if var_name.startswith('param_'):
+                            semantic_name = _infer_parameter_semantic_name(
+                                var_value, var_name, ssa_func, formatter
+                            )
+                            if semantic_name:
+                                var_name = semantic_name
+                                _switch_debug(f"  -> Inferred semantic parameter name: {var_name}")
 
-                    # CRITICAL FIX for Switch Variable Tracking:
-                    # If normal tracing failed, use heuristic to find switch variable
-                    # from nearby GCP instructions. This is needed because compiler generates
-                    # code where global is loaded once at function entry but not properly
-                    # propagated through CFG to switch comparison blocks.
-                    if not var_name:
-                        # Look for GCP in SSA blocks - works for all iterations, not just first
-                        # IMPORTANT: Pass SSA function, not CFG, to get correct mnemonics
-                        var_name = _find_switch_variable_from_nearby_gcp(
-                            ssa_func, current_block, var_value, formatter, func_block_ids
-                        )
-                        if var_name:
-                            logger.debug(f"  -> Found via GCP heuristic: {var_name}")
+                if not var_name:
+                    var_name = _trace_value_to_global(var_value, formatter)
+                    if var_name:
+                        _switch_debug(f"  -> Found global: {var_name}")
 
-                    if not var_name:
-                        # Fall back to regular rendering if neither parameter nor global
-                        var_name = formatter.render_value(var_value)
-                        logger.debug(f"  -> Fallback to rendered value: {var_name}")
+                if not var_name:
+                    var_name = _trace_value_to_function_call(ssa_func, var_value, formatter)
+                    if var_name:
+                        _switch_debug(f"  -> Found function call result: {var_name}")
 
-                    # Check if first switch or same variable
-                    # CRITICAL FIX: Track SSA value to detect aliasing (different names, same value)
-                    if test_var is None:
-                        # First case - establish both variable name and SSA value
-                        test_var = var_name
-                        test_ssa_value = var_value
-                        logger.debug(f"  -> Established switch variable: {test_var} (SSA: {var_value.name if hasattr(var_value, 'name') else var_value})")
-                        print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}", file=sys.stderr)
-                    elif test_var != var_name:
-                        # Variable name differs - check if it's the same SSA value (aliasing)
-                        # Option 1: Direct SSA value match (same object)
-                        values_match = (var_value == test_ssa_value)
+                # CRITICAL FIX for Switch Variable Tracking:
+                # If normal tracing failed, use heuristic to find switch variable
+                # from nearby GCP instructions. This is needed because compiler generates
+                # code where global is loaded once at function entry but not properly
+                # propagated through CFG to switch comparison blocks.
+                if not var_name:
+                    # Look for GCP in SSA blocks - works for all iterations, not just first
+                    # IMPORTANT: Pass SSA function, not CFG, to get correct mnemonics
+                    var_name = _find_switch_variable_from_nearby_gcp(
+                        ssa_func, current_block, var_value, formatter, func_block_ids
+                    )
+                    if var_name:
+                        _switch_debug(f"  -> Found via GCP heuristic: {var_name}")
 
-                        # Option 2: Check if both have same SSA name
-                        names_match = False
-                        if hasattr(var_value, 'name') and hasattr(test_ssa_value, 'name'):
-                            names_match = (var_value.name == test_ssa_value.name)
+                if not var_name:
+                    # Fall back to regular rendering if neither parameter nor global
+                    var_name = formatter.render_value(var_value)
+                    _switch_debug(f"  -> Fallback to rendered value: {var_name}")
 
-                        logger.debug(f"  -> Variable name changed: {test_var} -> {var_name}")
-                        logger.debug(f"  -> SSA value match: {values_match}, SSA name match: {names_match}")
-                        print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name}", file=sys.stderr)
-                        print(f"DEBUG SWITCH:   SSA value match: {values_match}, SSA name match: {names_match}", file=sys.stderr)
+                # PHASE 2 FIX: Calculate priority score for this variable
+                var_priority = 0
+                if "->" in var_name:
+                    # Parameter field access (info->message)
+                    var_priority = 100
+                elif var_name.startswith("param_"):
+                    var_priority = 90
+                elif var_name.startswith("g") or "_g" in var_name:
+                    var_priority = 50
+                elif "%" in var_name:
+                    # Modulo expression
+                    var_priority = 80
+                else:
+                    var_priority = 30
 
-                        if not values_match and not names_match:
-                            # Try to check if they're aliases (both load from same location)
-                            # This handles: first case uses parameter field (LADR->DADR->DCP)
-                            #               later cases use local copy (LCP [sp+418])
+                _switch_debug(f"  Variable '{var_name}' assigned priority: {var_priority}")
 
-                            # Check if one value's producer loads the same as the other
-                            alias_detected = False
+                # Track this variable's frequency and priority
+                variable_frequency[var_name] = variable_frequency.get(var_name, 0) + 1
+                variable_priority[var_name] = max(variable_priority.get(var_name, 0), var_priority)
+                variable_to_ssa[var_name] = var_value
 
-                            # Get producers for both values
-                            prod1 = test_ssa_value.producer_inst if hasattr(test_ssa_value, 'producer_inst') else None
-                            prod2 = var_value.producer_inst if hasattr(var_value, 'producer_inst') else None
+                # PHASE 3 FIX: Don't reject different variables during BFS
+                # Instead, collect ALL cases and filter after BFS completes
+                # This allows us to find switches where the compiler uses different
+                # variable names or expressions for the same underlying value
 
-                            if prod1 and prod2:
-                                # Check if both are memory loads (LCP, GCP, or DCP chain)
-                                prod1_is_load = prod1.mnemonic in ('LCP', 'GCP', 'DCP', 'LADR', 'DADR')
-                                prod2_is_load = prod2.mnemonic in ('LCP', 'GCP', 'DCP', 'LADR', 'DADR')
+                # Still track for first case establishment
+                if test_var is None:
+                    test_var = var_name
+                    test_ssa_value = var_value
+                    _switch_debug(f"First case established: {test_var} (SSA: {var_value.name if hasattr(var_value, 'name') else var_value})")
+                    chain_debug['variables_seen'].append(test_var)
+                    chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
+                    print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}", file=sys.stderr)
+                elif test_var != var_name:
+                    # Different variable name - log but DON'T skip (Phase 3 fix)
+                    _switch_debug(f"Different variable seen: {test_var} -> {var_name} (will be filtered later)")
+                    chain_debug['variables_seen'].append(var_name)
+                    chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
+                    print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (collecting anyway)", file=sys.stderr)
 
-                                if prod1_is_load and prod2_is_load:
-                                    # Both are loads - they might be loading the same value
-                                    # For now, accept as potential alias (lenient approach)
-                                    logger.debug(f"  -> Both values are memory loads, accepting as potential alias")
-                                    logger.debug(f"     Producer 1: {prod1.mnemonic}, Producer 2: {prod2.mnemonic}")
-                                    alias_detected = True
+                # Same variable (or first case), try to extract constant value using ConstantPropagator
+                _switch_debug(f"About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")
+                print(f"DEBUG SWITCH: About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}", file=sys.stderr)
+                case_val = None
+                const_info = formatter._constant_propagator.get_constant(const_value)
+                if const_info is not None:
+                    case_val = const_info.value
+                    _switch_debug(f"  Successfully extracted case value: {case_val}")
+                    print(f"DEBUG SWITCH: Successfully extracted case value: {case_val}", file=sys.stderr)
+                else:
+                    _switch_debug(f"  Failed to extract constant - const_value alias={const_value.alias if hasattr(const_value, 'alias') else 'None'}, producer={const_value.producer_inst.mnemonic if const_value.producer_inst else 'None'}")
+                    print(f"DEBUG SWITCH: Failed to extract constant for SSA value: {const_value.name}", file=sys.stderr)
 
-                            if not alias_detected:
-                                # Truly different variable, not part of switch
-                                logger.debug(f"  -> Different variable (not aliased), breaking chain")
-                                print(f"DEBUG SWITCH: Breaking chain - not aliased", file=sys.stderr)
+                if case_val is not None:
+                        # This is a valid case!
+                        print(f"DEBUG SWITCH: case_val is not None: {case_val}", file=sys.stderr)
+                        # Determine which successor is the case body
+                        # JZ means jump if zero (condition false), so arg1 is NOT the case
+                        # JNZ means jump if not zero (condition true), so arg1 IS the case
+                        mnemonic = resolver.get_mnemonic(opcode)
+                        print(f"DEBUG SWITCH: mnemonic={mnemonic}, opcode={opcode}", file=sys.stderr)
+                        if mnemonic == "JNZ":
+                            case_block = last_instr.arg1
+                        else:  # JZ
+                            # Fall-through is the case body
+                            case_block = last_instr.address + 1
+
+                        print(f"DEBUG SWITCH: case_block address={case_block}", file=sys.stderr)
+
+                        # Convert address to block ID
+                        case_block_id = None
+                        for bid, b in cfg.blocks.items():
+                            if b.start == case_block:
+                                case_block_id = bid
                                 break
-                            else:
-                                # Aliasing detected - continue chain but keep original var name
-                                logger.debug(f"  -> Aliasing detected, continuing chain with original variable: {test_var}")
-                                print(f"DEBUG SWITCH: Aliasing detected, continuing chain", file=sys.stderr)
+
+                        print(f"DEBUG SWITCH: case_block_id={case_block_id}", file=sys.stderr)
+                        if case_block_id is not None:
+                            # PHASE 3 FIX: Store all potential cases with their variable info
+                            # Don't filter yet - we'll do that after BFS completes
+                            case_info = CaseInfo(value=case_val, block_id=case_block_id)
+                            all_potential_cases.append((var_name, var_priority, var_value, case_info, current_block))
+
+                            # TEMPORARY: Also add to old structure for compatibility
+                            cases.append(case_info)
+                            chain_blocks.append(current_block)
+                            found_equ = True
+                            print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}", file=sys.stderr)
+
+                            # BFS: Add ALL successors of this comparison block to the queue
+                            # This allows us to find comparison blocks even if they're not directly chained
+                            for succ in curr_block_obj.successors:
+                                if succ not in visited_blocks and succ in func_block_ids:
+                                    to_visit.append((succ, depth + 1))
+                                    _switch_debug(f"Added successor {succ} to BFS queue")
                         else:
-                            logger.debug(f"  -> SSA value match confirmed, continuing chain")
-                            print(f"DEBUG SWITCH: SSA value match, continuing chain", file=sys.stderr)
+                            _switch_debug(f"Case block ID not found for address {case_block}")
 
-                    # Same variable (or first case), try to extract constant value
-                    case_val = None
-                    if const_value.alias and const_value.alias.startswith("data_"):
-                        try:
-                            offset = int(const_value.alias[5:])
-                            if ssa_func.scr and ssa_func.scr.data_segment:
-                                case_val = ssa_func.scr.data_segment.get_dword(offset * 4)
-                        except (ValueError, AttributeError):
-                            pass
-
-                    if case_val is not None:
-                            # This is a valid case!
-                            # Determine which successor is the case body
-                            # JZ means jump if zero (condition false), so arg1 is NOT the case
-                            # JNZ means jump if not zero (condition true), so arg1 IS the case
-                            mnemonic = resolver.get_mnemonic(opcode)
-                            if mnemonic == "JNZ":
-                                case_block = last_instr.arg1
-                            else:  # JZ
-                                # Fall-through is the case body
-                                case_block = last_instr.address + 1
-
-                            # Convert address to block ID
-                            case_block_id = None
-                            for bid, b in cfg.blocks.items():
-                                if b.start == case_block:
-                                    case_block_id = bid
-                                    break
-
-                            if case_block_id is not None:
-                                cases.append(CaseInfo(value=case_val, block_id=case_block_id))
-                                chain_blocks.append(current_block)
-                                found_equ = True
-
-                                # Find next block in chain
-                                if mnemonic == "JNZ":
-                                    # Fall-through is next test
-                                    next_addr = last_instr.address + 1
-                                else:  # JZ
-                                    # Jump target is next test
-                                    next_addr = last_instr.arg1
-
-                                # Find next block
-                                next_block = None
-                                for bid, b in cfg.blocks.items():
-                                    if b.start == next_addr:
-                                        next_block = bid
-                                        break
-                                current_block = next_block
-                            else:
-                                pass  # Case block ID not found
-
+            # If no EQU found, still explore successors (might be a gap in the chain)
             if not found_equ:
-                break
+                _switch_debug(f"No EQU found in block {current_block}, exploring successors")
+                for succ in curr_block_obj.successors:
+                    if succ not in visited_blocks and succ in func_block_ids:
+                        to_visit.append((succ, depth + 1))
 
-        # If we found at least 2 cases, it's a switch
-        if len(cases) >= 2:
+        # Log chain completion statistics
+        _switch_debug(f"Chain complete: {len(cases)} cases found")
+        if len(cases) < 1:
+            _switch_debug(f"Insufficient cases (need 1+), discarding")
+            _switch_debug(f"Break reasons: {chain_debug['break_reasons']}")
+        else:
+            switch_type = "full" if len(cases) >= 2 else "single_case"
+            _switch_debug(f"Switch detected: {test_var}, type={switch_type}")
+
+        # PHASE 2 FIX: Select the BEST variable based on priority and frequency
+        # If we saw multiple variables during BFS, pick the one with highest priority
+        # This handles cases where different blocks use different names for the same value
+        if len(cases) >= 1 and variable_frequency:
+            _switch_debug(f"Variable frequency: {variable_frequency}")
+            _switch_debug(f"Variable priority: {variable_priority}")
+
+            # Find variable with best combination of priority and frequency
+            best_var = None
+            best_score = -1
+
+            for var_name in variable_frequency:
+                # Score = priority * 1000 + frequency
+                # This heavily weights priority but uses frequency as tiebreaker
+                score = variable_priority.get(var_name, 0) * 1000 + variable_frequency[var_name]
+                _switch_debug(f"  {var_name}: priority={variable_priority.get(var_name, 0)}, freq={variable_frequency[var_name]}, score={score}")
+
+                if score > best_score:
+                    best_score = score
+                    best_var = var_name
+
+            if best_var and best_var != test_var:
+                _switch_debug(f"Overriding test_var '{test_var}' with best variable '{best_var}' (score={best_score})")
+                test_var = best_var
+                test_ssa_value = variable_to_ssa.get(best_var, test_ssa_value)
+
+        # BUGFIX: Deduplicate cases by value (BFS might find same value multiple times)
+        # Keep the first occurrence of each case value
+        seen_values = set()
+        unique_cases = []
+        for case in cases:
+            if case.value not in seen_values:
+                seen_values.add(case.value)
+                unique_cases.append(case)
+            else:
+                _switch_debug(f"Removing duplicate case value={case.value}, block={case.block_id}")
+
+        cases = unique_cases
+
+        # If we found at least 1 case, it's a switch (or single-case if-statement)
+        print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)", file=sys.stderr)
+        if len(cases) >= 1:
+            print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'", file=sys.stderr)
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
             # Find the exit block - common successor of all case blocks
@@ -551,8 +842,11 @@ def _detect_switch_patterns(
                             exit_block = real_exit
 
             # Collect all blocks belonging to the switch (initially just chain and case entries)
+            print(f"DEBUG SWITCH: Building all_blocks for {test_var}, chain_blocks={chain_blocks}, header_block={block_id}", file=sys.stderr)
             all_blocks = set(chain_blocks)
+            all_blocks.add(block_id)  # CRITICAL FIX: Always include header block
             all_blocks.update(all_case_blocks)
+            print(f"DEBUG SWITCH: all_blocks after adding chain and cases: {all_blocks}", file=sys.stderr)
             if current_block is not None:
                 all_blocks.add(current_block)  # default block
 
@@ -630,6 +924,9 @@ def _detect_switch_patterns(
             for case in cases:
                 case.has_break = _case_has_break(cfg, case, exit_block, resolver)
 
+            # Determine switch type for rendering
+            switch_type = "full" if len(cases) >= 2 else "single_case"
+
             switch = SwitchPattern(
                 test_var=test_var,
                 header_block=block_id,
@@ -638,7 +935,9 @@ def _detect_switch_patterns(
                 default_body_blocks=default_body,
                 exit_block=exit_block,
                 all_blocks=all_blocks,
+                _internal_type=switch_type,
             )
+            print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases", file=sys.stderr)
             switches.append(switch)
             processed_blocks.update(chain_blocks)
 
@@ -691,3 +990,34 @@ def _detect_switch_patterns(
         switches.sort(key=_rank_switch_importance, reverse=True)
 
     return switches
+
+
+def _infer_parameter_semantic_name(var_value, generic_name: str, ssa_func: SSAFunction, formatter: ExpressionFormatter) -> Optional[str]:
+    """
+    PHASE 8B Priority 1: Try to infer semantic parameter name from usage patterns.
+
+    This is a placeholder for future enhancement. Currently returns None,
+    which means the generic parameter name (param_0, param_1, etc.) will be used.
+
+    Future enhancements could analyze:
+    - Parameter usage patterns (e.g., passed to functions with known signatures)
+    - Comparisons against known constants (e.g., sides: 0=VC, 1=US, 2=NE)
+    - Arithmetic patterns that suggest semantic meaning
+
+    Args:
+        var_value: SSA value representing the parameter
+        generic_name: Generic name like "param_0", "param_1"
+        ssa_func: SSA function context
+        formatter: Expression formatter
+
+    Returns:
+        Semantic name if inferred, None otherwise
+    """
+    # Future: Could analyze how parameter is used:
+    # - Passed to functions with known signatures
+    # - Compared against known constants (e.g., sides: 0=VC, 1=US, 2=NE)
+    # - Used in arithmetic patterns
+
+    # For now, keep generic name
+    # The important fix is that the switch is DETECTED, even with generic name
+    return None

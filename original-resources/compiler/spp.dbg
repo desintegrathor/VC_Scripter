@@ -1,0 +1,8392 @@
+GetArgcArgv(): cmdln=='"spp.exe" "tt.c" "spp.c"'
+GetArgcArgv(): argc==3
+GetArgcArgv(): argv[0]=='spp.exe'
+GetArgcArgv(): argv[1]=='tt.c'
+GetArgcArgv(): argv[2]=='spp.c'
+
+ENTERING parse(): 
+
+TRANSLATING TEXT_LINE:  
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #include <inc\sc_MPglobal.h>
+
+
+PATH=='inc\sc_MPglobal.h'
+
+stdpath='C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler'
+prjpath=='C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler'
+
+my_cdfopen() debug message: new_cur_dir=='C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler'
+
+my_cdfopen() debug message: file=='inc\sc_MPglobal.h'
+
+ENTERING parse(): #include <inc\sc_MPglobal.h>
+
+
+TRANSLATING TEXT_LINE:  
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #ifndef SC_GLOBAL_H
+
+
+line+8=='SC_GLOBAL_H
+'
+
+line+8=='!defined SC_GLOBAL_H
+'
+
+if - cond==1
+
+ENTERING parse(): #ifndef !defined SC_GLOBAL_H
+
+
+TRANSLATING COMMAND: #define SC_GLOBAL_H 
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: ''.
+
+
+NEW MACRO INSERTED:
+name : 'SC_GLOBAL_H'
+value: '(null)'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define _GE_VERSION_		138			
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '138'.
+
+
+NEW MACRO INSERTED:
+name : '_GE_VERSION_'
+value: '138'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_GLOBAL_VARIABLE_MAX			4096
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4096'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_GLOBAL_VARIABLE_MAX'
+value: '4096'
+
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_TYPE_PC					1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_TYPE_PC'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_P_TYPE_AI					2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_TYPE_AI'
+value: '2'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_SIDE_US					0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_SIDE_US'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_P_SIDE_VC					1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_SIDE_VC'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_P_SIDE_NEUTRAL				2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_SIDE_NEUTRAL'
+value: '2'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_HIT					1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_HIT'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_SET					2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_SET'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_INIT					3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_INIT'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_DOTICK				4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_DOTICK'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_RELEASE				5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_RELEASE'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_USED					6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_USED'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_JUSTLOADED			7
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_JUSTLOADED'
+value: '7'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_INFO_EVENT_MOUNTEDSHOT			8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_INFO_EVENT_MOUNTEDSHOT'
+value: '8'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_OBJ_HIT_BY_MISSILE					1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_HIT_BY_MISSILE'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_HIT_BY_EXPLOSION					2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_HIT_BY_EXPLOSION'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_OBJ_HIT_BY_MISSILE_PC				3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_OBJ_HIT_BY_MISSILE_PC'
+value: '3'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_TIME						0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_TIME'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_RADIOUSED				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_RADIOUSED'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_SPEACHDONE				2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_SPEACHDONE'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_VIEWANIMCALLBACK			3		
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_VIEWANIMCALLBACK'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_EVENT					4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_EVENT'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_POINTINTERACT			5		
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_POINTINTERACT'
+value: '5'
+
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_POINTINTERACTINFO		6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_POINTINTERACTINFO'
+value: '6'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_INITSCENE				7	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_INITSCENE'
+value: '7'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_RELEASESCENE				8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_RELEASESCENE'
+value: '8'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_ARTILLERY				9	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '9'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_ARTILLERY'
+value: '9'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_LOUDSHOTCALLBACK			10	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '10'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_LOUDSHOTCALLBACK'
+value: '10'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_JUSTLOADED				11
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '11'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_JUSTLOADED'
+value: '11'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_MUSICDONE				12	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '12'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_MUSICDONE'
+value: '12'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_LIGHTSTICK_USED			13
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '13'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_LIGHTSTICK_USED'
+value: '13'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_STORYSKIP				14
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '14'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_STORYSKIP'
+value: '14'
+
+
+
+TRANSLATING COMMAND: #define SC_LEV_MES_GETMUSIC					15
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '15'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_LEV_MES_GETMUSIC'
+value: '15'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_UNDEFINED				0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_UNDEFINED'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_LEVELINIT				1	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_LEVELINIT'
+value: '1'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_RENDERHUD				2	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_RENDERHUD'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_SERVER_TICK				3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_SERVER_TICK'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_CLIENT_TICK				4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_CLIENT_TICK'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_SERVER_RECOVER_TIME		5	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_SERVER_RECOVER_TIME'
+value: '5'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 														
+
+
+TRANSLATING COMMAND: 		#define SC_NET_SERVER_RECTIME_NEVER			-1.0f
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '-1.0'.
+
+trandDef(): macro translation finished, value is now: '-1.0f'.
+
+trandDef(): macro has value: '-1.0f'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_SERVER_RECTIME_NEVER'
+value: '-1.0f'
+
+
+
+TRANSLATING COMMAND: 		#define SC_NET_SERVER_RECTIME_ENDOFROUND	-10.0f
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '-10.0'.
+
+trandDef(): macro translation finished, value is now: '-10.0f'.
+
+trandDef(): macro has value: '-10.0f'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_SERVER_RECTIME_ENDOFROUND'
+value: '-10.0f'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_SERVER_RECOVER_PLACE		6	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_SERVER_RECOVER_PLACE'
+value: '6'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_SERVER_KILL				7	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_SERVER_KILL'
+value: '7'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_MESSAGE					8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_MESSAGE'
+value: '8'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_LEVELPREINIT				9	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '9'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_LEVELPREINIT'
+value: '9'
+
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_RESTARTMAP				10	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '10'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_RESTARTMAP'
+value: '10'
+
+
+
+TRANSLATING COMMAND: #define SC_NET_MES_RULESCHANGED				11	
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '11'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_NET_MES_RULESCHANGED'
+value: '11'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_SOUND_MESSAGE_INIT				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SOUND_MESSAGE_INIT'
+value: '1'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_P_STATUS_NOTINGAME			0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_P_STATUS_NOTINGAME'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_P_STATUS_INGAME				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_P_STATUS_INGAME'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_P_STATUS_INGAMEDEATH			2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_P_STATUS_INGAMEDEATH'
+value: '2'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_ENUMPLAYER_SIDE_ALL			0xffffffff
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0xffffffff'.
+
+trandDef(): macro has value: '0xffffffff'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_ENUMPLAYER_SIDE_ALL'
+value: '0xffffffff'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_EXPL_TYPE_GRENADE				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_EXPL_TYPE_GRENADE'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_EXPL_TYPE_M72					2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_EXPL_TYPE_M72'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_EXPL_TYPE_MORTAR					3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_EXPL_TYPE_MORTAR'
+value: '3'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_PRELOAD_BES_MAXID					64
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '64'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_PRELOAD_BES_MAXID'
+value: '64'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_LINK3PV_MAX						4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_LINK3PV_MAX'
+value: '4'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_RADARCOLOR_DISABLE					0xff000000
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0xff000000'.
+
+trandDef(): macro has value: '0xff000000'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_RADARCOLOR_DISABLE'
+value: '0xff000000'
+
+
+
+TRANSLATING COMMAND: #define SC_P_RADARCOLOR_DEFAULT					0xfe000000
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0xfe000000'.
+
+trandDef(): macro has value: '0xfe000000'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_RADARCOLOR_DEFAULT'
+value: '0xfe000000'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_BODYFRONT			0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_BODYFRONT'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_BODYBACK				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_BODYBACK'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_LEFTARM				2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_LEFTARM'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_RIGHTARM				3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_RIGHTARM'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_LEFTLEG				4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_LEFTLEG'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_RIGHTLEG				5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_RIGHTLEG'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define SC_P_MESH_AREA_HEAD					6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_MESH_AREA_HEAD'
+value: '6'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_COUNT				6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_COUNT'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_CLASS				0x01
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x01'.
+
+trandDef(): macro has value: '0x01'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_CLASS'
+value: '0x01'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_POINTS			0x02
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x02'.
+
+trandDef(): macro has value: '0x02'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_POINTS'
+value: '0x02'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_FRAGS				0x04
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x04'.
+
+trandDef(): macro has value: '0x04'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_FRAGS'
+value: '0x04'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_KILLS				0x08
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x08'.
+
+trandDef(): macro has value: '0x08'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_KILLS'
+value: '0x08'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_DEATHS			0x10
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x10'.
+
+trandDef(): macro has value: '0x10'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_DEATHS'
+value: '0x10'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_PL_MASK_PINGS				0x20
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x20'.
+
+trandDef(): macro has value: '0x20'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_PL_MASK_PINGS'
+value: '0x20'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SIDE_MASK_POINTS			0x01
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x01'.
+
+trandDef(): macro has value: '0x01'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SIDE_MASK_POINTS'
+value: '0x01'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SIDE_MASK_FRAGS			0x02
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x02'.
+
+trandDef(): macro has value: '0x02'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SIDE_MASK_FRAGS'
+value: '0x02'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_NONE				0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_NONE'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_POINTS				1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_POINTS'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_FRAGS				2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_FRAGS'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_KILLS				3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_KILLS'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_DEATHS				4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_DEATHS'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORTBY_PINGS	    		5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORTBY_PINGS'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_SORT_DOWNUP				0x80000000
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '0'.
+
+trandDef(): macro translation finished, value is now: '0x80000000'.
+
+trandDef(): macro has value: '0x80000000'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_SORT_DOWNUP'
+value: '0x80000000'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_ENDRULE_TIME					0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_ENDRULE_TIME'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_ENDRULE_FRAGS					1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_ENDRULE_FRAGS'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_ENDRULE_POINTS				2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_ENDRULE_POINTS'
+value: '2'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_GAME			0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_GAME'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_SPEECH			1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_SPEECH'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_HELI			2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_HELI'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_BEEP			3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_BEEP'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_NATURE			5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_NATURE'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_SCRIPT0		6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_SCRIPT0'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define SC_SNDPLAYER_SCRIPT1		7
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_SNDPLAYER_SCRIPT1'
+value: '7'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE							499
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '499'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE'
+value: '499'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONSUBTYPE						498
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '498'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONSUBTYPE'
+value: '498'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_DM						1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_DM'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_TDM						2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_TDM'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_ATG						3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_ATG'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_LMS						4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_LMS'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_CTF						5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_CTF'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_CTR						6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_CTR'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_COOP					7
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_COOP'
+value: '7'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_RW						8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_RW'
+value: '8'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MP_MISSIONTYPE_TT						9
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '9'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MP_MISSIONTYPE_TT'
+value: '9'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_ALL			0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_ALL'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_DM			1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_DM'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WA			3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WA'
+value: '3'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WB			4
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '4'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WB'
+value: '4'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WC			5
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '5'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WC'
+value: '5'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WD			6
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WD'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WE			7
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '7'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WE'
+value: '7'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_WF			8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_WF'
+value: '8'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_CTF_US		9
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '9'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_CTF_US'
+value: '9'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_COOP			10
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '10'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_COOP'
+value: '10'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_ATG_US		11
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '11'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_ATG_US'
+value: '11'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_ATG_PILOT		12
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '12'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_ATG_PILOT'
+value: '12'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_RW_US			13
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '13'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_RW_US'
+value: '13'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_CTF_VC		14
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '14'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_CTF_VC'
+value: '14'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_ATG_VC		15
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '15'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_ATG_VC'
+value: '15'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_RW_VC			16
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '16'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_RW_VC'
+value: '16'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_DEF_0		17
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '17'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_DEF_0'
+value: '17'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_DEF_1		18
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '18'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_DEF_1'
+value: '18'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_DEF_2		19
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '19'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_DEF_2'
+value: '19'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_DEF_3		20
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '20'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_DEF_3'
+value: '20'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_DEF_4		21
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '21'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_DEF_4'
+value: '21'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_ATT_1		22
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '22'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_ATT_1'
+value: '22'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_ATT_2		23
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '23'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_ATT_2'
+value: '23'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_ATT_3		24
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '24'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_ATT_3'
+value: '24'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_ATT_4		25
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '25'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_ATT_4'
+value: '25'
+
+
+
+TRANSLATING COMMAND: #define SC_MP_RESPAWN_TT_ATT_5		26
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '26'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_MP_RESPAWN_TT_ATT_5'
+value: '26'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_P_CREATE_AEG_VALID_MAX				8
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '8'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_P_CREATE_AEG_VALID_MAX'
+value: '8'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #ifndef _PTEN_
+
+
+line+8=='_PTEN_
+'
+
+line+8=='!defined _PTEN_
+'
+
+if - cond==1
+
+ENTERING parse(): #ifndef !defined _PTEN_
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define FALSE		0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'FALSE'
+value: '0'
+
+
+
+TRANSLATING COMMAND: 	#define TRUE		1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'TRUE'
+value: '1'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define NULL		0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'NULL'
+value: '0'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define FLT_MAX         3.402823466e+38F
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '3.402823466'.
+
+trandDef(): macro translation finished, value is now: '3.402823466e'.
+
+trandDef(): macro translation started, value is now: '3.402823466e+38'.
+
+trandDef(): macro translation finished, value is now: '3.402823466e+38F'.
+
+trandDef(): macro has value: '3.402823466e+38F'.
+
+
+NEW MACRO INSERTED:
+name : 'FLT_MAX'
+value: '3.402823466e+38F'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define PI			3.141592654f
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '3.141592654'.
+
+trandDef(): macro translation finished, value is now: '3.141592654f'.
+
+trandDef(): macro has value: '3.141592654f'.
+
+
+NEW MACRO INSERTED:
+name : 'PI'
+value: '3.141592654f'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define CLEAR(a) SC_ZeroMem(&a,sizeof(a))
+
+
+trandDef(): added parameter: 'a'
+
+trandDef(): line[16]==')'
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: ''.
+
+trandDef(): macro translation finished, value is now: 'SC_ZeroMem'.
+
+trandDef(): macro translation started, value is now: 'SC_ZeroMem(&a,'.
+
+trandDef(): macro translation finished, value is now: 'SC_ZeroMem(&a,sizeof'.
+
+trandDef(): macro has value: 'SC_ZeroMem(&a,sizeof(a))'.
+
+
+NEW MACRO INSERTED:
+name : 'CLEAR'
+value: 'SC_ZeroMem(&a,sizeof(a))'
+prm[0]: 'a'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 	#define RAD_TO_DEG(a)				(a*57.2957795131f)
+
+
+trandDef(): added parameter: 'a'
+
+trandDef(): line[21]==')'
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '(a*57.2957795131'.
+
+trandDef(): macro translation finished, value is now: '(a*57.2957795131f'.
+
+trandDef(): macro has value: '(a*57.2957795131f)'.
+
+
+NEW MACRO INSERTED:
+name : 'RAD_TO_DEG'
+value: '(a*57.2957795131f)'
+prm[0]: 'a'
+
+
+
+TRANSLATING COMMAND: 	#define DEG_TO_RAD(a)				(a*0.0174532925199f)
+
+
+trandDef(): added parameter: 'a'
+
+trandDef(): line[21]==')'
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '(a*0.0174532925199'.
+
+trandDef(): macro translation finished, value is now: '(a*0.0174532925199f'.
+
+trandDef(): macro has value: '(a*0.0174532925199f)'.
+
+
+NEW MACRO INSERTED:
+name : 'DEG_TO_RAD'
+value: '(a*0.0174532925199f)'
+prm[0]: 'a'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	typedef unsigned int dword;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	typedef unsigned short ushort;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	typedef int BOOL;
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	typedef struct {
+
+
+TRANSLATING TEXT_LINE: 		float x,y,z;
+
+
+TRANSLATING TEXT_LINE: 	}c_Vector3;
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	typedef struct{
+
+
+TRANSLATING TEXT_LINE: 		c_Vector3 pos;
+
+
+TRANSLATING TEXT_LINE: 		float rad;
+
+
+TRANSLATING TEXT_LINE: 	}s_sphere;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	extern int sprintf(char *, const char *, ...);
+
+
+TRANSLATING TEXT_LINE: 	extern int swprintf(ushort *, ushort*, ...);
+
+
+TRANSLATING TEXT_LINE: 	extern int rand(void);
+
+
+TRANSLATING TEXT_LINE: 	extern float frnd(float max);
+
+
+TRANSLATING TEXT_LINE: 	extern float sqrt(float val);
+
+
+TRANSLATING TEXT_LINE: 	extern float fmod(float a, float b);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	extern float sin(float a);
+
+
+TRANSLATING TEXT_LINE: 	extern float cos(float a);
+
+
+TRANSLATING TEXT_LINE: 	extern float atan2(float y, float x);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{	
+
+
+TRANSLATING TEXT_LINE: 	char *bes;
+
+
+TRANSLATING TEXT_LINE: 	char *eqp;
+
+
+TRANSLATING TEXT_LINE: }s_SC_P_CreateEqp;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{	
+
+
+TRANSLATING TEXT_LINE: 	dword type;
+
+
+TRANSLATING TEXT_LINE: 	dword side;
+
+
+TRANSLATING TEXT_LINE: 	dword group;
+
+
+TRANSLATING TEXT_LINE: 	dword member_id;
+
+
+TRANSLATING TEXT_LINE: 	dword name_nr;
+
+
+TRANSLATING TEXT_LINE: 	dword debrief_group;	
+
+
+TRANSLATING TEXT_LINE: 	char *inifile;
+
+
+TRANSLATING TEXT_LINE: 	void *recover_pos;	
+
+
+TRANSLATING TEXT_LINE: 	char *icon_name;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword flags;		
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword weap_knife;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_pistol;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_main1;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_main2;	
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot1;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot6;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot7;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot8;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot9;
+
+
+TRANSLATING TEXT_LINE: 	dword weap_slot10;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword force_sel_slot;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword eqps;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_P_CreateEqp *eqp;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword aeg_valid_head_bes[SC_P_CREATE_AEG_VALID_MAX];
+
+
+TRANSLATING TEXT_LINE: 	dword aeg_valid_body_bes[SC_P_CREATE_AEG_VALID_MAX];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }s_SC_P_Create;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{	
+
+
+TRANSLATING TEXT_LINE: 	dword message,param1,param2,param3;
+
+
+TRANSLATING TEXT_LINE: 	float elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 	float next_exe_time;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 param4;
+
+
+TRANSLATING TEXT_LINE: }s_SC_L_info;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword MaxHideOutsStatus;			
+
+
+TRANSLATING TEXT_LINE: 	dword MaxGroups;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }s_SC_initside;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword SideId;
+
+
+TRANSLATING TEXT_LINE: 	dword GroupId;
+
+
+TRANSLATING TEXT_LINE: 	dword MaxPlayers;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	float NoHoldFireDistance;			
+
+
+TRANSLATING TEXT_LINE: 	float follow_point_max_distance;
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: }s_SC_initgroup;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	float cur_hp,max_hp;
+
+
+TRANSLATING TEXT_LINE: 	dword side;
+
+
+TRANSLATING TEXT_LINE: 	dword group;
+
+
+TRANSLATING TEXT_LINE: 	dword member_id;
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: }s_SC_P_getinfo;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword event_type;		
+
+
+TRANSLATING TEXT_LINE: 	void *master_nod;
+
+
+TRANSLATING TEXT_LINE: 	void *nod;	
+
+
+TRANSLATING TEXT_LINE: 	float new_hp_obtained;
+
+
+TRANSLATING TEXT_LINE: 	dword hit_by;			
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 *world_pos;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 *world_dir;
+
+
+TRANSLATING TEXT_LINE: 	float time;				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }s_SC_OBJ_info;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 velocity;	
+
+
+TRANSLATING TEXT_LINE: 	float rot_speed;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 rot_axis;
+
+
+TRANSLATING TEXT_LINE: }s_SC_OBJ_dynamic;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 loc;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 rot;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 scale;
+
+
+TRANSLATING TEXT_LINE: }s_SC_NOD_transform;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{	
+
+
+TRANSLATING TEXT_LINE: 	dword message,param1,param2,param3;
+
+
+TRANSLATING TEXT_LINE: 	float elapsed_time;	
+
+
+TRANSLATING TEXT_LINE: 	float fval1;
+
+
+TRANSLATING TEXT_LINE: }s_SC_NET_info;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE:  
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE:   
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword id;
+
+
+TRANSLATING TEXT_LINE: 	dword side;
+
+
+TRANSLATING TEXT_LINE: 	dword status;	
+
+
+TRANSLATING TEXT_LINE: 	char *name;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }s_SC_MP_EnumPlayers;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 pos;
+
+
+TRANSLATING TEXT_LINE: 	float rz;
+
+
+TRANSLATING TEXT_LINE: }s_SC_MP_Recover;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword title;
+
+
+TRANSLATING TEXT_LINE: 	BOOL use_sides;
+
+
+TRANSLATING TEXT_LINE: 	BOOL disableUSside;
+
+
+TRANSLATING TEXT_LINE: 	BOOL disableVCside;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword side_name[2];
+
+
+TRANSLATING TEXT_LINE: 	dword side_color[2];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	dword pl_mask;
+
+
+TRANSLATING TEXT_LINE: 	dword side_mask;
+
+
+TRANSLATING TEXT_LINE: 	dword sort_by[5];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }s_SC_MP_hud;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_ICON_TYPE_NONE		0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_ICON_TYPE_NONE'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_ICON_TYPE_NUMBER		1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_ICON_TYPE_NUMBER'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define SC_HUD_MP_ICON_TYPE_TIME		2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'SC_HUD_MP_ICON_TYPE_TIME'
+value: '2'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	dword icon_id;  
+
+
+TRANSLATING TEXT_LINE: 	dword type;     
+
+
+TRANSLATING TEXT_LINE: 	int value;	    
+
+
+TRANSLATING TEXT_LINE: 	dword color;	
+
+
+TRANSLATING TEXT_LINE: }s_SC_HUD_MP_icon;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	dword message;		
+
+
+TRANSLATING TEXT_LINE: }s_SC_SOUND_info;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	dword coop_respawn_time;
+
+
+TRANSLATING TEXT_LINE: 	dword coop_respawn_limit;
+
+
+TRANSLATING TEXT_LINE: 	dword dm_weap_resp_time;
+
+
+TRANSLATING TEXT_LINE: 	dword atg_class_limit[6];
+
+
+TRANSLATING TEXT_LINE: }s_SC_MP_SRV_settings;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	float ATG_round_time;
+
+
+TRANSLATING TEXT_LINE: 	float tt_respawntime;
+
+
+TRANSLATING TEXT_LINE: 	float tt_timelimit;
+
+
+TRANSLATING TEXT_LINE: }s_SC_MP_SRV_AtgSettings;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	int hours;
+
+
+TRANSLATING TEXT_LINE: 	int minutes;
+
+
+TRANSLATING TEXT_LINE: 	int seconds;
+
+
+TRANSLATING TEXT_LINE: 	int msec;	
+
+
+TRANSLATING TEXT_LINE: }s_SC_systime;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 138
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 138
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: typedef struct{
+
+
+TRANSLATING TEXT_LINE: 	dword id;	
+
+
+TRANSLATING TEXT_LINE: 	dword color;
+
+
+TRANSLATING TEXT_LINE: 	float scale;
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 pos;
+
+
+TRANSLATING TEXT_LINE: }s_SC_FpvMapSign;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_sgi(dword id, int a);
+
+
+TRANSLATING TEXT_LINE: extern int SC_ggi(dword id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_sgf(dword id, float a);
+
+
+TRANSLATING TEXT_LINE: extern float SC_ggf(dword id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_Gvar_SetSynchro(dword id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_ZeroMem(void *ptr, dword size);
+
+
+TRANSLATING TEXT_LINE: extern float SC_GetLineDist(c_Vector3 *pos, c_Vector3 *line_a, c_Vector3 *line_b);
+
+
+TRANSLATING TEXT_LINE: extern float SC_GetLineDistXY(c_Vector3 *pos, c_Vector3 *line_a, c_Vector3 *line_b);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_IsNear2D(c_Vector3 *a, c_Vector3 *b, float dist);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_IsNear3D(c_Vector3 *a, c_Vector3 *b, float dist);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_2VectorsDist(c_Vector3 *a, c_Vector3 *b);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_VectorLen(c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: extern float SC_VectorLen2(c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_message(char *txt,...);				
+
+
+TRANSLATING TEXT_LINE: extern void SC_Log(dword level, char *txt, ...);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_Osi(char *txt,...);					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_StringSame(char *a, char *b);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_EventImpuls(char *ev_name);
+
+
+TRANSLATING TEXT_LINE: extern void SC_EventEnable(char *ev_name, BOOL enable);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SetMissileTrace(dword color, float alpha);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_CreatePtc(dword id, c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: extern void SC_CreatePtc_Ext(dword id, void *nod, float time, float interval, float scale, float time_mult);
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: extern void SC_CreatePtcVec_Ext(dword id, c_Vector3 *vec, float time, float interval, float scale, float time_mult);
+
+
+TRANSLATING TEXT_LINE: extern void SC_CreatePtcInNodSpace_Ext(dword id, void *nod, float time, float interval, float scale, float time_mult);
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern ushort *SC_AnsiToUni(char *src, ushort *dest);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_Fnt_Write(float x, float y, char *txt, float scale, dword color);
+
+
+TRANSLATING TEXT_LINE: extern float SC_Fnt_GetWidth(char *txt, float scale);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_Fnt_WriteW(float x, float y, ushort *txt, float scale, dword color);
+
+
+TRANSLATING TEXT_LINE: extern float SC_Fnt_GetWidthW(ushort *txt, float scale);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetScreenRes(float *width, float *height);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_RadioSetDist(float max_dist_subtitle_write);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_DoExplosion(c_Vector3 *pos, dword type);	
+
+
+TRANSLATING TEXT_LINE: 														
+
+
+TRANSLATING TEXT_LINE: extern void SC_ArtillerySupport(BOOL enable);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SetMapFpvModel(char *bes_filename);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SetSceneVisibilityMult(float vis_mult, float scene_fog_mult, float bckg_fog_mult);
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SetObjectScript(char *obj_name, char *script_name);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_SphereIsVisible(s_sphere *sph);
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetPos_VecRz(void *cpos, c_Vector3 *pos, float *rz);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MakeBurning(s_sphere *sph);				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PreloadBES(dword id, char *bes_name);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetLoudShot(s_sphere *sph);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_GetVisibility(void);
+
+
+TRANSLATING TEXT_LINE: extern float SC_GetPCZoom(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PreloadWeapon(dword type, BOOL fpv_to);
+
+
+TRANSLATING TEXT_LINE: extern void SC_FadeTo(BOOL black, float time);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_ShowMovieInfo(dword *txt);						
+
+
+TRANSLATING TEXT_LINE: 																
+
+
+TRANSLATING TEXT_LINE: extern void SC_HUD_DisableRadar(BOOL disable);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: extern void SC_PreloadSound(dword snd_id, BOOL is3D);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_FadeSoundPlayer(dword snd_player_id, float final_volume, float fade_time);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern ushort* SC_Wtxt(dword val);				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_GetNearestPlayer(c_Vector3 *vec, float *dist);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SwitchSceneSCS(char *fname, float time);			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_GetRndWp(s_sphere *sph, c_Vector3 *wp);			
+
+
+TRANSLATING TEXT_LINE: 																
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetCameraPos(c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetSystemTime(s_SC_systime *info);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_Fauna_DoSoundAlert(c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern void SC_Fauna_KillThemAll(s_sphere *sph);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_PC_GetPos(c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_PC_Get(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_SetControl(BOOL user_control);				
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableMovementAndLooking(BOOL enable);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableMovement(BOOL enable);				
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnablePronePosition(BOOL enable);			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableWeaponsUsing(BOOL enable);			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableExit(BOOL enable);				
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableEnter(BOOL enable);				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_PC_PlayFpvAnim(char *filename);
+
+
+TRANSLATING TEXT_LINE: extern float SC_PC_PlayFpvAnim2(char *filename, dword plb_id, char *eqp, char *anm);
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_PlayFpvLooped(char *filename);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_PC_EnableFlashLight(BOOL enable);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_P_IsReady(dword pl_id);					
+
+
+TRANSLATING TEXT_LINE: extern char *SC_P_GetName(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_ChangeSideGroupMemId(dword pl_id, dword side, dword group, dword mem_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetForceClassName(dword pl_id, dword name_nr);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_P_GetWeapons(dword pl_id, s_SC_P_Create *info);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_GetPos(dword pl_id, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetPos(dword pl_id, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetRot(dword pl_id, float rz);
+
+
+TRANSLATING TEXT_LINE: extern float SC_P_GetRot(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_GetHeadPos(dword pl_id, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_GetDir(dword pl_id, c_Vector3 *dir);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_GetInfo(dword pl_id, s_SC_P_getinfo *info);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_DoKill(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetHp(dword pl_id, float hp);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_Heal(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_P_GetBySideGroupMember(dword iside, dword igroup, dword imember);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_P_HasWeapon(dword pl_id, dword weap_type);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_P_GetHasShoot(dword pl_id);		
+
+
+TRANSLATING TEXT_LINE: extern dword SC_P_GetCurWeap(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_Link3pvEqp(dword pl_id, dword slot_id, dword plb_id, char *eqp_name);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_UnLink3pvEqp(dword pl_id, dword slot_id);								
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_AddAllAmmo(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_AddAmmoNoGrenade(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_ChangeWeapon(dword pl_id, dword slot_id, dword weap_type);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetSelWeapon(dword pl_id, dword slot_id);
+
+
+TRANSLATING TEXT_LINE: extern float SC_P_GetPhase(dword pl_id);     
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetPhase(dword pl_id, dword phase);     
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_P_GetDistance(dword pl_id, dword to_pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_DoHit(dword pl_id, dword area_id, float hp);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetRadarColor(dword pl_id, dword val);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetNoAmmo(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_CloseEyes(dword pl_id, BOOL force_close);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_SetAmmo(dword pl_id, dword ammo_type, dword amount);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_P_UsesBinocular(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_EnableBinocular(dword pl_id, BOOL enable);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_GetWp(char *wpname, c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SetSideAlly(dword s1, dword s2, float status);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_InitSide(dword id, s_SC_initside *init);
+
+
+TRANSLATING TEXT_LINE: extern void SC_InitSideGroup(s_SC_initgroup *info);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_GetGroupPlayers(dword side, dword group);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_Item_Create(dword id, c_Vector3 *vec);						
+
+
+TRANSLATING TEXT_LINE: extern dword SC_Item_Create2(dword id, c_Vector3 *vec, c_Vector3 *movdir);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_Item_Preload(dword id);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_Item_GetPos(dword netid, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SRV_Item_Release(dword netid);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_Item_Find(dword item_type);			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_LevScr_Event(dword param1, dword param2);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_NET_FillRecover(s_SC_MP_Recover *recov, char *wpname);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetPls(s_sphere *sph, dword *list, dword *items);
+
+
+TRANSLATING TEXT_LINE: extern void SC_GetPlsInLine(c_Vector3 *pos, c_Vector3 *dir, dword *list, dword *items);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_DisplayBinocular(BOOL enable);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_GetScriptHelper(char *name, s_sphere *sph);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_SND_SetEnvironment(dword env1_id, dword env2_id, float env_ratio);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_Ambient_Play(dword snd_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_Ambient_Stop(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3D(dword snd_id, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3Dex(dword snd_id, c_Vector3 *pos, float *timeout);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound2D(dword snd_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 136
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 136
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3Dlink(dword snd_id, void *nod, float *timeout);	
+
+
+TRANSLATING TEXT_LINE: 																				
+
+
+TRANSLATING TEXT_LINE: 																				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3Dpl(dword snd_id, dword pl_id, dword flags);
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3DSpec(dword snd_id, c_Vector3 *pos, dword spec_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound3DexSpec(dword snd_id, c_Vector3 *pos, float *timeout, dword spec_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlaySound2DSpec(dword snd_id, dword spec_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_SetHearableRatio(float Ratio);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_CreateCurveSound(char *anm_filename, dword snd_id, float max_play_dist, BOOL apply_env_volume);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_SND_GetSoundLen(dword snd_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_PlayMusic(dword music_id);
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_MusicPlay(dword MusicID, dword StartVolume );
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_MusicStop(dword MusicID );
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_MusicStopFade(dword MusicID, dword Time );
+
+
+TRANSLATING TEXT_LINE: extern void SC_SND_MusicFadeVolume(dword MusicID, dword Volume, dword Time );
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_SetDSTR(void *nod, char *obj_name, char *dstr_name);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_ResetDSTR(void *nod, char *obj_name);
+
+
+TRANSLATING TEXT_LINE: extern char *SC_NOD_GetName(void *nod);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_GetPivotWorld(void *nod,c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_Detach(void *nod, char *name);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_AddDynamic(void *master_nod, char *name, s_SC_OBJ_dynamic *info);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_GetWorldPos(void *nod, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: extern float SC_NOD_GetWorldRotZ(void *nod);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_NOD_GetCollision(void *master_nod, char *name, BOOL clear_it);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_NOD_GetCollision2(void *nod, BOOL clear_it);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_DOBJ_IsBurning(void *nod, float perc);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_DOBJ_IsBurning2(void *nod);
+
+
+TRANSLATING TEXT_LINE: extern void SC_DOBJ_StopBurning(void *nod, BOOL enable_future_burning);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_GetDummySph(void *master_nod, char *dummy_name, s_sphere *sph);
+
+
+TRANSLATING TEXT_LINE: extern void SC_DOBJ_ClearDamagedHP(void *nod);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_DOBJ_BurnCreateBlockers(void *nod, s_sphere *sph, dword items);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_DOBJ_SetFrozenFlag(void *nod, BOOL frozen);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void *SC_NOD_Get(void *master_obj, char *obj_name);
+
+
+TRANSLATING TEXT_LINE: extern void *SC_NOD_GetNoMessage(void *master_obj, char *obj_name);
+
+
+TRANSLATING TEXT_LINE: extern void *SC_NOD_GetNoMessage_Entity(char *obj_name);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_GetTransform(void *obj,s_SC_NOD_transform *trans);			
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_SetTransform(void *obj,s_SC_NOD_transform *trans);
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_Hide(void *obj, BOOL hide);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_GetPosInOtherSpace(void *other_nod, void *nod, c_Vector3 *vec);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_NOD_SetFromANM(char *anm, float time, void *nod);
+
+
+TRANSLATING TEXT_LINE: extern float SC_ANM_GetFrameTime(char *anm, int frame);
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_NOD_GetPosFromANM(char *anm, float time, c_Vector3 *pos);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern float SC_DOBJ_CameraLooksAt(void *nod, float max_dist);
+
+
+TRANSLATING TEXT_LINE: extern float SC_DOBJ_CameraLooksAtCollision(void *nod, float max_dist);
+
+
+TRANSLATING TEXT_LINE: extern void SC_ACTIVE_Add(void *nod, float cur_dist, dword info_txt);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_DUMMY_Set_DoNotRenHier(char *dummy_name, BOOL do_not_render_hiearchy);
+
+
+TRANSLATING TEXT_LINE: extern void SC_DUMMY_Set_DoNotRenHier2(void *nod, BOOL do_not_render_hiearchy);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_MP_EnumPlayers(s_SC_MP_EnumPlayers *list, dword *items, dword side);	
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_RestartMission(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_P_SetRecoverTime(dword pl_id, float time);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_P_GetAfterRecoverSide(dword pl_id);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_P_GetClass(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_P_GetAfterRecoverClass(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_AddPlayerScript(char *filename);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_SetForceSide(dword side);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_SetClassLimit(dword class_id, dword limit);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_SetClassLimitsForDM(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_SRV_GetBestDMrecov(s_SC_MP_Recover *list, dword items, float *no_recov_time, float max_recov_time);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_InitWeaponsRecovery(float time);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_HUD_SetTabInfo(s_SC_MP_hud *info);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_HUD_SelectPl(dword pl_id, dword color);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_GameInfo(dword text_id, char *text);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_GameInfoW(ushort *text);
+
+
+TRANSLATING TEXT_LINE: extern void SC_P_MP_AddPoints(dword pl_id, int val);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_GetMaxPointsPl(int *points);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_GetMaxFragsPl(int *frags);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_GetHandleofPl(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: extern dword SC_MP_GetPlofHandle(dword pl_handle);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_HUD_RadarShowPlayer(dword pl_id, dword color);
+
+
+TRANSLATING TEXT_LINE: extern void SC_HUD_RadarShowPos(c_Vector3 *vec, dword color);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_P_SetObtainedDamageMult(dword pl_id, float mult);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetSideStats(dword side, int frags, int points);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_ScriptMessage(dword param1, dword param2);	
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_AllowStPwD(BOOL enable);		
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_AllowFriendlyFireOFF(BOOL enable);		
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetIconHUD(s_SC_HUD_MP_icon *icon, dword icons);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetInstantRecovery(BOOL enable);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetItemsNoDisappear(BOOL nodisappear);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_EnableBotsFromScene(BOOL enable);			
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetChooseValidSides(dword mask);			
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_EnableC4weapon(BOOL enable);				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_LoadNextMap(void);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SetTeamGame(BOOL teamgame);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_RecoverAllNoAiPlayers(void);					
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_RecoverAllAiPlayers(void);					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_EndRule_SetTimeLeft(float val, BOOL counting);				
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_GetSRVsettings(s_SC_MP_SRV_settings *info);	
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_MP_SRV_P_SetSideClass(dword pl_id, dword side, dword class_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_MP_SRV_GetAutoTeamBalance(void);
+
+
+TRANSLATING TEXT_LINE: extern int SC_MP_SRV_GetTeamsNrDifference(BOOL after_respawn);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_DoExplosion(c_Vector3 *pos, dword type);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_ClearPlsStats(void);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_InitGameAfterInactive(void);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: extern BOOL SC_MP_GetAmmoBoxesEnabled(void);
+
+
+TRANSLATING TEXT_LINE: extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 133
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 133
+
+
+TRANSLATING TEXT_LINE: 	extern void SC_MP_SetSpectatorCameras(char character);
+
+
+TRANSLATING TEXT_LINE: 	extern void SC_MP_GetRecovers(dword type, s_SC_MP_Recover *list, dword *items);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 136
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 136
+
+
+TRANSLATING TEXT_LINE: 	extern void SC_MP_RecoverPlayer(dword pl_id);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 138
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 138
+
+
+TRANSLATING TEXT_LINE: 	extern dword SC_MP_FpvMapSign_Load(char *fname);
+
+
+TRANSLATING TEXT_LINE: 	extern BOOL SC_MP_FpvMapSign_Unload(dword id);
+
+
+TRANSLATING TEXT_LINE: 	extern void SC_MP_FpvMapSign_Set(dword signs, s_SC_FpvMapSign *list);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define SGI_LEVELPHASE								6			
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'SGI_LEVELPHASE'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define SGI_DIFFICULTY								10
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '10'.
+
+
+NEW MACRO INSERTED:
+name : 'SGI_DIFFICULTY'
+value: '10'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+readline(): EOF found.
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define NORECOV_TIME					3.0f
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro translation started, value is now: '3.0'.
+
+trandDef(): macro translation finished, value is now: '3.0f'.
+
+trandDef(): macro has value: '3.0f'.
+
+
+NEW MACRO INSERTED:
+name : 'NORECOV_TIME'
+value: '3.0f'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define GVAR_SIDE0POINTS				500
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '500'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_SIDE0POINTS'
+value: '500'
+
+
+
+TRANSLATING COMMAND: #define GVAR_SIDE1POINTS				501
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '501'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_SIDE1POINTS'
+value: '501'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MAINPHASE					502
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '502'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MAINPHASE'
+value: '502'
+
+
+
+TRANSLATING COMMAND: #define GVAR_GAMEPHASE					503
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '503'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_GAMEPHASE'
+value: '503'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MISSIONTIME				504
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '504'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MISSIONTIME'
+value: '504'
+
+
+
+TRANSLATING COMMAND: #define GVAR_MISSIONTIME_UPDATE			505
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '505'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_MISSIONTIME_UPDATE'
+value: '505'
+
+
+
+TRANSLATING COMMAND: #define GVAR_LASTSCORES					506
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '506'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_LASTSCORES'
+value: '506'
+
+
+
+TRANSLATING COMMAND: #define GVAR_CURSTEP					507
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '507'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_CURSTEP'
+value: '507'
+
+
+
+TRANSLATING COMMAND: #define GVAR_STEPS						508
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '508'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_STEPS'
+value: '508'
+
+
+
+TRANSLATING COMMAND: #define GVAR_LASTWIN					509
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '509'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_LASTWIN'
+value: '509'
+
+
+
+TRANSLATING COMMAND: #define GVAR_SCORING_PLAYER				510
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '510'.
+
+
+NEW MACRO INSERTED:
+name : 'GVAR_SCORING_PLAYER'
+value: '510'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define STEP_MAX		6				
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '6'.
+
+
+NEW MACRO INSERTED:
+name : 'STEP_MAX'
+value: '6'
+
+
+
+TRANSLATING COMMAND: #define REC_MAX			32				
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '32'.
+
+
+NEW MACRO INSERTED:
+name : 'REC_MAX'
+value: '32'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #define MISSION_PHASE_NOACTIVE			0
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '0'.
+
+
+NEW MACRO INSERTED:
+name : 'MISSION_PHASE_NOACTIVE'
+value: '0'
+
+
+
+TRANSLATING COMMAND: #define MISSION_PHASE_INGAME			1
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '1'.
+
+
+NEW MACRO INSERTED:
+name : 'MISSION_PHASE_INGAME'
+value: '1'
+
+
+
+TRANSLATING COMMAND: #define MISSION_PHASE_WIN_ATTACKERS		2
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '2'.
+
+
+NEW MACRO INSERTED:
+name : 'MISSION_PHASE_WIN_ATTACKERS'
+value: '2'
+
+
+
+TRANSLATING COMMAND: #define MISSION_PHASE_WIN_DEFENDERS		3
+
+
+trandDef(): now i will count value!
+
+trandDef(): macro has value: '3'.
+
+
+NEW MACRO INSERTED:
+name : 'MISSION_PHASE_WIN_DEFENDERS'
+value: '3'
+
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword gSteps = 0;				
+
+
+TRANSLATING TEXT_LINE: dword gRecs[2][STEP_MAX];		
+
+
+TRANSLATING TEXT_LINE: s_SC_MP_Recover gRec[2][STEP_MAX][REC_MAX];
+
+
+TRANSLATING TEXT_LINE: float gRecTimer[2][STEP_MAX][REC_MAX];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: s_sphere gStepSwitch[STEP_MAX];	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword gEndRule;
+
+
+TRANSLATING TEXT_LINE: dword gEndValue;
+
+
+TRANSLATING TEXT_LINE: float gTime;
+
+
+TRANSLATING TEXT_LINE: dword gSidePoints[2];
+
+
+TRANSLATING TEXT_LINE: dword gCLN_SidePoints[2];
+
+
+TRANSLATING TEXT_LINE: dword gCLN_gamephase;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword gMainPhase = 0;
+
+
+TRANSLATING TEXT_LINE: dword gAttackingSide = 0;
+
+
+TRANSLATING TEXT_LINE: dword gCurStep = 0;
+
+
+TRANSLATING TEXT_LINE: BOOL gMission_phase = MISSION_PHASE_NOACTIVE;
+
+
+TRANSLATING TEXT_LINE: float gNoActiveTime = 0.0f;
+
+
+TRANSLATING TEXT_LINE: float gPhaseTimer;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: float gMissionTime_update = 10.0f;
+
+
+TRANSLATING TEXT_LINE: float gMissionTime;
+
+
+TRANSLATING TEXT_LINE: float gMissionTimeToBeat;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword gCLN_MissionTimePrevID;
+
+
+TRANSLATING TEXT_LINE: float gCLN_MissionTime;
+
+
+TRANSLATING TEXT_LINE: dword gCLN_CurStep;
+
+
+TRANSLATING TEXT_LINE: float gCLN_ShowInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: float gCLN_ShowStartInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: float gCLN_ShowWaitingInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: float gMission_starting_timer = 0.0f;
+
+
+TRANSLATING TEXT_LINE: float gMission_afterstart_time = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: float gNextRecover = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void *gFlagNod[STEP_MAX][3];
+
+
+TRANSLATING TEXT_LINE: c_Vector3 gFlagPos[STEP_MAX];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword abl_lists = 0;
+
+
+TRANSLATING TEXT_LINE: dword abl_list[64];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 133
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 133
+
+
+TRANSLATING TEXT_LINE: dword gRespawn_id[2][STEP_MAX] = {
+
+
+TRANSLATING TEXT_LINE: 	{0,SC_MP_RESPAWN_TT_ATT_1,SC_MP_RESPAWN_TT_ATT_2,SC_MP_RESPAWN_TT_ATT_3,SC_MP_RESPAWN_TT_ATT_4,SC_MP_RESPAWN_TT_ATT_5},
+
+
+TRANSLATING TEXT_LINE: 	{SC_MP_RESPAWN_TT_DEF_0,SC_MP_RESPAWN_TT_DEF_1,SC_MP_RESPAWN_TT_DEF_2,SC_MP_RESPAWN_TT_DEF_3,SC_MP_RESPAWN_TT_DEF_4,0}
+
+
+TRANSLATING TEXT_LINE: };
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 138
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 138
+
+
+TRANSLATING TEXT_LINE: dword g_FPV_UsFlag = 0;
+
+
+TRANSLATING TEXT_LINE: dword g_FPV_VcFlag = 0;
+
+
+TRANSLATING TEXT_LINE: dword g_FPV_NeFlag = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: BOOL SRV_CheckEndRule(float time){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	switch(gEndRule){
+
+
+TRANSLATING TEXT_LINE: 		case SC_MP_ENDRULE_TIME:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			if (gMission_phase>MISSION_PHASE_NOACTIVE) gTime += time;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_EndRule_SetTimeLeft(gTime,gMission_phase);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (gTime>gEndValue){
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_LoadNextMap();
+
+
+TRANSLATING TEXT_LINE: 				return TRUE;
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_MP_ENDRULE_POINTS:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if ((gSidePoints[0]>=gEndValue)||(gSidePoints[1]>=gEndValue)){
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_LoadNextMap();
+
+
+TRANSLATING TEXT_LINE: 				return TRUE;
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		default:			
+
+
+TRANSLATING TEXT_LINE: 			SC_message("EndRule unsupported: %d",gEndRule);
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	return FALSE;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: float GetRecovTime(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	float val;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_SRV_AtgSettings set;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_MP_SRV_GetAtgSettings(&set);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (set.tt_respawntime>1.0f){
+
+
+TRANSLATING TEXT_LINE: 		return set.tt_respawntime;
+
+
+TRANSLATING TEXT_LINE: 	}	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	val = SC_ggf(400);
+
+
+TRANSLATING TEXT_LINE: 	if (val==0) val = 30;
+
+
+TRANSLATING TEXT_LINE: 	return val;
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: float GetRecovLimitTime(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	float val;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_SRV_AtgSettings set;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_MP_SRV_GetAtgSettings(&set);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (set.tt_respawntime>1.0f){
+
+
+TRANSLATING TEXT_LINE: 		val = set.tt_respawntime/3;
+
+
+TRANSLATING TEXT_LINE: 		if (val<5.0f) val = 5.0f;
+
+
+TRANSLATING TEXT_LINE: 		if (val>10.0f) val = 10.0f;
+
+
+TRANSLATING TEXT_LINE: 		return val;
+
+
+TRANSLATING TEXT_LINE: 	}	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	val = SC_ggf(401);
+
+
+TRANSLATING TEXT_LINE: 	if (val==0) val = 10;
+
+
+TRANSLATING TEXT_LINE: 	return val;
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: float GetTimeLimit(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	float val;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_SRV_AtgSettings set;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_MP_SRV_GetAtgSettings(&set);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (set.tt_timelimit>59.0f){
+
+
+TRANSLATING TEXT_LINE: 		return set.tt_timelimit;
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	val = SC_ggf(402);
+
+
+TRANSLATING TEXT_LINE: 	if (val==0) val = 8*60;
+
+
+TRANSLATING TEXT_LINE: 	return val;
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void UpdateSidePoints(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	SC_sgi(GVAR_SIDE0POINTS,gSidePoints[0]);
+
+
+TRANSLATING TEXT_LINE: 	SC_sgi(GVAR_SIDE1POINTS,gSidePoints[1]);
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void SRV_UpdateMissionTime(float time){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	gMissionTime_update -= time;
+
+
+TRANSLATING TEXT_LINE: 	if (gMissionTime_update<0.0f){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		gMissionTime_update = 10.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		SC_sgf(GVAR_MISSIONTIME,gMissionTime);
+
+
+TRANSLATING TEXT_LINE: 		SC_sgi(GVAR_MISSIONTIME_UPDATE,SC_ggi(GVAR_MISSIONTIME_UPDATE)+1);		
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void ResetMission(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	gCurStep = gSteps-1;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_sgi(GVAR_CURSTEP,gCurStep);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if ((gMainPhase%2)==0)
+
+
+TRANSLATING TEXT_LINE: 		gMissionTime = GetTimeLimit();
+
+
+TRANSLATING TEXT_LINE: 	else 
+
+
+TRANSLATING TEXT_LINE: 		gMissionTime = gMissionTimeToBeat;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	gMissionTime_update = -1.0;					
+
+
+TRANSLATING TEXT_LINE: 	SRV_UpdateMissionTime(0.0f);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: dword GetAttackingSide(dword main_phase){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	switch(main_phase%4){
+
+
+TRANSLATING TEXT_LINE: 		case 0:
+
+
+TRANSLATING TEXT_LINE: 		case 3:return 0;			
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	return 1;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void RoundEnd(void){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	switch(gMission_phase){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case MISSION_PHASE_WIN_DEFENDERS:
+
+
+TRANSLATING TEXT_LINE: 			gSidePoints[1-gAttackingSide]++;
+
+
+TRANSLATING TEXT_LINE: 			UpdateSidePoints();
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_sgi(GVAR_LASTSCORES,1-gAttackingSide);
+
+
+TRANSLATING TEXT_LINE: 			SC_sgi(GVAR_LASTWIN,1-gAttackingSide);			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (gMainPhase % 2) gMainPhase++;
+
+
+TRANSLATING TEXT_LINE: 				else gMainPhase+=2;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case MISSION_PHASE_WIN_ATTACKERS:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_sgi(GVAR_LASTWIN,gAttackingSide);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (gMainPhase % 2){
+
+
+TRANSLATING TEXT_LINE: 				gSidePoints[gAttackingSide]++;
+
+
+TRANSLATING TEXT_LINE: 				UpdateSidePoints();
+
+
+TRANSLATING TEXT_LINE: 				SC_sgi(GVAR_LASTSCORES,gAttackingSide);
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 			else
+
+
+TRANSLATING TEXT_LINE: 				gMissionTimeToBeat = GetTimeLimit() - gMissionTime;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gMainPhase++;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_sgi(GVAR_MAINPHASE,gMainPhase);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	gAttackingSide = GetAttackingSide(gMainPhase);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_sgi(GVAR_CURSTEP,STEP_MAX);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void SetFlagStatus(dword attacking_side, dword cur_step){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	BOOL us,vc,ne;
+
+
+TRANSLATING TEXT_LINE: 	dword i,flags;
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 138
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 138
+
+
+TRANSLATING TEXT_LINE: 	s_SC_FpvMapSign fpv_list[STEP_MAX];
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	flags = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	for (i=0;i<STEP_MAX;i++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		us = FALSE;
+
+
+TRANSLATING TEXT_LINE: 		vc = FALSE;
+
+
+TRANSLATING TEXT_LINE: 		ne = FALSE;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		if ((i+1)==cur_step){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			switch(attacking_side){
+
+
+TRANSLATING TEXT_LINE: 				case 0:
+
+
+TRANSLATING TEXT_LINE: 					vc = TRUE;
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 				case 1:
+
+
+TRANSLATING TEXT_LINE: 					us = TRUE;
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 				case 2:
+
+
+TRANSLATING TEXT_LINE: 					ne = TRUE;
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		}
+
+
+TRANSLATING TEXT_LINE: 		else
+
+
+TRANSLATING TEXT_LINE: 		if (i<cur_step){
+
+
+TRANSLATING TEXT_LINE: 			ne = TRUE;
+
+
+TRANSLATING TEXT_LINE: 		}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		if (gFlagNod[i][0]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][0],!us);				
+
+
+TRANSLATING TEXT_LINE: 		if (gFlagNod[i][1]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][1],!vc);				
+
+
+TRANSLATING TEXT_LINE: 		if (gFlagNod[i][2]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][2],!ne);				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		fpv_list[flags].id = 0;
+
+
+TRANSLATING TEXT_LINE: 		if (us) fpv_list[flags].id = g_FPV_UsFlag;
+
+
+TRANSLATING TEXT_LINE: 		else
+
+
+TRANSLATING TEXT_LINE: 		if (vc) fpv_list[flags].id = g_FPV_VcFlag;
+
+
+TRANSLATING TEXT_LINE: 		else
+
+
+TRANSLATING TEXT_LINE: 		if (ne) fpv_list[flags].id = g_FPV_NeFlag;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		if (fpv_list[flags].id){
+
+
+TRANSLATING TEXT_LINE: 			fpv_list[flags].color = 0xffffffff;
+
+
+TRANSLATING TEXT_LINE: 			fpv_list[flags].pos = gFlagPos[i];
+
+
+TRANSLATING TEXT_LINE: 			fpv_list[flags].scale = 1.0f;				
+
+
+TRANSLATING TEXT_LINE: 			flags++;
+
+
+TRANSLATING TEXT_LINE: 		}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_MP_FpvMapSign_Set(flags,fpv_list);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void Check_ABL(dword pl_handle){
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	int val;
+
+
+TRANSLATING TEXT_LINE: 	dword to_change;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_P_getinfo info;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (!SC_MP_SRV_GetAutoTeamBalance()) return;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	val = SC_MP_SRV_GetTeamsNrDifference(TRUE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if ((val<3)&&(val>-3)) return;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_P_GetInfo(pl_handle,&info);	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if ((info.side==0)&&(val>0)) to_change = 1;
+
+
+TRANSLATING TEXT_LINE: 	else
+
+
+TRANSLATING TEXT_LINE: 	if ((info.side==1)&&(val<0)) to_change = 0;
+
+
+TRANSLATING TEXT_LINE: 	else
+
+
+TRANSLATING TEXT_LINE: 		return;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	SC_MP_SRV_P_SetSideClass(pl_handle,to_change,1 + 20*to_change);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (abl_lists<64){
+
+
+TRANSLATING TEXT_LINE: 		abl_list[abl_lists] = pl_handle;
+
+
+TRANSLATING TEXT_LINE: 		abl_lists++;
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void Check_ABL_Restart(void){
+
+
+TRANSLATING TEXT_LINE: 	int val;
+
+
+TRANSLATING TEXT_LINE: 	dword side,nr_to_change;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_P_getinfo info;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_EnumPlayers enum_pl[64];
+
+
+TRANSLATING TEXT_LINE: 	dword i,j,k;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (!SC_MP_SRV_GetAutoTeamBalance()) return;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	val = SC_MP_SRV_GetTeamsNrDifference(TRUE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if ((val<3)&&(val>-3)) return;	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (val>0){
+
+
+TRANSLATING TEXT_LINE: 		side = 0;
+
+
+TRANSLATING TEXT_LINE: 		nr_to_change = val/2;
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 	else{
+
+
+TRANSLATING TEXT_LINE: 		side = 1;
+
+
+TRANSLATING TEXT_LINE: 		nr_to_change = -val/2;
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	j = 64;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (SC_MP_EnumPlayers(enum_pl,&j,side)){				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		if (!j) return;
+
+
+TRANSLATING TEXT_LINE: 		
+
+
+TRANSLATING TEXT_LINE: 		while(nr_to_change!=0){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			k = rand()%j;
+
+
+TRANSLATING TEXT_LINE: 			i = k;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			while(
+
+
+TRANSLATING TEXT_LINE: 				(enum_pl[i].id==0)
+
+
+TRANSLATING TEXT_LINE: 				||(enum_pl[i].status==SC_MP_P_STATUS_NOTINGAME)){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				i++;
+
+
+TRANSLATING TEXT_LINE: 				if (i==j) i = 0;
+
+
+TRANSLATING TEXT_LINE: 				if (i==k) return;	
+
+
+TRANSLATING TEXT_LINE: 			}						
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_P_SetSideClass(enum_pl[i].id,1-side,1 + 20*(1-side));
+
+
+TRANSLATING TEXT_LINE: 			enum_pl[i].id = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			nr_to_change--;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		}
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: void RecoverDeathDefenders(void){
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 136
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 136
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_EnumPlayers enum_pl[64];
+
+
+TRANSLATING TEXT_LINE: 	dword i,side,pls;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	side = 1-GetAttackingSide(SC_ggi(GVAR_MAINPHASE));
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	pls = 64;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	if (SC_MP_EnumPlayers(enum_pl,&pls,side)){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		for (i=0;i<pls;i++)
+
+
+TRANSLATING TEXT_LINE: 			if (enum_pl[i].status==SC_MP_P_STATUS_INGAMEDEATH){
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_RecoverPlayer(enum_pl[i].id);
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: int ScriptMain(s_SC_NET_info *info){
+
+
+TRANSLATING TEXT_LINE: 	char txt[32];
+
+
+TRANSLATING TEXT_LINE: 	dword i,j,k,icons,pls;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_Recover *precov;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_hud hudinfo;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_EnumPlayers enum_pl[64];
+
+
+TRANSLATING TEXT_LINE: 	s_SC_MP_SRV_settings SRVset;
+
+
+TRANSLATING TEXT_LINE: 	char side_char;
+
+
+TRANSLATING TEXT_LINE: 	void *nod;
+
+
+TRANSLATING TEXT_LINE: 	BOOL side[2],in_middle;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_HUD_MP_icon icon[3];
+
+
+TRANSLATING TEXT_LINE: 	c_Vector3 pos;
+
+
+TRANSLATING TEXT_LINE: 	ushort *witxt,wtxt[128],wtxt2[64];
+
+
+TRANSLATING TEXT_LINE: 	float val,valy;
+
+
+TRANSLATING TEXT_LINE: 	s_SC_P_getinfo plinfo;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	switch(info->message){
+
+
+TRANSLATING TEXT_LINE: 		
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_SERVER_TICK:	
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (SRV_CheckEndRule(info->elapsed_time)) break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			side[0] = side[1] = FALSE;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			pls = 64;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			if (SC_MP_EnumPlayers(enum_pl,&pls,SC_MP_ENUMPLAYER_SIDE_ALL)){				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				if ((pls==0)&&((gSidePoints[0]+gSidePoints[1])!=0)){
+
+
+TRANSLATING TEXT_LINE: 					gSidePoints[0] = 0;
+
+
+TRANSLATING TEXT_LINE: 					gSidePoints[1] = 0;
+
+
+TRANSLATING TEXT_LINE: 					UpdateSidePoints();
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				for (i=0;i<pls;i++)
+
+
+TRANSLATING TEXT_LINE: 					if (enum_pl[i].status!=SC_MP_P_STATUS_NOTINGAME){
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						if (enum_pl[i].side<2) side[enum_pl[i].side] = TRUE;
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				gMission_starting_timer -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				if ((side[0])&&(side[1])){					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_SetInstantRecovery(FALSE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					if (gMission_phase==MISSION_PHASE_NOACTIVE){												
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						gMission_phase = MISSION_PHASE_INGAME;										
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gMission_afterstart_time = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 						SC_sgi(GVAR_GAMEPHASE,gMission_phase);
+
+
+TRANSLATING TEXT_LINE: 						ResetMission();						
+
+
+TRANSLATING TEXT_LINE: 						SC_MP_SRV_InitGameAfterInactive();
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (gNoActiveTime>6.0f){
+
+
+TRANSLATING TEXT_LINE: 							SC_MP_RestartMission();							
+
+
+TRANSLATING TEXT_LINE: 							SC_MP_RecoverAllNoAiPlayers();
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gMission_starting_timer = 8.0f;
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 				else{
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					if (gMission_starting_timer<=0.0f){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						SC_MP_SetInstantRecovery(TRUE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (gMission_phase>MISSION_PHASE_NOACTIVE){							
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 							gMission_phase = MISSION_PHASE_NOACTIVE;
+
+
+TRANSLATING TEXT_LINE: 							gMission_afterstart_time = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
+
+
+TRANSLATING TEXT_LINE: 							Check_ABL_Restart();
+
+
+TRANSLATING TEXT_LINE: 							ResetMission();
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			for (i=0;i<2;i++)
+
+
+TRANSLATING TEXT_LINE: 			for (j=0;j<gSteps;j++)
+
+
+TRANSLATING TEXT_LINE: 				for (k=0;k<gRecs[i][j];k++)
+
+
+TRANSLATING TEXT_LINE: 					gRecTimer[i][j][k] -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gNextRecover -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 			if (gNextRecover<0.0f) gNextRecover = GetRecovTime(); 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			switch(gMission_phase){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_NOACTIVE:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gNoActiveTime += info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (gMissionTime>-10.0f){
+
+
+TRANSLATING TEXT_LINE: 							gMissionTime = -10.0f;
+
+
+TRANSLATING TEXT_LINE: 							gMissionTime_update = -1.0;					
+
+
+TRANSLATING TEXT_LINE: 							SRV_UpdateMissionTime(0.0f);
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_INGAME:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 						gMission_afterstart_time += info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gMissionTime -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 						SRV_UpdateMissionTime(info->elapsed_time);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (gMissionTime<=0.0f){	
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 							gMission_phase = MISSION_PHASE_WIN_DEFENDERS;
+
+
+TRANSLATING TEXT_LINE: 							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
+
+
+TRANSLATING TEXT_LINE: 							gPhaseTimer = 8.0f;
+
+
+TRANSLATING TEXT_LINE: 							RoundEnd();
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 						else					
+
+
+TRANSLATING TEXT_LINE: 						if (gMission_afterstart_time>5.0f){
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 							if (gCurStep>0)
+
+
+TRANSLATING TEXT_LINE: 							for (i=0;i<pls;i++)
+
+
+TRANSLATING TEXT_LINE: 								if (((enum_pl[i].side==gAttackingSide)
+
+
+TRANSLATING TEXT_LINE: 									&&(enum_pl[i].status==SC_MP_P_STATUS_INGAME))){																		
+
+
+TRANSLATING TEXT_LINE: 										
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 										SC_P_GetPos(enum_pl[i].id,&pos);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 										
+
+
+TRANSLATING TEXT_LINE: 										for (j=gCurStep-1;j<gCurStep;j++)
+
+
+TRANSLATING TEXT_LINE: 											if (SC_IsNear3D(&pos,&gStepSwitch[j].pos,gStepSwitch[j].rad)){
+
+
+TRANSLATING TEXT_LINE: 												
+
+
+TRANSLATING TEXT_LINE: 												if (j){								
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													gCurStep = j;
+
+
+TRANSLATING TEXT_LINE: 													SC_sgi(GVAR_SCORING_PLAYER,SC_MP_GetHandleofPl(enum_pl[i].id));
+
+
+TRANSLATING TEXT_LINE: 													SC_sgi(GVAR_CURSTEP,gCurStep);													
+
+
+TRANSLATING TEXT_LINE: 													RecoverDeathDefenders();
+
+
+TRANSLATING TEXT_LINE: 												}
+
+
+TRANSLATING TEXT_LINE: 												else{
+
+
+TRANSLATING TEXT_LINE: 													
+
+
+TRANSLATING TEXT_LINE: 													gMission_phase = MISSION_PHASE_WIN_ATTACKERS;
+
+
+TRANSLATING TEXT_LINE: 													SC_sgi(GVAR_SCORING_PLAYER,SC_MP_GetHandleofPl(enum_pl[i].id));
+
+
+TRANSLATING TEXT_LINE: 													SC_sgi(GVAR_GAMEPHASE,gMission_phase);													
+
+
+TRANSLATING TEXT_LINE: 													gPhaseTimer = 8.0f;
+
+
+TRANSLATING TEXT_LINE: 													RoundEnd();
+
+
+TRANSLATING TEXT_LINE: 												}
+
+
+TRANSLATING TEXT_LINE: 											}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 									}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_WIN_DEFENDERS:
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_WIN_ATTACKERS:
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gPhaseTimer -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 						if (gPhaseTimer<0.0f){							
+
+
+TRANSLATING TEXT_LINE: 							gNoActiveTime = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 							gMission_phase = MISSION_PHASE_NOACTIVE;
+
+
+TRANSLATING TEXT_LINE: 							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
+
+
+TRANSLATING TEXT_LINE: 							Check_ABL_Restart();
+
+
+TRANSLATING TEXT_LINE: 							SC_MP_SetInstantRecovery(TRUE);
+
+
+TRANSLATING TEXT_LINE: 							SC_MP_RecoverAllNoAiPlayers();													
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_CLIENT_TICK:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gCLN_ShowInfo -= info->elapsed_time;						
+
+
+TRANSLATING TEXT_LINE: 			if (gCLN_ShowStartInfo>0.0f) gCLN_ShowStartInfo -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 			if (gCLN_ShowWaitingInfo>0.0f) gCLN_ShowWaitingInfo -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			switch(SC_ggi(GVAR_GAMEPHASE)){
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_NOACTIVE:
+
+
+TRANSLATING TEXT_LINE: 					SetFlagStatus(SC_ggi(GVAR_STEPS)-1,2);
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_INGAME:
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					if (gCLN_CurStep!=SC_ggi(GVAR_CURSTEP)){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						gCLN_CurStep = SC_ggi(GVAR_CURSTEP);						
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if ((gCLN_CurStep<(SC_ggi(GVAR_STEPS)-1))&&(gCLN_CurStep>0)){
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 							gCLN_ShowInfo = 5.0f;	
+
+
+TRANSLATING TEXT_LINE: 							SC_SND_PlaySound2D(10425);							
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SetFlagStatus(GetAttackingSide(SC_ggi(GVAR_MAINPHASE)),gCLN_CurStep);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			if (gCLN_MissionTimePrevID!=SC_ggi(GVAR_MISSIONTIME_UPDATE)){
+
+
+TRANSLATING TEXT_LINE: 				gCLN_MissionTimePrevID = SC_ggi(GVAR_MISSIONTIME_UPDATE);
+
+
+TRANSLATING TEXT_LINE: 				gCLN_MissionTime = SC_ggf(GVAR_MISSIONTIME);
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 			else{
+
+
+TRANSLATING TEXT_LINE: 				if (SC_ggi(GVAR_GAMEPHASE)==MISSION_PHASE_INGAME)
+
+
+TRANSLATING TEXT_LINE: 					gCLN_MissionTime -= info->elapsed_time;
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			for (i=0;i<2;i++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				gCLN_SidePoints[i] = SC_ggi(GVAR_SIDE0POINTS+i);			
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_SetSideStats(i,0,gCLN_SidePoints[i]);
+
+
+TRANSLATING TEXT_LINE: 										
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				icon[i].type = SC_HUD_MP_ICON_TYPE_NUMBER;
+
+
+TRANSLATING TEXT_LINE: 				icon[i].icon_id = 3*i;
+
+
+TRANSLATING TEXT_LINE: 				icon[i].value = gCLN_SidePoints[i];
+
+
+TRANSLATING TEXT_LINE: 				icon[i].color = 0xbbffffff;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			icons = 2;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if ((gCLN_MissionTime>0.0f)&&(SC_ggi(GVAR_GAMEPHASE))){
+
+
+TRANSLATING TEXT_LINE: 				icon[icons].color = 0xbbffffff;
+
+
+TRANSLATING TEXT_LINE: 				icon[icons].icon_id = 6;
+
+
+TRANSLATING TEXT_LINE: 									
+
+
+TRANSLATING TEXT_LINE: 				if (SC_ggi(GVAR_GAMEPHASE)==MISSION_PHASE_WIN_DEFENDERS)
+
+
+TRANSLATING TEXT_LINE: 					icon[icons].value = 0;					
+
+
+TRANSLATING TEXT_LINE: 				else
+
+
+TRANSLATING TEXT_LINE: 					icon[icons].value = (int)(gCLN_MissionTime+0.99f);					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				icon[icons].type = SC_HUD_MP_ICON_TYPE_TIME;
+
+
+TRANSLATING TEXT_LINE: 				icons++;
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SetIconHUD(icon,icons);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_LEVELPREINIT:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_sgi(GVAR_MP_MISSIONTYPE,GVAR_MP_MISSIONTYPE_TT);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gEndRule = info->param1;
+
+
+TRANSLATING TEXT_LINE: 			gEndValue = info->param2;
+
+
+TRANSLATING TEXT_LINE: 			gTime = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_EnableBotsFromScene(FALSE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_LEVELINIT:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: 		#if _GE_VERSION_ >= 138
+
+
+if - cond==1
+
+ENTERING parse(): 		#if 138 >= 138
+
+
+TRANSLATING TEXT_LINE: 			g_FPV_UsFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_USflag.BES");
+
+
+TRANSLATING TEXT_LINE: 			g_FPV_VcFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_VCflag.BES");
+
+
+TRANSLATING TEXT_LINE: 			g_FPV_NeFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_emptyflag.BES");
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_SetForceSide(0xffffffff);
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SetChooseValidSides(3);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_SetClassLimit(18,0);
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_SetClassLimit(19,0);
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_SetClassLimit(39,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_GetSRVsettings(&SRVset);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			for (i=0;i<6;i++){
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_SRV_SetClassLimit(i+1,SRVset.atg_class_limit[i]);
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_SRV_SetClassLimit(i+21,SRVset.atg_class_limit[i]);
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			CLEAR(hudinfo);
+
+
+++transMacro(): line[9]=='h', tmp==''
+
+--transMacro(): line[16]==')', tmp=='hudinfo'
+
+++transMacro(): line[16]==')', tmp=='hudinfo'
+
+transMacro(): argument[0]=='hudinfo'
+
+TRANSLATING TEXT_LINE: 			hudinfo.title = 5100;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.sort_by[0] = SC_HUD_MP_SORTBY_KILLS;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.sort_by[1] = SC_HUD_MP_SORTBY_DEATHS | SC_HUD_MP_SORT_DOWNUP;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.sort_by[2] = SC_HUD_MP_SORTBY_PINGS | SC_HUD_MP_SORT_DOWNUP;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.pl_mask = SC_HUD_MP_PL_MASK_CLASS | SC_HUD_MP_PL_MASK_KILLS | SC_HUD_MP_PL_MASK_DEATHS;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.use_sides = TRUE;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.side_name[0] = 1010;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.side_color[0] = 0x440000ff;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.side_name[1] = 1011;
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.side_color[1] = 0x44ff0000;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			hudinfo.side_mask = SC_HUD_MP_SIDE_MASK_POINTS;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_HUD_SetTabInfo(&hudinfo);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_AllowStPwD(TRUE);
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_AllowFriendlyFireOFF(TRUE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SetItemsNoDisappear(FALSE);
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (info->param2){	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				CLEAR(gFlagNod);
+
+
+++transMacro(): line[10]=='g', tmp==''
+
+--transMacro(): line[18]==')', tmp=='gFlagNod'
+
+++transMacro(): line[18]==')', tmp=='gFlagNod'
+
+transMacro(): argument[0]=='gFlagNod'
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				for (i=0;i<STEP_MAX;i++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					sprintf(txt,"TT_flag_%d",i);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					nod = SC_NOD_GetNoMessage(NULL,txt);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 					if (nod){
+
+
+TRANSLATING TEXT_LINE: 						SC_NOD_GetPivotWorld(nod,&gFlagPos[i]);
+
+
+TRANSLATING TEXT_LINE: 						gFlagNod[i][0] = SC_NOD_Get(nod,"vlajkaUS");
+
+
+TRANSLATING TEXT_LINE: 						gFlagNod[i][1] = SC_NOD_Get(nod,"Vlajka VC");
+
+
+TRANSLATING TEXT_LINE: 						gFlagNod[i][2] = SC_NOD_Get(nod,"vlajka N");
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				if (info->param1){	
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_SIDE0POINTS);
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_SIDE1POINTS);
+
+
+TRANSLATING TEXT_LINE: 					UpdateSidePoints();
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_GAMEPHASE);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_GAMEPHASE,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_MAINPHASE);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_MAINPHASE,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_LASTSCORES);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_LASTSCORES,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_LASTWIN);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_LASTWIN,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_SCORING_PLAYER);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_SCORING_PLAYER,0);			
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_CURSTEP);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_CURSTEP,0);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_STEPS);
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_MISSIONTIME);
+
+
+TRANSLATING TEXT_LINE: 					SC_MP_Gvar_SetSynchro(GVAR_MISSIONTIME_UPDATE);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgf(GVAR_MISSIONTIME,0.0f);
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_MISSIONTIME_UPDATE,0);		
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					CLEAR(gRecs);
+
+
+++transMacro(): line[11]=='g', tmp==''
+
+--transMacro(): line[16]==')', tmp=='gRecs'
+
+++transMacro(): line[16]==')', tmp=='gRecs'
+
+transMacro(): argument[0]=='gRecs'
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					for (k=0;k<2;k++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (k) side_char = 'D';
+
+
+TRANSLATING TEXT_LINE: 							else side_char = 'A';
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						for (j=0;j<STEP_MAX;j++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 							for (i=0;i<REC_MAX;i++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 								sprintf(txt,"TT_%c%d_%d",side_char,j,i);
+
+
+TRANSLATING TEXT_LINE: 								
+
+
+TRANSLATING TEXT_LINE: 								if (SC_NET_FillRecover(&gRec[k][j][gRecs[k][j]],txt)){
+
+
+TRANSLATING TEXT_LINE: 									gRecs[k][j]++;								
+
+
+TRANSLATING TEXT_LINE: 								}
+
+
+TRANSLATING TEXT_LINE: 							}
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING COMMAND: #if _GE_VERSION_ >= 133
+
+
+if - cond==1
+
+ENTERING parse(): #if 138 >= 133
+
+
+TRANSLATING TEXT_LINE: 							if (gRespawn_id[k][j]){
+
+
+TRANSLATING TEXT_LINE: 								i = REC_MAX - gRecs[k][j];
+
+
+TRANSLATING TEXT_LINE: 								SC_MP_GetRecovers(gRespawn_id[k][j],&gRec[k][j][gRecs[k][j]],&i);
+
+
+TRANSLATING TEXT_LINE: 								gRecs[k][j] += i;								
+
+
+TRANSLATING TEXT_LINE: 							}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					gSteps = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					for (i=0;i<STEP_MAX;i++)
+
+
+TRANSLATING TEXT_LINE: 						if (gRecs[0][i]) gSteps = i+1;
+
+
+TRANSLATING TEXT_LINE: 							
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					for (i=0;i<gSteps;i++)
+
+
+TRANSLATING TEXT_LINE: 						SC_Log(3,"TurnTable recovers #%d: att:%d  def:%d",i,gRecs[0][i],gRecs[1][i]);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					CLEAR(gRecTimer);
+
+
+++transMacro(): line[11]=='g', tmp==''
+
+--transMacro(): line[20]==')', tmp=='gRecTimer'
+
+++transMacro(): line[20]==')', tmp=='gRecTimer'
+
+transMacro(): argument[0]=='gRecTimer'
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					for (i=0;i<gSteps-1;i++){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						sprintf(txt,"TTS_%d",i);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (!SC_GetScriptHelper(txt,&gStepSwitch[i])){
+
+
+TRANSLATING TEXT_LINE: 							SC_message("helper %s not found",txt);
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					SC_sgi(GVAR_STEPS,gSteps);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_RENDERHUD:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			i = 0;
+
+
+TRANSLATING TEXT_LINE: 			witxt = NULL;
+
+
+TRANSLATING TEXT_LINE: 			in_middle = FALSE;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			k = SC_ggi(GVAR_MAINPHASE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (gCLN_gamephase!=SC_ggi(GVAR_GAMEPHASE)){
+
+
+TRANSLATING TEXT_LINE: 				gCLN_gamephase = SC_ggi(GVAR_GAMEPHASE);
+
+
+TRANSLATING TEXT_LINE: 				switch(gCLN_gamephase){
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_WIN_ATTACKERS:
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_WIN_DEFENDERS:
+
+
+TRANSLATING TEXT_LINE: 						if (SC_ggi(GVAR_LASTWIN)==0) SC_SND_PlaySound2D(11117);
+
+
+TRANSLATING TEXT_LINE: 							else SC_SND_PlaySound2D(11116);
+
+
+TRANSLATING TEXT_LINE: 						break;					
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			switch(gCLN_gamephase){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_NOACTIVE:
+
+
+TRANSLATING TEXT_LINE: 					if (gCLN_ShowWaitingInfo<=0.0f)					
+
+
+TRANSLATING TEXT_LINE: 						witxt = SC_Wtxt(1076);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					gCLN_ShowStartInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_INGAME:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					gCLN_ShowWaitingInfo = 3.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					if (gCLN_ShowStartInfo==0.0f){
+
+
+TRANSLATING TEXT_LINE: 						gCLN_ShowStartInfo = 3.0f;
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					if (gCLN_ShowStartInfo>0.0f){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						i = SC_PC_Get();
+
+
+TRANSLATING TEXT_LINE: 						if (i){
+
+
+TRANSLATING TEXT_LINE: 							SC_P_GetInfo(i,&plinfo);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 							if (plinfo.side==GetAttackingSide(SC_ggi(GVAR_MAINPHASE)))
+
+
+TRANSLATING TEXT_LINE: 								witxt = SC_Wtxt(5108);
+
+
+TRANSLATING TEXT_LINE: 							else
+
+
+TRANSLATING TEXT_LINE: 								witxt = SC_Wtxt(5109);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 							SC_GameInfoW(witxt);
+
+
+TRANSLATING TEXT_LINE: 							witxt = NULL;
+
+
+TRANSLATING TEXT_LINE: 						}					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					else					
+
+
+TRANSLATING TEXT_LINE: 					if ((gCLN_ShowInfo>0.0f)&&(gCLN_CurStep>0)){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
+
+
+TRANSLATING TEXT_LINE: 						if (j){						
+
+
+TRANSLATING TEXT_LINE: 							SC_AnsiToUni(SC_P_GetName(j),wtxt2);
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 						else
+
+
+TRANSLATING TEXT_LINE: 							SC_AnsiToUni("'disconnected'",wtxt2);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						swprintf(wtxt,SC_Wtxt(5107),wtxt2,gCLN_CurStep);
+
+
+TRANSLATING TEXT_LINE: 						witxt = wtxt;
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					else{
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						i = SC_PC_Get();
+
+
+TRANSLATING TEXT_LINE: 						if (i){
+
+
+TRANSLATING TEXT_LINE: 							SC_P_GetInfo(i,&plinfo);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 							if (plinfo.side==GetAttackingSide(SC_ggi(GVAR_MAINPHASE))){
+
+
+TRANSLATING TEXT_LINE: 								if (gCLN_CurStep==1){
+
+
+TRANSLATING TEXT_LINE: 									witxt = SC_Wtxt(5111);
+
+
+TRANSLATING TEXT_LINE: 								}
+
+
+TRANSLATING TEXT_LINE: 								else{
+
+
+TRANSLATING TEXT_LINE: 									swprintf(wtxt,SC_Wtxt(5110),gCLN_CurStep-1);
+
+
+TRANSLATING TEXT_LINE: 									witxt = wtxt;
+
+
+TRANSLATING TEXT_LINE: 								}
+
+
+TRANSLATING TEXT_LINE: 							}
+
+
+TRANSLATING TEXT_LINE: 							else{
+
+
+TRANSLATING TEXT_LINE: 								if (gCLN_CurStep==1){
+
+
+TRANSLATING TEXT_LINE: 									witxt = SC_Wtxt(5113);
+
+
+TRANSLATING TEXT_LINE: 								}
+
+
+TRANSLATING TEXT_LINE: 								else{
+
+
+TRANSLATING TEXT_LINE: 									swprintf(wtxt,SC_Wtxt(5112),gCLN_CurStep-1);
+
+
+TRANSLATING TEXT_LINE: 									witxt = wtxt;
+
+
+TRANSLATING TEXT_LINE: 								}
+
+
+TRANSLATING TEXT_LINE: 							}
+
+
+TRANSLATING TEXT_LINE: 								
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_WIN_ATTACKERS:
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
+
+
+TRANSLATING TEXT_LINE: 					if (j){						
+
+
+TRANSLATING TEXT_LINE: 						SC_AnsiToUni(SC_P_GetName(j),wtxt2);
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					else
+
+
+TRANSLATING TEXT_LINE: 						SC_AnsiToUni("'disconnected'",wtxt2);
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					switch(k%4){
+
+
+TRANSLATING TEXT_LINE: 						case 0:i = 5101;break;
+
+
+TRANSLATING TEXT_LINE: 						case 1:i = 5103;break;
+
+
+TRANSLATING TEXT_LINE: 						case 2:i = 5102;break;
+
+
+TRANSLATING TEXT_LINE: 						case 3:i = 5104;break;
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					swprintf(wtxt,SC_Wtxt(i),wtxt2);
+
+
+TRANSLATING TEXT_LINE: 					witxt = wtxt;
+
+
+TRANSLATING TEXT_LINE: 					gCLN_ShowStartInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				case MISSION_PHASE_WIN_DEFENDERS:
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 					
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
+
+
+TRANSLATING TEXT_LINE: 					if (j){						
+
+
+TRANSLATING TEXT_LINE: 						SC_AnsiToUni(SC_P_GetName(j),wtxt2);
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 					else
+
+
+TRANSLATING TEXT_LINE: 						SC_AnsiToUni("'disconnected'",wtxt2);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					switch(SC_ggi(GVAR_LASTSCORES)){
+
+
+TRANSLATING TEXT_LINE: 						case 0:i = 5105;break;
+
+
+TRANSLATING TEXT_LINE: 						case 1:i = 5106;break;
+
+
+TRANSLATING TEXT_LINE: 					}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					swprintf(wtxt,SC_Wtxt(i),wtxt2);
+
+
+TRANSLATING TEXT_LINE: 					witxt = wtxt;	
+
+
+TRANSLATING TEXT_LINE: 					gCLN_ShowStartInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 			if (witxt){
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				SC_GetScreenRes(&val,&valy);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				val -= SC_Fnt_GetWidthW(witxt,1); 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				if (in_middle) valy = 0.5f * valy - 40.0f;
+
+
+TRANSLATING TEXT_LINE: 					else valy = 15;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 				SC_Fnt_WriteW(val * 0.5f,valy,witxt,1,0xffffffff);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_SERVER_RECOVER_TIME:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (info->param2){
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				info->fval1 = 0.1f;
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 			else{
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				switch(gMission_phase){
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_INGAME:
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						for (i=0;i<abl_lists;i++)
+
+
+TRANSLATING TEXT_LINE: 							if (info->param1==abl_list[i]){
+
+
+TRANSLATING TEXT_LINE: 								abl_lists--;
+
+
+TRANSLATING TEXT_LINE: 								abl_list[i] = abl_list[abl_lists];
+
+
+TRANSLATING TEXT_LINE: 								break;
+
+
+TRANSLATING TEXT_LINE: 							}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 						if (i<abl_lists){							
+
+
+TRANSLATING TEXT_LINE: 							info->fval1 = 0.1f;
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 						else{
+
+
+TRANSLATING TEXT_LINE: 							if (gNextRecover>GetRecovLimitTime()) info->fval1 = gNextRecover;
+
+
+TRANSLATING TEXT_LINE: 								else info->fval1 = gNextRecover + GetRecovTime();
+
+
+TRANSLATING TEXT_LINE: 						}
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					case MISSION_PHASE_NOACTIVE:
+
+
+TRANSLATING TEXT_LINE: 						info->fval1 = 3.0f;
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 					default:
+
+
+TRANSLATING TEXT_LINE: 						
+
+
+TRANSLATING TEXT_LINE: 						info->fval1 = -1.0f;
+
+
+TRANSLATING TEXT_LINE: 						break;
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_SERVER_RECOVER_PLACE:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			precov = (s_SC_MP_Recover*)info->param2;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			j = info->param1; 
+
+
+TRANSLATING TEXT_LINE: 			if (gAttackingSide) j = 1-j;
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 			if (j){
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				if (gMission_phase==MISSION_PHASE_INGAME){
+
+
+TRANSLATING TEXT_LINE: 					if (gCurStep<2) k = 0;
+
+
+TRANSLATING TEXT_LINE: 						else k = gCurStep-1-rand()%2;
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 				else k = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 			else{
+
+
+TRANSLATING TEXT_LINE: 				
+
+
+TRANSLATING TEXT_LINE: 				if (gMission_phase==MISSION_PHASE_INGAME){
+
+
+TRANSLATING TEXT_LINE: 					k = gCurStep;
+
+
+TRANSLATING TEXT_LINE: 				}
+
+
+TRANSLATING TEXT_LINE: 				else k = gSteps-1;
+
+
+TRANSLATING TEXT_LINE: 			}			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			i = SC_MP_SRV_GetBestDMrecov(gRec[j][k],gRecs[j][k],gRecTimer[j][k],NORECOV_TIME);
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			gRecTimer[j][k][i] = NORECOV_TIME;
+
+
+TRANSLATING TEXT_LINE: 			*precov = gRec[j][k][i];
+
+
+TRANSLATING TEXT_LINE: 															
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_RESTARTMAP:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gTime = 0;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			CLEAR(gSidePoints);			
+
+
+++transMacro(): line[9]=='g', tmp==''
+
+--transMacro(): line[20]==')', tmp=='gSidePoints'
+
+++transMacro(): line[20]==')', tmp=='gSidePoints'
+
+transMacro(): argument[0]=='gSidePoints'
+
+TRANSLATING TEXT_LINE: 			UpdateSidePoints();			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SetInstantRecovery(TRUE);
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			if (gMission_phase!=MISSION_PHASE_NOACTIVE){
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_RestartMission();							
+
+
+TRANSLATING TEXT_LINE: 				SC_MP_RecoverAllNoAiPlayers();			
+
+
+TRANSLATING TEXT_LINE: 				gMission_phase = MISSION_PHASE_NOACTIVE;				
+
+
+TRANSLATING TEXT_LINE: 				SC_sgi(GVAR_GAMEPHASE,gMission_phase);				
+
+
+TRANSLATING TEXT_LINE: 			}
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			gCLN_ShowInfo = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 			SC_MP_SRV_ClearPlsStats();
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_RULESCHANGED:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			gEndRule = info->param1;
+
+
+TRANSLATING TEXT_LINE: 			gEndValue = info->param2;
+
+
+TRANSLATING TEXT_LINE: 			gTime = 0.0f;
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 		case SC_NET_MES_SERVER_KILL:
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 			Check_ABL(info->param1);			
+
+
+TRANSLATING TEXT_LINE: 			break;
+
+
+TRANSLATING TEXT_LINE: 			
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	}
+
+
+TRANSLATING TEXT_LINE: 	
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: 	return 1;
+
+
+TRANSLATING TEXT_LINE: 
+
+
+TRANSLATING TEXT_LINE: }
+
+
+readline(): EOF found.

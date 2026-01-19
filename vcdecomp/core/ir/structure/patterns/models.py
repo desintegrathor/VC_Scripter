@@ -35,6 +35,7 @@ class SwitchPattern:
     default_body_blocks: Set[int] = None  # All blocks in default body
     exit_block: Optional[int] = None     # Common exit point after switch
     all_blocks: Set[int] = None          # All blocks belonging to this switch
+    _internal_type: str = "full"         # "full" (2+ cases) or "single_case" (1 case, renders as if)
 
     def __post_init__(self):
         if self.all_blocks is None:

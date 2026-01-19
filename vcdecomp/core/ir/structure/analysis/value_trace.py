@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Set, Dict
 import logging
+import sys
 
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
@@ -199,7 +200,65 @@ def _check_ssa_value_equivalence(
                 logger.debug(f"    -> SSA equivalence: both LADR from same parameter offset {prod1.instruction.instruction.arg1}")
                 return True
 
+    # PHASE 8B Priority 1: Check if both are XCALL/CALL with same function and arguments
+    # This handles patterns like: switch(SC_ggi(GVAR_GAMEPHASE)) where each case has
+    # its own XCALL instruction but they call the same function with the same argument
+    if prod1.mnemonic in {'XCALL', 'CALL'} and prod2.mnemonic in {'XCALL', 'CALL'}:
+        # Check if calling same function
+        if prod1.mnemonic == prod2.mnemonic:
+            # For XCALL, arg1 is XFN index; for CALL, arg1 is function address
+            if prod1.instruction and prod1.instruction.instruction and \
+               prod2.instruction and prod2.instruction.instruction:
+                same_function = (prod1.instruction.instruction.arg1 ==
+                                prod2.instruction.instruction.arg1)
+
+                if same_function:
+                    # Same function - now check if arguments match
+                    # XCALL/CALL arguments are in the inputs list
+                    args1 = _extract_call_arguments(prod1, ssa_func)
+                    args2 = _extract_call_arguments(prod2, ssa_func)
+
+                    # If both have same number of args
+                    if len(args1) == len(args2):
+                        # Recursively check if all arguments are equivalent
+                        args_match = all(
+                            _check_ssa_value_equivalence(a1, a2, ssa_func, max_depth-1)
+                            for a1, a2 in zip(args1, args2)
+                        )
+
+                        if args_match:
+                            logger.debug(f"    -> SSA equivalence: both call {prod1.mnemonic} "
+                                        f"with same function and arguments")
+                            return True
+
     return False
+
+
+def _extract_call_arguments(call_inst, ssa_func: SSAFunction) -> list:
+    """
+    PHASE 8B Priority 1: Extract arguments passed to XCALL/CALL instruction.
+
+    In the VC compiler, function arguments are passed via the SSA instruction inputs.
+    For XCALL/CALL instructions, the inputs list contains the argument values.
+
+    Args:
+        call_inst: XCALL or CALL SSA instruction
+        ssa_func: SSA function containing the instruction
+
+    Returns:
+        List of SSA values representing the arguments (in order)
+    """
+    args = []
+
+    # Check if instruction has inputs (arguments)
+    if hasattr(call_inst, 'inputs') and call_inst.inputs:
+        # The inputs are the arguments passed to the function
+        args = list(call_inst.inputs)
+
+    logger.debug(f"    _extract_call_arguments: {call_inst.mnemonic} at {call_inst.address} "
+                f"has {len(args)} arguments")
+
+    return args
 
 
 @dataclass
@@ -857,9 +916,30 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
             # Negative offsets are function parameters in some calling conventions
             # Positive offsets can be local variables or parameters depending on context
 
-            # Heuristic: if offset is in range 306-326, likely s_SC_NET_info parameter
-            # This is a common pattern in VC scripts for ScriptMain function
-            # Map common offsets seen in tdm.scr
+            # Heuristic: Detect s_SC_L_info or s_SC_NET_info parameter struct fields
+            # Different scripts use different stack base offsets:
+            # - LEVEL.SCR (ScriptMain): base at [sp+87]
+            # - TDM.SCR (ScriptMain): base at [sp+306]
+
+            # Try s_SC_L_info pattern (LEVEL.SCR, base at sp+87)
+            if 87 <= stack_offset <= 107:  # 87 + 20 dwords (struct size ~80 bytes)
+                field_offset = (stack_offset - 87) * 4  # Convert dword index to byte offset
+                field_map = {
+                    0: "message",       # offset 0
+                    4: "param1",        # offset 4
+                    8: "param2",        # offset 8
+                    12: "param3",       # offset 12
+                    16: "elapsed_time", # offset 16
+                    20: "next_exe_time",# offset 20
+                    # param4 (c_Vector3) starts at offset 24
+                }
+                field_name = field_map.get(field_offset)
+                param_name = "info"
+                if field_name:
+                    logger.debug(f"Detected s_SC_L_info field: info->{field_name} at stack offset {stack_offset}")
+                    return f"{param_name}->{field_name}"
+
+            # Try s_SC_NET_info pattern (TDM.SCR, base at sp+306)
             field_map = {
                 306: "message",      # offset 0
                 310: "param1",       # offset 4
@@ -902,10 +982,17 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
             # In VC compiler, parameters can also be at positive offsets like +4, +8, +12
             # Typically local variables start at higher offsets (300+)
             if 0 < stack_offset < 100:  # Likely parameter range
-                # Parameters are typically at +4, +8, +12, etc.
-                param_index = (stack_offset // 4) - 1  # +4 → param_0, +8 → param_1
-                if param_index >= 0:
-                    return f"param_{param_index}"
+                if stack_offset < 20:
+                    # Standard parameter range: +4, +8, +12, etc.
+                    param_index = (stack_offset // 4) - 1  # +4 → param_0, +8 → param_1
+                    if param_index >= 0:
+                        return f"param_{param_index}"
+                else:
+                    # High offset - trace backward to find parameter source
+                    # Pattern: LCP [sp-4] → (store) → [sp+41] → LCP [sp+41]
+                    param_source = _trace_stack_slot_to_parameter(producer, ssa_func, max_depth=max_depth)
+                    if param_source:
+                        return param_source
 
             # Fallback: check if this is a simple parameter load
             # Try to use parameter name mapping if available
@@ -963,6 +1050,123 @@ def _extract_stack_offset(lcp_inst) -> Optional[int]:
         offset_val = lcp_inst.inputs[0]
         if hasattr(offset_val, 'constant'):
             return offset_val.constant
+
+    return None
+
+
+def _trace_stack_slot_to_parameter(
+    lcp_inst,
+    ssa_func: SSAFunction,
+    max_depth: int = 10
+) -> Optional[str]:
+    """
+    Trace a stack slot back to parameter source.
+
+    Pattern: LCP [sp-4] → (store via SSA) → [sp+41] → LCP [sp+41]
+
+    This handles the case where the compiler copies a parameter from its standard
+    location (negative offset) to a local stack slot (positive offset). The local
+    slot is then used throughout the function.
+
+    Example bytecode:
+        534: LCP [sp-4]       ; Load first parameter (attacking_side)
+        535: JMP label_0537   ; Jump to first test
+        ...
+        537: LCP [sp+41]      ; Reload from local stack slot
+        539: EQU (with 0)     ; Test case 0
+
+    Args:
+        lcp_inst: LCP instruction loading from stack
+        ssa_func: SSA function containing the instruction
+        max_depth: Maximum search depth (default: 10)
+
+    Returns:
+        Parameter name string (e.g., "param_0") if traced to parameter, None otherwise
+    """
+    if not lcp_inst or max_depth <= 0:
+        return None
+
+    import sys
+    import os
+    debug = os.environ.get('VCDECOMP_SWITCH_DEBUG') == '1'
+
+    # Get the stack offset this LCP loads from
+    stack_offset = _extract_stack_offset(lcp_inst)
+    if stack_offset is None:
+        return None
+
+    if debug:
+        logger.debug(f"  _trace_stack_slot_to_parameter: Tracing LCP [sp+{stack_offset}] at {lcp_inst.address}")
+
+    # Search backwards in the same block and predecessors for an LCP with negative offset
+    # that might have been stored to this stack location
+    visited_blocks = set()
+    to_visit = [(lcp_inst.block_id, max_depth)]
+
+    while to_visit:
+        block_id, depth = to_visit.pop(0)
+
+        if block_id in visited_blocks or depth <= 0:
+            continue
+        visited_blocks.add(block_id)
+
+        if block_id not in ssa_func.instructions:
+            continue
+
+        block_instructions = ssa_func.instructions[block_id]
+
+        # Search for LCP with negative offset (parameter load)
+        # The pattern is typically:
+        # 1. LCP [sp-4]    <- parameter load
+        # 2. (implicit store to stack)
+        # 3. LCP [sp+41]   <- our current instruction
+
+        for inst in block_instructions:
+            if inst.mnemonic == "LCP":
+                inst_offset = _extract_stack_offset(inst)
+                if inst_offset is not None and inst_offset < 0:
+                    # Found a parameter load! Check if it could be the source
+                    # Calculate parameter index
+                    param_index = (abs(inst_offset) // 4) - 1  # -4 → param_0, -8 → param_1
+
+                    if param_index >= 0:
+                        param_name = f"param_{param_index}"
+                        if debug:
+                            logger.debug(f"    -> Found parameter load: LCP [sp{inst_offset}] = {param_name} at {inst.address}")
+                        return param_name
+
+        # Also check for SSA value flow: trace the producer of the value
+        # stored at this stack location
+        # This is more robust than just looking for LCP instructions
+        for inst in block_instructions:
+            # Look for instructions that might have stored to our stack offset
+            # In SSA form, this would be represented by the value flow
+            if hasattr(inst, 'outputs') and inst.outputs:
+                for output in inst.outputs:
+                    # Check if this output flows to our LCP location
+                    # We need to check if this value is later loaded by LCP [sp+stack_offset]
+                    if inst.mnemonic == "LCP":
+                        inst_offset = _extract_stack_offset(inst)
+                        if inst_offset is not None and inst_offset < 0:
+                            # This is a parameter load - it might flow to our location
+                            param_index = (abs(inst_offset) // 4) - 1
+                            if param_index >= 0:
+                                # Try to trace if this value flows to the high-offset location
+                                # For now, use a simple heuristic: first param load in predecessor
+                                param_name = f"param_{param_index}"
+                                if debug:
+                                    logger.debug(f"    -> Found parameter via SSA flow: {param_name}")
+                                return param_name
+
+        # Explore predecessors
+        if hasattr(ssa_func, 'cfg') and ssa_func.cfg and block_id in ssa_func.cfg.blocks:
+            current_block = ssa_func.cfg.blocks[block_id]
+            for pred_id in current_block.predecessors:
+                if pred_id not in visited_blocks:
+                    to_visit.append((pred_id, depth - 1))
+
+    if debug:
+        logger.debug(f"  _trace_stack_slot_to_parameter: No parameter source found for LCP [sp+{stack_offset}]")
 
     return None
 

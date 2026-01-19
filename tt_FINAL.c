@@ -1,0 +1,3537 @@
+DEBUG: Entry point = 1097
+DEBUG: _init entry=0 end=49 blocks=1
+DEBUG FieldTracker: _init param_0 detected as s_SC_NET_info
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 17 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 0 for switch pattern (start addr: 0)
+DEBUG SWITCH: BFS loop complete for block 0: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 17 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_0050 entry=50 end=118 blocks=16
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 1 for switch pattern (start addr: 50)
+DEBUG SWITCH: First case - variable: gEndRule, SSA: t53_0
+DEBUG SWITCH: About to extract constant from: t54_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=57
+DEBUG SWITCH: case_block_id=4
+DEBUG SWITCH: Added case: value=0, block=4, added current_block=3 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t83_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=86
+DEBUG SWITCH: case_block_id=11
+DEBUG SWITCH: Added case: value=2, block=11, added current_block=10 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 1: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'gEndRule'
+DEBUG SWITCH: Building all_blocks for gEndRule, chain_blocks=[3, 10], header_block=1
+DEBUG SWITCH: all_blocks after adding chain and cases: {1, 3, 4, 10, 11}
+DEBUG SWITCH: Appending switch to switches list: gEndRule with 2 cases
+DEBUG SWITCH: Checking block 4 for switch pattern (start addr: 57)
+DEBUG SWITCH: BFS loop complete for block 4: 0 cases collected
+DEBUG SWITCH: Checking block 5 for switch pattern (start addr: 61)
+DEBUG SWITCH: BFS loop complete for block 5: 0 cases collected
+DEBUG SWITCH: Checking block 6 for switch pattern (start addr: 67)
+DEBUG SWITCH: BFS loop complete for block 6: 0 cases collected
+DEBUG SWITCH: Checking block 7 for switch pattern (start addr: 76)
+DEBUG SWITCH: BFS loop complete for block 7: 0 cases collected
+DEBUG SWITCH: Checking block 8 for switch pattern (start addr: 80)
+DEBUG SWITCH: BFS loop complete for block 8: 0 cases collected
+DEBUG SWITCH: Checking block 11 for switch pattern (start addr: 86)
+DEBUG SWITCH: BFS loop complete for block 11: 0 cases collected
+DEBUG SWITCH: Checking block 12 for switch pattern (start addr: 93)
+DEBUG SWITCH: BFS loop complete for block 12: 0 cases collected
+DEBUG SWITCH: Checking block 13 for switch pattern (start addr: 100)
+DEBUG SWITCH: BFS loop complete for block 13: 0 cases collected
+DEBUG SWITCH: Checking block 14 for switch pattern (start addr: 101)
+DEBUG SWITCH: BFS loop complete for block 14: 0 cases collected
+DEBUG SWITCH: Checking block 15 for switch pattern (start addr: 105)
+DEBUG SWITCH: BFS loop complete for block 15: 0 cases collected
+DEBUG SWITCH: Checking block 17 for switch pattern (start addr: 107)
+DEBUG SWITCH: BFS loop complete for block 17: 0 cases collected
+DEBUG SWITCH: Checking block 19 for switch pattern (start addr: 114)
+DEBUG SWITCH: BFS loop complete for block 19: 0 cases collected
+DEBUG SWITCH: Checking block 20 for switch pattern (start addr: 115)
+DEBUG SWITCH: BFS loop complete for block 20: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 1 switches
+DEBUG ORCHESTRATOR: Switch 0: gEndRule with 2 cases, header_block=1
+DEBUG ORCHESTRATOR: Adding switch gEndRule to map, all_blocks={1, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 20}
+DEBUG ORCHESTRATOR: block_to_switch contains 13 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG ORCHESTRATOR: Block 1 is in block_to_switch, header_block=1, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for gEndRule with 2 cases at block 1
+DEBUG: func_0119 entry=119 end=154 blocks=5
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 21 for switch pattern (start addr: 119)
+DEBUG SWITCH: BFS loop complete for block 21: 0 cases collected
+DEBUG SWITCH: Checking block 22 for switch pattern (start addr: 130)
+DEBUG SWITCH: BFS loop complete for block 22: 0 cases collected
+DEBUG SWITCH: Checking block 23 for switch pattern (start addr: 135)
+DEBUG SWITCH: BFS loop complete for block 23: 0 cases collected
+DEBUG SWITCH: Checking block 24 for switch pattern (start addr: 148)
+DEBUG SWITCH: BFS loop complete for block 24: 0 cases collected
+DEBUG SWITCH: Checking block 25 for switch pattern (start addr: 152)
+DEBUG SWITCH: BFS loop complete for block 25: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing idx (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Using field_tracker type for idx: s_SC_MP_SRV_AtgSettings
+DEBUG FieldTracker: t132_0 → local_1->tt_respawntime (offset=4, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG variables.py: Expression mentions local_1: 'return local_1->tt_respawntime;'
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG FieldTracker: t132_0 → local_1->tt_respawntime (offset=4, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG: func_0155 entry=155 end=212 blocks=9
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 32 for switch pattern (start addr: 193)
+DEBUG SWITCH: BFS loop complete for block 32: 0 cases collected
+DEBUG SWITCH: Checking block 33 for switch pattern (start addr: 206)
+DEBUG SWITCH: BFS loop complete for block 33: 0 cases collected
+DEBUG SWITCH: Checking block 34 for switch pattern (start addr: 210)
+DEBUG SWITCH: BFS loop complete for block 34: 0 cases collected
+DEBUG SWITCH: Checking block 26 for switch pattern (start addr: 155)
+DEBUG SWITCH: BFS loop complete for block 26: 0 cases collected
+DEBUG SWITCH: Checking block 27 for switch pattern (start addr: 166)
+DEBUG SWITCH: BFS loop complete for block 27: 0 cases collected
+DEBUG SWITCH: Checking block 28 for switch pattern (start addr: 178)
+DEBUG SWITCH: BFS loop complete for block 28: 0 cases collected
+DEBUG SWITCH: Checking block 29 for switch pattern (start addr: 182)
+DEBUG SWITCH: BFS loop complete for block 29: 0 cases collected
+DEBUG SWITCH: Checking block 30 for switch pattern (start addr: 186)
+DEBUG SWITCH: BFS loop complete for block 30: 0 cases collected
+DEBUG SWITCH: Checking block 31 for switch pattern (start addr: 190)
+DEBUG SWITCH: BFS loop complete for block 31: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing idx (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Using field_tracker type for idx: s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_0213 entry=213 end=248 blocks=5
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 35 for switch pattern (start addr: 213)
+DEBUG SWITCH: BFS loop complete for block 35: 0 cases collected
+DEBUG SWITCH: Checking block 36 for switch pattern (start addr: 224)
+DEBUG SWITCH: BFS loop complete for block 36: 0 cases collected
+DEBUG SWITCH: Checking block 37 for switch pattern (start addr: 229)
+DEBUG SWITCH: BFS loop complete for block 37: 0 cases collected
+DEBUG SWITCH: Checking block 38 for switch pattern (start addr: 242)
+DEBUG SWITCH: BFS loop complete for block 38: 0 cases collected
+DEBUG SWITCH: Checking block 39 for switch pattern (start addr: 246)
+DEBUG SWITCH: BFS loop complete for block 39: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing idx (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Using field_tracker type for idx: s_SC_MP_SRV_AtgSettings
+DEBUG FieldTracker: t226_0 → local_1->tt_timelimit (offset=8, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG variables.py: Expression mentions local_1: 'return local_1->tt_timelimit;'
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG FieldTracker: t226_0 → local_1->tt_timelimit (offset=8, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG: func_0249 entry=249 end=263 blocks=1
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 40 for switch pattern (start addr: 249)
+DEBUG SWITCH: BFS loop complete for block 40: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_0264 entry=264 end=293 blocks=3
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 41 for switch pattern (start addr: 264)
+DEBUG SWITCH: BFS loop complete for block 41: 0 cases collected
+DEBUG SWITCH: Checking block 42 for switch pattern (start addr: 274)
+DEBUG SWITCH: BFS loop complete for block 42: 0 cases collected
+DEBUG SWITCH: Checking block 43 for switch pattern (start addr: 293)
+DEBUG SWITCH: BFS loop complete for block 43: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing idx (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_0294 entry=294 end=333 blocks=4
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 44 for switch pattern (start addr: 294)
+DEBUG SWITCH: First case - variable: gMainPhase%2, SSA: t306_0
+DEBUG SWITCH: About to extract constant from: t307_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=310
+DEBUG SWITCH: case_block_id=45
+DEBUG SWITCH: Added case: value=0, block=45, added current_block=44 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 44: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'gMainPhase%2'
+DEBUG SWITCH: Building all_blocks for gMainPhase%2, chain_blocks=[44], header_block=44
+DEBUG SWITCH: all_blocks after adding chain and cases: {44, 45}
+DEBUG SWITCH: Appending switch to switches list: gMainPhase%2 with 1 cases
+DEBUG SWITCH: Checking block 45 for switch pattern (start addr: 310)
+DEBUG SWITCH: BFS loop complete for block 45: 0 cases collected
+DEBUG SWITCH: Checking block 46 for switch pattern (start addr: 322)
+DEBUG SWITCH: BFS loop complete for block 46: 0 cases collected
+DEBUG SWITCH: Checking block 47 for switch pattern (start addr: 326)
+DEBUG SWITCH: BFS loop complete for block 47: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 1 switches
+DEBUG ORCHESTRATOR: Switch 0: gMainPhase%2 with 1 cases, header_block=44
+DEBUG ORCHESTRATOR: Adding switch gMainPhase%2 to map, all_blocks={44, 45, 47}
+DEBUG ORCHESTRATOR: block_to_switch contains 3 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG ORCHESTRATOR: Block 44 is in block_to_switch, header_block=44, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for gMainPhase%2 with 1 cases at block 44
+DEBUG: func_0334 entry=334 end=354 blocks=6
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 48 for switch pattern (start addr: 334)
+DEBUG SWITCH: First case - variable: param_0%4, SSA: t339_0
+DEBUG SWITCH: About to extract constant from: t340_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=343
+DEBUG SWITCH: case_block_id=51
+DEBUG SWITCH: Added case: value=0, block=51, added current_block=50 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: param_0%4, new var_name: n
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t345_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=348
+DEBUG SWITCH: case_block_id=53
+DEBUG SWITCH: Added case: value=3, block=53, added current_block=52 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 48: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'param_0%4'
+DEBUG SWITCH: Building all_blocks for param_0%4, chain_blocks=[50, 52], header_block=48
+DEBUG SWITCH: all_blocks after adding chain and cases: {48, 50, 51, 52, 53}
+DEBUG SWITCH: Appending switch to switches list: param_0%4 with 2 cases
+DEBUG SWITCH: Checking block 51 for switch pattern (start addr: 343)
+DEBUG SWITCH: BFS loop complete for block 51: 0 cases collected
+DEBUG SWITCH: Checking block 53 for switch pattern (start addr: 348)
+DEBUG SWITCH: BFS loop complete for block 53: 0 cases collected
+DEBUG SWITCH: Checking block 54 for switch pattern (start addr: 351)
+DEBUG SWITCH: BFS loop complete for block 54: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 1 switches
+DEBUG ORCHESTRATOR: Switch 0: param_0%4 with 2 cases, header_block=48
+DEBUG ORCHESTRATOR: Adding switch param_0%4 to map, all_blocks={48, 50, 51, 52, 53, 54}
+DEBUG ORCHESTRATOR: block_to_switch contains 6 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG ORCHESTRATOR: Block 48 is in block_to_switch, header_block=48, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for param_0%4 with 2 cases at block 48
+DEBUG: func_0355 entry=355 end=497 blocks=12
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+// Structured decompilation of decompiler_source_tests/test1/tt.scr
+// Functions: 15
+
+#include <inc\sc_global.h>
+#include <inc\sc_def.h>
+
+// Global variables
+int gSteps;
+dword gRecs[12];
+dword gRec[64];
+dword gVar;
+dword gVar11;
+dword gVar1;
+dword gVar2;
+dword gVar8;
+dword gVar9;
+dword gVar3;
+dword gVar4;
+dword gVar6;
+dword gVar5;
+dword gVar10;
+dword gVar7;
+dword gVar12;
+dword gRecTimer[384];
+dword gStepSwitch[24];
+int gEndRule;
+int gEndValue;
+int gTime;
+dword gSidePoints[2];
+dword gCLN_SidePoints[2];
+int gCLN_gamephase;
+int gMainPhase;
+int gAttackingSide;
+int gCurStep;
+int gMission_phase;
+float gNoActiveTime;
+int gPhaseTimer;
+int gMissionTime_update;
+int gMissionTime;
+float gMissionTimePrev;
+int gMissionTimeToBeat;
+int gCLN_MissionTimePrevID;
+float gCLN_MissionTime;
+int gCLN_CurStep;
+int gCLN_ShowInfo;
+int gCLN_ShowStartInfo;
+int gCLN_ShowWaitingInfo;
+int gMission_starting_timer;
+int gMission_afterstart_time;
+float gNextRecover;
+dword gFlagNod[18];
+dword gFlagPos[18];
+dword gRespawn_id[12];
+int g_FPV_UsFlag;
+int g_FPV_VcFlag;
+int g_FPV_NeFlag;
+
+int _init(s_SC_NET_info *info) {
+    c_Vector3 local_311;
+    int n;
+    int side;
+    int sideB;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0050(float param_0) {
+    c_Vector3 local_311;
+    int data_;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp12;
+    int tmp13;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    switch (gEndRule) {
+    case 0:
+        if (tmp2) {
+            data_ = tmp3;
+        } else {
+            SC_MP_EndRule_SetTimeLeft(data_, gMission_phase);
+            if (tmp5) {
+                SC_MP_LoadNextMap();
+                return TRUE;
+            }
+        }
+        break;
+    case 2:
+        if (tmp9 && tmp12) {
+            return 0;  // FIX (06-05): Synthesized return value
+        }
+        SC_MP_LoadNextMap();
+        return TRUE;
+    default:
+    }
+    SC_message("EndRule unsopported: %d", tmp1);
+    goto block_17; // @107
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0119(void) {
+    c_Vector3 local_311;
+    int m;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings idx;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_MP_SRV_GetAtgSettings(&local_1);
+    if (!tmp2) {
+        return local_1->tt_respawntime;
+    } else {
+        tmp5 = SC_ggf(400);
+        tmp5 = 30.0f;
+        return tmp5;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0155(void) {
+    c_Vector3 local_311;
+    int m;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings idx;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_MP_SRV_GetAtgSettings(&local_1);
+    if (!tmp2) {
+        tmp6 = tmp5;
+        tmp6 = 5.0f;
+        tmp6 = 10.0f;
+        return tmp6;
+    } else {
+        tmp6 = SC_ggf(401);
+        tmp6 = 10.0f;
+        return tmp6;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0213(void) {
+    c_Vector3 local_311;
+    int m;
+    int n;
+    int side;
+    int side2;
+    int side3;
+    int side4;
+    int sideB;
+    int tmp;
+    int tmp1;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings idx;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_MP_SRV_GetAtgSettings(&local_1);
+    if (!side2) {
+        return local_1->tt_timelimit;
+    } else {
+        tmp = SC_ggf(402);
+        tmp = 480.0f;
+        return tmp;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+void func_0249(void) {
+    c_Vector3 local_311;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_sgi(500, tmp1);
+    SC_sgi(501, tmp3);
+    return;
+}
+
+void func_0264(float param_0) {
+    c_Vector3 local_311;
+    int idx;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    tmp1 = tmp;
+    if (!tmp2) {
+        tmp1 = 10.0f;
+        SC_sgf(504, gMissionTime);
+        SC_ggi(505);
+        SC_sgi(505, tmp3);
+    } else {
+        return;
+    }
+    return;
+}
+
+void func_0294(void) {
+    c_Vector3 local_311;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    switch (gMainPhase%2) {
+    case 0:
+        tmp4 = func_0213();
+        tmp5 = tmp4;
+        break;
+    default:
+        tmp6 = -1.0f;
+        func_0264(0.0f);
+        return;
+    }
+    tmp4 = gMissionTimeToBeat;
+    return;
+}
+
+int func_0334(int param_0) {
+    c_Vector3 local_311;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    switch (param_0%4) {
+    case 0:
+        break;
+    case 3:
+        return 0.0f;
+    default:
+        return 0;  // FIX (06-05): Synthesized return value
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+void func_0355(void) {
+    c_Vector3 local_311;
+    int data_;
+    int data_1966;
+    int n;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp12;
+    int tmp13;
+    int tmp15;
+    int tmp16;
+    int tmp17;
+    int tmp18;
+    int tmp19;
+    int tmp2;
+    int tmp20;
+    int tmp21;
+    int tmp22;
+    int tmp23;
+    int tmp24;
+    int tmp25;
+    int tmp26;
+    int tmp27;
+    int tmp28;
+    int tmp29;
+    int tmp3;
+    int tmp30;
+    int tmp32;
+    int tmp33;
+    int tmp34;
+    int tmp35;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    switch (gMission_phase) {
+    case 3:
+        gSidePoints[tmp11] = tmp10;
+        func_0249();
+        SC_sgi(506, tmp15);
+        SC_sgi(509, tmp16);
+        if (tmp17) {
+            data_ = tmp18;
+        } else {
+            data_ = tmp19;
+        }
+        break;
+    case 2:
+        SC_sgi(tmp35, data_1966);
+        if (tmp21) {
+            gSidePoints[data_1966] = tmp28;
+            func_0249();
+            SC_sgi(506, data_1966);
+            data_ = tmp34;
+        } else {
+            tmp33 = tmp32;
+        }
+        break;
+    default:
+        SC_sgi(502, data_);
+        data_1966 = func_0334(data_);
+        SC_sgi(507, 6);
+        return;
+    }
+    return;
+}DEBUG SWITCH: Checking block 64 for switch pattern (start addr: 428)
+DEBUG SWITCH: BFS loop complete for block 64: 0 cases collected
+DEBUG SWITCH: Checking block 65 for switch pattern (start addr: 436)
+DEBUG SWITCH: BFS loop complete for block 65: 0 cases collected
+DEBUG SWITCH: Checking block 66 for switch pattern (start addr: 464)
+DEBUG SWITCH: BFS loop complete for block 66: 0 cases collected
+DEBUG SWITCH: Checking block 67 for switch pattern (start addr: 470)
+DEBUG SWITCH: BFS loop complete for block 67: 0 cases collected
+DEBUG SWITCH: Checking block 68 for switch pattern (start addr: 479)
+DEBUG SWITCH: BFS loop complete for block 68: 0 cases collected
+DEBUG SWITCH: Checking block 55 for switch pattern (start addr: 355)
+DEBUG SWITCH: First case - variable: gMission_phase, SSA: t358_0
+DEBUG SWITCH: About to extract constant from: t359_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=362
+DEBUG SWITCH: case_block_id=58
+DEBUG SWITCH: Added case: value=3, block=58, added current_block=57 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t425_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=428
+DEBUG SWITCH: case_block_id=64
+DEBUG SWITCH: Added case: value=2, block=64, added current_block=63 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 55: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'gMission_phase'
+DEBUG SWITCH: Building all_blocks for gMission_phase, chain_blocks=[57, 63], header_block=55
+DEBUG SWITCH: all_blocks after adding chain and cases: {64, 55, 57, 58, 63}
+DEBUG SWITCH: Appending switch to switches list: gMission_phase with 2 cases
+DEBUG SWITCH: Checking block 58 for switch pattern (start addr: 362)
+DEBUG SWITCH: BFS loop complete for block 58: 0 cases collected
+DEBUG SWITCH: Checking block 59 for switch pattern (start addr: 407)
+DEBUG SWITCH: BFS loop complete for block 59: 0 cases collected
+DEBUG SWITCH: Checking block 60 for switch pattern (start addr: 416)
+DEBUG SWITCH: BFS loop complete for block 60: 0 cases collected
+DEBUG SWITCH: Checking block 61 for switch pattern (start addr: 422)
+DEBUG SWITCH: BFS loop complete for block 61: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 1 switches
+DEBUG ORCHESTRATOR: Switch 0: gMission_phase with 2 cases, header_block=55
+DEBUG ORCHESTRATOR: Adding switch gMission_phase to map, all_blocks={64, 65, 66, 67, 68, 55, 57, 58, 60, 63}
+DEBUG ORCHESTRATOR: block_to_switch contains 10 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG ORCHESTRATOR: Block 55 is in block_to_switch, header_block=55, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for gMission_phase with 2 cases at block 55
+DEBUG: func_0498 entry=498 end=751 blocks=1
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 69 for switch pattern (start addr: 498)
+DEBUG SWITCH: BFS loop complete for block 69: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 16 entries
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_0752 entry=752 end=851 blocks=19
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 128 for switch pattern (start addr: 817)
+DEBUG SWITCH: BFS loop complete for block 128: 0 cases collected
+DEBUG SWITCH: Checking block 129 for switch pattern (start addr: 818)
+DEBUG SWITCH: BFS loop complete for block 129: 0 cases collected
+DEBUG SWITCH: Checking block 130 for switch pattern (start addr: 835)
+DEBUG SWITCH: BFS loop complete for block 130: 0 cases collected
+DEBUG SWITCH: Checking block 131 for switch pattern (start addr: 851)
+DEBUG SWITCH: BFS loop complete for block 131: 0 cases collected
+DEBUG SWITCH: Checking block 113 for switch pattern (start addr: 752)
+DEBUG SWITCH: First case - variable: abl_lists, SSA: t787_0
+DEBUG SWITCH: About to extract constant from: t788_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=791
+DEBUG SWITCH: case_block_id=121
+DEBUG SWITCH: Added case: value=0, block=121, added current_block=120 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t804_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=807
+DEBUG SWITCH: case_block_id=125
+DEBUG SWITCH: Added case: value=1, block=125, added current_block=124 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 113: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'abl_lists'
+DEBUG SWITCH: Building all_blocks for abl_lists, chain_blocks=[120, 124], header_block=113
+DEBUG SWITCH: all_blocks after adding chain and cases: {113, 120, 121, 124, 125}
+DEBUG SWITCH: Appending switch to switches list: abl_lists with 2 cases
+DEBUG SWITCH: Checking block 114 for switch pattern (start addr: 760)
+DEBUG SWITCH: BFS loop complete for block 114: 0 cases collected
+DEBUG SWITCH: Checking block 115 for switch pattern (start addr: 761)
+DEBUG SWITCH: BFS loop complete for block 115: 0 cases collected
+DEBUG SWITCH: Checking block 116 for switch pattern (start addr: 762)
+DEBUG SWITCH: BFS loop complete for block 116: 0 cases collected
+DEBUG SWITCH: Checking block 117 for switch pattern (start addr: 775)
+DEBUG SWITCH: BFS loop complete for block 117: 0 cases collected
+DEBUG SWITCH: Checking block 118 for switch pattern (start addr: 779)
+DEBUG SWITCH: BFS loop complete for block 118: 0 cases collected
+DEBUG SWITCH: Checking block 119 for switch pattern (start addr: 780)
+DEBUG SWITCH: BFS loop complete for block 119: 0 cases collected
+DEBUG SWITCH: Checking block 121 for switch pattern (start addr: 791)
+DEBUG SWITCH: BFS loop complete for block 121: 0 cases collected
+DEBUG SWITCH: Checking block 122 for switch pattern (start addr: 795)
+DEBUG SWITCH: BFS loop complete for block 122: 0 cases collected
+DEBUG SWITCH: Checking block 123 for switch pattern (start addr: 796)
+DEBUG SWITCH: BFS loop complete for block 123: 0 cases collected
+DEBUG SWITCH: Checking block 125 for switch pattern (start addr: 807)
+DEBUG SWITCH: BFS loop complete for block 125: 0 cases collected
+DEBUG SWITCH: Checking block 126 for switch pattern (start addr: 811)
+DEBUG SWITCH: BFS loop complete for block 126: 0 cases collected
+DEBUG SWITCH: Checking block 127 for switch pattern (start addr: 812)
+DEBUG SWITCH: BFS loop complete for block 127: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 1 switches
+DEBUG ORCHESTRATOR: Switch 0: abl_lists with 2 cases, header_block=113
+DEBUG ORCHESTRATOR: Adding switch abl_lists to map, all_blocks={128, 129, 130, 131, 113, 120, 121, 122, 124, 125, 126, 127}
+DEBUG ORCHESTRATOR: block_to_switch contains 12 entries
+DEBUG variables.py: formatter._var_struct_types has 17 entries
+DEBUG variables.py: Imported local_2 -> s_SC_P_getinfo (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing idx (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Using field_tracker type for player_info: s_SC_P_getinfo
+DEBUG variables.py: Expression mentions local_1: 'SC_MP_SRV_P_SetSideClass(idx, local_1, tmp5);'
+DEBUG variables.py: Expression mentions local_1: 'local_1 = 1;'
+DEBUG variables.py: Expression mentions local_1: 'local_1 = 0.0f;'
+DEBUG variables.py: Added field_tracker var local_2 -> s_SC_P_getinfo
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG ORCHESTRATOR: Block 113 is in block_to_switch, header_block=113, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for abl_lists with 2 cases at block 113
+DEBUG: func_0852 entry=852 end=1027 blocks=17
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: []
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 132 for switch pattern (start addr: 852)
+DEBUG SWITCH: BFS loop complete for block 132: 0 cases collected
+DEBUG SWITCH: Checking block 133 for switch pattern (start addr: 865)
+DEBUG SWITCH: BFS loop complete for block 133: 0 cases collected
+DEBUG SWITCH: Checking block 134 for switch pattern (start addr: 866)
+DEBUG SWITCH: BFS loop complete for block 134: 0 cases collected
+DEBUG SWITCH: Checking block 135 for switch pattern (start addr: 867)
+DEBUG SWITCH: BFS loop complete for block 135: 0 cases collected
+DEBUG SWITCH: Checking block 136 for switch pattern (start addr: 880)
+DEBUG SWITCH: BFS loop complete for block 136: 0 cases collected
+DEBUG SWITCH: Checking block 137 for switch pattern (start addr: 884)
+DEBUG SWITCH: BFS loop complete for block 137: 0 cases collected
+DEBUG SWITCH: Checking block 138 for switch pattern (start addr: 885)
+DEBUG SWITCH: BFS loop complete for block 138: 0 cases collected
+DEBUG SWITCH: Checking block 139 for switch pattern (start addr: 886)
+DEBUG SWITCH: BFS loop complete for block 139: 0 cases collected
+DEBUG SWITCH: Checking block 140 for switch pattern (start addr: 890)
+DEBUG SWITCH: BFS loop complete for block 140: 0 cases collected
+DEBUG SWITCH: Checking block 141 for switch pattern (start addr: 901)
+DEBUG SWITCH: BFS loop complete for block 141: 0 cases collected
+DEBUG SWITCH: Checking block 142 for switch pattern (start addr: 912)
+DEBUG SWITCH: BFS loop complete for block 142: 0 cases collected
+DEBUG SWITCH: Checking block 143 for switch pattern (start addr: 925)
+DEBUG SWITCH: BFS loop complete for block 143: 0 cases collected
+DEBUG SWITCH: Checking block 144 for switch pattern (start addr: 927)
+DEBUG SWITCH: BFS loop complete for block 144: 0 cases collected
+DEBUG SWITCH: Checking block 145 for switch pattern (start addr: 928)
+DEBUG SWITCH: BFS loop complete for block 145: 0 cases collected
+DEBUG SWITCH: Checking block 146 for switch pattern (start addr: 929)
+DEBUG SWITCH: BFS loop complete for block 146: 0 cases collected
+DEBUG SWITCH: Checking block 147 for switch pattern (start addr: 933)
+DEBUG SWITCH: BFS loop complete for block 147: 0 cases collected
+DEBUG SWITCH: Checking block 157 for switch pattern (start addr: 1027)
+DEBUG SWITCH: BFS loop complete for block 157: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 17 entries
+DEBUG variables.py: Imported local_8 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Processing k (var_name=local_1), struct_type_info=StructTypeInfo(struct_type='s_SC_MP_SRV_AtgSettings', confidence=0.9, source='field_tracker')
+DEBUG variables.py: Using field_tracker type for k: s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Using field_tracker type for local_265: s_SC_MP_EnumPlayers
+DEBUG variables.py: Expression mentions local_1: 'local_1 = 0.0f;'
+DEBUG variables.py: Expression mentions local_1: 'local_1 = 1;'
+DEBUG variables.py: Expression mentions local_1: 'SC_MP_EnumPlayers(&enum_pl, &local_265, local_1);'
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: func_1028 entry=1028 end=1096 blocks=3
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 16 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: [164]
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH:   Block 165: start=1097, end=1122, preds=0
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 167: start=1124, end=1127, preds=1
+DEBUG SWITCH:   Block 168: start=1128, end=1136, preds=2
+DEBUG SWITCH:   Block 169: start=1137, end=1137, preds=1
+DEBUG SWITCH:   Block 170: start=1138, end=1160, preds=1
+DEBUG SWITCH:   Block 171: start=1161, end=1164, preds=1
+DEBUG SWITCH:   Block 172: start=1165, end=1176, preds=1
+DEBUG SWITCH:   Block 173: start=1177, end=1177, preds=1
+DEBUG SWITCH:   Block 174: start=1178, end=1190, preds=1
+DEBUG SWITCH:   Block 175: start=1191, end=1194, preds=2
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 164 for switch pattern (start addr: 1096)
+DEBUG SWITCH: BFS loop complete for block 164: 0 cases collected
+DEBUG SWITCH: Checking block 158 for switch pattern (start addr: 1028)
+DEBUG SWITCH: BFS loop complete for block 158: 0 cases collected
+DEBUG SWITCH: Checking block 159 for switch pattern (start addr: 1061)
+DEBUG SWITCH: BFS loop complete for block 159: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 0 switches
+DEBUG ORCHESTRATOR: block_to_switch contains 0 entries
+DEBUG variables.py: formatter._var_struct_types has 17 entries
+DEBUG variables.py: Imported local_0 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_296 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG: ScriptMain entry=1097 end=3735 blocks=144
+DEBUG FieldTracker: ScriptMain param_0 detected as s_SC_NET_info
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings, param 0)
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_MP_SRV_GetAtgSettings' (from 'SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void')
+DEBUG FieldTracker: Found known function SC_MP_SRV_GetAtgSettings, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_265 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_257 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_MP_EnumPlayers, scanning for LADR
+DEBUG FieldTracker: local_296 detected as s_SC_MP_EnumPlayers (from SC_MP_EnumPlayers, param 0)
+DEBUG FieldTracker: Found known function SC_P_GetPos, scanning for LADR
+DEBUG FieldTracker: local_311 detected as c_Vector3 (from SC_P_GetPos, param 1)
+DEBUG FieldTracker: Found known function SC_MP_SetIconHUD, scanning for LADR
+DEBUG FieldTracker: local_299 detected as s_SC_HUD_MP_icon (from SC_MP_SetIconHUD, param 0)
+DEBUG FieldTracker: Found known function SC_MP_GetSRVsettings, scanning for LADR
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings, param 0)
+DEBUG FieldTracker: Found known function SC_MP_HUD_SetTabInfo, scanning for LADR
+DEBUG FieldTracker: local_14 detected as s_SC_MP_hud (from SC_MP_HUD_SetTabInfo, param 0)
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG FieldTracker: Checking func_name='SC_P_GetInfo' (from 'SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void')
+DEBUG FieldTracker: Found known function SC_P_GetInfo, scanning for LADR
+DEBUG Propagate: Completed in 1 iterations, tracking 17 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_2' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG PNT: Rejected - base_var '&local_413' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_265', '&local_265', 'local_257', '&local_257', 'local_296', '&local_296', 'local_311', '&local_311', 'local_299', '&local_299', 'local_285', '&local_285', 'local_14', '&local_14']
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG SWITCH: ScriptMain area blocks (1090-1200): [164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177]
+DEBUG SWITCH: ScriptMain blocks in func_block_ids: [165, 167, 168, 169, 170, 171, 172, 173, 174, 175]
+DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: [164, 166, 176, 177]
+DEBUG SWITCH:   Block 164: start=1096, end=1096, preds=2
+DEBUG SWITCH:   Block 166: start=1123, end=1123, preds=0
+DEBUG SWITCH:   Block 176: start=1195, end=1198, preds=1
+DEBUG SWITCH:   Block 177: start=1199, end=1208, preds=1
+DEBUG SWITCH: Checking block 165 for switch pattern (start addr: 1097)
+DEBUG SWITCH: First case - variable: gCLN_ShowInfo, SSA: t1124_0
+DEBUG SWITCH: About to extract constant from: t1125_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1128
+DEBUG SWITCH: case_block_id=168
+DEBUG SWITCH: Added case: value=3, block=168, added current_block=167 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t1714_0
+DEBUG SWITCH: Successfully extracted case value: 4
+DEBUG SWITCH: case_val is not None: 4
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1717
+DEBUG SWITCH: case_block_id=239
+DEBUG SWITCH: Added case: value=4, block=239, added current_block=238 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t2052_0
+DEBUG SWITCH: Successfully extracted case value: 9
+DEBUG SWITCH: case_val is not None: 9
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2055
+DEBUG SWITCH: case_block_id=272
+DEBUG SWITCH: Added case: value=9, block=272, added current_block=271 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: param_2
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 171 - different variable
+DEBUG SWITCH: About to extract constant from: t2081_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2084
+DEBUG SWITCH: case_block_id=275
+DEBUG SWITCH: Added case: value=1, block=275, added current_block=274 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t2795_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2798
+DEBUG SWITCH: case_block_id=319
+DEBUG SWITCH: Added case: value=2, block=319, added current_block=318 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: SC_ggi(tmp37)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 245 - different variable
+DEBUG SWITCH: About to extract constant from: t3391_0
+DEBUG SWITCH: Successfully extracted case value: 5
+DEBUG SWITCH: case_val is not None: 5
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3394
+DEBUG SWITCH: case_block_id=404
+DEBUG SWITCH: Added case: value=5, block=404, added current_block=403 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3519_0
+DEBUG SWITCH: Successfully extracted case value: 6
+DEBUG SWITCH: case_val is not None: 6
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3522
+DEBUG SWITCH: case_block_id=431
+DEBUG SWITCH: Added case: value=6, block=431, added current_block=430 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3664_0
+DEBUG SWITCH: Successfully extracted case value: 10
+DEBUG SWITCH: case_val is not None: 10
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3667
+DEBUG SWITCH: case_block_id=447
+DEBUG SWITCH: Added case: value=10, block=447, added current_block=446 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: SC_ggi(tmp71)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 322 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: SC_ggi(tmp70)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 332 - different variable
+DEBUG SWITCH: About to extract constant from: t3408_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3411
+DEBUG SWITCH: case_block_id=409
+DEBUG SWITCH: Added case: value=1, block=409, added current_block=408 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3701_0
+DEBUG SWITCH: Successfully extracted case value: 11
+DEBUG SWITCH: case_val is not None: 11
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3704
+DEBUG SWITCH: case_block_id=452
+DEBUG SWITCH: Added case: value=11, block=452, added current_block=451 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3497_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3500
+DEBUG SWITCH: case_block_id=422
+DEBUG SWITCH: Added case: value=0, block=422, added current_block=421 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3723_0
+DEBUG SWITCH: Successfully extracted case value: 7
+DEBUG SWITCH: case_val is not None: 7
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3726
+DEBUG SWITCH: case_block_id=455
+DEBUG SWITCH: Added case: value=7, block=455, added current_block=454 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: gMission_phase
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 441 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: gCLN_ShowInfo, new var_name: gMission_phase
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 434 - different variable
+DEBUG SWITCH: BFS loop complete for block 165: 12 cases collected
+DEBUG SWITCH: Creating switch with 12 cases on variable 'gCLN_ShowInfo'
+DEBUG SWITCH: Building all_blocks for gCLN_ShowInfo, chain_blocks=[167, 238, 271, 274, 318, 403, 430, 446, 408, 451, 421, 454], header_block=165
+DEBUG SWITCH: all_blocks after adding chain and cases: {318, 451, 452, 319, 454, 455, 271, 272, 274, 403, 275, 404, 408, 409, 421, 165, 167, 422, 168, 238, 430, 239, 431, 446, 447}
+DEBUG SWITCH: Appending switch to switches list: gCLN_ShowInfo with 12 cases
+DEBUG SWITCH: Checking block 168 for switch pattern (start addr: 1128)
+DEBUG SWITCH: First case - variable: param_2, SSA: t1161_0
+DEBUG SWITCH: About to extract constant from: t1162_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1165
+DEBUG SWITCH: case_block_id=172
+DEBUG SWITCH: Added case: value=0, block=172, added current_block=171 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 168: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'param_2'
+DEBUG SWITCH: Building all_blocks for param_2, chain_blocks=[171], header_block=168
+DEBUG SWITCH: all_blocks after adding chain and cases: {168, 171, 172}
+DEBUG SWITCH: Appending switch to switches list: param_2 with 1 cases
+DEBUG SWITCH: Checking block 169 for switch pattern (start addr: 1137)
+DEBUG SWITCH: BFS loop complete for block 169: 0 cases collected
+DEBUG SWITCH: Checking block 170 for switch pattern (start addr: 1138)
+DEBUG SWITCH: BFS loop complete for block 170: 0 cases collected
+DEBUG SWITCH: Checking block 172 for switch pattern (start addr: 1165)
+DEBUG SWITCH: BFS loop complete for block 172: 0 cases collected
+DEBUG SWITCH: Checking block 173 for switch pattern (start addr: 1177)
+DEBUG SWITCH: BFS loop complete for block 173: 0 cases collected
+DEBUG SWITCH: Checking block 174 for switch pattern (start addr: 1178)
+DEBUG SWITCH: BFS loop complete for block 174: 0 cases collected
+DEBUG SWITCH: Checking block 175 for switch pattern (start addr: 1191)
+DEBUG SWITCH: BFS loop complete for block 175: 0 cases collected
+DEBUG SWITCH: Checking block 192 for switch pattern (start addr: 1318)
+DEBUG SWITCH: BFS loop complete for block 192: 0 cases collected
+DEBUG SWITCH: Checking block 239 for switch pattern (start addr: 1717)
+DEBUG SWITCH: First case - variable: SC_ggi(tmp37), SSA: t1757_0
+DEBUG SWITCH: About to extract constant from: t1758_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1761
+DEBUG SWITCH: case_block_id=246
+DEBUG SWITCH: Added case: value=0, block=246, added current_block=245 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t1775_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1778
+DEBUG SWITCH: case_block_id=249
+DEBUG SWITCH: Added case: value=1, block=249, added current_block=248 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp37), new var_name: SC_ggi(503)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 257 - different variable
+DEBUG SWITCH: BFS loop complete for block 239: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'SC_ggi(tmp37)'
+DEBUG SWITCH: Building all_blocks for SC_ggi(tmp37), chain_blocks=[245, 248], header_block=239
+DEBUG SWITCH: all_blocks after adding chain and cases: {245, 246, 248, 249, 239}
+DEBUG SWITCH: Appending switch to switches list: SC_ggi(tmp37) with 2 cases
+DEBUG SWITCH: Checking block 240 for switch pattern (start addr: 1729)
+DEBUG SWITCH: BFS loop complete for block 240: 0 cases collected
+DEBUG SWITCH: Checking block 241 for switch pattern (start addr: 1737)
+DEBUG SWITCH: BFS loop complete for block 241: 0 cases collected
+DEBUG SWITCH: Checking block 242 for switch pattern (start addr: 1741)
+DEBUG SWITCH: BFS loop complete for block 242: 0 cases collected
+DEBUG SWITCH: Checking block 243 for switch pattern (start addr: 1749)
+DEBUG SWITCH: BFS loop complete for block 243: 0 cases collected
+DEBUG SWITCH: Checking block 246 for switch pattern (start addr: 1761)
+DEBUG SWITCH: First case - variable: SC_ggi(503), SSA: t1867_0
+DEBUG SWITCH: About to extract constant from: t1869_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=1872
+DEBUG SWITCH: case_block_id=258
+DEBUG SWITCH: Added case: value=1, block=258, added current_block=257 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 246: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'SC_ggi(503)'
+DEBUG SWITCH: Building all_blocks for SC_ggi(503), chain_blocks=[257], header_block=246
+DEBUG SWITCH: all_blocks after adding chain and cases: {257, 258, 246}
+DEBUG SWITCH: Appending switch to switches list: SC_ggi(503) with 1 cases
+DEBUG SWITCH: Checking block 249 for switch pattern (start addr: 1778)
+DEBUG SWITCH: BFS loop complete for block 249: 0 cases collected
+DEBUG SWITCH: Checking block 250 for switch pattern (start addr: 1787)
+DEBUG SWITCH: BFS loop complete for block 250: 0 cases collected
+DEBUG SWITCH: Checking block 251 for switch pattern (start addr: 1807)
+DEBUG SWITCH: BFS loop complete for block 251: 0 cases collected
+DEBUG SWITCH: Checking block 252 for switch pattern (start addr: 1811)
+DEBUG SWITCH: BFS loop complete for block 252: 0 cases collected
+DEBUG SWITCH: Checking block 253 for switch pattern (start addr: 1812)
+DEBUG SWITCH: BFS loop complete for block 253: 0 cases collected
+DEBUG SWITCH: Checking block 254 for switch pattern (start addr: 1819)
+DEBUG SWITCH: BFS loop complete for block 254: 0 cases collected
+DEBUG SWITCH: Checking block 255 for switch pattern (start addr: 1834)
+DEBUG SWITCH: BFS loop complete for block 255: 0 cases collected
+DEBUG SWITCH: Checking block 256 for switch pattern (start addr: 1844)
+DEBUG SWITCH: BFS loop complete for block 256: 0 cases collected
+DEBUG SWITCH: Checking block 258 for switch pattern (start addr: 1872)
+DEBUG SWITCH: BFS loop complete for block 258: 0 cases collected
+DEBUG SWITCH: Checking block 259 for switch pattern (start addr: 1880)
+DEBUG SWITCH: BFS loop complete for block 259: 0 cases collected
+DEBUG SWITCH: Checking block 272 for switch pattern (start addr: 2055)
+DEBUG SWITCH: BFS loop complete for block 272: 0 cases collected
+DEBUG SWITCH: Checking block 275 for switch pattern (start addr: 2084)
+DEBUG SWITCH: BFS loop complete for block 275: 0 cases collected
+DEBUG SWITCH: Checking block 319 for switch pattern (start addr: 2798)
+DEBUG SWITCH: First case - variable: SC_ggi(tmp71), SSA: t2840_0
+DEBUG SWITCH: About to extract constant from: t2841_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2844
+DEBUG SWITCH: case_block_id=323
+DEBUG SWITCH: Added case: value=2, block=323, added current_block=322 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(tmp70)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t2871_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2874
+DEBUG SWITCH: case_block_id=333
+DEBUG SWITCH: Added case: value=0, block=333, added current_block=332 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t2846_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2849
+DEBUG SWITCH: case_block_id=325
+DEBUG SWITCH: Added case: value=3, block=325, added current_block=324 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(tmp70)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t2894_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2897
+DEBUG SWITCH: case_block_id=338
+DEBUG SWITCH: Added case: value=1, block=338, added current_block=337 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(tmp74)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 325 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(tmp70)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t3140_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3143
+DEBUG SWITCH: case_block_id=366
+DEBUG SWITCH: Added case: value=2, block=366, added current_block=365 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: gCLN_ShowInfo
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t3252_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3255
+DEBUG SWITCH: case_block_id=385
+DEBUG SWITCH: Added case: value=3, block=385, added current_block=384 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(502)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 342 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(502)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 355 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: param_1%4
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 371 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(tmp71), new var_name: SC_ggi(tmp101)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 390 - different variable
+DEBUG SWITCH: BFS loop complete for block 319: 6 cases collected
+DEBUG SWITCH: Creating switch with 6 cases on variable 'SC_ggi(tmp71)'
+DEBUG SWITCH: Building all_blocks for SC_ggi(tmp71), chain_blocks=[322, 332, 324, 337, 365, 384], header_block=319
+DEBUG SWITCH: all_blocks after adding chain and cases: {384, 385, 322, 323, 324, 325, 332, 365, 333, 366, 337, 338, 319}
+DEBUG SWITCH: Appending switch to switches list: SC_ggi(tmp71) with 6 cases
+DEBUG SWITCH: Checking block 320 for switch pattern (start addr: 2828)
+DEBUG SWITCH: BFS loop complete for block 320: 0 cases collected
+DEBUG SWITCH: Checking block 323 for switch pattern (start addr: 2844)
+DEBUG SWITCH: First case - variable: SC_ggi(tmp74), SSA: t2853_0
+DEBUG SWITCH: About to extract constant from: t2855_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=2858
+DEBUG SWITCH: case_block_id=326
+DEBUG SWITCH: Added case: value=0, block=326, added current_block=325 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 323: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'SC_ggi(tmp74)'
+DEBUG SWITCH: Building all_blocks for SC_ggi(tmp74), chain_blocks=[325], header_block=323
+DEBUG SWITCH: all_blocks after adding chain and cases: {323, 325, 326}
+DEBUG SWITCH: Appending switch to switches list: SC_ggi(tmp74) with 1 cases
+DEBUG SWITCH: Checking block 326 for switch pattern (start addr: 2858)
+DEBUG SWITCH: BFS loop complete for block 326: 0 cases collected
+DEBUG SWITCH: Checking block 327 for switch pattern (start addr: 2862)
+DEBUG SWITCH: BFS loop complete for block 327: 0 cases collected
+DEBUG SWITCH: Checking block 328 for switch pattern (start addr: 2865)
+DEBUG SWITCH: BFS loop complete for block 328: 0 cases collected
+DEBUG SWITCH: Checking block 329 for switch pattern (start addr: 2866)
+DEBUG SWITCH: BFS loop complete for block 329: 0 cases collected
+DEBUG SWITCH: Checking block 330 for switch pattern (start addr: 2867)
+DEBUG SWITCH: BFS loop complete for block 330: 0 cases collected
+DEBUG SWITCH: Checking block 333 for switch pattern (start addr: 2874)
+DEBUG SWITCH: BFS loop complete for block 333: 0 cases collected
+DEBUG SWITCH: Checking block 334 for switch pattern (start addr: 2878)
+DEBUG SWITCH: BFS loop complete for block 334: 0 cases collected
+DEBUG SWITCH: Checking block 335 for switch pattern (start addr: 2887)
+DEBUG SWITCH: BFS loop complete for block 335: 0 cases collected
+DEBUG SWITCH: Checking block 338 for switch pattern (start addr: 2897)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t2934_0
+DEBUG SWITCH: About to extract constant from: t2938_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t2938_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 338: 0 cases collected
+DEBUG SWITCH: Checking block 339 for switch pattern (start addr: 2905)
+DEBUG SWITCH: BFS loop complete for block 339: 0 cases collected
+DEBUG SWITCH: Checking block 340 for switch pattern (start addr: 2909)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t2934_0
+DEBUG SWITCH: About to extract constant from: t2938_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t2938_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 340: 0 cases collected
+DEBUG SWITCH: Checking block 341 for switch pattern (start addr: 2913)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t2934_0
+DEBUG SWITCH: About to extract constant from: t2938_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t2938_0
+DEBUG SWITCH: BFS loop complete for block 341: 0 cases collected
+DEBUG SWITCH: Checking block 342 for switch pattern (start addr: 2922)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t2934_0
+DEBUG SWITCH: About to extract constant from: t2938_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t2938_0
+DEBUG SWITCH: BFS loop complete for block 342: 0 cases collected
+DEBUG SWITCH: Checking block 343 for switch pattern (start addr: 2942)
+DEBUG SWITCH: BFS loop complete for block 343: 0 cases collected
+DEBUG SWITCH: Checking block 344 for switch pattern (start addr: 2952)
+DEBUG SWITCH: BFS loop complete for block 344: 0 cases collected
+DEBUG SWITCH: Checking block 345 for switch pattern (start addr: 2961)
+DEBUG SWITCH: BFS loop complete for block 345: 0 cases collected
+DEBUG SWITCH: Checking block 346 for switch pattern (start addr: 2968)
+DEBUG SWITCH: BFS loop complete for block 346: 0 cases collected
+DEBUG SWITCH: Checking block 347 for switch pattern (start addr: 2969)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t3058_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 347: 0 cases collected
+DEBUG SWITCH: Checking block 348 for switch pattern (start addr: 2973)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t3058_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 348: 0 cases collected
+DEBUG SWITCH: Checking block 349 for switch pattern (start addr: 2977)
+DEBUG SWITCH: BFS loop complete for block 349: 0 cases collected
+DEBUG SWITCH: Checking block 350 for switch pattern (start addr: 2978)
+DEBUG SWITCH: BFS loop complete for block 350: 0 cases collected
+DEBUG SWITCH: Checking block 351 for switch pattern (start addr: 2994)
+DEBUG SWITCH: BFS loop complete for block 351: 0 cases collected
+DEBUG SWITCH: Checking block 352 for switch pattern (start addr: 3008)
+DEBUG SWITCH: BFS loop complete for block 352: 0 cases collected
+DEBUG SWITCH: Checking block 353 for switch pattern (start addr: 3016)
+DEBUG SWITCH: BFS loop complete for block 353: 0 cases collected
+DEBUG SWITCH: Checking block 354 for switch pattern (start addr: 3037)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t3058_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 354: 0 cases collected
+DEBUG SWITCH: Checking block 355 for switch pattern (start addr: 3046)
+DEBUG SWITCH: First case - variable: SC_ggi(502), SSA: t3058_0
+DEBUG SWITCH: About to extract constant from: t3062_0
+DEBUG SWITCH: Failed to extract constant for SSA value: t3062_0
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 360 - different variable
+DEBUG SWITCH: Variable mismatch - test_var: SC_ggi(502), new var_name: gCLN_CurStep
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Skipping block 356 - different variable
+DEBUG SWITCH: BFS loop complete for block 355: 0 cases collected
+DEBUG SWITCH: Checking block 356 for switch pattern (start addr: 3066)
+DEBUG SWITCH: First case - variable: gCLN_CurStep, SSA: t3066_0
+DEBUG SWITCH: About to extract constant from: t3067_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3070
+DEBUG SWITCH: case_block_id=357
+DEBUG SWITCH: Added case: value=1, block=357, added current_block=356 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 356: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'gCLN_CurStep'
+DEBUG SWITCH: Building all_blocks for gCLN_CurStep, chain_blocks=[356], header_block=356
+DEBUG SWITCH: all_blocks after adding chain and cases: {356, 357}
+DEBUG SWITCH: Appending switch to switches list: gCLN_CurStep with 1 cases
+DEBUG SWITCH: Checking block 357 for switch pattern (start addr: 3070)
+DEBUG SWITCH: BFS loop complete for block 357: 0 cases collected
+DEBUG SWITCH: Checking block 358 for switch pattern (start addr: 3080)
+DEBUG SWITCH: BFS loop complete for block 358: 0 cases collected
+DEBUG SWITCH: Checking block 359 for switch pattern (start addr: 3101)
+DEBUG SWITCH: BFS loop complete for block 359: 0 cases collected
+DEBUG SWITCH: Checking block 360 for switch pattern (start addr: 3102)
+DEBUG SWITCH: First case - variable: gCLN_CurStep, SSA: t3102_0
+DEBUG SWITCH: About to extract constant from: t3103_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3106
+DEBUG SWITCH: case_block_id=361
+DEBUG SWITCH: Added case: value=1, block=361, added current_block=360 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 360: 1 cases collected
+DEBUG SWITCH: Creating switch with 1 cases on variable 'gCLN_CurStep'
+DEBUG SWITCH: Building all_blocks for gCLN_CurStep, chain_blocks=[360], header_block=360
+DEBUG SWITCH: all_blocks after adding chain and cases: {360, 361}
+DEBUG SWITCH: Appending switch to switches list: gCLN_CurStep with 1 cases
+DEBUG SWITCH: Checking block 361 for switch pattern (start addr: 3106)
+DEBUG SWITCH: BFS loop complete for block 361: 0 cases collected
+DEBUG SWITCH: Checking block 362 for switch pattern (start addr: 3116)
+DEBUG SWITCH: BFS loop complete for block 362: 0 cases collected
+DEBUG SWITCH: Checking block 363 for switch pattern (start addr: 3137)
+DEBUG SWITCH: BFS loop complete for block 363: 0 cases collected
+DEBUG SWITCH: Checking block 366 for switch pattern (start addr: 3143)
+DEBUG SWITCH: First case - variable: param_1%4, SSA: t3186_0
+DEBUG SWITCH: About to extract constant from: t3187_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3190
+DEBUG SWITCH: case_block_id=372
+DEBUG SWITCH: Added case: value=0, block=372, added current_block=371 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: param_1%4, new var_name: SC_AnsiToUni(j, &local_379)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t3197_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3200
+DEBUG SWITCH: case_block_id=375
+DEBUG SWITCH: Added case: value=1, block=375, added current_block=374 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: param_1%4, new var_name: SC_AnsiToUni(j, &local_379)
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t3207_0
+DEBUG SWITCH: Successfully extracted case value: 2
+DEBUG SWITCH: case_val is not None: 2
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3210
+DEBUG SWITCH: case_block_id=378
+DEBUG SWITCH: Added case: value=2, block=378, added current_block=377 to chain_blocks
+DEBUG SWITCH: Variable mismatch - test_var: param_1%4, new var_name: gCLN_ShowInfo
+DEBUG SWITCH:   SSA value match: False, SSA name match: False
+DEBUG SWITCH: Values equivalent, continuing chain
+DEBUG SWITCH: About to extract constant from: t3217_0
+DEBUG SWITCH: Successfully extracted case value: 3
+DEBUG SWITCH: case_val is not None: 3
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3220
+DEBUG SWITCH: case_block_id=381
+DEBUG SWITCH: Added case: value=3, block=381, added current_block=380 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 366: 4 cases collected
+DEBUG SWITCH: Creating switch with 4 cases on variable 'param_1%4'
+DEBUG SWITCH: Building all_blocks for param_1%4, chain_blocks=[371, 374, 377, 380], header_block=366
+DEBUG SWITCH: all_blocks after adding chain and cases: {366, 371, 372, 374, 375, 377, 378, 380, 381}
+DEBUG SWITCH: Appending switch to switches list: param_1%4 with 4 cases
+DEBUG SWITCH: Checking block 367 for switch pattern (start addr: 3159)
+DEBUG SWITCH: BFS loop complete for block 367: 0 cases collected
+DEBUG SWITCH: Checking block 368 for switch pattern (start addr: 3173)
+DEBUG SWITCH: BFS loop complete for block 368: 0 cases collected
+DEBUG SWITCH: Checking block 369 for switch pattern (start addr: 3181)
+DEBUG SWITCH: BFS loop complete for block 369: 0 cases collected
+DEBUG SWITCH: Checking block 372 for switch pattern (start addr: 3190)
+DEBUG SWITCH: BFS loop complete for block 372: 0 cases collected
+DEBUG SWITCH: Checking block 375 for switch pattern (start addr: 3200)
+DEBUG SWITCH: BFS loop complete for block 375: 0 cases collected
+DEBUG SWITCH: Checking block 378 for switch pattern (start addr: 3210)
+DEBUG SWITCH: BFS loop complete for block 378: 0 cases collected
+DEBUG SWITCH: Checking block 381 for switch pattern (start addr: 3220)
+DEBUG SWITCH: BFS loop complete for block 381: 0 cases collected
+DEBUG SWITCH: Checking block 382 for switch pattern (start addr: 3225)
+DEBUG SWITCH: BFS loop complete for block 382: 0 cases collected
+DEBUG SWITCH: Checking block 385 for switch pattern (start addr: 3255)
+DEBUG SWITCH: First case - variable: SC_ggi(tmp101), SSA: t3301_0
+DEBUG SWITCH: About to extract constant from: t3302_0
+DEBUG SWITCH: Successfully extracted case value: 0
+DEBUG SWITCH: case_val is not None: 0
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3305
+DEBUG SWITCH: case_block_id=391
+DEBUG SWITCH: Added case: value=0, block=391, added current_block=390 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3312_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3315
+DEBUG SWITCH: case_block_id=394
+DEBUG SWITCH: Added case: value=1, block=394, added current_block=393 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 385: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'SC_ggi(tmp101)'
+DEBUG SWITCH: Building all_blocks for SC_ggi(tmp101), chain_blocks=[390, 393], header_block=385
+DEBUG SWITCH: all_blocks after adding chain and cases: {385, 390, 391, 393, 394}
+DEBUG SWITCH: Appending switch to switches list: SC_ggi(tmp101) with 2 cases
+DEBUG SWITCH: Checking block 386 for switch pattern (start addr: 3271)
+DEBUG SWITCH: BFS loop complete for block 386: 0 cases collected
+DEBUG SWITCH: Checking block 387 for switch pattern (start addr: 3285)
+DEBUG SWITCH: BFS loop complete for block 387: 0 cases collected
+DEBUG SWITCH: Checking block 388 for switch pattern (start addr: 3293)
+DEBUG SWITCH: BFS loop complete for block 388: 0 cases collected
+DEBUG SWITCH: Checking block 391 for switch pattern (start addr: 3305)
+DEBUG SWITCH: BFS loop complete for block 391: 0 cases collected
+DEBUG SWITCH: Checking block 394 for switch pattern (start addr: 3315)
+DEBUG SWITCH: BFS loop complete for block 394: 0 cases collected
+DEBUG SWITCH: Checking block 395 for switch pattern (start addr: 3320)
+DEBUG SWITCH: BFS loop complete for block 395: 0 cases collected
+DEBUG SWITCH: Checking block 396 for switch pattern (start addr: 3345)
+DEBUG SWITCH: BFS loop complete for block 396: 0 cases collected
+DEBUG SWITCH: Checking block 397 for switch pattern (start addr: 3348)
+DEBUG SWITCH: BFS loop complete for block 397: 0 cases collected
+DEBUG SWITCH: Checking block 398 for switch pattern (start addr: 3366)
+DEBUG SWITCH: BFS loop complete for block 398: 0 cases collected
+DEBUG SWITCH: Checking block 399 for switch pattern (start addr: 3375)
+DEBUG SWITCH: BFS loop complete for block 399: 0 cases collected
+DEBUG SWITCH: Checking block 400 for switch pattern (start addr: 3379)
+DEBUG SWITCH: BFS loop complete for block 400: 0 cases collected
+DEBUG SWITCH: Checking block 401 for switch pattern (start addr: 3388)
+DEBUG SWITCH: BFS loop complete for block 401: 0 cases collected
+DEBUG SWITCH: Checking block 404 for switch pattern (start addr: 3394)
+DEBUG SWITCH: BFS loop complete for block 404: 0 cases collected
+DEBUG SWITCH: Checking block 405 for switch pattern (start addr: 3398)
+DEBUG SWITCH: BFS loop complete for block 405: 0 cases collected
+DEBUG SWITCH: Checking block 406 for switch pattern (start addr: 3404)
+DEBUG SWITCH: BFS loop complete for block 406: 0 cases collected
+DEBUG SWITCH: Checking block 409 for switch pattern (start addr: 3411)
+DEBUG SWITCH: BFS loop complete for block 409: 0 cases collected
+DEBUG SWITCH: Checking block 422 for switch pattern (start addr: 3500)
+DEBUG SWITCH: BFS loop complete for block 422: 0 cases collected
+DEBUG SWITCH: Checking block 424 for switch pattern (start addr: 3507)
+DEBUG SWITCH: BFS loop complete for block 424: 0 cases collected
+DEBUG SWITCH: Checking block 426 for switch pattern (start addr: 3514)
+DEBUG SWITCH: BFS loop complete for block 426: 0 cases collected
+DEBUG SWITCH: Checking block 427 for switch pattern (start addr: 3515)
+DEBUG SWITCH: BFS loop complete for block 427: 0 cases collected
+DEBUG SWITCH: Checking block 428 for switch pattern (start addr: 3516)
+DEBUG SWITCH: BFS loop complete for block 428: 0 cases collected
+DEBUG SWITCH: Checking block 431 for switch pattern (start addr: 3522)
+DEBUG SWITCH: First case - variable: gMission_phase, SSA: t3576_0
+DEBUG SWITCH: About to extract constant from: t3577_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3580
+DEBUG SWITCH: case_block_id=442
+DEBUG SWITCH: Added case: value=1, block=442, added current_block=441 to chain_blocks
+DEBUG SWITCH: About to extract constant from: t3545_0
+DEBUG SWITCH: Successfully extracted case value: 1
+DEBUG SWITCH: case_val is not None: 1
+DEBUG SWITCH: mnemonic=JZ, opcode=136
+DEBUG SWITCH: case_block address=3548
+DEBUG SWITCH: case_block_id=435
+DEBUG SWITCH: Added case: value=1, block=435, added current_block=434 to chain_blocks
+DEBUG SWITCH: BFS loop complete for block 431: 2 cases collected
+DEBUG SWITCH: Creating switch with 2 cases on variable 'gMission_phase'
+DEBUG SWITCH: Building all_blocks for gMission_phase, chain_blocks=[441, 434], header_block=431
+DEBUG SWITCH: all_blocks after adding chain and cases: {434, 435, 441, 442, 431}
+DEBUG SWITCH: Appending switch to switches list: gMission_phase with 2 cases
+DEBUG SWITCH: Checking block 432 for switch pattern (start addr: 3536)
+DEBUG SWITCH: BFS loop complete for block 432: 0 cases collected
+DEBUG SWITCH: Checking block 433 for switch pattern (start addr: 3542)
+DEBUG SWITCH: BFS loop complete for block 433: 0 cases collected
+DEBUG SWITCH: Checking block 435 for switch pattern (start addr: 3548)
+DEBUG SWITCH: BFS loop complete for block 435: 0 cases collected
+DEBUG SWITCH: Checking block 436 for switch pattern (start addr: 3552)
+DEBUG SWITCH: BFS loop complete for block 436: 0 cases collected
+DEBUG SWITCH: Checking block 437 for switch pattern (start addr: 3557)
+DEBUG SWITCH: BFS loop complete for block 437: 0 cases collected
+DEBUG SWITCH: Checking block 438 for switch pattern (start addr: 3570)
+DEBUG SWITCH: BFS loop complete for block 438: 0 cases collected
+DEBUG SWITCH: Checking block 439 for switch pattern (start addr: 3571)
+DEBUG SWITCH: BFS loop complete for block 439: 0 cases collected
+DEBUG SWITCH: Checking block 440 for switch pattern (start addr: 3575)
+DEBUG SWITCH: BFS loop complete for block 440: 0 cases collected
+DEBUG SWITCH: Checking block 442 for switch pattern (start addr: 3580)
+DEBUG SWITCH: BFS loop complete for block 442: 0 cases collected
+DEBUG SWITCH: Checking block 443 for switch pattern (start addr: 3585)
+DEBUG SWITCH: BFS loop complete for block 443: 0 cases collected
+DEBUG SWITCH: Checking block 444 for switch pattern (start addr: 3591)
+DEBUG SWITCH: BFS loop complete for block 444: 0 cases collected
+DEBUG SWITCH: Checking block 447 for switch pattern (start addr: 3667)
+DEBUG SWITCH: BFS loop complete for block 447: 0 cases collected
+DEBUG SWITCH: Checking block 448 for switch pattern (start addr: 3683)
+DEBUG SWITCH: BFS loop complete for block 448: 0 cases collected
+DEBUG SWITCH: Checking block 449 for switch pattern (start addr: 3693)
+DEBUG SWITCH: BFS loop complete for block 449: 0 cases collected
+DEBUG SWITCH: Checking block 452 for switch pattern (start addr: 3704)
+DEBUG SWITCH: BFS loop complete for block 452: 0 cases collected
+DEBUG SWITCH: Checking block 455 for switch pattern (start addr: 3726)
+DEBUG SWITCH: BFS loop complete for block 455: 0 cases collected
+DEBUG SWITCH: Checking block 456 for switch pattern (start addr: 3732)
+DEBUG SWITCH: BFS loop complete for block 456: 0 cases collected
+DEBUG ORCHESTRATOR: _detect_switch_patterns returned 11 switches
+DEBUG ORCHESTRATOR: Switch 0: gCLN_ShowInfo with 12 cases, header_block=165
+DEBUG ORCHESTRATOR: Switch 1: gCLN_CurStep with 1 cases, header_block=356
+DEBUG ORCHESTRATOR: Switch 2: gCLN_CurStep with 1 cases, header_block=360
+DEBUG ORCHESTRATOR: Switch 3: gMission_phase with 2 cases, header_block=431
+DEBUG ORCHESTRATOR: Switch 4: param_2 with 1 cases, header_block=168
+DEBUG ORCHESTRATOR: Switch 5: SC_ggi(tmp37) with 2 cases, header_block=239
+DEBUG ORCHESTRATOR: Switch 6: SC_ggi(503) with 1 cases, header_block=246
+DEBUG ORCHESTRATOR: Switch 7: SC_ggi(tmp71) with 6 cases, header_block=319
+DEBUG ORCHESTRATOR: Switch 8: SC_ggi(tmp74) with 1 cases, header_block=323
+DEBUG ORCHESTRATOR: Switch 9: param_1%4 with 4 cases, header_block=366
+DEBUG ORCHESTRATOR: Switch 10: SC_ggi(tmp101) with 2 cases, header_block=385
+DEBUG ORCHESTRATOR: Adding switch gCLN_ShowInfo to map, all_blocks={256, 257, 258, 259, 271, 272, 274, 275, 318, 319, 320, 322, 323, 324, 325, 326, 327, 328, 329, 330, 332, 333, 334, 335, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 365, 366, 367, 368, 369, 371, 372, 374, 375, 377, 378, 380, 381, 382, 384, 385, 386, 387, 388, 390, 391, 393, 394, 395, 396, 397, 398, 399, 400, 401, 443, 403, 404, 405, 406, 408, 409, 421, 165, 167, 422, 168, 169, 427, 170, 171, 430, 431, 172, 173, 174, 175, 428, 432, 433, 434, 435, 436, 437, 438, 439, 440, 446, 447, 192, 441, 442, 451, 452, 444, 454, 455, 448, 449, 238, 239, 240, 241, 242, 243, 245, 246, 248, 249, 250, 251, 252, 253, 254, 255}
+DEBUG ORCHESTRATOR: Adding switch gCLN_CurStep to map, all_blocks={400, 356, 357, 359}
+DEBUG ORCHESTRATOR: Adding switch gCLN_CurStep to map, all_blocks={400, 360, 361, 363}
+DEBUG ORCHESTRATOR: Adding switch gMission_phase to map, all_blocks={456, 431, 434, 435, 436, 437, 438, 440, 441, 442, 444}
+DEBUG ORCHESTRATOR: Adding switch param_2 to map, all_blocks={168, 171, 172, 173, 174, 175}
+DEBUG ORCHESTRATOR: Adding switch SC_ggi(tmp37) to map, all_blocks={239, 245, 246, 248, 249, 250, 251, 252, 253, 254}
+DEBUG ORCHESTRATOR: Adding switch SC_ggi(503) to map, all_blocks={257, 258, 259, 246}
+DEBUG ORCHESTRATOR: Adding switch SC_ggi(tmp71) to map, all_blocks={384, 385, 386, 387, 388, 390, 391, 393, 394, 395, 396, 397, 398, 399, 400, 401, 319, 322, 323, 324, 325, 326, 327, 456, 328, 329, 332, 333, 335, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 365, 366, 367, 368, 369, 371, 372, 374, 375, 377, 378, 380, 381, 382}
+DEBUG ORCHESTRATOR: Adding switch SC_ggi(tmp74) to map, all_blocks={323, 325, 326, 328, 329}
+DEBUG ORCHESTRATOR: Adding switch param_1%4 to map, all_blocks={366, 400, 371, 372, 374, 375, 377, 378, 380, 381}
+DEBUG ORCHESTRATOR: Adding switch SC_ggi(tmp101) to map, all_blocks={400, 385, 390, 391, 393, 394}
+DEBUG ORCHESTRATOR: block_to_switch contains 142 entries
+DEBUG variables.py: formatter._var_struct_types has 19 entries
+DEBUG variables.py: Imported local_29 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_413 -> s_SC_P_getinfo (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_1 -> s_SC_MP_SRV_AtgSettings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_265 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_257 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+
+int func_0498(int param_0, int param_1) {
+    c_Vector3 local_311;
+    int idx;
+    int m;
+    int tmp;
+    int tmp1;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    tmp = 0.0f;
+    tmp1 = 0.0f;
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0752(int param_0) {
+    c_Vector3 local_311;
+    int idx;
+    int local_;
+    int local_7;
+    int n;
+    int side;
+    int side2;
+    int side3;
+    int side4;
+    int side5;
+    int sideB;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+    s_SC_P_getinfo local_2;
+    s_SC_P_getinfo player_info;
+
+    switch (abl_lists) {
+    case 0:
+        if (tmp2) break;
+        break;
+    case 1:
+        if (tmp3) {
+            local_1 = 0.0f;
+            SC_MP_SRV_P_SetSideClass(param_0, local_1, tmp5);
+            if (tmp6) {
+                abl_list[tmp11] = param_0;
+                tmp11 = tmp10;
+            } else {
+                return 7;
+            }
+        } else {
+            return 7;
+        }
+        break;
+    default:
+    }
+    goto block_116; // @762
+    return 7;
+    block_116:
+    local_ = SC_MP_SRV_GetTeamsNrDifference(1);
+    if (!tmp) {
+        return 7;
+    } else {
+    }
+    if (!tmp1) goto block_120; // @781
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0852(void) {
+    c_Vector3 local_311;
+    int idx;
+    int k;
+    int local_;
+    int local_2;
+    int local_265;
+    int local_266;
+    int local_267;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers enum_pl[64];
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_MP_SRV_GetAutoTeamBalance();
+    if (!local_267) {
+        local_ = SC_MP_SRV_GetTeamsNrDifference(tmp6);
+        return 267;
+    } else {
+        return 267;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_1028(void) {
+    c_Vector3 local_311;
+    int idx;
+    int local_257;
+    int local_258;
+    int local_259;
+    int local_260;
+    int local_261;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers enum_pl[64];
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_hud local_14;
+
+    SC_ggi(tmp4);
+    func_0334();
+    tmp1 = tmp;
+    tmp2 = 64;
+    SC_MP_EnumPlayers(enum_pl, &tmp2, tmp1);
+    if (!local_259) {
+        tmp3 = 0.0f;
+    } else {
+        return tmp1;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int ScriptMain(s_SC_NET_info *info) {
+    dword MPIC_USflag;  // Auto-generated
+    dword MPIC_VCflag;  // Auto-generated
+    dword MPIC_emptyflag;  // Auto-generated
+    int g;  // Auto-generated
+    dword param_1;  // Auto-generated
+
+    c_Vector3 local_311;
+    float local_411;
+    float local_420;
+    int data_;
+    int data_1959;
+    int gSidePoints;
+    int i;
+    int idx;
+    int j;
+    int k;
+    int local_;
+    int local_10;
+    int local_12;
+    int local_13;
+    int local_298;
+    int local_314;
+    int local_315;
+    int local_379;
+    int local_412;
+    int local_418;
+    int local_419;
+    int local_421;
+    int local_422;
+    int local_8;
+    int local_9;
+    int n;
+    int precov;
+    int side;
+    int side2;
+    int side3;
+    int sideB;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp100;
+    int tmp101;
+    int tmp102;
+    int tmp103;
+    int tmp104;
+    int tmp105;
+    int tmp106;
+    int tmp107;
+    int tmp108;
+    int tmp109;
+    int tmp11;
+    int tmp110;
+    int tmp111;
+    int tmp113;
+    int tmp114;
+    int tmp115;
+    int tmp116;
+    int tmp118;
+    int tmp12;
+    int tmp120;
+    int tmp121;
+    int tmp122;
+    int tmp123;
+    int tmp125;
+    int tmp126;
+    int tmp127;
+    int tmp128;
+    int tmp129;
+    int tmp13;
+    int tmp130;
+    int tmp131;
+    int tmp132;
+    int tmp133;
+    int tmp134;
+    int tmp135;
+    int tmp136;
+    int tmp137;
+    int tmp138;
+    int tmp139;
+    int tmp14;
+    int tmp140;
+    int tmp141;
+    int tmp142;
+    int tmp143;
+    int tmp144;
+    int tmp145;
+    int tmp146;
+    int tmp147;
+    int tmp148;
+    int tmp149;
+    int tmp15;
+    int tmp150;
+    int tmp151;
+    int tmp152;
+    int tmp154;
+    int tmp155;
+    int tmp156;
+    int tmp157;
+    int tmp158;
+    int tmp159;
+    int tmp16;
+    int tmp160;
+    int tmp161;
+    int tmp162;
+    int tmp163;
+    int tmp164;
+    int tmp165;
+    int tmp166;
+    int tmp167;
+    int tmp168;
+    int tmp169;
+    int tmp170;
+    int tmp171;
+    int tmp18;
+    int tmp2;
+    int tmp20;
+    int tmp21;
+    int tmp22;
+    int tmp23;
+    int tmp24;
+    int tmp26;
+    int tmp27;
+    int tmp28;
+    int tmp29;
+    int tmp3;
+    int tmp30;
+    int tmp31;
+    int tmp32;
+    int tmp33;
+    int tmp34;
+    int tmp35;
+    int tmp36;
+    int tmp37;
+    int tmp38;
+    int tmp39;
+    int tmp4;
+    int tmp40;
+    int tmp41;
+    int tmp42;
+    int tmp43;
+    int tmp44;
+    int tmp45;
+    int tmp46;
+    int tmp47;
+    int tmp48;
+    int tmp49;
+    int tmp5;
+    int tmp50;
+    int tmp51;
+    int tmp52;
+    int tmp53;
+    int tmp54;
+    int tmp55;
+    int tmp56;
+    int tmp57;
+    int tmp58;
+    int tmp59;
+    int tmp60;
+    int tmp61;
+    int tmp62;
+    int tmp63;
+    int tmp64;
+    int tmp65;
+    int tmp66;
+    int tmp67;
+    int tmp68;
+    int tmp69;
+    int tmp7;
+    int tmp70;
+    int tmp71;
+    int tmp72;
+    int tmp73;
+    int tmp74;
+    int tmp75;
+    int tmp76;
+    int tmp77;
+    int tmp78;
+    int tmp79;
+    int tmp80;
+    int tmp81;
+    int tmp82;
+    int tmp83;
+    int tmp84;
+    int tmp85;
+    int tmp86;
+    int tmp87;
+    int tmp88;
+    int tmp89;
+    int tmp9;
+    int tmp90;
+    int tmp91;
+    int tmp92;
+    int tmp93;
+    int tmp94;
+    int tmp95;
+    int tmp96;
+    int tmp97;
+    int tmp98;
+    int tmp99;
+    s_SC_HUD_MP_icon icon;
+    s_SC_HUD_MP_icon local_299;
+    s_SC_MP_EnumPlayers enum_pl[64];
+    s_SC_MP_EnumPlayers local_257;
+    s_SC_MP_EnumPlayers local_265;
+    s_SC_MP_EnumPlayers local_296;
+    s_SC_MP_SRV_AtgSettings local_1;
+    s_SC_MP_SRV_settings local_285;
+    s_SC_MP_SRV_settings srv_settings;
+    s_SC_MP_hud local_14;
+    s_SC_P_getinfo local_413;
+    s_SC_P_getinfo player_info;
+
+    switch (gCLN_ShowInfo) {
+    case 3:
+        if (func_0050(tmp4)) break;
+        local_296.field1 = 0.0f;
+        tmp7 = tmp4;
+        local_ = 64;
+        if (SC_MP_EnumPlayers(enum_pl, &local_, tmp20)) {
+            if (tmp9 && tmp15) {
+                gSidePoints[0.0f] = 0.0f;
+                gSidePoints[1] = 0.0f;
+                func_0249();
+            }
+            local_8 = 0.0f;
+        } else {
+            local_8 = 0.0f;
+        }
+        break;
+    case 4:
+        data_ = tmp24;
+        if (tmp26) {
+            tmp30 = tmp29;
+        } else {
+            if (tmp31) {
+                tmp35 = tmp34;
+            } else {
+                SC_ggi(tmp37);
+                if (tmp36) {
+                    SC_ggi(508);
+                    func_0498(tmp38, 2);
+                } else {
+                    if (tmp39) {
+                        SC_ggi(507);
+                        if (tmp40 && tmp42 && tmp43) {
+                            data_ = 5.0f;
+                            SC_SND_PlaySound2D(10425);
+                        }
+                        SC_ggi(tmp45);
+                        func_0334();
+                        func_0498(i);
+                    }
+                }
+                SC_ggi(505);
+                if (tmp46) {
+                    tmp47 = SC_ggi(505);
+                    tmp48 = SC_ggf(tmp53);
+                } else {
+                    SC_ggi(503);
+                    if (tmp49) {
+                        tmp48 = tmp52;
+                    } else {
+                        local_8 = 0.0f;
+                    }
+                }
+            }
+        }
+        break;
+    case 9:
+        SC_sgi(499, 9);
+        tmp57 = tmp56;
+        tmp60 = tmp59;
+        data_1959 = 0.0f;
+        SC_MP_EnableBotsFromScene(0);
+        break;
+    case 1:
+        tmp62 = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_USflag.BES");
+        tmp63 = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_VCflag.BES");
+        tmp64 = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_emptyflag.BES");
+        SC_MP_SRV_SetForceSide(-1);
+        SC_MP_SetChooseValidSides(3);
+        SC_MP_SRV_SetClassLimit(18, 0.0f);
+        SC_MP_SRV_SetClassLimit(19, 0.0f);
+        SC_MP_SRV_SetClassLimit(39, 0.0f);
+        SC_MP_GetSRVsettings(&srv_settings);
+        local_8 = 0.0f;
+        break;
+    case 2:
+        local_8 = 0.0f;
+        local_314 = 0.0f;
+        tmp66 = 0.0f;
+        local_10 = SC_ggi(tmp70);
+        SC_ggi(503);
+        if (tmp67) {
+            tmp68 = SC_ggi(tmp71);
+            if (tmp69) {
+            } else {
+                if (tmp72) {
+                    SC_ggi(tmp74);
+                    if (tmp73) {
+                        SC_SND_PlaySound2D(tmp75);
+                    } else {
+                        SC_SND_PlaySound2D(11116);
+                    }
+                }
+            }
+        } else {
+            if (tmp76) {
+                if (tmp77) {
+                    local_314 = SC_Wtxt(1076);
+                } else {
+                    tmp30 = 0.0f;
+                    if (!local_314) break;
+                    SC_GetScreenRes(&tmp104, &local_412);
+                    SC_Fnt_GetWidthW(local_314, 1.0f);
+                    tmp104 = tmp103;
+                    if (tmp66) {
+                        local_412 = tmp106;
+                        SC_Fnt_WriteW(tmp107, local_412, local_314, 1.0f, -1);
+                    } else {
+                        local_412 = 15.0f;
+                    }
+                }
+            } else {
+                if (tmp78) {
+                    tmp35 = 3.0f;
+                    if (tmp79) {
+                        tmp30 = 3.0f;
+                    } else {
+                        if (tmp80) {
+                            local_8 = SC_PC_Get();
+                            if (local_8) {
+                                SC_P_GetInfo(local_8, &player_info);
+                                SC_ggi(502);
+                                func_0334();
+                                if (tmp81) {
+                                    local_314 = SC_Wtxt(5108);
+                                    SC_GameInfoW(local_314);
+                                    local_314 = 0.0f;
+                                } else {
+                                    local_314 = SC_Wtxt(5109);
+                                }
+                            }
+                        } else {
+                            if (tmp82 && tmp83) {
+                                SC_ggi(510);
+                                local_9 = SC_MP_GetPlofHandle(j);
+                                if (local_9) {
+                                    SC_P_GetName(local_9);
+                                    SC_AnsiToUni(j, &local_379);
+                                    SC_Wtxt(tmp89);
+                                    swprintf(tmp89, local_422, &local_379, i);
+                                    local_314 = &local_315;
+                                } else {
+                                    SC_AnsiToUni("'disconnected'", &local_379);
+                                }
+                                return TRUE;
+                            }
+                            local_8 = SC_PC_Get();
+                            if (local_8) {
+                                SC_P_GetInfo(local_8, &player_info);
+                                SC_ggi(502);
+                                func_0334();
+                                if (tmp84) {
+                                    if (tmp85) {
+                                        local_314 = SC_Wtxt(5111);
+                                    } else {
+                                        SC_Wtxt(5110);
+                                        swprintf(5110, local_422, tmp86);
+                                        local_314 = &local_315;
+                                    }
+                                } else {
+                                    if (tmp87) {
+                                        local_314 = SC_Wtxt(5113);
+                                    } else {
+                                        SC_Wtxt(5112);
+                                        swprintf(5112, local_422, tmp88);
+                                        local_314 = &local_315;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (tmp91) {
+                        SC_ggi(tmp94);
+                        local_9 = SC_MP_GetPlofHandle(j);
+                        if (local_9) {
+                            SC_P_GetName(local_9);
+                            SC_AnsiToUni(j, &local_379);
+                            if (tmp93) {
+                                local_8 = 5101;
+                            } else {
+                                if (tmp95) {
+                                    local_8 = 5103;
+                                } else {
+                                    if (tmp96) {
+                                        local_8 = 5102;
+                                    } else {
+                                        if (tmp97) {
+                                            local_8 = 5104;
+                                        }
+                                    }
+                                }
+                            }
+                            SC_Wtxt(local_8);
+                            swprintf(local_8, local_422, &local_379);
+                            local_314 = &local_315;
+                            tmp30 = 0.0f;
+                        } else {
+                            SC_AnsiToUni("'disconnected'", &local_379);
+                        }
+                    } else {
+                        if (tmp98) {
+                            SC_ggi(tmp100);
+                            local_9 = SC_MP_GetPlofHandle(j);
+                            if (local_9) {
+                                SC_P_GetName(local_9);
+                                SC_AnsiToUni(j, &local_379);
+                                SC_ggi(tmp101);
+                                if (tmp99) {
+                                    local_8 = 5105;
+                                } else {
+                                    if (tmp102) {
+                                        local_8 = 5106;
+                                    }
+                                }
+                                SC_Wtxt(local_8);
+                                swprintf(local_8, local_422, &local_379);
+                                local_314 = &local_315;
+                                tmp30 = 0.0f;
+                            } else {
+                                SC_AnsiToUni("'disconnected'", &local_379);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        break;
+    case 5:
+        if (tmp110) {
+            param_1->field_20 = 0.1f;
+        } else {
+            param_1->field_20 = -1.0f;
+        }
+        break;
+    case 6:
+        tmp123 = tmp122;
+        local_9 = tmp126;
+        if (gAttackingSide) {
+            local_9 = tmp127;
+        } else {
+            if (local_9) {
+                if (tmp128) {
+                    if (tmp129) {
+                        local_10 = 0.0f;
+                        local_8 = SC_MP_SRV_GetBestDMrecov(precov, tmp142, tmp146, 3.0f);
+                        tmp152 = 3.0f;
+                        tmp123 = tmp160;
+                    } else {
+                        rand();
+                        local_10 = tmp132;
+                    }
+                } else {
+                    local_10 = 0.0f;
+                }
+            } else {
+                if (tmp133) {
+                    local_10 = gCurStep;
+                } else {
+                    local_10 = tmp134;
+                }
+            }
+        }
+        break;
+    case 10:
+        data_1959 = 0.0f;
+        SC_ZeroMem(&gSidePoints, 8);
+        func_0249();
+        SC_MP_SetInstantRecovery(1);
+        if (tmp162) {
+            SC_MP_RestartMission();
+            SC_MP_RecoverAllNoAiPlayers();
+            tmp114 = 0.0f;
+            SC_sgi(503, tmp114);
+        } else {
+            data_ = 0.0f;
+            SC_MP_SRV_ClearPlsStats();
+        }
+        break;
+    case 1:
+        local_8 = 0.0f;
+        break;
+    case 11:
+        tmp57 = tmp165;
+        tmp60 = tmp167;
+        data_1959 = 0.0f;
+        break;
+    case 0:
+        param_1->field_20 = 3.0f;
+        break;
+    case 7:
+        func_0752(tmp170);
+        break;
+    default:
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
+DEBUG variables.py: Imported local_296 -> s_SC_MP_EnumPlayers (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_311 -> c_Vector3 (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_299 -> s_SC_HUD_MP_icon (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_285 -> s_SC_MP_SRV_settings (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Imported local_14 -> s_SC_MP_hud (confidence=0.9, source=field_tracker)
+DEBUG variables.py: Using field_tracker type for local_296: s_SC_MP_EnumPlayers
+DEBUG variables.py: Using field_tracker type for srv_settings: s_SC_MP_SRV_settings
+DEBUG variables.py: Using field_tracker type for player_info: s_SC_P_getinfo
+DEBUG variables.py: Using field_tracker type for icon: s_SC_HUD_MP_icon
+DEBUG variables.py: Expression mentions local_1: 'local_10 = SC_ggi(tmp70);'
+DEBUG variables.py: Expression mentions local_1: 'local_10 = 0.0f;'
+DEBUG variables.py: Expression mentions local_1: 'local_10 = tmp132;'
+DEBUG variables.py: Expression mentions local_1: 'local_10 = 0.0f;'
+DEBUG variables.py: Expression mentions local_1: 'local_10 = gCurStep;'
+DEBUG variables.py: Expression mentions local_1: 'local_10 = tmp134;'
+DEBUG variables.py: Added field_tracker var local_311 -> c_Vector3
+DEBUG variables.py: Added field_tracker var local_299 -> s_SC_HUD_MP_icon
+DEBUG variables.py: Added field_tracker var local_285 -> s_SC_MP_SRV_settings
+DEBUG variables.py: Added field_tracker var local_14 -> s_SC_MP_hud
+DEBUG variables.py: Added field_tracker var local_413 -> s_SC_P_getinfo
+DEBUG variables.py: Added field_tracker var local_1 -> s_SC_MP_SRV_AtgSettings
+DEBUG variables.py: Added field_tracker var local_265 -> s_SC_MP_EnumPlayers
+DEBUG variables.py: Added field_tracker var local_257 -> s_SC_MP_EnumPlayers
+DEBUG ORCHESTRATOR: Block 165 is in block_to_switch, header_block=165, is_header=True
+DEBUG ORCHESTRATOR: Rendering switch for gCLN_ShowInfo with 12 cases at block 165
+
+
