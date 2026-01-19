@@ -480,6 +480,10 @@ FUNCTION_STRUCT_PARAMS: Dict[str, Dict[int, str]] = {
     "SC_MP_HUD_SetTabInfo": {0: "s_SC_MP_hud"},
     "SC_MP_SetIconHUD": {0: "s_SC_HUD_MP_icon"},
     "SC_MP_EnumPlayers": {0: "s_SC_MP_EnumPlayers"},
+    # Phase 2: Missing functions from field_tracker.py
+    "SC_MP_SRV_GetAtgSettings": {0: "s_SC_MP_SRV_AtgSettings"},
+    "SC_NOD_GetInfo": {0: "s_SC_OBJ_info"},
+    "SC_L_GetInfo": {0: "s_SC_L_info"},
 }
 
 

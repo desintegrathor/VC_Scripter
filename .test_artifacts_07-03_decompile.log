@@ -1,0 +1,3 @@
+usage: vcdecomp [-h]
+                {info,disasm,strings,hex,lift,cfg,ssa,expr,structure,symbols,validate,validate-batch,gui} ...
+vcdecomp: error: unrecognized arguments: --log-level=INFO

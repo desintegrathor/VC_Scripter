@@ -207,6 +207,24 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Maps variable name -> StructTypeInfo (with confidence scoring)
     inferred_struct_types: Dict[str, StructTypeInfo] = {}
 
+    # Phase 2: Import struct types from field tracker (via formatter._var_struct_types)
+    # These are high-confidence struct types detected from function call patterns
+    import sys
+    if hasattr(formatter, '_var_struct_types'):
+        print(f"DEBUG variables.py: formatter._var_struct_types has {len(formatter._var_struct_types)} entries", file=sys.stderr)
+        for var_name, struct_type in formatter._var_struct_types.items():
+            # Only import local variables (skip params and globals)
+            if var_name.startswith('local_') or (var_name.startswith('&') and var_name[1:].startswith('local_')):
+                # Remove & prefix if present
+                clean_var_name = var_name[1:] if var_name.startswith('&') else var_name
+                # Store with HIGH confidence (0.9) - these come from field tracker
+                inferred_struct_types[clean_var_name] = StructTypeInfo(
+                    struct_type=struct_type,
+                    confidence=0.9,  # High confidence from field tracker
+                    source="field_tracker"
+                )
+                print(f"DEBUG variables.py: Imported {clean_var_name} -> {struct_type} (confidence=0.9, source=field_tracker)", file=sys.stderr)
+
     # FIX (07-04): Track loop bounds for array dimension inference
     from .value_trace import trace_loop_bounds
     loop_bounds = trace_loop_bounds(ssa_func)
@@ -254,16 +272,25 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # New strategy: Always check for opcode types, and UPDATE if opcode is more specific
         already_declared = display_name in var_types
         if already_declared:
-            # Check if we have opcode evidence that should override the existing type
-            if value.value_type != opcodes.ResultType.UNKNOWN:
-                opcode_type = result_type_to_c_type(value.value_type)
-                if opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
-                    # We have concrete opcode evidence - update the type
-                    existing_type = var_types[display_name]
-                    if existing_type.startswith("s_SC_") or existing_type == "int" or existing_type == "dword":
-                        # Override struct types or generic types with concrete opcode types
-                        logger.debug(f"[TYPE UPDATE] {display_name}: {existing_type} → {opcode_type} (opcode evidence)")
-                        var_types[display_name] = opcode_type
+            # Check if this variable has confidence=1.0 type (ABSOLUTE certainty)
+            # These should NEVER be overridden
+            is_absolute_confidence = False
+            if display_name in inferred_struct_types and inferred_struct_types[display_name].confidence == 1.0:
+                is_absolute_confidence = True
+            elif var_name in inferred_struct_types and inferred_struct_types[var_name].confidence == 1.0:
+                is_absolute_confidence = True
+
+            if not is_absolute_confidence:
+                # Check if we have opcode evidence that should override the existing type
+                if value.value_type != opcodes.ResultType.UNKNOWN:
+                    opcode_type = result_type_to_c_type(value.value_type)
+                    if opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
+                        # We have concrete opcode evidence - update the type
+                        existing_type = var_types[display_name]
+                        if existing_type.startswith("s_SC_") or existing_type == "int" or existing_type == "dword":
+                            # Override struct types or generic types with concrete opcode types
+                            logger.debug(f"[TYPE UPDATE] {display_name}: {existing_type} → {opcode_type} (opcode evidence)")
+                            var_types[display_name] = opcode_type
             # Skip further processing if we don't have opcode evidence to update
             return
 
@@ -285,6 +312,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         elif var_name in inferred_struct_types:
             struct_type_info = inferred_struct_types[var_name]
 
+        # DEBUG: Log when processing local_1
+        if display_name == "local_1" or var_name == "local_1":
+            print(f"DEBUG variables.py: Processing {display_name} (var_name={var_name}), struct_type_info={struct_type_info}", file=sys.stderr)
+
         # Priority 1: ABSOLUTE PRIORITY - Opcode-based types (concrete evidence)
         # Variables used in FADD/IADD/IMUL operations MUST use opcode-derived types
         # This prevents field access heuristics from overriding concrete arithmetic type evidence
@@ -293,15 +324,24 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             opcode_type = result_type_to_c_type(value.value_type)
 
 
-        if opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
+        # Priority 0: ABSOLUTE CONFIDENCE struct types (1.0) - these are CERTAIN
+        # Examples: SC_MP_EnumPlayers first param is ALWAYS s_SC_MP_EnumPlayers[64]
+        # These override even opcode types because they represent the true structure
+        if struct_type_info and struct_type_info.confidence == 1.0:
+            var_type = struct_type_info.struct_type
+        elif opcode_type is not None and opcode_type in {"int", "float", "dword", "char", "short", "double"}:
             # CRITICAL: Concrete opcode type ALWAYS wins - skip all struct inference
             var_type = opcode_type
         # Priority 2: If no concrete opcode type, check HIGH confidence struct types (0.8+)
-        # DISABLED (07-08): Even HIGH confidence struct types cause false positives
-        # Variables are often reused for different purposes (stack slot reuse)
-        # Only use opcode-derived types to eliminate Pattern 2 completely
-        # elif struct_type_info and struct_type_info.confidence >= 0.8:
-        #     var_type = struct_type_info.struct_type
+        # Phase 2 FIX: Re-enable for field_tracker sources ONLY
+        # Field tracker uses LADR pattern matching which is much more reliable than
+        # generic function call inference (which was disabled due to false positives)
+        elif struct_type_info and struct_type_info.confidence >= 0.8:
+            # Only use high-confidence types from field_tracker (not generic function calls)
+            if struct_type_info.source == "field_tracker":
+                var_type = struct_type_info.struct_type
+                print(f"DEBUG variables.py: Using field_tracker type for {display_name}: {var_type}", file=sys.stderr)
+            # else: skip - generic high-confidence types still cause false positives
         # Priority 3: Check MEDIUM confidence struct types (0.5-0.8)
         # elif struct_type_info and struct_type_info.confidence >= 0.5:
         #     var_type = struct_type_info.struct_type
@@ -367,6 +407,17 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # Variables passed to functions are frequently reused for other purposes
                 # Only trust field access patterns and explicit opcode types
                 # This prevents Pattern 2 type mismatches (int assigned to struct)
+
+                # EXCEPTION: Whitelist certain functions where we're 100% certain
+                # SC_MP_EnumPlayers first param is ALWAYS s_SC_MP_EnumPlayers array
+                if call_name == "SC_MP_EnumPlayers" and arg_idx == 0:
+                    # This is an array of structs, allocated as ASP 256 (256 dwords)
+                    # s_SC_MP_EnumPlayers struct is 4 dwords → 256/4 = 64 elements
+                    inferred_struct_types[var_name] = StructTypeInfo(
+                        struct_type="s_SC_MP_EnumPlayers[64]",
+                        confidence=1.0,
+                        source="SC_MP_EnumPlayers_call"
+                    )
 
                 # Original logic (disabled):
                 # struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.4, source="function_call")
@@ -605,18 +656,35 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     from ...expr import format_block_expressions
     import re
 
+    # DEBUG: Log function name for context
+    func_name = ssa_func.name if hasattr(ssa_func, 'name') else "unknown"
+    func_entry = ssa_func.entry_block if hasattr(ssa_func, 'entry_block') else None
+    if func_entry == 119:  # func_0119 has entry block 119
+        print(f"DEBUG variables.py: Processing func with entry 119, name={func_name}, func_block_ids={func_block_ids}", file=sys.stderr)
+
     for block_id in func_block_ids:
         block_exprs = format_block_expressions(ssa_func, block_id, formatter=formatter)
+
+        # DEBUG: Log all expressions that mention local_1
+        for expr in block_exprs:
+            if "local_1" in expr.text:
+                print(f"DEBUG variables.py: Expression mentions local_1: '{expr.text}'", file=sys.stderr)
+
         for expr in block_exprs:
             # Extract address-of references: &varname
             # These are the most common cause of undeclared variables
             addr_of_vars = re.findall(r'&(\w+)', expr.text)
 
+            # DEBUG: Log address-of variables found
+            if "local_1" in addr_of_vars:
+                print(f"DEBUG variables.py: Found &local_1 in expression: {expr.text}", file=sys.stderr)
+
             for var_name in addr_of_vars:
                 # Skip if already declared
                 if var_name in var_types:
                     continue
-                # Skip param_, data_, local_ (should be handled elsewhere)
+                # Skip param_, data_ (globals and parameters)
+                # Phase 2: DON'T skip local_ - they may only appear as &local_X (address-of)
                 if var_name.startswith('param_') or var_name.startswith('data_'):
                     continue
                 # Skip constants and keywords
@@ -624,20 +692,26 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     continue
 
                 # This is an undeclared variable that needs declaration
-                # Determine type - use int default (AGGRESSIVE FIX 07-08)
-                # DISABLED: All struct inference heuristics cause false positives (Pattern 2)
+                # Phase 2: Check field_tracker struct types FIRST
                 var_type = "int"  # Default
-                # struct_info = inferred_struct_types.get(var_name)
-                # if struct_info and struct_info.confidence >= 0.5:
-                #     var_type = struct_info.struct_type
-                # Check if this is a vector/array-like name pattern (LOW confidence heuristic)
-                # elif var_name in ('vec', 'pos', 'rot', 'dir'):
-                #     var_type = "s_SC_vector"  # Common vector struct
-                # elif 'enum' in var_name.lower():
-                #     var_type = "s_SC_MP_EnumPlayers"  # Common enum struct
+                struct_info = inferred_struct_types.get(var_name)
+                if struct_info and struct_info.source == "field_tracker" and struct_info.confidence >= 0.8:
+                    # Use high-confidence field_tracker types (these are reliable)
+                    var_type = struct_info.struct_type
+                    print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type}", file=sys.stderr)
+                # else: use int default (generic struct inference still disabled due to false positives)
 
                 # Add to var_types
                 var_types[var_name] = var_type
+
+    # Phase 2: Add all high-confidence field_tracker struct types to var_types
+    # These may not have been processed by process_value (e.g., only used as &local_X)
+    for var_name, struct_info in inferred_struct_types.items():
+        if struct_info.source == "field_tracker" and struct_info.confidence >= 0.8:
+            # Only add if not already declared
+            if var_name not in var_types:
+                var_types[var_name] = struct_info.struct_type
+                print(f"DEBUG variables.py: Added field_tracker var {var_name} -> {struct_info.struct_type}", file=sys.stderr)
 
     # FIX (07-04): Generate declarations (multi-dim arrays, 1D arrays, then regular variables)
     declarations = []
@@ -678,7 +752,16 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     for var_name in sorted(var_types.keys()):
         if var_name not in local_arrays and var_name not in multidim_arrays:
             var_type = var_types[var_name]
-            declarations.append(f"{var_type} {var_name}")
+
+            # BUGFIX: Handle array syntax in type string
+            # If var_type contains "[...]", split it properly: "Type[256]" -> "Type var[256]"
+            if "[" in var_type:
+                # Split at first [
+                base_type = var_type[:var_type.index("[")]
+                array_part = var_type[var_type.index("["):]
+                declarations.append(f"{base_type} {var_name}{array_part}")
+            else:
+                declarations.append(f"{var_type} {var_name}")
 
     # CRITICAL FIX (07-08): Post-process to eliminate Pattern 2
     # Remove struct types from tmp* variables that don't have field access

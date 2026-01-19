@@ -9,6 +9,8 @@ switch variables from nearby global variable loads.
 from __future__ import annotations
 
 from typing import Dict, Set, List, Optional
+import logging
+import sys
 
 from ...cfg import CFG
 from ....disasm import opcodes
@@ -22,6 +24,8 @@ from ..analysis.value_trace import (
     _trace_value_to_parameter_field,
     _trace_value_to_global
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _case_has_break(
@@ -237,6 +241,19 @@ def _detect_switch_patterns(
     switches: List[SwitchPattern] = []
     processed_blocks: Set[int] = set()
 
+    # DEBUG: Print blocks around ScriptMain entry (1097)
+    scriptmain_blocks = [bid for bid in cfg.blocks.keys() if 1090 <= cfg.blocks[bid].start <= 1200]
+    scriptmain_in_func = [bid for bid in scriptmain_blocks if bid in func_block_ids]
+    scriptmain_missing = [bid for bid in scriptmain_blocks if bid not in func_block_ids]
+    print(f"DEBUG SWITCH: ScriptMain area blocks (1090-1200): {sorted(scriptmain_blocks)}", file=sys.stderr)
+    print(f"DEBUG SWITCH: ScriptMain blocks in func_block_ids: {sorted(scriptmain_in_func)}", file=sys.stderr)
+    if scriptmain_missing:
+        print(f"DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: {sorted(scriptmain_missing)}", file=sys.stderr)
+        for bid in sorted(scriptmain_missing):
+            if bid in cfg.blocks:
+                block = cfg.blocks[bid]
+                print(f"DEBUG SWITCH:   Block {bid}: start={block.start}, end={block.end}, preds={len(block.predecessors)}", file=sys.stderr)
+
     # Iterate through blocks looking for switch headers
     for block_id in func_block_ids:
         if block_id in processed_blocks:
@@ -246,8 +263,12 @@ def _detect_switch_patterns(
         if not block or not block.instructions:
             continue
 
+        logger.debug(f"Checking block {block_id} for switch pattern (start addr: {block.start})")
+        print(f"DEBUG SWITCH: Checking block {block_id} for switch pattern (start addr: {block.start})", file=sys.stderr)
+
         # Start collecting potential switch cases
         test_var = None
+        test_ssa_value = None  # Track the actual SSA value being tested (for aliasing detection)
         cases: List[CaseInfo] = []
         chain_blocks: List[int] = []
         current_block = block_id
@@ -298,52 +319,68 @@ def _detect_switch_patterns(
                     var_value = equ_inst.inputs[0]
                     const_value = equ_inst.inputs[1]
 
-                    # FIX #3: Filter out float switches - check if constant is a float
-                    # If comparing to 0.0f or other float literals, skip this switch
+                    # FIX #3: Improved float filtering - check if constant is a float
+                    # Message IDs are typically 0-1000, definitely integers
+                    # Only filter if we have strong evidence this is a float switch
                     if const_value.alias and const_value.alias.startswith("data_"):
                         try:
                             offset = int(const_value.alias[5:])
                             if ssa_func.scr and ssa_func.scr.data_segment:
                                 const_raw = ssa_func.scr.data_segment.get_dword(offset * 4)
-                                # Check if this is a float constant by trying to interpret as float
-                                # Common float patterns: 0.0f, 1.0f, etc. have specific bit patterns
-                                # 0.0f = 0x00000000, other small floats have exponent bits set
-                                # For now, check if it's 0 and the previous/next values suggest floats
-                                # Better heuristic: if value is very large (> 1000) it's likely int
-                                # If value is 0-100 and used in other float contexts, might be float
-                                # For safety, check if this appears to be a float comparison
-                                import struct
-                                try:
-                                    float_val = struct.unpack('f', struct.pack('I', const_raw & 0xFFFFFFFF))[0]
-                                    # If the float interpretation makes sense (not NaN, reasonable range)
-                                    # and the integer interpretation doesn't make sense as a switch case,
-                                    # this might be a float switch
-                                    if not (float_val != float_val) and -1000.0 < float_val < 1000.0:
-                                        # Check if this looks like a float literal (e.g., 0.0, 10.5, 11.0)
-                                        # Switch cases are typically small integers (0-20 for message enums)
-                                        if float_val == float(int(float_val)) and 0 <= int(float_val) <= 20:
-                                            # This could be either int or float - ambiguous
-                                            # Don't filter based on this alone
-                                            pass
-                                        elif abs(float_val - round(float_val)) > 0.01:
-                                            # Has decimal part - definitely float, not switch case
-                                            found_equ = False
-                                            break
-                                except:
-                                    pass
+                                logger.debug(f"  Checking constant: data[{offset}] = {const_raw} (0x{const_raw:08X})")
+
+                                # CRITICAL FIX: Integer range check for message IDs
+                                # Message IDs are typically 0-1000, definitely < 10000
+                                # If value is in this range, treat as integer, NOT float
+                                if 0 <= const_raw < 1000:
+                                    logger.debug(f"    -> In message ID range (0-1000), treating as integer")
+                                    # Don't skip this case - it's likely a valid switch case
+                                else:
+                                    # Outside message ID range - might be float
+                                    import struct
+                                    try:
+                                        float_val = struct.unpack('f', struct.pack('I', const_raw & 0xFFFFFFFF))[0]
+                                        logger.debug(f"    As float: {float_val}")
+
+                                        # Check if this is definitely a float by looking for fractional part
+                                        # OR if the value is very large and looks like a float bit pattern
+                                        if not (float_val != float_val):  # Not NaN
+                                            # Has fractional part? Definitely float
+                                            if abs(float_val - round(float_val)) > 0.01:
+                                                logger.debug(f"    -> Detected as float (has decimal part), skipping switch case")
+                                                found_equ = False
+                                                break
+                                            # Large value that doesn't make sense as message ID?
+                                            # Could still be integer constant, so be conservative
+                                            elif const_raw > 100000:
+                                                # Very large value - check if float interpretation is more sensible
+                                                if -10000.0 < float_val < 10000.0:
+                                                    logger.debug(f"    -> Large value with reasonable float interpretation, might be float")
+                                                    # Be conservative - don't filter unless we're sure
+                                    except:
+                                        pass
                         except (ValueError, AttributeError):
                             pass
 
                     # FIX #1: Get variable name - try parameter field FIRST (highest priority)
+                    logger.debug(f"Switch detection: Tracing var_value {var_value.name} (alias: {var_value.alias})")
+                    logger.debug(f"  Producer: {var_value.producer_inst.mnemonic if var_value.producer_inst else 'None'}")
+
                     var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
+                    if var_name:
+                        logger.debug(f"  -> Found parameter field: {var_name}")
 
                     # Then try regular parameter access
                     if not var_name:
                         var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+                        if var_name:
+                            logger.debug(f"  -> Found parameter: {var_name}")
 
                     # Then try global variables
                     if not var_name:
                         var_name = _trace_value_to_global(var_value, formatter)
+                        if var_name:
+                            logger.debug(f"  -> Found global: {var_name}")
 
                     # CRITICAL FIX for Switch Variable Tracking:
                     # If normal tracing failed, use heuristic to find switch variable
@@ -356,18 +393,73 @@ def _detect_switch_patterns(
                         var_name = _find_switch_variable_from_nearby_gcp(
                             ssa_func, current_block, var_value, formatter, func_block_ids
                         )
+                        if var_name:
+                            logger.debug(f"  -> Found via GCP heuristic: {var_name}")
 
                     if not var_name:
                         # Fall back to regular rendering if neither parameter nor global
                         var_name = formatter.render_value(var_value)
+                        logger.debug(f"  -> Fallback to rendered value: {var_name}")
 
                     # Check if first switch or same variable
+                    # CRITICAL FIX: Track SSA value to detect aliasing (different names, same value)
                     if test_var is None:
+                        # First case - establish both variable name and SSA value
                         test_var = var_name
+                        test_ssa_value = var_value
+                        logger.debug(f"  -> Established switch variable: {test_var} (SSA: {var_value.name if hasattr(var_value, 'name') else var_value})")
+                        print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}", file=sys.stderr)
                     elif test_var != var_name:
-                        # Different variable, not part of switch
-                        # Don't process this block, break the loop
-                        break
+                        # Variable name differs - check if it's the same SSA value (aliasing)
+                        # Option 1: Direct SSA value match (same object)
+                        values_match = (var_value == test_ssa_value)
+
+                        # Option 2: Check if both have same SSA name
+                        names_match = False
+                        if hasattr(var_value, 'name') and hasattr(test_ssa_value, 'name'):
+                            names_match = (var_value.name == test_ssa_value.name)
+
+                        logger.debug(f"  -> Variable name changed: {test_var} -> {var_name}")
+                        logger.debug(f"  -> SSA value match: {values_match}, SSA name match: {names_match}")
+                        print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name}", file=sys.stderr)
+                        print(f"DEBUG SWITCH:   SSA value match: {values_match}, SSA name match: {names_match}", file=sys.stderr)
+
+                        if not values_match and not names_match:
+                            # Try to check if they're aliases (both load from same location)
+                            # This handles: first case uses parameter field (LADR->DADR->DCP)
+                            #               later cases use local copy (LCP [sp+418])
+
+                            # Check if one value's producer loads the same as the other
+                            alias_detected = False
+
+                            # Get producers for both values
+                            prod1 = test_ssa_value.producer_inst if hasattr(test_ssa_value, 'producer_inst') else None
+                            prod2 = var_value.producer_inst if hasattr(var_value, 'producer_inst') else None
+
+                            if prod1 and prod2:
+                                # Check if both are memory loads (LCP, GCP, or DCP chain)
+                                prod1_is_load = prod1.mnemonic in ('LCP', 'GCP', 'DCP', 'LADR', 'DADR')
+                                prod2_is_load = prod2.mnemonic in ('LCP', 'GCP', 'DCP', 'LADR', 'DADR')
+
+                                if prod1_is_load and prod2_is_load:
+                                    # Both are loads - they might be loading the same value
+                                    # For now, accept as potential alias (lenient approach)
+                                    logger.debug(f"  -> Both values are memory loads, accepting as potential alias")
+                                    logger.debug(f"     Producer 1: {prod1.mnemonic}, Producer 2: {prod2.mnemonic}")
+                                    alias_detected = True
+
+                            if not alias_detected:
+                                # Truly different variable, not part of switch
+                                logger.debug(f"  -> Different variable (not aliased), breaking chain")
+                                print(f"DEBUG SWITCH: Breaking chain - not aliased", file=sys.stderr)
+                                break
+                            else:
+                                # Aliasing detected - continue chain but keep original var name
+                                logger.debug(f"  -> Aliasing detected, continuing chain with original variable: {test_var}")
+                                print(f"DEBUG SWITCH: Aliasing detected, continuing chain", file=sys.stderr)
+                        else:
+                            logger.debug(f"  -> SSA value match confirmed, continuing chain")
+                            print(f"DEBUG SWITCH: SSA value match, continuing chain", file=sys.stderr)
 
                     # Same variable (or first case), try to extract constant value
                     case_val = None
@@ -426,6 +518,7 @@ def _detect_switch_patterns(
 
         # If we found at least 2 cases, it's a switch
         if len(cases) >= 2:
+            logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
             # Find the exit block - common successor of all case blocks
             # For now, we'll use a simple heuristic: find the most common successor

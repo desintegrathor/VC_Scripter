@@ -17,6 +17,74 @@ from ...expr import ExpressionFormatter
 logger = logging.getLogger(__name__)
 
 
+def _follow_ssa_value_across_blocks(
+    value,
+    ssa_func: SSAFunction,
+    seen_blocks: Optional[Set[int]] = None,
+    max_depth: int = 5
+):
+    """
+    Follow SSA value definition across block boundaries.
+
+    This helper traces an SSA value back to its producer instruction even when
+    the producer is in a different block. This is critical for switch detection
+    where values flow across multiple blocks.
+
+    Pattern handled:
+        Block 1: LADR [sp-4]  -> base_ptr
+                 JMP Block 2
+        Block 2: DADR base_ptr, offset -> field_ptr
+                 JMP Block 3
+        Block 3: DCP field_ptr -> value
+                 EQU value, const
+
+    Args:
+        value: SSA value to trace
+        ssa_func: SSA function containing the value
+        seen_blocks: Set of block IDs already visited (to prevent infinite loops)
+        max_depth: Maximum recursion depth (default: 5)
+
+    Returns:
+        Producer instruction if found, None otherwise
+    """
+    if not value or max_depth <= 0:
+        return None
+
+    if seen_blocks is None:
+        seen_blocks = set()
+
+    # Get producer instruction
+    prod_inst = value.producer_inst
+
+    # If we have a direct producer that's not a PHI, return it
+    if prod_inst and prod_inst.mnemonic != "PHI":
+        logger.debug(f"  _follow_ssa_value_across_blocks: Found producer {prod_inst.mnemonic} at {prod_inst.address} in block {prod_inst.block_id}")
+        return prod_inst
+
+    # Handle PHI nodes - trace backward through predecessors
+    if prod_inst and prod_inst.mnemonic == "PHI":
+        logger.debug(f"  _follow_ssa_value_across_blocks: Following PHI with {len(prod_inst.inputs)} inputs")
+
+        # Avoid revisiting same block
+        if prod_inst.block_id in seen_blocks:
+            logger.debug(f"  _follow_ssa_value_across_blocks: Already visited block {prod_inst.block_id}")
+            return None
+        seen_blocks.add(prod_inst.block_id)
+
+        # Try each PHI input
+        for phi_input in prod_inst.inputs:
+            logger.debug(f"  _follow_ssa_value_across_blocks: Trying PHI input {phi_input.name}")
+            result = _follow_ssa_value_across_blocks(
+                phi_input, ssa_func, seen_blocks, max_depth - 1
+            )
+            if result:
+                return result
+
+    # No producer found through normal means
+    logger.debug(f"  _follow_ssa_value_across_blocks: No producer found for {value.name}")
+    return None
+
+
 @dataclass
 class BoundInfo:
     """Information about loop bounds for array dimension inference."""
@@ -247,45 +315,62 @@ def _trace_value_to_parameter_field(
     visited.add(id(value))
 
     if not value.producer_inst:
+        logger.debug(f"_trace_value_to_parameter_field: value {value.name} has no producer")
         return None
 
     producer = value.producer_inst
+    logger.debug(f"_trace_value_to_parameter_field: value {value.name}, producer {producer.mnemonic} at {producer.address}")
 
     # Pattern: DCP (dereference pointer)
     if producer.mnemonic == "DCP":
         if len(producer.inputs) == 0:
+            logger.debug(f"  DCP has no inputs")
             return None
 
         # The input to DCP is the pointer (result of LADR+DADR)
         ptr_value = producer.inputs[0]
+        logger.debug(f"  DCP input: {ptr_value.name} (alias: {ptr_value.alias})")
 
-        if not ptr_value.producer_inst:
+        # CRITICAL FIX: Use multi-block tracing to find the producer
+        # The ptr_value might come from a different block via PHI or flow
+        ptr_producer = _follow_ssa_value_across_blocks(ptr_value, ssa_func)
+
+        if not ptr_producer:
+            logger.debug(f"  DCP input has no producer - even across blocks")
             return None
 
-        ptr_producer = ptr_value.producer_inst
+        logger.debug(f"  DCP input producer: {ptr_producer.mnemonic} at {ptr_producer.address}")
 
         # Pattern: DADR (add offset to address)
         if ptr_producer.mnemonic == "DADR":
             if len(ptr_producer.inputs) == 0:
+                logger.debug(f"    DADR has no inputs")
                 return None
 
             # Get the field offset from DADR instruction
             field_offset = None
             if ptr_producer.instruction and ptr_producer.instruction.instruction:
                 field_offset = ptr_producer.instruction.instruction.arg1
+                logger.debug(f"    DADR field offset: {field_offset}")
 
             # The input to DADR is the base address (result of LADR)
             base_addr_value = ptr_producer.inputs[0]
+            logger.debug(f"    DADR input: {base_addr_value.name} (alias: {base_addr_value.alias})")
 
-            if not base_addr_value.producer_inst:
+            # CRITICAL FIX: Use multi-block tracing to find the base producer
+            base_producer = _follow_ssa_value_across_blocks(base_addr_value, ssa_func)
+
+            if not base_producer:
+                logger.debug(f"    DADR input has no producer - even across blocks")
                 return None
 
-            base_producer = base_addr_value.producer_inst
+            logger.debug(f"    DADR input producer: {base_producer.mnemonic} at {base_producer.address}")
 
             # Pattern: LADR [sp-4] (load address of parameter)
             if base_producer.mnemonic == "LADR":
                 if base_producer.instruction and base_producer.instruction.instruction:
                     stack_offset = base_producer.instruction.instruction.arg1
+                    logger.debug(f"      LADR stack offset: {stack_offset}")
 
                     # [sp-4] is the first parameter in VC compiler convention
                     # Negative offsets are function parameters
@@ -319,7 +404,11 @@ def _trace_value_to_parameter_field(
                                     if parts:
                                         param_name = parts[-1].rstrip('*')
 
-                            return f"{param_name}->{field_name}"
+                            result = f"{param_name}->{field_name}"
+                            logger.debug(f"      SUCCESS: Detected parameter field access: {result}")
+                            return result
+                        else:
+                            logger.debug(f"      Field offset {field_offset} not in field_map")
 
     # Try to trace through PHI nodes
     if producer.mnemonic == "PHI":

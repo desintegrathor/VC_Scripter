@@ -1107,32 +1107,69 @@ class TypeInferenceEngine:
 
         return param_infos
 
+    def _get_reachable_blocks(self, entry_block_id: int) -> set:
+        """
+        Get all blocks reachable from entry block (i.e., blocks in this function).
+
+        Uses BFS to find all blocks reachable through CFG edges.
+        """
+        import sys
+        reachable = set()
+        queue = [entry_block_id]
+        visited = {entry_block_id}
+
+        while queue:
+            current_id = queue.pop(0)
+            reachable.add(current_id)
+
+            # Get successors from CFG
+            current_block = self.ssa.cfg.blocks.get(current_id)
+            if not current_block:
+                continue
+
+            # Add unvisited successors to queue
+            for succ_id in current_block.successors:
+                if succ_id not in visited:
+                    visited.add(succ_id)
+                    queue.append(succ_id)
+
+        return reachable
+
     def _collect_parameter_values(self, entry_block_id: int) -> List['SSAValue']:
         """
-        Collect parameter values from entry block.
+        Collect parameter values from ALL blocks reachable from entry.
 
+        BUGFIX: Parameters may be loaded anywhere in the function, not just entry block.
+        But we must only scan blocks that belong to THIS function.
         Parameters are loaded via LCP instructions with negative stack offsets.
         """
         param_values = []
         param_offsets = {}  # offset -> SSAValue
 
-        if entry_block_id not in self.ssa.instructions:
-            return []
+        # Get all blocks reachable from entry (i.e., blocks in this function)
+        reachable_blocks = self._get_reachable_blocks(entry_block_id)
 
-        for inst in self.ssa.instructions[entry_block_id]:
-            # LCP with negative offset = parameter load
-            if inst.mnemonic == 'LCP' and inst.instruction:
-                orig_instr = inst.instruction.instruction
-                stack_offset = orig_instr.arg1
+        # Scan all reachable blocks for parameter loads
+        for block_id in reachable_blocks:
+            if block_id not in self.ssa.instructions:
+                continue
 
-                # Handle two's complement for negative offsets
-                if stack_offset >= 0x80000000:
-                    stack_offset = stack_offset - 0x100000000
+            for inst in self.ssa.instructions[block_id]:
+                # LCP with negative offset = parameter load
+                if inst.mnemonic == 'LCP' and inst.instruction:
+                    orig_instr = inst.instruction.instruction
+                    stack_offset = orig_instr.arg1
 
-                # Negative offset = parameter
-                if stack_offset < 0 and inst.outputs:
-                    param_offset = abs(stack_offset)
-                    param_offsets[param_offset] = inst.outputs[0]
+                    # Handle two's complement for negative offsets
+                    if stack_offset >= 0x80000000:
+                        stack_offset = stack_offset - 0x100000000
+
+                    # Negative offset = parameter
+                    if stack_offset < 0 and inst.outputs:
+                        param_offset = abs(stack_offset)
+                        # Only store first occurrence of each offset
+                        if param_offset not in param_offsets:
+                            param_offsets[param_offset] = inst.outputs[0]
 
         # Sort by offset to get parameter order
         sorted_offsets = sorted(param_offsets.keys())
@@ -1185,31 +1222,39 @@ class TypeInferenceEngine:
             Return type string ('void', 'int', 'float', etc.)
         """
         return_values = []
+        has_value_return = False
 
         # Scan all blocks for RET instructions
         for block_id, instructions in self.ssa.instructions.items():
             for inst in instructions:
                 if inst.mnemonic == 'RET':
-                    # Check if RET has inputs (return value)
-                    if inst.inputs:
-                        return_values.append(inst.inputs[0])
+                    # Check RET arg1 to see if it returns a value
+                    if inst.instruction and inst.instruction.instruction:
+                        ret_count = inst.instruction.instruction.arg1
+                        if ret_count > 0:
+                            has_value_return = True
+                            # Try to get the returned value if inputs are tracked
+                            if inst.inputs:
+                                return_values.append(inst.inputs[0])
 
-        # No return values = void function
-        if not return_values:
+        # If ANY RET returns a value, function returns int (not void)
+        if not has_value_return:
             return 'void'
 
-        # Infer types of return values
-        return_types = []
-        for value in return_values:
-            inferred_type = self.get_type_for_variable(value.name)
-            if inferred_type:
-                return_types.append(inferred_type)
+        # Infer types of return values if we have them
+        if return_values:
+            return_types = []
+            for value in return_values:
+                inferred_type = self.get_type_for_variable(value.name)
+                if inferred_type:
+                    return_types.append(inferred_type)
 
-        # Merge return types (find dominant type)
-        if not return_types:
-            return 'int'  # Default
+            # Merge return types (find dominant type)
+            if return_types:
+                return self._merge_types(return_types)
 
-        return self._merge_types(return_types)
+        # Default to int if function returns something but we can't determine type
+        return 'int'
 
     def _merge_types(self, types: List[str]) -> str:
         """

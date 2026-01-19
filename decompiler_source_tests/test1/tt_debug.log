@@ -1,0 +1,533 @@
+DEBUG: Entry point = 1097
+DEBUG: Processing function at 1097, i=14, total_funcs=15
+DEBUG: _init entry=0 end=49 blocks=1
+DEBUG FieldTracker: _init param_0 detected as s_SC_NET_info
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 9 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0050 entry=50 end=79 blocks=5
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0119 entry=119 end=134 blocks=2
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG FieldTracker: t132_0 → local_1->tt_respawntime (offset=4, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG FieldTracker: t132_0 → local_1->tt_respawntime (offset=4, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG: func_0155 entry=155 end=192 blocks=6
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0213 entry=213 end=228 blocks=2
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG FieldTracker: t226_0 → local_1->tt_timelimit (offset=8, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG FieldTracker: t226_0 → local_1->tt_timelimit (offset=8, struct=s_SC_MP_SRV_AtgSettings)
+DEBUG: func_0249 entry=249 end=263 blocks=1
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0264 entry=264 end=293 blocks=3
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0294 entry=294 end=333 blocks=4
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0334 entry=334 end=350 blocks=3
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0355 entry=355 end=497 blocks=10
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0498 entry=498 end=751 blocks=1
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0752 entry=752 end=761 blocks=3
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_0852 entry=852 end=866 blocks=3
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: func_1028 entry=1028 end=1096 blocks=3
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 8 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns
+DEBUG: ScriptMain entry=1097 end=3735 blocks=11
+DEBUG FieldTracker: ScriptMain param_0 detected as s_SC_NET_info
+DEBUG FieldTracker: local_1 detected as s_SC_MP_SRV_AtgSettings (from SC_MP_SRV_GetAtgSettings(*s_SC_MP_SRV_AtgSettings)void)
+DEBUG FieldTracker: local_2 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG FieldTracker: local_285 detected as s_SC_MP_SRV_settings (from SC_MP_GetSRVsettings(*s_SC_MP_SRV_settings)void)
+DEBUG FieldTracker: local_413 detected as s_SC_P_getinfo (from SC_P_GetInfo(unsignedlong,*s_SC_P_getinfo)void)
+DEBUG Propagate: Completed in 1 iterations, tracking 9 struct variables
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t126_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t132_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t162_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=4, field=tt_respawntime
+DEBUG FieldTracker: Found PNT pattern: t168_0 = &local_1.field at offset 4
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t220_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_1, struct=s_SC_MP_SRV_AtgSettings, offset=8, field=tt_timelimit
+DEBUG FieldTracker: Found PNT pattern: t226_0 = &local_1.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t787_0 = &local_2.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_2, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t803_0 = &local_2.field at offset 8
+DEBUG PNT: Rejected - base_var 't959_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1073_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1203_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1213_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1225_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1525_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1535_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: Rejected - base_var 't1572_0' not in var_struct_types ['param_0', 'local_1', '&local_1', 'local_2', '&local_2', 'local_285', '&local_285', 'local_413', '&local_413']
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t2928_0 = &local_413.field at offset 8
+DEBUG PNT: SUCCESS - base=&local_413, struct=s_SC_P_getinfo, offset=8, field=member_id
+DEBUG FieldTracker: Found PNT pattern: t3052_0 = &local_413.field at offset 8
+DEBUG FieldTracker: Scanned 92 DCP instructions, found 18 PNT patterns, 25 DADR patterns

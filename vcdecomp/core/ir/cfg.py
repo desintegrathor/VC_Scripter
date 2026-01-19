@@ -88,6 +88,14 @@ def _resolve_entry_ip(scr: SCRFile, resolver: opcodes.OpcodeResolver) -> int:
 
 
 def build_cfg(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -> CFG:
+    """
+    Build Control Flow Graph from instructions.
+
+    Basic Block Invariant:
+    - Each basic block contains AT MOST ONE control flow instruction (jump/return)
+    - If present, it must be the LAST instruction in the block
+    - This is enforced by making the instruction after ANY jump/return a block leader
+    """
     resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     instructions = scr.code_segment.instructions
     entry_ip = _resolve_entry_ip(scr, resolver)
@@ -97,10 +105,11 @@ def build_cfg(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -
         opcode = instr.opcode
         if resolver.is_jump(opcode):
             leaders.add(instr.arg1)
-            if resolver.is_conditional_jump(opcode):
-                next_addr = instr.address + 1
-                if next_addr < len(instructions):
-                    leaders.add(next_addr)
+            # Add next instruction as leader after ANY jump (not just conditional)
+            # This ensures proper block splitting for consecutive jumps
+            next_addr = instr.address + 1
+            if next_addr < len(instructions):
+                leaders.add(next_addr)
         elif resolver.is_return(opcode):
             next_addr = instr.address + 1
             if next_addr < len(instructions):

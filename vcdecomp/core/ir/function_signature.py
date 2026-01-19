@@ -89,6 +89,10 @@ def detect_function_signature(
     import sys
     debug = False  # Set to True to enable debug output
 
+    # Track if we've seen any RET that returns a value
+    has_value_return = False
+    has_void_return = False
+
     # Scan all instructions in function blocks
     for block_id in func_blocks:
         if block_id not in ssa_func.instructions:
@@ -123,15 +127,16 @@ def detect_function_signature(
                         next_instr = ssa_instrs[i + 1]
                         if next_instr.mnemonic in {"FADD", "FSUB", "FMUL", "FDIV", "FGRE", "FLES", "FEQU"}:
                             is_float = True
+
                     param_accesses[param_offset] = is_float
 
             # Check for RET instruction to detect return type
             elif instr.mnemonic == "RET" and instr.instruction:
                 ret_count = instr.instruction.instruction.arg1
                 if ret_count > 0:
-                    sig.return_type = "int"  # Returns something
+                    has_value_return = True
                 else:
-                    sig.return_type = "int"  # Default to int (may return FALSE/TRUE)
+                    has_void_return = True
 
     # Determine parameter count from maximum offset
     if param_accesses:
@@ -148,6 +153,15 @@ def detect_function_signature(
                 sig.param_types.append(f"float param_{param_index}")
             else:
                 sig.param_types.append(f"int param_{param_index}")
+
+    # Determine return type from RET instructions
+    # If ANY RET returns a value, function returns int
+    # If ALL RET instructions return void, function is void
+    if has_value_return:
+        sig.return_type = "int"
+    elif has_void_return:
+        sig.return_type = "void"
+    # else: default "int" from FunctionSignature init
 
     return sig
 

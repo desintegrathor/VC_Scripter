@@ -1,0 +1,215 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\flori\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\flori\source\repos\VC_Scripter
+configfile: pytest.ini
+plugins: anyio-4.9.0, Faker-37.6.0, datadir-1.8.0, regressions-2.9.1
+collecting ... collected 1 item
+
+vcdecomp/tests/test_validation.py::test_decompilation_validation[tt-turntable] 
+-------------------------------- live log call --------------------------------
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 3: NOT ORPHANED (has 1 predecessors: [1])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_3
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 2 at address 53 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 8 at address 82 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 15 at address 114 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 46: NOT ORPHANED (has 1 predecessors: [44])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_46
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 45 at address 339 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 48: NOT ORPHANED (has 1 predecessors: [46])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_48
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 47 at address 344 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 49 at address 351 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 63 at address 512 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 64 at address 516 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 65 at address 534 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 66 at address 537 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 67 at address 541 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 68 at address 547 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 69 at address 551 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 70 at address 557 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 71 at address 561 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 72 at address 566 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 73 at address 568 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 74 at address 572 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 75 at address 576 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 76 at address 585 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 77 at address 595 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 78 at address 596 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 79 at address 598 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 80 at address 599 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 81 at address 601 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 82 at address 610 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 83 at address 620 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 84 at address 621 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 85 at address 623 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 86 at address 624 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 87 at address 626 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 88 at address 635 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 89 at address 645 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 90 at address 646 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 91 at address 648 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 92 at address 649 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 93 at address 651 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 94 at address 661 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 95 at address 670 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 96 at address 672 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 97 at address 681 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 98 at address 683 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 99 at address 691 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 100 at address 698 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 101 at address 738 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 102 at address 747 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 138 at address 946 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 139 at address 955 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 140 at address 965 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 141 at address 966 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 142 at address 978 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 143 at address 982 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 144 at address 986 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 145 at address 987 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 146 at address 988 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.validation.compiler_wrapper:compiler_wrapper.py:192 Process failed: 
+FAILED                                                                   [100%]
+
+================================== FAILURES ===================================
+_________________ test_decompilation_validation[tt-turntable] _________________
+vcdecomp\tests\test_validation.py:194: in test_decompilation_validation
+    pytest.fail(
+E   Failed: Compilation failed with 0 errors. First error: Unknown
+---------------------------- Captured stdout call -----------------------------
+
+================================================================================
+Testing: test1/tt
+================================================================================
+
+[1/3] Decompiling tt.scr...
+  X Function func_0294 failed: AttributeError
+  X Function func_0355 failed: AttributeError
+  X Function func_1028 failed: AttributeError
+  X Function ScriptMain failed: AttributeError
+OK Decompiled to: C:\Users\flori\AppData\Local\Temp\pytest-of-flori\pytest-12\test_decompilation_validation_0\test1_tt_decompiled.c
+  Functions: 11/15 succeeded
+  Partial decompilation: 4 function(s) failed
+  Size: 4801 bytes
+
+[2/3] Compiling and comparing bytecode...
+
+[3/3] Validation results:
+================================================================================
+Verdict: FAIL
+Original:    decompiler_source_tests\test1\tt.scr
+Decompiled:  C:\Users\flori\AppData\Local\Temp\pytest-of-flori\pytest-12\test_decompilation_validation_0\test1_tt_decompiled.c
+================================================================================
+
+================================================================================
+COMPILATION ERROR ANALYSIS
+================================================================================
+
+Error breakdown: {'syntax': 0, 'semantic': 0, 'type': 0, 'include': 0, 'other': 0}
+Total errors: 0
+
+First 3 errors:
+
+X test1/tt: COMPILATION FAILED
+---------------------------- Captured stderr call -----------------------------
+
+=== FILE COPY DEBUG ===
+Source file: C:\Users\flori\AppData\Local\Temp\pytest-of-flori\pytest-12\test_decompilation_validation_0\test1_tt_decompiled.c
+Source exists: True
+Dest file: C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler\test1_tt_decompiled.c
+Compiler dir: C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler
+After copy - dest exists: True
+Dest file size: 5065 bytes
+======================
+
+
+=== COMPILER EXECUTION DEBUG ===
+FULL COMMAND: ['C:\\Users\\flori\\source\\repos\\VC_Scripter\\original-resources\\compiler\\SCMP.exe', 'test1_tt_decompiled.c', 'test1_tt_decompiled_recompiled.scr', 'test1_tt_decompiled.h']
+COMMAND STRING: C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler\SCMP.exe test1_tt_decompiled.c test1_tt_decompiled_recompiled.scr test1_tt_decompiled.h
+EXECUTABLE: C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler\SCMP.exe
+EXECUTABLE EXISTS: True
+WORKING DIR: C:\Users\flori\source\repos\VC_Scripter\original-resources\compiler
+ENV: None
+================================
+
+
+=== COMPILER EXECUTION RESULT ===
+Return code: 3221225477
+STDOUT: (empty)
+STDERR: (empty)
+=================================
+
+------------------------------ Captured log call ------------------------------
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 3: NOT ORPHANED (has 1 predecessors: [1])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_3
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 2 at address 53 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 8 at address 82 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 15 at address 114 in function func_0050 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 46: NOT ORPHANED (has 1 predecessors: [44])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_46
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 45 at address 339 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:820 [PATTERN1_DEBUG] Block 48: NOT ORPHANED (has 1 predecessors: [46])
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:830 [PATTERN1_DEBUG] EMITTING UNCONDITIONAL GOTO: block_48
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 47 at address 344 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 49 at address 351 in function func_0334 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 63 at address 512 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 64 at address 516 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 65 at address 534 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 66 at address 537 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 67 at address 541 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 68 at address 547 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 69 at address 551 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 70 at address 557 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 71 at address 561 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 72 at address 566 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 73 at address 568 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 74 at address 572 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 75 at address 576 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 76 at address 585 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 77 at address 595 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 78 at address 596 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 79 at address 598 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 80 at address 599 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 81 at address 601 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 82 at address 610 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 83 at address 620 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 84 at address 621 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 85 at address 623 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 86 at address 624 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 87 at address 626 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 88 at address 635 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 89 at address 645 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 90 at address 646 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 91 at address 648 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 92 at address 649 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 93 at address 651 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 94 at address 661 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 95 at address 670 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 96 at address 672 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 97 at address 681 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 98 at address 683 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 99 at address 691 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 100 at address 698 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 101 at address 738 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 102 at address 747 in function func_0498 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 138 at address 946 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 139 at address 955 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 140 at address 965 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 141 at address 966 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 142 at address 978 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 143 at address 982 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 144 at address 986 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 145 at address 987 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.core.ir.structure.orchestrator:orchestrator.py:364 Skipping orphaned block 146 at address 988 in function func_0852 - no predecessors (unreachable code)
+WARNING  vcdecomp.validation.compiler_wrapper:compiler_wrapper.py:192 Process failed:
+============================== warnings summary ===============================
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1428
+  C:\Users\flori\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\config\__init__.py:1428: PytestConfigWarning: Unknown config option: regressions_data_dir
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED vcdecomp/tests/test_validation.py::test_decompilation_validation[tt-turntable] - Failed: Compilation failed with 0 errors. First error: Unknown
+======================== 1 failed, 1 warning in 1.90s =========================

@@ -403,5 +403,12 @@ class Disassembler:
         """
         from vcdecomp.core.ir.function_detector import detect_function_boundaries_v2
 
-        entry_point = self.scr.header.enter_ip
-        return detect_function_boundaries_v2(self.scr, self.resolver, entry_point)
+        # BUGFIX: Use the resolved ScriptMain address from self.functions, not raw enter_ip
+        # self.functions already has the correct ScriptMain address resolved in __init__
+        scriptmain_addr = None
+        for addr, name in self.functions.items():
+            if name == "ScriptMain":
+                scriptmain_addr = addr
+                break
+
+        return detect_function_boundaries_v2(self.scr, self.resolver, scriptmain_addr)

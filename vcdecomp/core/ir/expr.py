@@ -326,6 +326,12 @@ class ExpressionFormatter:
         # Initialize field access tracking
         self._field_tracker = FieldAccessTracker(ssa, func_name=func_name)
         self._field_tracker.analyze()
+        # Phase 2: Transfer field tracker results to formatter's var_struct_types
+        # This enables struct-typed variable declarations for locals
+        for var_name, struct_type in self._field_tracker.var_struct_types.items():
+            # Only store if not already set (preserve existing mappings)
+            if var_name not in self._var_struct_types:
+                self._var_struct_types[var_name] = struct_type
         # Initialize header database for function signatures
         self._header_db = get_header_database()
         # Initialize DataResolver for type-aware data segment reading

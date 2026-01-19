@@ -370,7 +370,12 @@ def get_constant_name(prefix: str, value: int) -> Optional[str]:
 
     table = tables.get(prefix.upper())
     if table:
-        return table.get(value)
+        name = table.get(value)
+        # COMPILATION FIX: Skip GVAR_* constants (not defined in headers)
+        # GVAR_* are documentation-only names, use numeric literals instead
+        if name and name.startswith("GVAR_"):
+            return None
+        return name
     return None
 
 

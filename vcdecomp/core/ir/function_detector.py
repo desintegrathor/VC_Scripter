@@ -77,7 +77,16 @@ def detect_function_boundaries_v2(
 
     # Add entry point if provided
     if entry_point is not None:
-        function_starts.append(entry_point)
+        import sys
+        # BUGFIX: Negative entry points are relative to code end
+        # entry_point=-1097 means 1097 instructions from end
+        if entry_point < 0:
+            actual_entry = len(instructions) + entry_point
+            print(f"DEBUG: Entry point = {entry_point} (resolves to {actual_entry})", file=sys.stderr)
+            function_starts.append(actual_entry)
+        else:
+            print(f"DEBUG: Entry point = {entry_point}", file=sys.stderr)
+            function_starts.append(entry_point)
         logger.debug(f"Entry point at address {entry_point}")
 
     # Add CALL targets as definitive function starts
@@ -98,6 +107,9 @@ def detect_function_boundaries_v2(
     for i, start in enumerate(function_starts):
         # Find FIRST RET that comes after this start
         end = None
+        import sys
+        if start >= 1096:
+            print(f"DEBUG: Processing function at {start}, i={i}, total_funcs={len(function_starts)}", file=sys.stderr)
         for ret_addr in ret_addresses:
             if ret_addr >= start:
                 # This is the first RET after function start

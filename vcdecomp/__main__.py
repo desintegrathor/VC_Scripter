@@ -488,6 +488,11 @@ def cmd_structure(args):
                 # Skip pure read-only data_XXX entries (likely constants)
                 continue
 
+            # COMPILATION FIX: Skip SGI constants (they're #define macros in headers)
+            if usage.source in ("SGI_constant", "SGI_runtime"):
+                # SGI_* names are macros, not variables - skip declaration
+                continue
+
             # Determine type and name
             # FIX 4.4: Improved fallback logic for type inference
             if usage.inferred_type:

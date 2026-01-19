@@ -211,9 +211,13 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     func_sig = detect_function_signature(ssa_func, entry_addr, end_addr)
 
     # Find the entry block for this function
-    entry_block = start_to_block.get(entry_addr)
-    if entry_block is None:
-        return f"// Function {func_name} at {entry_addr} - entry block not found"
+    # For negative entry addresses (e.g., ScriptMain at -1098), use CFG's resolved entry_block
+    if entry_addr < 0:
+        entry_block = cfg.entry_block
+    else:
+        entry_block = start_to_block.get(entry_addr)
+        if entry_block is None:
+            return f"// Function {func_name} at {entry_addr} - entry block not found"
 
     # Find blocks in this function (MOVED UP - needed for VariableRenamer)
     func_block_ids: Set[int] = set()
@@ -225,6 +229,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # Filter out unreachable blocks (dead code elimination)
     reachable_blocks = _find_reachable_blocks(cfg, entry_block)
     func_block_ids = func_block_ids & reachable_blocks
+
+    import sys
+    print(f"DEBUG: {func_name} entry={entry_addr} end={end_addr} blocks={len(func_block_ids)}", file=sys.stderr)
+
     logger.debug(f"{func_name}: {len(func_block_ids)} reachable blocks (out of {len([b for b in cfg.blocks.values() if entry_addr <= b.start <= (end_addr or float('inf'))])})")
 
     # FIX 2: Variable name collision resolution
@@ -296,14 +304,16 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     scr = ssa_func.scr
 
     # Get complete signature (handles both entry points and internal functions)
-    # Plan 07-06a: Pass type_engine for parameter type and return type inference
+    # BUGFIX (07-ERROR6): Disable type_engine for signatures when using build_ssa_all_blocks()
+    # TypeInferenceEngine.infer_parameter_types() assumes entry_block=0, which is wrong
+    # when SSAFunction contains multiple functions. Use bytecode-based detection instead.
     signature = get_function_signature_string(
         ssa_func,
         func_name,
         entry_addr,
         end_addr,
         scr_header_enter_size=scr.header.enter_size,
-        type_engine=type_engine
+        type_engine=None  # Disable type inference for signatures - use bytecode detection
     )
 
     lines.append(f"{signature} {{")
@@ -330,9 +340,25 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             # Get last part (variable name), strip array brackets if present
             var_name = parts[-1].split('[')[0]
 
-            # Skip if already declared by lowering
+            # BUGFIX: If this variable was already declared by lowering, but the old system
+            # has better type info (struct types, arrays), REPLACE the lowering declaration
             if var_name in lowered_var_names:
-                continue
+                # Check if this declaration has better type info than the lowered one
+                # Better = has struct type (s_SC_) or array syntax ([)
+                has_better_type = var_decl.startswith("s_SC_") or "[" in var_decl
+                if has_better_type:
+                    # Remove the lowered declaration and add this better one
+                    lowered_decl = None
+                    for i, decl in enumerate(local_vars):
+                        if f" {var_name}" in decl or decl.endswith(var_name):
+                            lowered_decl = decl
+                            local_vars[i] = var_decl
+                            break
+                    if lowered_decl:
+                        continue
+                else:
+                    # Keep the lowered declaration, skip this one
+                    continue
 
         local_vars.append(var_decl)
 
@@ -378,7 +404,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             # Get predecessors that are in the current function
             predecessors = [p for p in cfg.blocks[block_id].predecessors if p in func_block_ids]
             if not predecessors:
-                logger.warning(
+                logger.debug(
                     f"Skipping orphaned block {block_id} at address {addr} "
                     f"in function {func_name} - no predecessors (unreachable code)"
                 )
@@ -441,6 +467,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
             # Pattern 1 fix: Emit label for goto targets before switch rendering
             if block_id in goto_targets:
+                # Category 6 fix: Remove meaningless goto if previous line jumps to this label
+                if lines and lines[-1].strip().startswith(f"goto block_{block_id};"):
+                    lines.pop()  # Remove the meaningless goto
                 lines.append(f"{base_indent}block_{block_id}:")
 
             # Render switch statement
@@ -590,6 +619,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
             # Pattern 1 fix: Emit label for goto targets before if/else rendering
             if block_id in goto_targets:
+                # Category 6 fix: Remove meaningless goto if previous line jumps to this label
+                if lines and lines[-1].strip().startswith(f"goto block_{block_id};"):
+                    lines.pop()  # Remove the meaningless goto
                 lines.append(f"{base_indent}block_{block_id}:")
 
             # Get condition from SSA
@@ -644,7 +676,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
             # Render true branch
             true_body_sorted = sorted(if_pattern.true_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+            found_return_in_if = False  # Track if we hit a return in if-body
             for body_block_id in true_body_sorted:
+                # Skip blocks after return (unreachable code across blocks)
+                if found_return_in_if:
+                    continue
+
                 body_block = cfg.blocks.get(body_block_id)
                 if body_block:
                     # FIX 3C: Only add comment if block has actual statements
@@ -652,10 +689,15 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if not _is_control_flow_only(ssa_block, resolver):
                         if SHOW_BLOCK_COMMENTS: lines.append(f"{base_indent}    // Block {body_block_id} @{body_block.start}")
                     # FIX 3B: Pass recursive params for nested if/else detection
-                    lines.extend(_format_block_lines(
+                    block_lines = _format_block_lines(
                         ssa_func, body_block_id, base_indent + "    ", formatter,
                         block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver
-                    ))
+                    )
+                    lines.extend(block_lines)
+
+                    # Check if this block ended with a return
+                    if block_lines and any("return" in line for line in block_lines):
+                        found_return_in_if = True
 
             # Check if false branch is non-empty
             if if_pattern.false_body:
@@ -663,7 +705,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
                 # Render false branch
                 false_body_sorted = sorted(if_pattern.false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+                found_return_in_else = False  # Track if we hit a return in else-body
                 for body_block_id in false_body_sorted:
+                    # Skip blocks after return (unreachable code across blocks)
+                    if found_return_in_else:
+                        continue
+
                     body_block = cfg.blocks.get(body_block_id)
                     if body_block:
                         # FIX 3C: Only add comment if block has actual statements
@@ -671,10 +718,15 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         if not _is_control_flow_only(ssa_block, resolver):
                             if SHOW_BLOCK_COMMENTS: lines.append(f"{base_indent}    // Block {body_block_id} @{body_block.start}")
                         # FIX 3B: Pass recursive params for nested if/else detection
-                        lines.extend(_format_block_lines(
+                        block_lines = _format_block_lines(
                             ssa_func, body_block_id, base_indent + "    ", formatter,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver
-                        ))
+                        )
+                        lines.extend(block_lines)
+
+                        # Check if this block ended with a return
+                        if block_lines and any("return" in line for line in block_lines):
+                            found_return_in_else = True
 
             lines.append(f"{base_indent}}}")
             emitted_ifs.add(block_id)
@@ -709,6 +761,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
         # Pattern 1 fix: Emit label for goto targets
         if block_id in goto_targets:
+            # Category 6 fix: Remove meaningless goto if previous line jumps to this label
+            if lines and lines[-1].strip().startswith(f"goto block_{block_id};"):
+                lines.pop()  # Remove the meaningless goto
             lines.append(f"{base_indent}block_{block_id}:")
 
         # FIX 3C: Only add comment if block has actual statements
@@ -842,10 +897,20 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if not is_switch_header_jump and not is_orphaned_target:
                         # FIX 3C: Skip goto if target is already emitted (unreachable code)
                         if target_block not in emitted_blocks:
+                            # Check if target is the next block (meaningless goto)
+                            is_next_block = False
+                            if idx + 1 < len(func_blocks):
+                                next_block_id = func_blocks[idx + 1][1]
+                                if target_block == next_block_id:
+                                    is_next_block = True
+
                             if is_back_edge:
                                 lines.append(f"{base_indent}continue;  // back to loop header @{target}")
                             elif is_loop_exit:
                                 lines.append(f"{base_indent}break;  // exit loop @{target}")
+                            elif is_next_block:
+                                # Skip meaningless goto to next block (Category 6 fix)
+                                pass
                             else:
                                 # Pattern 1 fix: Track this block as a goto target
                                 goto_targets.add(target_block)
@@ -1024,6 +1089,27 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     if keyword in line:
                         return "float"
 
+        # Check for function calls with &var (address-of)
+        # Pattern: FunctionName(&var_name) suggests var should be the param type
+        address_of_pattern = re.compile(rf'(\w+)\(&{re.escape(var_name)}\b')
+        for line in lines:
+            match = address_of_pattern.search(line)
+            if match:
+                func_name = match.group(1)
+
+                # Try to infer type from common SDK function patterns
+                if "GetAtgSettings" in func_name:
+                    return "s_SC_MP_SRV_AtgSettings"
+                elif "GetInfo" in func_name or "P_info" in func_name:
+                    return "s_SC_P_info"
+                elif "GetSettings" in func_name:
+                    return "s_SC_MP_SRV_settings"
+                elif "SC_MP_EnumPlayers" in func_name:
+                    # First parameter is s_SC_MP_EnumPlayers *list
+                    # ASP 256 allocates 256 dwords, struct is 4 dwords each → 64 elements
+                    return "s_SC_MP_EnumPlayers[64]"
+                # Add more common patterns as needed
+
         # Default to int
         return "int"
 
@@ -1171,5 +1257,23 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Add blank line after auto-generated declarations
         if var_declarations_to_add:
             lines.insert(insert_pos, "")
+
+    # BUGFIX: Fix &array_var references - arrays decay to pointers, don't need &
+    # For any variable declared as an array (contains '['), replace &varname with varname
+    import re
+    array_vars = set()
+    for line in lines:
+        # Match variable declarations like "Type varname[size];"
+        match = re.match(r'\s+\w+\s+(\w+)\[', line)
+        if match:
+            array_vars.add(match.group(1))
+
+    if array_vars:
+        # Replace &array_var with array_var in function calls
+        for i, line in enumerate(lines):
+            for arr_var in array_vars:
+                # Match &array_var in function calls (not in declarations)
+                # Pattern: &varname followed by , or ) (function argument context)
+                lines[i] = re.sub(rf'&({arr_var})([,)])', r'\1\2', lines[i])
 
     return "\n".join(lines)

@@ -1,0 +1,9 @@
+DEBUG: Lowering declared: int enum_pl
+DEBUG: Setting local_0 to s_SC_MP_EnumPlayers[64]
+DEBUG: Using confidence=1.0 type s_SC_MP_EnumPlayers[64] for enum_pl (orig: local_0)
+DEBUG: Protecting enum_pl from override (confidence=1.0)
+DEBUG: Protecting enum_pl from override (confidence=1.0)
+DEBUG: Protecting enum_pl from override (confidence=1.0)
+DEBUG: Pattern2 checking: s_SC_MP_EnumPlayers enum_pl[64]
+DEBUG: Pattern2 result: s_SC_MP_EnumPlayers enum_pl[64]
+DEBUG: Replacing lowered decl with better type: s_SC_MP_EnumPlayers enum_pl[64]
