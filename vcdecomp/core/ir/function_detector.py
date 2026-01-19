@@ -103,42 +103,25 @@ def detect_function_boundaries_v2(
     function_starts = sorted(set(function_starts))
     logger.debug(f"Function starts (CALL-based): {function_starts}")
 
-    # Step 4: Pair each start with FIRST RET after it
+    # Step 4: Determine function end boundaries
+    # NEW STRATEGY: Use next function start as boundary instead of first RET.
+    # This prevents functions with early returns from being truncated and
+    # leaving orphaned code that contains switch statements.
     for i, start in enumerate(function_starts):
-        # Find FIRST RET that comes after this start
-        end = None
-        import sys
-        if start >= 1096:
-            print(f"DEBUG: Processing function at {start}, i={i}, total_funcs={len(function_starts)}", file=sys.stderr)
-        for ret_addr in ret_addresses:
-            if ret_addr >= start:
-                # This is the first RET after function start
-                # Check if it's before next function start
-                if i + 1 < len(function_starts):
-                    next_start = function_starts[i + 1]
-                    if ret_addr < next_start:
-                        # RET is within this function
-                        end = ret_addr
-                        break
-                    else:
-                        # RET is after next function start - use next_start - 1
-                        end = next_start - 1
-                        logger.warning(
-                            f"Function at {start} has no RET before next function at {next_start}, "
-                            f"using {end} as end"
-                        )
-                        break
-                else:
-                    # Last function, use this RET
-                    end = ret_addr
-                    break
-
-        if end is None:
-            # No RET found, function extends to end of code
+        # End is just before next function starts, or end of code segment
+        if i + 1 < len(function_starts):
+            end = function_starts[i + 1] - 1
+        else:
+            # Last function extends to end of code segment
             end = len(instructions) - 1
-            logger.warning(
-                f"Function starting at {start} has no RET instruction, "
-                f"extending to end of code at {end}"
+
+        # Validation: Check if function ends with RET instruction
+        end_instr = instructions[end]
+        if end_instr.opcode not in return_opcodes:
+            # Function doesn't end with RET - may have fall-through or be truncated
+            # This is just a warning, not an error (some functions may legitimately not return)
+            logger.debug(
+                f"Function at {start} doesn't end with RET (ends at {end} with {end_instr.opcode})"
             )
 
         # Assign name
