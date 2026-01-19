@@ -17,11 +17,26 @@ from ...expr import ExpressionFormatter
 logger = logging.getLogger(__name__)
 
 
+def _score_producer_quality(inst):
+    """Score instruction quality for PHI resolution - prefer informative sources."""
+    if inst.mnemonic in {'GCP', 'GLD', 'GADR'}:
+        return 100  # Global load - highest priority
+    if inst.mnemonic in {'LCP', 'LADR'}:
+        return 50   # Parameter/local load
+    if inst.mnemonic == 'DCP':
+        return 30   # Pointer dereference (field access)
+    if inst.mnemonic == 'IMOD':
+        return 40   # Modulo expression
+    if inst.mnemonic in {'XCALL', 'CALL'}:
+        return 35   # Function call
+    return 10       # Other (temporaries, arithmetic)
+
+
 def _follow_ssa_value_across_blocks(
     value,
     ssa_func: SSAFunction,
     seen_blocks: Optional[Set[int]] = None,
-    max_depth: int = 5
+    max_depth: int = 15
 ):
     """
     Follow SSA value definition across block boundaries.
@@ -71,18 +86,120 @@ def _follow_ssa_value_across_blocks(
             return None
         seen_blocks.add(prod_inst.block_id)
 
-        # Try each PHI input
+        # Try ALL PHI inputs and pick best producer
+        results = []
         for phi_input in prod_inst.inputs:
             logger.debug(f"  _follow_ssa_value_across_blocks: Trying PHI input {phi_input.name}")
+            # Use copy of seen_blocks to allow exploring all branches
             result = _follow_ssa_value_across_blocks(
-                phi_input, ssa_func, seen_blocks, max_depth - 1
+                phi_input, ssa_func, seen_blocks.copy(), max_depth - 1
             )
             if result:
-                return result
+                score = _score_producer_quality(result)
+                results.append((result, score))
+                logger.debug(f"    -> Found producer {result.mnemonic} (score: {score})")
+
+        if results:
+            # Pick best producer (prefer global/parameter loads over temporaries)
+            best = max(results, key=lambda x: x[1])
+            logger.debug(f"  -> Selected best producer: {best[0].mnemonic}")
+            return best[0]
 
     # No producer found through normal means
     logger.debug(f"  _follow_ssa_value_across_blocks: No producer found for {value.name}")
     return None
+
+
+def _check_ssa_value_equivalence(
+    value1,
+    value2,
+    ssa_func: SSAFunction,
+    max_depth: int = 10
+) -> bool:
+    """
+    Check if two SSA values represent the same semantic variable.
+
+    Handles:
+    - Direct SSA name match (v_123 == v_123)
+    - Both load from same memory location (LCP [sp+4])
+    - Both trace to same PHI node input
+    - Both trace to same parameter field (info->message)
+    - Both trace to same global variable
+
+    Args:
+        value1: First SSA value to compare
+        value2: Second SSA value to compare
+        ssa_func: SSA function containing the values
+        max_depth: Maximum recursion depth (default: 10)
+
+    Returns:
+        True if values represent the same semantic variable, False otherwise
+    """
+    if not value1 or not value2 or max_depth <= 0:
+        return False
+
+    # Direct match
+    if hasattr(value1, 'name') and hasattr(value2, 'name'):
+        if value1.name == value2.name:
+            return True
+
+    # Trace to ultimate producers (through PHIs)
+    prod1 = _follow_ssa_value_across_blocks(value1, ssa_func, max_depth=max_depth)
+    prod2 = _follow_ssa_value_across_blocks(value2, ssa_func, max_depth=max_depth)
+
+    if not prod1 or not prod2:
+        return False
+
+    # Same producer instruction
+    if prod1 == prod2:
+        return True
+
+    # Both load from same stack offset (LCP [sp+4])
+    if prod1.mnemonic == 'LCP' and prod2.mnemonic == 'LCP':
+        if prod1.instruction and prod1.instruction.instruction and \
+           prod2.instruction and prod2.instruction.instruction:
+            if prod1.instruction.instruction.arg1 == prod2.instruction.instruction.arg1:
+                logger.debug(f"    -> SSA equivalence: both LCP from same stack offset {prod1.instruction.instruction.arg1}")
+                return True
+
+    # Both load from same global (GCP/GLD data[X])
+    if prod1.mnemonic in {'GCP', 'GLD'} and prod2.mnemonic in {'GCP', 'GLD'}:
+        if prod1.instruction and prod1.instruction.instruction and \
+           prod2.instruction and prod2.instruction.instruction:
+            if prod1.instruction.instruction.arg1 == prod2.instruction.instruction.arg1:
+                logger.debug(f"    -> SSA equivalence: both load from same global offset {prod1.instruction.instruction.arg1}")
+                return True
+
+    # Both dereference same base pointer (DCP)
+    # Pattern: DCP(DADR(LADR [sp-4], 0)) - both access same field
+    if prod1.mnemonic == 'DCP' and prod2.mnemonic == 'DCP':
+        if len(prod1.inputs) > 0 and len(prod2.inputs) > 0:
+            # Recursively check if the base pointers are equivalent
+            return _check_ssa_value_equivalence(
+                prod1.inputs[0], prod2.inputs[0], ssa_func, max_depth - 1
+            )
+
+    # Check if both trace to DADR (field offset) with same offset
+    if prod1.mnemonic == 'DADR' and prod2.mnemonic == 'DADR':
+        # Check if same field offset
+        if prod1.instruction and prod1.instruction.instruction and \
+           prod2.instruction and prod2.instruction.instruction:
+            if prod1.instruction.instruction.arg1 == prod2.instruction.instruction.arg1:
+                # Same offset, check if base addresses are equivalent
+                if len(prod1.inputs) > 0 and len(prod2.inputs) > 0:
+                    return _check_ssa_value_equivalence(
+                        prod1.inputs[0], prod2.inputs[0], ssa_func, max_depth - 1
+                    )
+
+    # Check if both trace to LADR (parameter address) with same offset
+    if prod1.mnemonic == 'LADR' and prod2.mnemonic == 'LADR':
+        if prod1.instruction and prod1.instruction.instruction and \
+           prod2.instruction and prod2.instruction.instruction:
+            if prod1.instruction.instruction.arg1 == prod2.instruction.instruction.arg1:
+                logger.debug(f"    -> SSA equivalence: both LADR from same parameter offset {prod1.instruction.instruction.arg1}")
+                return True
+
+    return False
 
 
 @dataclass
@@ -98,88 +215,358 @@ def _trace_value_to_function_call(
     ssa_func: SSAFunction,
     value: "SSAValue",
     formatter: "ExpressionFormatter",
-    max_depth: int = 5
+    max_depth: int = 10
 ) -> Optional[str]:
     """
-    FÁZE 1.6: Trace a value back to its producer to check if it's a function call result.
+    PHASE 8B.2: Trace a value back to its producer to check if it's a function call result.
+
+    Enhanced to search across blocks for XCALL/CALL patterns.
 
     Pattern to detect:
     - XCALL/CALL instruction
     - Followed by LLD [sp+307] (load return value)
-    - Value used in condition or assignment
+    - Value used in condition or assignment (possibly across blocks)
 
     Args:
         ssa_func: SSA function containing the value
         value: SSA value to trace
         formatter: Expression formatter for rendering
-        max_depth: Maximum recursion depth (default: 5)
+        max_depth: Maximum recursion depth (default: 10, increased from 5)
 
     Returns:
-        Function call expression (e.g., "SC_MP_EnumPlayers(...)") if found, None otherwise
+        Function call expression (e.g., "SC_ggi(GVAR_GAMEPHASE)") if found, None otherwise
     """
     if not value or max_depth <= 0:
         return None
 
     # DEBUG
     import sys
-    # print(f"DEBUG _trace_value_to_function_call: value={value.name}, has_producer={value.producer_inst is not None}", file=sys.stderr)
+    import os
+    debug = os.environ.get('VCDECOMP_SWITCH_DEBUG') == '1'
 
-    # Check if this value came from LLD instruction
+    # Check if this value came from any instruction
     if not value.producer_inst:
         return None
 
     producer = value.producer_inst
-    # print(f"DEBUG producer: mnemonic={producer.mnemonic}, addr={producer.address}", file=sys.stderr)
+
+    # Direct XCALL/CALL result (rare but possible)
+    if producer.mnemonic in {"XCALL", "CALL"}:
+        return _format_xcall_expression(producer, formatter, ssa_func)
+
+    # NEW PHASE 8B.2: Check if producer is LCP (stack reload pattern)
+    # This indicates the value was stored to stack and is being reloaded,
+    # which is common when function call results are used across blocks
+    if producer.mnemonic == "LCP":
+        # Extract stack offset from LCP instruction
+        stack_offset = None
+        if producer.instruction and producer.instruction.instruction:
+            stack_offset = producer.instruction.instruction.arg1
+
+        # Search current block and predecessors for XCALL+LLD pattern
+        xcall_lld = _find_xcall_with_lld_in_predecessors(
+            block_id=producer.block_id,
+            stack_offset=stack_offset,
+            ssa_func=ssa_func,
+            max_depth=5  # Increased search depth for cross-block patterns
+        )
+
+        if xcall_lld:
+            xcall_inst, lld_inst = xcall_lld
+            return _format_xcall_expression(xcall_inst, formatter, ssa_func)
 
     # Pattern: LLD [sp+307] loads return value from stack
     # This is the standard return value slot after CALL/XCALL
     if producer.mnemonic == "LLD":
-        # Check if LLD is loading from sp+307 (return value slot)
-        if producer.instruction and producer.instruction.instruction:
-            load_offset = producer.instruction.instruction.arg1
-            # sp+307 is the return value slot (stack pointer + 307 * 4 bytes typically)
-            # But we also need to check if there's a recent CALL/XCALL before this LLD
+        # Look backwards in the same block for CALL/XCALL
+        block_id = producer.block_id
+        block_instructions = ssa_func.instructions.get(block_id, [])
 
-            # Look backwards in the same block for CALL/XCALL
-            block_id = producer.block_id
-            block_instructions = ssa_func.instructions.get(block_id, [])
+        # Find the LLD instruction index
+        lld_index = None
+        for idx, inst in enumerate(block_instructions):
+            if inst.address == producer.address:
+                lld_index = idx
+                break
 
-            # Find the LLD instruction index
-            lld_index = None
-            for idx, inst in enumerate(block_instructions):
-                if inst.address == producer.address:
-                    lld_index = idx
-                    break
-
-            if lld_index is None:
-                return None
-
+        if lld_index is not None:
             # Look backwards for CALL/XCALL (should be immediately before or within a few instructions)
             for idx in range(lld_index - 1, max(0, lld_index - 5), -1):
                 prev_inst = block_instructions[idx]
                 if prev_inst.mnemonic in {"CALL", "XCALL"}:
-                    # Found the function call! Format it using the expression formatter
-                    # The formatter already knows how to render CALL/XCALL with arguments
-                    try:
-                        from ...expr import format_instruction
-                        call_expr = format_instruction(prev_inst, formatter)
-                        # Extract just the call part (remove semicolon if present)
-                        if call_expr.endswith(";"):
-                            call_expr = call_expr[:-1].strip()
-                        return call_expr
-                    except:
-                        # Fallback: just return a placeholder
-                        if prev_inst.mnemonic == "XCALL":
-                            return f"func_{prev_inst.address}(...)"
-                        else:
-                            return f"func_{prev_inst.address}(...)"
+                    return _format_xcall_expression(prev_inst, formatter, ssa_func)
 
-    # If not direct LLD, check if value came from PHI that might wrap LLD
-    if producer.mnemonic == "PHI" and len(producer.inputs) == 1:
-        # Single-input PHI, trace through it
-        return _trace_value_to_function_call(ssa_func, producer.inputs[0], formatter, max_depth - 1)
+    # NEW PHASE 8B.2: Trace through PHI nodes more thoroughly
+    if producer.mnemonic == "PHI":
+        # Try all PHI inputs, prioritize XCALL/CALL results
+        for phi_input in producer.inputs:
+            result = _trace_value_to_function_call(ssa_func, phi_input, formatter, max_depth - 1)
+            if result:
+                if debug:
+                    logger.debug(f"  -> Traced function call through PHI: {result}")
+                return result
+
+    # NEW PHASE 8B.2: Follow SSA value across blocks to find XCALL
+    # This handles cases where the value flows through multiple blocks
+    if max_depth > 0:
+        visited = set()
+        to_visit = [(value, 0)]
+
+        while to_visit:
+            current_val, depth = to_visit.pop(0)
+
+            if depth > max_depth or id(current_val) in visited:
+                continue
+
+            visited.add(id(current_val))
+
+            if current_val.producer_inst:
+                prod = current_val.producer_inst
+
+                # Found XCALL/CALL?
+                if prod.mnemonic in {"XCALL", "CALL"}:
+                    return _format_xcall_expression(prod, formatter, ssa_func)
+
+                # Follow LLD backward to XCALL in same block
+                if prod.mnemonic == "LLD":
+                    block_instructions = ssa_func.instructions.get(prod.block_id, [])
+                    lld_idx = None
+                    for idx, inst in enumerate(block_instructions):
+                        if inst.address == prod.address:
+                            lld_idx = idx
+                            break
+
+                    if lld_idx is not None:
+                        for idx in range(lld_idx - 1, max(0, lld_idx - 5), -1):
+                            prev_inst = block_instructions[idx]
+                            if prev_inst.mnemonic in {"CALL", "XCALL"}:
+                                return _format_xcall_expression(prev_inst, formatter, ssa_func)
+
+                # Follow SSA inputs
+                if hasattr(prod, 'inputs') and prod.inputs:
+                    for inp in prod.inputs:
+                        to_visit.append((inp, depth + 1))
 
     return None
+
+
+def _find_xcall_with_lld_in_predecessors(
+    block_id: int,
+    stack_offset: Optional[int],
+    ssa_func: SSAFunction,
+    max_depth: int = 3,
+    visited: Optional[Set[int]] = None
+) -> Optional[tuple]:
+    """
+    Search for XCALL+LLD pattern in current block and predecessors.
+
+    This function searches for the pattern where a function call (XCALL/CALL) is followed
+    by an LLD instruction that loads the return value from the stack. This pattern often
+    spans multiple blocks in the Vietcong compiler output.
+
+    Pattern to detect:
+        XCALL/CALL ...         # Function call
+        LLD [sp+offset]        # Load return value (within 1-3 instructions)
+
+    The cross-block pattern:
+        Block N:
+            XCALL SC_ggi       # Call function
+            LLD [sp+419]       # Load return value
+            JMP Block N+1
+        Block N+1:
+            LCP [sp+419]       # Reload value from stack
+            EQU                # Use in comparison
+
+    Args:
+        block_id: Current block ID to search
+        stack_offset: Expected stack offset for LLD (if known), or None to accept any
+        ssa_func: SSA function containing the blocks
+        max_depth: Maximum recursion depth for predecessor search (default: 3)
+        visited: Set of visited block IDs to prevent cycles
+
+    Returns:
+        Tuple of (xcall_inst, lld_inst) if pattern found, None otherwise
+    """
+    import sys
+    import os
+
+    debug = os.environ.get('VCDECOMP_SWITCH_DEBUG') == '1'
+
+    if visited is None:
+        visited = set()
+
+    # Prevent cycles
+    if block_id in visited or max_depth <= 0:
+        return None
+    visited.add(block_id)
+
+    # Get instructions for current block
+    if block_id not in ssa_func.instructions:
+        return None
+
+    block_instructions = ssa_func.instructions[block_id]
+
+    # Search current block for XCALL+LLD pattern
+    for i, inst in enumerate(block_instructions):
+        if inst.mnemonic in {"CALL", "XCALL"}:
+            # Look ahead 1-3 instructions for LLD
+            for j in range(i + 1, min(i + 4, len(block_instructions))):
+                next_inst = block_instructions[j]
+                if next_inst.mnemonic == "LLD":
+                    # Found XCALL+LLD pattern
+                    if stack_offset is None:
+                        # Accept any LLD after XCALL
+                        if debug:
+                            print(f"[XCALL] Found XCALL+LLD in block {block_id}: "
+                                  f"XCALL@{inst.address}, LLD@{next_inst.address}",
+                                  file=sys.stderr)
+                        return (inst, next_inst)
+                    else:
+                        # Verify LLD loads from expected stack offset
+                        if next_inst.instruction and next_inst.instruction.instruction:
+                            lld_offset = next_inst.instruction.instruction.arg1
+                            if lld_offset == stack_offset:
+                                if debug:
+                                    print(f"[XCALL] Found XCALL+LLD in block {block_id}: "
+                                          f"XCALL@{inst.address}, LLD@{next_inst.address}, offset={stack_offset}",
+                                          file=sys.stderr)
+                                return (inst, next_inst)
+
+    # Pattern not found in current block, search predecessors
+    if hasattr(ssa_func, 'cfg') and ssa_func.cfg:
+        cfg = ssa_func.cfg
+        # Get predecessors of current block from the CFG
+        if block_id in cfg.blocks:
+            current_block = cfg.blocks[block_id]
+            predecessors = list(current_block.predecessors)
+
+            # Recursively search predecessors
+            for pred_id in predecessors:
+                result = _find_xcall_with_lld_in_predecessors(
+                    pred_id, stack_offset, ssa_func, max_depth - 1, visited
+                )
+                if result:
+                    return result
+
+    return None
+
+
+def _format_xcall_expression(xcall_inst, formatter: "ExpressionFormatter", ssa_func: SSAFunction) -> Optional[str]:
+    """
+    PHASE 8B.2: Format XCALL/CALL instruction as C function call expression.
+
+    Extracts function name and arguments from XCALL instruction to produce
+    a readable expression like "SC_ggi(GVAR_GAMEPHASE)" or "SC_NOD_Get(100, 1)".
+
+    Args:
+        xcall_inst: XCALL or CALL SSA instruction
+        formatter: Expression formatter for rendering arguments
+        ssa_func: SSA function containing the instruction
+
+    Returns:
+        Formatted function call string, or None if formatting fails
+    """
+    import sys
+    import os
+
+    debug = os.environ.get('VCDECOMP_SWITCH_DEBUG') == '1'
+
+    try:
+        # Try using the formatter's _format_call method if available
+        if hasattr(formatter, '_format_call'):
+            call_expr = formatter._format_call(xcall_inst)
+            # Extract just the call part (remove semicolon if present)
+            if call_expr.endswith(";"):
+                call_expr = call_expr[:-1].strip()
+            if debug:
+                logger.debug(f"  -> Formatted XCALL via _format_call: {call_expr}")
+            return call_expr
+
+        # Fallback: Manual formatting
+        # Get function name from XCALL instruction
+        func_name = None
+        if xcall_inst.mnemonic == "XCALL":
+            # External function call - should have XFN index
+            if hasattr(xcall_inst, 'xfn_index') and xcall_inst.xfn_index is not None:
+                # Resolve XFN name from script
+                if ssa_func.scr and hasattr(ssa_func.scr, 'xfn_table'):
+                    xfn_table = ssa_func.scr.xfn_table
+                    if xcall_inst.xfn_index < len(xfn_table):
+                        func_name = xfn_table[xcall_inst.xfn_index].name
+        elif xcall_inst.mnemonic == "CALL":
+            # Internal function call
+            func_name = f"func_{xcall_inst.instruction.instruction.arg1}"
+
+        if not func_name:
+            # Last resort: generic name
+            func_name = f"func_{xcall_inst.address}"
+
+        # Extract arguments from instruction inputs
+        args = []
+        if hasattr(xcall_inst, 'inputs') and xcall_inst.inputs:
+            for arg_value in xcall_inst.inputs:
+                arg_str = _format_argument(arg_value, formatter, ssa_func)
+                args.append(arg_str)
+
+        result = f"{func_name}({', '.join(args)})"
+        if debug:
+            logger.debug(f"  -> Formatted XCALL manually: {result}")
+        return result
+
+    except Exception as e:
+        # Fallback on error
+        import sys
+        import os
+        debug = os.environ.get('VCDECOMP_SWITCH_DEBUG') == '1'
+        if debug:
+            print(f"[XCALL] _format_xcall_expression failed: {e}", file=sys.stderr)
+
+        # Return generic function call
+        if xcall_inst.mnemonic == "XCALL":
+            return f"func_{xcall_inst.address}(...)"
+        else:
+            return f"func_{xcall_inst.address}(...)"
+
+
+def _format_argument(arg_value, formatter: "ExpressionFormatter", ssa_func: SSAFunction) -> str:
+    """
+    PHASE 8B.2: Format a single function argument value.
+
+    Attempts to resolve constants to their named equivalents (e.g., GVAR_GAMEPHASE instead of 500).
+
+    Args:
+        arg_value: SSA value representing the argument
+        formatter: Expression formatter
+        ssa_func: SSA function containing the value
+
+    Returns:
+        Formatted argument string
+    """
+    # Check if it's a constant value from data segment
+    if hasattr(arg_value, 'alias') and arg_value.alias and arg_value.alias.startswith("data_"):
+        try:
+            offset = int(arg_value.alias[5:])
+            # Try to get the constant value
+            if ssa_func.scr and ssa_func.scr.data_segment:
+                const_value = ssa_func.scr.data_segment.get_dword(offset * 4)
+
+                # Check if this constant has a known name (like GVAR_GAMEPHASE)
+                # This would require a constant name database - for now just return the value
+                return str(const_value)
+        except (ValueError, AttributeError):
+            pass
+
+    # Try to render using formatter
+    if hasattr(formatter, 'render_value'):
+        return formatter.render_value(arg_value)
+
+    # Fallback: use alias or name
+    if hasattr(arg_value, 'alias') and arg_value.alias:
+        return arg_value.alias
+    if hasattr(arg_value, 'name'):
+        return arg_value.name
+
+    return "?"
 
 
 def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) -> Optional[str]:
@@ -420,31 +807,40 @@ def _trace_value_to_parameter_field(
     return None
 
 
-def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: SSAFunction) -> Optional[str]:
+def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: SSAFunction, max_depth: int = 5) -> Optional[str]:
     """
-    Trace an SSA value back to its parameter source.
+    PHASE 8B.3: Trace an SSA value back to its parameter source.
 
-    If value comes from LCP (load from stack parameter), return the parameter field access.
+    Enhanced to handle negative stack offsets (function parameters).
+
+    If value comes from LCP (load from stack parameter), return the parameter name.
     Otherwise return None.
 
     Pattern:
-        LCP [sp+offset] -> produces value
-        We want to return the parameter field access for that offset.
+        LCP [sp+offset] -> produces value (positive offset: local variable or param)
+        LCP [sp-offset] -> produces value (negative offset: function parameter)
 
     For ScriptMain(s_SC_NET_info *info):
         LCP [sp+306] = info->message (offset 0 in s_SC_NET_info)
         LCP [sp+310] = info->param1  (offset 4 in s_SC_NET_info)
         etc.
 
+    For GetAttackingSide(dword main_phase, dword attacking_side):
+        LCP [sp+4]  = main_phase (first parameter)
+        LCP [sp+8]  = attacking_side (second parameter)
+        LCP [sp-4]  = first parameter (alternative calling convention)
+        LCP [sp-8]  = second parameter (alternative calling convention)
+
     Args:
         value: SSA value to trace
         formatter: Expression formatter (may have _func_signature and _param_names)
         ssa_func: SSA function containing the value
+        max_depth: Maximum recursion depth for tracing (default: 5)
 
     Returns:
-        Parameter field access string (e.g., "info->message") if found, None otherwise
+        Parameter name string (e.g., "param_1", "attacking_side") if found, None otherwise
     """
-    if not value:
+    if not value or max_depth <= 0:
         return None
 
     if not value.producer_inst:
@@ -454,8 +850,12 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
 
     # Check if producer is LCP (load from stack/parameter)
     if producer.mnemonic == "LCP":
-        if producer.instruction and producer.instruction.instruction:
-            stack_offset = producer.instruction.instruction.arg1
+        stack_offset = _extract_stack_offset(producer)
+
+        if stack_offset is not None:
+            # PHASE 8B.3: Handle both positive and negative stack offsets
+            # Negative offsets are function parameters in some calling conventions
+            # Positive offsets can be local variables or parameters depending on context
 
             # Heuristic: if offset is in range 306-326, likely s_SC_NET_info parameter
             # This is a common pattern in VC scripts for ScriptMain function
@@ -489,13 +889,80 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
 
                 return f"{param_name}->{field_name}"
 
+            # PHASE 8B.3: Handle negative offsets (parameters)
+            if stack_offset < 0:
+                # Negative offset indicates function parameter
+                # Map to param_N based on absolute offset
+                # Typically parameters are at -4, -8, -12, etc. (4-byte aligned)
+                param_index = (abs(stack_offset) // 4) - 1  # -4 → param_0, -8 → param_1
+                if param_index >= 0:
+                    return f"param_{param_index}"
+
+            # PHASE 8B.3: Handle positive offsets for parameters (alternative convention)
+            # In VC compiler, parameters can also be at positive offsets like +4, +8, +12
+            # Typically local variables start at higher offsets (300+)
+            if 0 < stack_offset < 100:  # Likely parameter range
+                # Parameters are typically at +4, +8, +12, etc.
+                param_index = (stack_offset // 4) - 1  # +4 → param_0, +8 → param_1
+                if param_index >= 0:
+                    return f"param_{param_index}"
+
             # Fallback: check if this is a simple parameter load
-            # Parameters are typically at positive stack offsets in VC compiler
             # Try to use parameter name mapping if available
             if hasattr(formatter, '_param_names'):
                 param_name = formatter._param_names.get(stack_offset)
                 if param_name:
                     return param_name
+
+    # PHASE 8B.3: Trace through PHI nodes if producer is PHI
+    if producer.mnemonic == "PHI" and max_depth > 0:
+        for phi_input in producer.inputs:
+            result = _trace_value_to_parameter(phi_input, formatter, ssa_func, max_depth - 1)
+            if result:
+                return result
+
+    return None
+
+
+def _extract_stack_offset(lcp_inst) -> Optional[int]:
+    """
+    PHASE 8B.3: Extract numeric stack offset from LCP instruction.
+
+    Handles both positive and negative offsets.
+
+    Args:
+        lcp_inst: LCP instruction
+
+    Returns:
+        int: Stack offset (positive or negative)
+        None: If offset cannot be determined
+    """
+    if not lcp_inst or lcp_inst.mnemonic != "LCP":
+        return None
+
+    # Try to extract from instruction argument
+    if hasattr(lcp_inst, 'instruction') and lcp_inst.instruction:
+        if hasattr(lcp_inst.instruction, 'instruction') and lcp_inst.instruction.instruction:
+            # Get arg1 which contains the stack offset
+            offset = lcp_inst.instruction.instruction.arg1
+
+            # Handle signed integers (Python's ctypes or similar)
+            # If offset is > 0x7FFFFFFF, it's a negative number in two's complement
+            if offset > 0x7FFFFFFF:
+                # Convert to negative
+                offset = offset - 0x100000000
+
+            return offset
+
+    # Alternative: check if offset is stored directly
+    if hasattr(lcp_inst, 'offset'):
+        return lcp_inst.offset
+
+    # Try examining inputs for constant offset
+    if hasattr(lcp_inst, 'inputs') and lcp_inst.inputs and len(lcp_inst.inputs) > 0:
+        offset_val = lcp_inst.inputs[0]
+        if hasattr(offset_val, 'constant'):
+            return offset_val.constant
 
     return None
 
