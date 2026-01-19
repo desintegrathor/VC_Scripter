@@ -21,10 +21,14 @@ def _is_likely_float(val: int) -> bool:
         True if value looks like a float
     """
     import struct
+    import math
 
-    # Special cases: common integer values should NOT be floats
-    # 0, 1, -1, small integers are almost never intended as floats
-    if val in [0, 1, 2, 3, 4, 5, 0xFFFFFFFF]:  # Common int values
+    # FIXED: Allow 0 as 0.0f (valid float constant)
+    # Removed exclusion: if val == 0: return False
+
+    # FIXED: Narrowed range exclusion from [0,1,2,3,4,5] to [1,2,3,4,5]
+    # This allows 0.0f while still filtering very small integers
+    if val in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0xFFFFFFFF]:  # Common small int values
         return False
 
     # Convert to float and check if it's a reasonable value
@@ -32,21 +36,33 @@ def _is_likely_float(val: int) -> bool:
         f = struct.unpack('<f', struct.pack('<I', val))[0]
 
         # Filter out NaN and Inf
-        if f != f or abs(f) > 1e30:  # NaN or Inf
+        if math.isnan(f) or math.isinf(f):
             return False
 
-        # Only consider it a float if:
-        # 1. It's a reasonable range (not tiny denormal)
-        # 2. It looks like a float value (has decimal or exponent)
-        if abs(f) < 1e-10 and f != 0.0:  # Too small (denormal)
+        # Rozumný rozsah pro herní konstanty
+        if abs(f) > 1e6 or (abs(f) < 1e-6 and f != 0.0):
             return False
 
-        str_repr = str(f)
-        # Must have decimal point AND reasonable magnitude
-        if '.' in str_repr and (abs(f) >= 0.1 or f == 0.0):
+        # Kontrola zda je to "hezká" hodnota
+        # Celá čísla nebo hodnoty s max 2 desetinnými místy
+        if f == int(f):
             return True
 
-    except:
+        # Hodnoty jako 0.5, 0.25, 0.75, 1.5, etc.
+        rounded = round(f, 2)
+        if abs(f - rounded) < 1e-5:
+            return True
+
+        # FIXED: Expanded common_floats to include more whole number floats
+        # Added: 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 100.0 explicitly
+        common_floats = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+                        1.0, 1.1, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0,
+                        10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 100.0,
+                        0.05, 0.075, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65}
+        if rounded in common_floats or round(f, 3) in common_floats:
+            return True
+
+    except (struct.error, OverflowError):
         pass
 
     return False
@@ -64,8 +80,24 @@ def _format_float(val: int) -> str:
     """
     import struct
     f = struct.unpack('<f', struct.pack('<I', val))[0]
-    # Format with 'f' suffix for C compatibility
-    return f"{f}f"
+
+    # FIXED: Handle 0.0f explicitly
+    if f == 0.0:
+        return "0.0f"
+
+    if f == int(f):
+        return f"{int(f)}.0f"
+
+    # FIXED: Increased precision from default to 6 decimal places
+    rounded = round(f, 6)
+    if rounded == int(rounded):
+        return f"{int(rounded)}.0f"
+
+    # FIXED: Add scientific notation for extreme values
+    if abs(f) >= 1e4 or (abs(f) < 1e-3 and f != 0.0):
+        return f"{f:.6e}f"
+
+    return f"{rounded}f"
 
 
 class DataResolver:
@@ -192,8 +224,10 @@ class DataResolver:
         # Integer types (int, dword, void*, BOOL, etc.)
         val = self.data_segment.get_dword(byte_offset)
 
-        # Heuristic float detection (for 'unknown' type)
-        if type_hint == 'unknown' and _is_likely_float(val):
+        # FIXED (Phase 1): Heuristic float detection for 'unknown' AND 'int' types
+        # Many float constants are initially inferred as 'int' by type inference,
+        # but we should still check if they look like floats based on IEEE 754 representation
+        if type_hint in ('unknown', 'int', 'dword', 'unsignedlong') and _is_likely_float(val):
             return _format_float(val)
 
         # Signed conversion for negative integers

@@ -42,11 +42,12 @@ def _is_likely_float(val: int) -> bool:
     - Float hodnota musí být "hezká" (celé číslo, nebo malý počet desetinných míst)
     - Vyloučíme hodnoty které vypadají jako adresy nebo flagy
     """
-    if val == 0:
-        return False  # 0 je 0 jako int i float
+    # FIXED: Allow 0 as 0.0f (valid float constant)
+    # Removed exclusion: if val == 0: return False
 
-    # Vyloučíme malá celá čísla (0-1000) - ty jsou spíše int
-    if 0 < val < 1000:
+    # FIXED: Narrowed range exclusion from 0-1000 to 0-10
+    # This allows common whole number floats like 10.0f, 30.0f, 60.0f, 100.0f
+    if 0 < val < 10:
         return False
 
     # Vyloučíme hodnoty které vypadají jako adresy (zarovnané na 4)
@@ -74,10 +75,11 @@ def _is_likely_float(val: int) -> bool:
         if abs(f - rounded) < 1e-5:
             return True
 
-        # Speciální hodnoty často používané v hrách
+        # FIXED: Expanded common_floats to include more whole number floats
+        # Added: 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 100.0 explicitly
         common_floats = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
                         1.0, 1.1, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0,
-                        10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 100.0,
+                        10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 100.0,
                         0.05, 0.075, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65}
         if rounded in common_floats or round(f, 3) in common_floats:
             return True
@@ -91,12 +93,23 @@ def _is_likely_float(val: int) -> bool:
 def _format_float(val: int) -> str:
     """Formátuje int hodnotu jako float literal."""
     f = struct.unpack('<f', struct.pack('<I', val & 0xFFFFFFFF))[0]
+
+    # FIXED: Handle 0.0f explicitly
+    if f == 0.0:
+        return "0.0f"
+
     if f == int(f):
         return f"{int(f)}.0f"
-    # Zaokrouhlení na rozumný počet desetinných míst
-    rounded = round(f, 4)
+
+    # FIXED: Increased precision from 4 to 6 decimal places
+    rounded = round(f, 6)
     if rounded == int(rounded):
         return f"{int(rounded)}.0f"
+
+    # FIXED: Add scientific notation for extreme values
+    if abs(f) >= 1e4 or (abs(f) < 1e-3 and f != 0.0):
+        return f"{f:.6e}f"
+
     return f"{rounded}f"
 
 
@@ -316,11 +329,13 @@ class ExpressionFormatter:
         # Initialize header database for function signatures
         self._header_db = get_header_database()
         # Initialize DataResolver for type-aware data segment reading
-        if self.data_segment and self._global_type_info:
+        # FIXED (Phase 1): Create DataResolver even if _global_type_info is empty
+        # The DataResolver can still use heuristic float detection for constants
+        if self.data_segment is not None:
             from .data_resolver import DataResolver
             self._data_resolver = DataResolver(
                 self.data_segment,
-                self._global_type_info,
+                self._global_type_info,  # May be empty, that's OK
                 confidence_threshold=0.70
             )
         else:
@@ -2535,21 +2550,11 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                 )
             else:
                 # Return void (RET 0)
-                # Check if function has return values - if yes, return FALSE
-                scr = formatter.ssa.scr if hasattr(formatter, 'ssa') and hasattr(formatter.ssa, 'scr') else None
-                if scr and scr.header.ret_size > 0:
-                    # Function returns a value, but RET 0 - return FALSE
-                    formatted.append(
-                        FormattedExpression(
-                            text="return FALSE;",
-                            address=inst.address,
-                            mnemonic=inst.mnemonic,
-                        )
-                    )
-                else:
-                    # Void return
-                    formatted.append(
-                        FormattedExpression(
+                # BUGFIX (07-ERROR6): RET 0 means the function returns nothing (void).
+                # Don't check scr.header.ret_size - that's for ScriptMain, not this function.
+                # A void function should just have "return;" or nothing (implicit return).
+                formatted.append(
+                    FormattedExpression(
                             text="return;",
                             address=inst.address,
                             mnemonic=inst.mnemonic,
