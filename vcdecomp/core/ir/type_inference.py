@@ -97,17 +97,19 @@ class TypeInferenceEngine:
     Supports aggressive mode which overrides existing type hints.
     """
 
-    def __init__(self, ssa_func: SSAFunction, aggressive: bool = True):
+    def __init__(self, ssa_func: SSAFunction, aggressive: bool = True, field_tracker=None):
         """
         Initialize type inference engine.
 
         Args:
             ssa_func: SSA function to analyze
             aggressive: If True, override all types; if False, only infer missing
+            field_tracker: Optional FieldAccessTracker instance for struct field type inference
         """
         self.ssa = ssa_func
         self.aggressive = aggressive
         self.header_db = get_header_database()
+        self.field_tracker = field_tracker  # Optional FieldAccessTracker for struct accesses
 
         # SSA value name → TypeInfo
         self.type_info: Dict[str, TypeInfo] = {}
@@ -590,10 +592,57 @@ class TypeInferenceEngine:
                 ))
 
     def _infer_from_struct_accesses(self):
-        """Infer types from struct field accesses."""
-        # This requires field tracker integration
-        # TODO: Check if field_tracker has type info for accessed fields
-        pass
+        """
+        Infer types from struct field accesses.
+
+        If a value represents a struct field access (detected by field_tracker),
+        use the field's type from the struct definition.
+
+        Pattern: DCP(PNT(base, offset)) → field type from struct[offset]
+
+        Example:
+            // Before: typ info->master_nod is unknown (void*)
+            void* master = info->master_nod;
+
+            // After: type is derived from struct definition
+            c_Node* master = info->master_nod;  // Because s_SC_OBJ_info.master_nod is c_Node*
+        """
+        if not self.field_tracker:
+            return
+
+        # Import required modules
+        from ..structures import get_struct_by_name
+
+        # Iterate over all tracked field accesses
+        for ssa_value_name, field_access in self.field_tracker.field_map.items():
+            # Get struct definition
+            struct_def = get_struct_by_name(field_access.struct_type)
+            if not struct_def:
+                logger.debug(f"Struct type {field_access.struct_type} not found in registry")
+                continue
+
+            # Get field at the offset
+            field = struct_def.get_field_at_offset(field_access.field_offset)
+            if not field:
+                logger.debug(f"No field at offset {field_access.field_offset} in {field_access.struct_type}")
+                continue
+
+            # Get field type
+            field_type = field.type_name
+
+            # Add evidence for this SSA value
+            info = self._get_or_create_type_info(ssa_value_name)
+            info.add_evidence(TypeEvidence(
+                confidence=0.92,  # High confidence - struct definition is ground truth
+                source=TypeSource.STRUCT_ACCESS,
+                inferred_type=field_type,
+                reason=f'Field {field_access.struct_type}.{field.name} has type {field_type}'
+            ))
+
+            logger.debug(
+                f"Struct access inference: {ssa_value_name} → {field_type} "
+                f"(from {field_access.struct_type}.{field.name})"
+            )
 
     def _infer_from_constants(self):
         """Infer types from constant value ranges."""

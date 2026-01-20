@@ -311,9 +311,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # This refines SSA value.value_type fields with dataflow analysis, enabling
     # accurate type declarations (float/int/struct) instead of generic "dword"
     # ENHANCEMENT (07-06a): Also used for parameter type inference in function signatures
+    # ENHANCEMENT (01-20-26): Pass field_tracker for struct field type inference
     type_engine = None
     try:
-        type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        type_engine = TypeInferenceEngine(
+            ssa_func,
+            aggressive=True,
+            field_tracker=formatter._field_tracker
+        )
         type_engine.integrate_with_ssa_values()
         logger.info(f"Type inference completed for {func_name}")
     except Exception as e:
