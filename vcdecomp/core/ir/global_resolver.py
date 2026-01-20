@@ -541,16 +541,20 @@ class GlobalResolver:
                         # Update global usage with inferred type
                         usage = self.globals[byte_offset]
 
-                        # In aggressive mode, always override
-                        if self.aggressive_typing:
+                        # Only update type if:
+                        # 1. No type set yet, OR
+                        # 2. New type has higher confidence (aggressive mode), OR
+                        # 3. Types are same (update confidence)
+                        should_update = (
+                            not usage.inferred_type or
+                            confidence > usage.type_confidence or
+                            inferred_type == usage.inferred_type
+                        )
+
+                        if should_update:
                             usage.inferred_type = inferred_type
-                            usage.type_confidence = confidence
-                            logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={confidence:.2f})")
-                        # In conservative mode, only set if not already set
-                        elif not usage.inferred_type:
-                            usage.inferred_type = inferred_type
-                            usage.type_confidence = confidence
-                            logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={confidence:.2f})")
+                            usage.type_confidence = max(confidence, usage.type_confidence)
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={usage.type_confidence:.2f})")
 
                         # FIX 4.3: Propagate type from array element to array base
                         # If this is an array element and we inferred its type,
@@ -583,15 +587,79 @@ class GlobalResolver:
 
                         usage = self.globals[byte_offset]
 
-                        # Update type with appropriate mode logic
-                        if self.aggressive_typing:
+                        # Only update type if confidence is higher
+                        should_update = (
+                            not usage.inferred_type or
+                            confidence > usage.type_confidence or
+                            inferred_type == usage.inferred_type
+                        )
+
+                        if should_update:
                             usage.inferred_type = inferred_type
-                            usage.type_confidence = confidence
-                            logger.debug(f"Global {byte_offset}: type={inferred_type} from GST (confidence={confidence:.2f})")
-                        elif not usage.inferred_type:
-                            usage.inferred_type = inferred_type
-                            usage.type_confidence = confidence
-                            logger.debug(f"Global {byte_offset}: type={inferred_type} from GST (confidence={confidence:.2f})")
+                            usage.type_confidence = max(confidence, usage.type_confidence)
+                            logger.debug(f"Global {byte_offset}: type={inferred_type} from GST (confidence={usage.type_confidence:.2f})")
+
+                # ASGN stores value to address - infer global type from stored value
+                if instr.mnemonic == 'ASGN':
+                    # Pattern: FADD/FSUB/... → GADR global_offset → ASGN
+                    # The ASGN stores typed value to global
+                    if len(instr.inputs) < 2:
+                        continue
+
+                    # Check if target is a global address (from GADR)
+                    target_value = instr.inputs[1] if len(instr.inputs) > 1 else instr.inputs[0]
+                    source_value = instr.inputs[0] if len(instr.inputs) > 1 else None
+
+                    if not target_value or not source_value:
+                        continue
+
+                    # Check if target is from GADR (global address)
+                    if target_value.producer_inst and target_value.producer_inst.mnemonic == 'GADR':
+                        gadr_inst = target_value.producer_inst
+                        if gadr_inst.instruction and gadr_inst.instruction.instruction:
+                            dword_offset = gadr_inst.instruction.instruction.arg1
+                            global_byte_offset = dword_offset * 4
+
+                            if global_byte_offset not in self.globals:
+                                continue
+
+                            # Check if source has inferred type
+                            inferred_type = inferred_types.get(source_value.name)
+                            if not inferred_type:
+                                # Check source's producer instruction for float ops
+                                if source_value.producer_inst:
+                                    src_mnemonic = source_value.producer_inst.mnemonic
+                                    if src_mnemonic in {'FADD', 'FSUB', 'FMUL', 'FDIV', 'FNEG', 'frnd', 'ITOF'}:
+                                        inferred_type = 'float'
+                                    elif src_mnemonic in {'IADD', 'ISUB', 'IMUL', 'IDIV'}:
+                                        inferred_type = 'int'
+
+                            if not inferred_type:
+                                continue
+
+                            # Skip void* types
+                            if inferred_type in ['void*', 'void *', 'ptr']:
+                                continue
+
+                            # Get confidence
+                            type_info = self.type_inference.type_info.get(source_value.name)
+                            confidence = 0.9  # High confidence for ASGN pattern
+                            if type_info and type_info.evidence:
+                                confidence = sum(ev.confidence for ev in type_info.evidence) / len(type_info.evidence)
+
+                            usage = self.globals[global_byte_offset]
+
+                            # Only update type if confidence is higher
+                            should_update = (
+                                not usage.inferred_type or
+                                confidence > usage.type_confidence or
+                                inferred_type == usage.inferred_type
+                            )
+
+                            if should_update:
+                                usage.inferred_type = inferred_type
+                                usage.type_confidence = max(confidence, usage.type_confidence)
+                                logger.debug(f"Global {global_byte_offset}: type={inferred_type} from ASGN (confidence={usage.type_confidence:.2f})")
 
     def _infer_struct_definitions(self):
         """

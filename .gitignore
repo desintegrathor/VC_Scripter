@@ -1,12 +1,19 @@
-nul
+# Ignore everything
+*
 
-# Auto Claude data directory
-.auto-claude/
+# But not these files/folders
+!.gitignore
+!vcdecomp/
+!vcdecomp/**
+!README.md
+!CLAUDE.md
+!requirements.txt
+!pyproject.toml
+!setup.py
 
-# Auto Claude generated files
-.auto-claude-security.json
-.auto-claude-status
-.claude_settings.json
-.worktrees/
-.security-key
-logs/security/
+# Always ignore these (even if inside vcdecomp)
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/

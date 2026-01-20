@@ -207,9 +207,10 @@ SC_P_CONSTANTS: Dict[str, Dict[int, str]] = {
         2: "SC_P_AI_BATTLEMODE_RETREAT",
     },
     "AI_MOVEMODE": {
+        # Values from sc_global.h
         0: "SC_P_AI_MOVEMODE_WALK",
-        1: "SC_P_AI_MOVEMODE_RUN",
-        2: "SC_P_AI_MOVEMODE_SNEAK",
+        1: "SC_P_AI_MOVEMODE_AIM",
+        2: "SC_P_AI_MOVEMODE_RUN",
     },
     "AI_MOVEPOS": {
         0: "SC_P_AI_MOVEPOS_STAND",

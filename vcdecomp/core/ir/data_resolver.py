@@ -216,18 +216,28 @@ class DataResolver:
                 return f'&"{escaped}"' if is_address else f'"{escaped}"'
             # Fallback: if no string found, treat as int
 
-        # Float types
-        if 'float' in type_hint.lower():
+        # Float types (but NOT float pointers!)
+        # '*float' is a pointer to float, NOT a float value - check for non-pointer first
+        if 'float' in type_hint.lower() and '*' not in type_hint:
             val = self.data_segment.get_dword(byte_offset)
             return _format_float(val)
+
+        # Pointer types (void*, float*, char* for data, etc.) - pass through as integers
+        # A value of 0 for a pointer type is NULL
+        if '*' in type_hint:
+            val = self.data_segment.get_dword(byte_offset)
+            if val > 0x7FFFFFFF:
+                val = val - 0x100000000
+            return str(val)  # Return as integer (NULL is 0)
 
         # Integer types (int, dword, void*, BOOL, etc.)
         val = self.data_segment.get_dword(byte_offset)
 
-        # FIXED (Phase 1): Heuristic float detection for 'unknown' AND 'int' types
-        # Many float constants are initially inferred as 'int' by type inference,
-        # but we should still check if they look like floats based on IEEE 754 representation
-        if type_hint in ('unknown', 'int', 'dword', 'unsignedlong') and _is_likely_float(val):
+        # FIXED (Phase 3): Heuristic float detection for 'unknown' type ONLY
+        # When type_hint is explicitly 'int', 'dword', etc. (from context or function signature),
+        # we must respect that and NOT override with float heuristic.
+        # Only apply float heuristic when type is truly unknown.
+        if type_hint == 'unknown' and _is_likely_float(val):
             return _format_float(val)
 
         # Signed conversion for negative integers

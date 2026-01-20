@@ -384,7 +384,8 @@ STRUCT_S_SC_MP_RECOVER = StructDef(
 # Registry - all structures by name and size
 # ============================================================================
 
-ALL_STRUCTURES: Dict[str, StructDef] = {
+# Base hardcoded structures (legacy - will be merged with SDK structures)
+_HARDCODED_STRUCTURES: Dict[str, StructDef] = {
     "c_Vector3": STRUCT_C_VECTOR3,
     "s_sphere": STRUCT_S_SPHERE,
     "s_SC_P_info": STRUCT_S_SC_P_INFO,
@@ -405,6 +406,53 @@ ALL_STRUCTURES: Dict[str, StructDef] = {
     "s_SC_MP_EnumPlayers": STRUCT_S_SC_MP_ENUMPAYERS,
     "s_SC_MP_Recover": STRUCT_S_SC_MP_RECOVER,
 }
+
+
+def _load_sdk_structures() -> Dict[str, StructDef]:
+    """
+    Load structure definitions from SDK database.
+
+    Returns:
+        Dictionary of structure name -> StructDef
+    """
+    try:
+        from ..sdk import SDKDatabase
+
+        sdk_db = SDKDatabase()
+        sdk_structs = {}
+
+        for struct_name, sdk_struct in sdk_db.structures.items():
+            # Convert SDK StructDefinition to our StructDef format
+            fields = []
+            for sdk_field in sdk_struct.fields:
+                field = StructField(
+                    offset=sdk_field.offset,
+                    name=sdk_field.name,
+                    type_name=sdk_field.type,
+                    size=sdk_field.size,
+                    is_pointer=sdk_field.type.endswith('*'),
+                    is_array=sdk_field.is_array,
+                    array_count=sdk_field.array_size if sdk_field.is_array else 1
+                )
+                fields.append(field)
+
+            sdk_structs[struct_name] = StructDef(
+                name=struct_name,
+                size=sdk_struct.size,
+                fields=fields
+            )
+
+        return sdk_structs
+    except Exception:
+        # SDK not available, return empty dict
+        return {}
+
+
+# Merge hardcoded structures with SDK structures
+# SDK structures override hardcoded ones if there's a conflict
+ALL_STRUCTURES: Dict[str, StructDef] = _HARDCODED_STRUCTURES.copy()
+_sdk_structures = _load_sdk_structures()
+ALL_STRUCTURES.update(_sdk_structures)  # SDK takes priority
 
 # Map size -> possible structures (for heuristic detection)
 STRUCTURES_BY_SIZE: Dict[int, List[str]] = {}

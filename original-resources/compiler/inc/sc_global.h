@@ -17,7 +17,7 @@
 #define SC_GLOBAL_H 
 
 
-#define _GE_VERSION_		141			// game engine version to compile for
+#define _GE_VERSION_		158			// game engine version to compile for
 
 
 // number of global variables accesed by SC_sgi, SC_ggi, SC_sgf ,SC_ggf and SC_MP_Gvar_SetSynchro functions
@@ -1108,6 +1108,7 @@ typedef struct{
 	float ATG_round_time;
 	float tt_respawntime;
 	float tt_timelimit;
+	float ctf_respawntime;
 }s_SC_MP_SRV_AtgSettings;
 
 
@@ -1227,7 +1228,11 @@ extern void SC_MissionCompleted(void);
 extern void SC_MissionFailed(void);
 extern void SC_MissionFailedEx(dword music_id, dword start_volume);
 extern void SC_MissionDone(void);	// directly switches to next mission
+extern void SC_TheEnd(void);		// used on the end of the game
 
+//extern void SC_SetView(char *anm_name, float time);	// removed
+extern void SC_SetViewAnim(char *anm_name, dword start_frame, dword end_frame, dword callback_id);
+extern void SC_SetViewAnimEx(char *anm_name, dword start_frame, dword end_frame, dword callback_id, void *nod);
 
 extern void SC_SetMissileTrace(dword color, float alpha);
 
@@ -1254,40 +1259,140 @@ extern float SC_Fnt_GetWidthW(ushort *txt, float scale);
 
 extern void SC_GetScreenRes(float *width, float *height);
 
+
+extern void SC_SpeachRadio(dword speach_txt, dword snd_id, float *timeout);
+extern void SC_SpeachRadioMes(dword speach_txt, dword snd_id, float *timeout, dword param);
+
+extern void SC_SpeechRadio2(dword speech_txt, float *timeout);
+extern void SC_SpeechRadioMes2(dword speech_txt, float *timeout, dword param);
+
+
+extern void SC_Radio_Enable(dword radio_id);
+extern void SC_Radio_Disable(dword radio_id);
+
+extern BOOL SC_Radio_Get(dword *radio_id);// no radio is active - returns FALSE
+											// some radio is active - returns TRUE and fills *radio_id
+
+extern void SC_RadioBatch_Begin(void);
+extern void SC_RadioBatch_End(void);
+
+extern void SC_RadistBatch_Begin(void);
+extern void SC_RadistBatch_End(void);
+
+extern void SC_RadioSet2D(BOOL willbe2D);	// TRUE - from this moment all inserted SC_SpeechRadio... will be in 2D
+											// default is FALSE
 extern void SC_SpeechSet3Dto3Dincamera(BOOL incamera3D);
 											// TRUE - all 3D speech will be played in camera ( useful for briefings)
 											// default is FALSE
+extern void SC_RadioSet3DButDistanceLimit(BOOL enable);											
+											// default is FALSE
+											
+											
+
+extern float SC_RadioGetWillTalk(void);
+
+
+extern void SC_RadioBreak_Set(s_SC_SpeachBreakProps *props);
+extern void SC_RadioBreak_Get(s_SC_SpeachBreakProps *props);
+extern void SC_RadioSetDist(float max_dist_subtitle_write);
+
+extern void SC_MissionSave(s_SC_MissionSave *info);
 
 extern void SC_DoExplosion(c_Vector3 *pos, dword type);	// for server only in MP
 														// type is SC_EXPL_TYPE_xxxx
+extern void SC_ArtillerySupport(BOOL enable);
+extern void SC_SetBombInfo(s_SC_BombInfo *info);
+
+extern void SC_SetMapFpvModel(char *bes_filename);
 
 extern dword SC_MWP_Create(s_SC_MWP_Create *info);
 
+extern void SC_SetSceneVisibilityMult(float vis_mult, float scene_fog_mult, float bckg_fog_mult);
+				// 1.0f - default visibility, 2.0f - twotimes bigger visibility
+
 extern void SC_SetObjectScript(char *obj_name, char *script_name);
 
+extern void SC_ClearImpossibleWayTargets(void);
+
+extern BOOL SC_SphereIsVisible(s_sphere *sph);
 extern void SC_GetPos_VecRz(void *cpos, c_Vector3 *pos, float *rz);	// pos or rz can be NULL
 
+extern void SC_MakeBurning(s_sphere *sph);				// sets on fire everything in sphere (objects and players)
+
 extern void SC_PreloadBES(dword id, char *bes_name);	// preload, max id is from interval [1,SC_PRELOAD_BES_MAXID]
+
+extern void SC_SetObjectives(dword objectives, s_SC_Objective *objective, float force_display_time);
+extern void SC_SetObjectivesNoSound(dword objectives, s_SC_Objective *objective, float force_display_time);
+extern void SC_GetLoudShot(s_sphere *sph);
+
+extern void SC_SetCommandMenu(dword text_id);	// 0 - means CommandMenu enabled
+												// !=0 - this text is written
+extern float SC_GetVisibility(void);
+extern float SC_GetPCZoom(void);
+
+extern void SC_ShowHelp(dword *txt, dword texts, float time);
+														// texts = 0.0f = hide window
+														// time = 0.0f - forever
 
 extern void SC_PreloadWeapon(dword type, BOOL fpv_to);
 extern void SC_FadeTo(BOOL black, float time);	// time==0.0f - immediatelly
 
+extern void SC_SetAmmobagAmmo(dword ammo_type, BOOL enable);	// ammo_type viz weap.txt
+
+extern void SC_ShowMovieInfo(dword *txt);						// txt[0],txt[1],txt[2] - show 3 lines of info
+																// txt==NULL - disable it
+extern void SC_Debrief_Clear(void);
+extern void SC_Debrief_Add(s_SC_DebriefInfo *add_info);
+extern void SC_Debrief_Get(s_SC_DebriefInfo *info);
+
+extern void SC_HUD_DisableRadar(BOOL disable);
+
+extern void SC_HUD_TextWriterInit(s_SC_HUD_TextWrite *initdata);
+extern void SC_HUD_TextWriterRelease(float fade_out_time);
+
+
+extern void SC_CreateMissile(dword missile_id, dword author_pl_id, c_Vector3 *from, c_Vector3 *at);
+							// NEFUNGUJE SITOVE, STRELA NEDAVA DAMAGE
+							// missile_id - id of missile from weap.txt
+							// author_pl_id - pl_id of author
+							//				- can be NULL, but then AI do not take notice of this missile
+							// from - start position of the missile
+							// at - target - used for direction, sizeof trajectory depends on missile_id
 					
 extern void SC_PreloadSound(dword snd_id, BOOL is3D);	// preloads sound
 extern void SC_FadeSoundPlayer(dword snd_player_id, float final_volume, float fade_time);// final_volume 0 - off, 1 - full volume
 
+//extern char* SC_Utxt(dword val);				// obsolete
 extern ushort* SC_Wtxt(dword val);				// get texts from texts database
 
 extern dword SC_GetNearestPlayer(c_Vector3 *vec, float *dist);
 
+extern void SC_SwitchSceneSCS(char *fname, float time);			// switch scene settings
+extern void SC_RemoveItems(s_sphere *area, dword item_type);	// valid in single player only
+
+extern BOOL SC_GetRndWp(s_sphere *sph, c_Vector3 *wp);			// returns	- TRUE - found random wp in sphere
+																//			- FALSE - no wp found
+
+extern void SC_Ai_SetShootOnHeardEnemyColTest(BOOL do_test);
 extern void SC_SetMovieBorders(BOOL set_on);
+
+
+extern void SC_EnableBloodWhenHit(BOOL enable); // default is TRUE ( function written just for tutorial )
 
 extern void SC_CreateLight(s_SC_light *info);
 
+extern void SC_EnableCharacterLOD(BOOL enable);	// default is TRUE, use FALSE for briefings and other noingame special situations
+
+extern void SC_EnableObjectScriptWhileUnipage(void *master_nod, BOOL enable);
 extern void SC_GetCameraPos(c_Vector3 *vec);
+
+extern void SC_EnableQuickSave(BOOL enable); // default is TRUE
+
+extern void SC_GetSystemTime(s_SC_systime *info);
 
 extern void SC_Fauna_DoSoundAlert(c_Vector3 *pos);
 extern void SC_Fauna_KillThemAll(s_sphere *sph);
+
 
 
 // PC
@@ -1301,20 +1406,107 @@ extern void SC_PC_EnablePronePosition(BOOL enable);			// default is TRUE, use FA
 
 extern void SC_PC_EnableWeaponsUsing(BOOL enable);			// default is TRUE, use FALSE to disable shooting, weapons, change, reload, mode changing
 
+extern void SC_PC_EnableExit(BOOL enable);				// default value is TRUE
+extern void SC_PC_EnableEnter(BOOL enable);				// default value is TRUE
+
+extern void SC_PC_EnableRadioBreak(BOOL enable);		// default value is FALSE
+
+
+extern float SC_PC_PlayFpvAnim(char *filename);
+extern float SC_PC_PlayFpvAnim2(char *filename, dword plb_id, char *eqp, char *anm);
+													// bes - object to link - index to PreLoadBes  ( SC_PreloadBES )
+													// eqp - how to link
+													// anm - animation of object, can be NULL
+
+extern void SC_PC_PlayFpvLooped(char *filename);	// fpv animation to play looped, use NULL to stop fpv animation
+
+extern void SC_PC_EnableFlashLight(BOOL enable);	// default is FALSE
+
+extern void SC_PC_EnableHitByAllies(BOOL enable);	// default is FALSE
+extern void SC_PC_EnablePickup(BOOL enable);		// default is TRUE
+
+extern void SC_PC_SetIntel(s_SC_P_intel *info);
+extern void SC_PC_GetIntel(s_SC_P_intel *info);
+
 // player
 
 extern dword SC_P_Create(s_SC_P_Create *info);	// returns player_id
 extern BOOL SC_P_IsReady(dword pl_id);					// returns whether player is ready (is created and recovered, but death)
 extern char *SC_P_GetName(dword pl_id);
+extern void SC_P_ChangeSideGroupMemId(dword pl_id, dword side, dword group, dword mem_id);
+extern void SC_P_SetForceClassName(dword pl_id, dword name_nr);
+
+extern BOOL SC_P_GetWeapons(dword pl_id, s_SC_P_Create *info);	// only weap_xxxx members are valid
+
+
 
 extern void SC_P_GetPos(dword pl_id, c_Vector3 *pos);
+extern void SC_P_SetPos(dword pl_id, c_Vector3 *pos);
+extern void SC_P_SetRot(dword pl_id, float rz);
 extern float SC_P_GetRot(dword pl_id);
-extern void SC_P_GetInfo(dword pl_id, s_SC_P_getinfo *info);
 
+extern void SC_P_GetHeadPos(dword pl_id, c_Vector3 *pos);
+
+extern void SC_P_GetDir(dword pl_id, c_Vector3 *dir);
+extern void SC_P_AddAttObj(dword pl_id, char *bes_name, char *eqp_name);
+extern void SC_P_GetInfo(dword pl_id, s_SC_P_getinfo *info);
+extern void SC_P_DoKill(dword pl_id);
+
+extern void SC_P_Speach(dword pl_id, dword speach_txt, dword snd_id, float *timeout);
+extern void SC_P_SpeachMes(dword pl_id, dword speach_txt, dword snd_id, float *timeout, dword param);
+extern void SC_P_SpeachRadio(dword pl_id, dword speach_txt, dword snd_id, float *timeout);
+extern void SC_P_SetSpeachDist(dword pl_id, float max_dist_subtitle_write);
+
+extern void SC_P_Speech2(dword pl_id, dword speech_txt, float *timeout);
+extern void SC_P_SpeechMes2(dword pl_id, dword speech_txt, float *timeout, dword param);
+extern void SC_P_SpeechMes3(dword pl_id, char *speech_str, float *timeout, dword param);
+extern void SC_P_SpeechMes3W(dword pl_id, ushort *speech_str, float *timeout, dword param);
+
+
+extern void SC_P_DoAnim(dword pl_id, char *filename);
+extern void SC_P_DoAnimLooped(dword pl_id, char *filename);
+
+
+extern void SC_P_SetChat(dword pl_id, float time);
+extern BOOL SC_P_CanChat(dword pl_id);
+extern void SC_P_SetHp(dword pl_id, float hp);
+extern void SC_P_Heal(dword pl_id);
+extern void SC_P_Radio_Enable(dword pl_id, dword radio_id);
+extern BOOL SC_P_Radio_Used(dword pl_id, dword radio_id);
 extern dword SC_P_GetBySideGroupMember(dword iside, dword igroup, dword imember);
 
 extern void SC_P_ScriptMessage(dword pl_id, dword param1, dword param2);	
+extern dword SC_P_IsInCar(dword pl_id);
+extern dword SC_P_IsInCarEx(dword pl_id, dword *entry_index);
+extern dword SC_P_IsInHeli(dword pl_id);
+extern dword SC_P_IsInShip(dword pl_id);
+extern void SC_P_Release(dword pl_id);
 
+extern void SC_P_SetToHeli(dword pl_id, char *heli_name, dword entry_index);	// entry_index is < 0 , entries-1 >
+extern void SC_P_ExitHeli(dword pl_id, c_Vector3 *new_pos);
+extern BOOL SC_P_HasWeapon(dword pl_id, dword weap_type);
+extern void SC_P_SetToShip(dword pl_id, char *ship_name, dword entry_index);	// entry_index is < 0 , entries-1 >
+extern void SC_P_ExitShip(dword pl_id, c_Vector3 *new_pos);
+extern void SC_P_SetToCar(dword pl_id, char *car_name, dword entry_index);	// entry_index is < 0 , entries-1 >
+extern void SC_P_SetToSceneMwp(dword pl_id, char *mwp_name);
+extern void SC_P_ExitSceneMwp(dword pl_id);
+
+
+extern BOOL SC_P_GetHasShoot(dword pl_id);		// returns TRUE when player shot from the last function call
+extern dword SC_P_GetCurWeap(dword pl_id);
+
+
+extern void SC_P_Recover(dword pl_id, c_Vector3 *pos, float rz);	// valid for singleplayer only!
+extern void SC_P_Recover2(dword pl_id, c_Vector3 *pos, float rz, dword phase);	// phase 0 - stand, 1-crouch
+
+
+extern float SC_P_GetWillTalk(dword pl_id);	// returns time in sec, when player will finish his last buffered speech
+extern BOOL SC_P_GetTalking(dword pl_id);	// returns TRUE if player is talking right now
+
+extern void SC_P_EnableLonelyWolfKiller(dword pl_id, float distance);	// if nearest ally is farrer from player then distance 
+												//   -> enemies shoots quite accurately 
+												//	0.0f means disabled
+												// has sense of PC only...
 extern void SC_P_SetFaceStatus(dword pl_id, dword face_type, float time);
 												// changes players face for selected time
 extern void SC_P_SetHandVariation(dword pl_id, dword hand_id, dword variation, float time);
@@ -1322,8 +1514,62 @@ extern void SC_P_SetHandVariation(dword pl_id, dword hand_id, dword variation, f
 												// variation - SC_P_HANDVAR_xxxx
 												// time - how long variation will be used, after this time returns to SC_P_HANDVAR_DEFAULT
 
-extern float SC_P_GetDistance(dword pl_id, dword to_pl_id);
+extern void SC_P_Link3pvEqp(dword pl_id, dword slot_id, dword plb_id, char *eqp_name);	// slot_id is [0,SC_P_LINK3PV_MAX-1]
+extern void SC_P_UnLink3pvEqp(dword pl_id, dword slot_id);								// slot_id is [0,SC_P_LINK3PV_MAX-1]
 
+extern void SC_P_SetSpecAnims(dword pl_id, s_SC_P_SpecAnims *info);
+extern void SC_P_AddAllAmmo(dword pl_id);
+extern void SC_P_AddAmmoNoGrenade(dword pl_id);
+
+
+extern void SC_P_ChangeWeapon(dword pl_id, dword slot_id, dword weap_type);
+extern void SC_P_SetSelWeapon(dword pl_id, dword slot_id);
+extern float SC_P_GetPhase(dword pl_id);     // 0-stand, 1-crouch, 2-lie
+extern void SC_P_SetPhase(dword pl_id, dword phase);     // 0-stand, 1-crouch ( lie is not supported )
+
+extern float SC_P_GetDistance(dword pl_id, dword to_pl_id);
+extern void SC_P_SetActive(dword pl_id, BOOL active);
+extern BOOL SC_P_GetActive(dword pl_id);
+
+extern void SC_P_SetInvisibleForAi(dword pl_id, BOOL invisible);	// default is FALSE
+extern BOOL SC_P_GetInvisibleForAi(dword pl_id);
+
+extern void SC_P_DoHit(dword pl_id, dword area_id, float hp);
+extern void SC_P_SetRadarColor(dword pl_id, dword val);	// val is SC_P_RADARCOLOR_xxxxx or RGB color
+extern void SC_P_SetNoAmmo(dword pl_id);
+extern void SC_P_CloseEyes(dword pl_id, BOOL force_close);
+
+extern void SC_P_RemoveAllSpeech(dword pl_id);	// when pl_id is 0, all speech is removed
+												// when pl_id is 1, radio speech is removed
+extern void SC_P_RemoveAllSpeechEx(dword pl_id, BOOL include_active);
+												// include_active  - TRUE - removes also already active ( running ) speech
+												//					 FALSE - same as SC_P_RemoveAllSpeech()
+												// when pl_id is 0, all speech is removed
+												// when pl_id is 1, radio speech is removed
+
+extern void SC_P_SetAmmo(dword pl_id, dword ammo_type, dword amount);
+
+extern BOOL SC_P_UsesBinocular(dword pl_id);
+extern void SC_P_EnableBinocular(dword pl_id, BOOL enable);	// default value is TRUE
+extern void SC_P_EnableHeadEqpFlyOff(dword pl_id, BOOL enable);// defaul value is TRUE
+extern void SC_P_EnableHitAnimations(dword pl_id, BOOL enable);// defaul value is TRUE
+extern void SC_P_EnableSearchDeathBodies(dword pl_id, BOOL enable);	// default value is TRUE
+
+
+extern void SC_P_WriteHealthToGlobalVar(dword pl_id, dword first_gvar);		// uses 2 global variable
+extern void SC_P_ReadHealthFromGlobalVar(dword pl_id, dword first_gvar);	// uses 2 global variable
+
+extern void SC_P_WriteAmmoToGlobalVar(dword pl_id, dword first_gvar, dword last_gvar);	// 30 gvars is minimum
+extern void SC_P_ReadAmmoFromGlobalVar(dword pl_id, dword first_gvar, dword last_gvar); // 30 gvars is minimum
+
+extern dword SC_P_GetAmmoInWeap(dword pl_id, dword slot_id);
+extern void SC_P_SetAmmoInWeap(dword pl_id, dword slot_id, dword ammo);
+
+extern void SC_P_SetLinkedView(dword pl_id, float rz, float rx);
+
+extern BOOL SC_P_IsInSpecStativ(dword pl_id);
+
+extern void SC_P_DisableSpeaking(dword pl_id, BOOL disable);
 
 // ai
 extern void SC_P_Ai_SetMode(dword pl_id, dword mode);				// values SC_P_AI_MODE_xxxxx
@@ -1356,6 +1602,9 @@ extern dword SC_P_Ai_GetSureEnemies(dword pl_id);
 extern void SC_P_Ai_LookAt(dword pl_id, c_Vector3 *vec);
 extern void SC_P_Ai_EnableSituationUpdate(dword pl_id, BOOL enable);
 
+extern void SC_P_Ai_EnterCar(dword pl_id, char *car_name, dword entry_function, s_sphere *enter_pos);
+				// enter_pos - position where is possible to enter the car, NULL = everywhere
+extern void SC_P_Ai_StepOutCar(dword pl_id);
 extern BOOL SC_P_Ai_KnowsAboutPl(dword pl_id, dword target_pl_id);
 
 extern void SC_P_Ai_SetBattleProps(dword pl_id, s_SC_P_Ai_BattleProps *props);	// NULL means engine default algorithms(results differ depends on battle situation)
@@ -1376,6 +1625,12 @@ extern void SC_P_Ai_ShouldLookAt(dword pl_id, c_Vector3 *pos, float time);
 extern void SC_P_Ai_SetStaticMode(dword pl_id, BOOL is_static);
 extern BOOL SC_P_Ai_GetStaticMode(dword pl_id);
 
+extern void SC_P_Ai_EnterHeli(dword pl_id, char *heli_name, dword entry_function);				
+extern void SC_P_Ai_StepOutHeli(dword pl_id);
+
+extern void SC_P_Ai_Drive(dword pl_id, char *way_filename);
+extern BOOL SC_P_Ai_ThrowGrenade(dword pl_id, c_Vector3 *target, float explode_time);	// time to explode after drop
+
 extern float SC_P_Ai_GetNearestEnemyDist(dword pl_id);			// returns FLT_MAX if no enemy found
 extern dword SC_P_Ai_GetNearestEnemy(dword pl_id);				// returns 0 if no enemy found
 
@@ -1385,6 +1640,7 @@ extern void SC_P_Ai_Script_WatchPlayer(dword pl_id, dword target_pl_id, float ti
 extern void SC_P_Ai_UpdateSituation(dword pl_id, dword target_pl_id, BOOL enable_se);
 
 extern void SC_P_Ai_GetEnemyShotAround(dword pl_id, float max_dist);			// causes SC_P_MES_SHOTAROUNDCALLBACK
+extern void SC_P_Ai_JumpInNextFrame(dword pl_id);								// AI will press jump in next frame...
 
 extern void SC_P_Ai_SetIgnoreFlags(dword pl_id, dword flags);					// use SC_PL_AI_SIT_IFL_xxxx
 extern dword SC_P_Ai_GetIgnoreFlags(dword pl_id);
@@ -1397,11 +1653,17 @@ extern void SC_P_Ai_WalkThruAIs(dword pl_id, BOOL enable);		// enables switching
 extern void SC_P_Ai_SetMedicIngMaxActiveDist(dword pl_id, float distance);	// default is 0 that means no limit
 
 
+extern void SC_Ai_SetFormationType(dword side, dword group, dword type);	// SC_AI_FORMTYPE_xxxx
+extern void SC_Ai_SetFormationSize(dword side, dword group, float size);	// 1.0 - standart
 extern void SC_Ai_SetBattleMode(dword side, dword group, dword mode);	// SC_P_AI_BATTLEMODE_xxxx
 extern void SC_Ai_SetBattleModeExt(dword size, dword group, dword battlemode, c_Vector3 *param);
 																		// param is valid for SC_P_AI_BATTLEMODE_GOTO only
 extern void SC_Ai_SetPeaceMode(dword side, dword group, dword mode);	// SC_P_AI_PEACEMODE_xxxx
 extern void SC_Ai_SetPointRuns(dword side, dword group, BOOL runs);
+
+extern void SC_Ai_ClearCheckPoints(dword side, dword group);
+extern void SC_Ai_AddCheckPoint(dword side, dword group, c_Vector3 *vec, dword flags);			// flags: SC_AI_CP_FL_xxxx
+extern BOOL SC_Ai_GetCurCheckPoint(dword side, dword group, c_Vector3 *vec);
 
 extern void SC_Ai_SetPlFollow(dword side, dword group, dword mode, s_SC_Ai_PlFollow *follow, dword *follow_order, dword *point_order, dword players);	//formation is SC_AI_FOLLOWMODE_xxxx
 extern void SC_Ai_PointStopDanger(dword side, dword group);			// points reacts fast, the rest with delay
@@ -1431,7 +1693,7 @@ extern BOOL SC_P_Ai_CanSeePlayer(dword pl_id, dword target_id, float max_dist, d
 															// pl_id - AI who is looking
 															// target_id - player to test his visibility
 															// max_dist - maximum distance to check to ( it's also limited by scene visibility and AI visibility settings)
-															// need_points - 11 areas of target_id is checked, need_points says how many of them must be visible to succeed
+															// need_points - 11 areas of target_id i checked, need_points says how many of them must be visible to succeed
 
 // level stuff
 extern BOOL SC_GetWp(char *wpname, c_Vector3 *vec);
@@ -1458,8 +1720,15 @@ extern BOOL SC_NET_FillRecover(s_SC_MP_Recover *recov, char *wpname);
 extern void SC_GetPls(s_sphere *sph, dword *list, dword *items);
 extern void SC_GetPlsInLine(c_Vector3 *pos, c_Vector3 *dir, dword *list, dword *items);
 
+extern void SC_SetQFStep(dword step);
+extern dword SC_GetQFStep(void);
 extern void SC_DisplayBinocular(BOOL enable);
 
+extern void SC_DeathCamera_Enable(BOOL enable);// default is TRUE
+												// use FALSE in tunnels for example
+
+extern void SC_Set_GoToPC_snd(dword member_id, dword peace, dword agressive, dword stealth);
+extern void SC_Set_RadioMan_RunDist(float dist);// 0 is default and means no limit
 extern BOOL SC_GetScriptHelper(char *name, s_sphere *sph);
 extern void SC_MissionFailedDeathPlayer(dword death_plid);// make Mission failed and camera looks at defined player
 
@@ -1490,6 +1759,7 @@ extern void SC_SND_PlaySound3DexSpec(dword snd_id, c_Vector3 *pos, float *timeou
 extern void SC_SND_PlaySound2DSpec(dword snd_id, dword spec_id);
 
 extern void SC_SND_SetHearableRatio(float Ratio);
+extern void SC_SND_CreateCurveSound(char *anm_filename, dword snd_id, float max_play_dist, BOOL apply_env_volume);
 
 extern float SC_SND_GetSoundLen(dword snd_id);
 
@@ -1523,7 +1793,8 @@ extern void SC_DOBJ_ClearDamagedHP(void *nod);
 extern void SC_DOBJ_BurnCreateBlockers(void *nod, s_sphere *sph, dword items);
 
 extern void SC_DOBJ_SetFrozenFlag(void *nod, BOOL frozen);
-	
+
+	// for fpv weapons
 extern void *SC_NOD_Get(void *master_obj, char *obj_name);
 extern void *SC_NOD_GetNoMessage(void *master_obj, char *obj_name);
 extern void *SC_NOD_GetNoMessage_Entity(char *obj_name);
@@ -1534,37 +1805,57 @@ extern void SC_NOD_Hide(void *obj, BOOL hide);
 
 extern void SC_NOD_GetPosInOtherSpace(void *other_nod, void *nod, c_Vector3 *vec);
 
+extern void SC_FPV_AttachMagazine(BOOL render);
+extern void SC_FPV_FlyOffCartridge(s_SC_FlyOffCartridge *info);
+
+
+// other objects functions
+
+extern void SC_NOD_SetFromANM(char *anm, float time, void *nod);
+extern float SC_ANM_GetFrameTime(char *anm, int frame);
+extern BOOL SC_NOD_GetPosFromANM(char *anm, float time, c_Vector3 *pos);
+
 
 extern float SC_DOBJ_CameraLooksAt(void *nod, float max_dist);
 extern float SC_DOBJ_CameraLooksAtCollision(void *nod, float max_dist);
 extern void SC_ACTIVE_Add(void *nod, float cur_dist, dword info_txt);
 
+extern void SC_UP_Open(dword what, dword level);
+
+extern dword SC_MANM_Create(char *filename);
+extern void SC_MANM_Release(dword manm_id);
+extern dword SC_MANM_GetIndex(dword manm_id, char *objname);
+extern void SC_MANM_Set(dword manm_id, dword manm_index, void *nod, float time);
+extern float SC_MANM_GetLength(dword manm_id, dword manm_index);
+
+
 // scene rendering
 extern void SC_DUMMY_Set_DoNotRenHier(char *dummy_name, BOOL do_not_render_hiearchy);
 extern void SC_DUMMY_Set_DoNotRenHier2(void *nod, BOOL do_not_render_hiearchy);
 
-// cars - for singleplayer only !
+
+// cars
 	
 extern void *SC_CAR_Create(void *nod, s_SC_Car_Init *info);
 extern void SC_CAR_WheelAdd(void *car, void *nod, s_SC_Car_AddWheel *info);
 extern void SC_CAR_EntryAdd(void *car, s_SC_Car_AddEntry *info);
 extern void SC_CAR_SetAirResistance(void *car, float a0, float a1, float a2);
 
-// ships - for singleplayer only !
+
+// ships
 
 extern void *SC_SHIP_Create(void *nod, s_SC_Ship_Init *info, s_SC_PHS_IWantToFloat *finfo);
 extern void SC_SHIP_EntryAdd(void *ship, s_SC_Car_AddEntry *info);
 
 
-// helis - for singleplayer only !
+// helis
 
 extern void *SC_HELI_Create(void *nod, s_SC_Heli_Init *info);
 extern void SC_HELI_EntryAdd(void *heli, s_SC_Car_AddEntry *info);
 extern void SC_HELI_ChangeEntryStativ(void *heli, dword entry_index, char *stg_name);	   
 
-
-
 // Multiplayer scripting
+
 
 extern BOOL SC_MP_EnumPlayers(s_SC_MP_EnumPlayers *list, dword *items, dword side);	
 			// *items : IN - size of list array
@@ -1606,6 +1897,7 @@ extern dword SC_MP_GetPlofHandle(dword pl_handle);
 
 extern void SC_HUD_RadarShowPlayer(dword pl_id, dword color);
 extern void SC_HUD_RadarShowPos(c_Vector3 *vec, dword color);
+extern void SC_MP_SRV_P_SetObtainedDamageMult(dword pl_id, float mult);	// 1-normal, 0.5-has 2x 'more HP',
 extern void SC_MP_SetSideStats(dword side, int frags, int points);
 extern void SC_MP_ScriptMessage(dword param1, dword param2);	// send SC_NET_MES_MESSAGE to mp script
 extern void SC_MP_AllowStPwD(BOOL enable);		// Switch to Players when Death
@@ -1652,8 +1944,14 @@ extern void SC_MP_SRV_GetAtgSettings(s_SC_MP_SRV_AtgSettings *info);
 	extern void SC_MP_FpvMapSign_Set(dword signs, s_SC_FpvMapSign *list);	
 #endif
 
+
+#if _GE_VERSION_ >= 158
+	extern BOOL SC_MP_RecoverAiPlayer(dword pl_id, c_Vector3 *pos, float rz);	// if pos==NULL, the default respawn place is used
 #endif 
-//#ifndef SC_GLOBAL_H
+
+
+
+#endif //#ifndef SC_GLOBAL_H
 
 
 

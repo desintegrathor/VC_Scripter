@@ -1,0 +1,3198 @@
+{
+  "c_Vector3": {
+    "name": "c_Vector3",
+    "size": 12,
+    "fields": [
+      {
+        "name": "x",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "y",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "z",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_sphere": {
+    "name": "s_sphere",
+    "size": 16,
+    "fields": [
+      {
+        "name": "pos",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rad",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_L_info": {
+    "name": "s_SC_L_info",
+    "size": 36,
+    "fields": [
+      {
+        "name": "message",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param1",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param2",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param3",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "elapsed_time",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "next_exe_time",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param4",
+        "type": "c_Vector3",
+        "offset": 24,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_info": {
+    "name": "s_SC_P_info",
+    "size": 28,
+    "fields": [
+      {
+        "name": "message",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param1",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param2",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "pl_id",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*pos",
+        "type": "void",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "elapsed_time",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "next_exe_time",
+        "type": "float",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_SOUND_info": {
+    "name": "s_SC_SOUND_info",
+    "size": 4,
+    "fields": [
+      {
+        "name": "message",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_ScriptHelper_info": {
+    "name": "s_SC_ScriptHelper_info",
+    "size": 32,
+    "fields": [
+      {
+        "name": "event_type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "sph",
+        "type": "s_sphere",
+        "offset": 4,
+        "size": 16,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod",
+        "type": "void",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "elapsed_time",
+        "type": "float",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "next_exe_time",
+        "type": "float",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_OBJ_info": {
+    "name": "s_SC_OBJ_info",
+    "size": 48,
+    "fields": [
+      {
+        "name": "event_type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*master_nod",
+        "type": "void",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod",
+        "type": "void",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "new_hp_obtained",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "hit_by",
+        "type": "dword",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*world_pos",
+        "type": "c_Vector3",
+        "offset": 20,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*world_dir",
+        "type": "c_Vector3",
+        "offset": 32,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "time",
+        "type": "float",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_NET_info": {
+    "name": "s_SC_NET_info",
+    "size": 24,
+    "fields": [
+      {
+        "name": "message",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param1",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param2",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param3",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "elapsed_time",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "fval1",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_WEAP_info": {
+    "name": "s_SC_WEAP_info",
+    "size": 64,
+    "fields": [
+      {
+        "name": "event_type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*obj",
+        "type": "void",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*weap_type",
+        "type": "void",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "anim_id",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "anim_time",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "prev_time",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "pos",
+        "type": "c_Vector3",
+        "offset": 24,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_batch",
+        "type": "dword",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_ammo",
+        "type": "dword",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_phase",
+        "type": "dword",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "param1",
+        "type": "float",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_bayonet",
+        "type": "dword",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_phase",
+        "type": "dword",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "step_time",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_WEAP3pv_info": {
+    "name": "s_SC_WEAP3pv_info",
+    "size": 32,
+    "fields": [
+      {
+        "name": "event_type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*obj",
+        "type": "void",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*weap_type",
+        "type": "void",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_batch",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_ammo",
+        "type": "dword",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_phase",
+        "type": "dword",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "pl_id",
+        "type": "dword",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_bayonet",
+        "type": "dword",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_Create": {
+    "name": "s_SC_P_Create",
+    "size": 94,
+    "fields": [
+      {
+        "name": "type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "side",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "group",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "member_id",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "name_nr",
+        "type": "dword",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "debrief_group",
+        "type": "dword",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*inifile",
+        "type": "char",
+        "offset": 24,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*recover_pos",
+        "type": "void",
+        "offset": 25,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*icon_name",
+        "type": "char",
+        "offset": 29,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "flags",
+        "type": "dword",
+        "offset": 30,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_knife",
+        "type": "dword",
+        "offset": 34,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_pistol",
+        "type": "dword",
+        "offset": 38,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_main1",
+        "type": "dword",
+        "offset": 42,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_main2",
+        "type": "dword",
+        "offset": 46,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot1",
+        "type": "dword",
+        "offset": 50,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot6",
+        "type": "dword",
+        "offset": 54,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot7",
+        "type": "dword",
+        "offset": 58,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot8",
+        "type": "dword",
+        "offset": 62,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot9",
+        "type": "dword",
+        "offset": 66,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "weap_slot10",
+        "type": "dword",
+        "offset": 70,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "force_sel_slot",
+        "type": "dword",
+        "offset": 74,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eqps",
+        "type": "dword",
+        "offset": 78,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*eqp",
+        "type": "s_SC_P_CreateEqp",
+        "offset": 82,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aeg_valid_head_bes[SC_P_CREATE_AEG_VALID_MAX]",
+        "type": "dword",
+        "offset": 86,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aeg_valid_body_bes[SC_P_CREATE_AEG_VALID_MAX]",
+        "type": "dword",
+        "offset": 90,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_CreateEqp": {
+    "name": "s_SC_P_CreateEqp",
+    "size": 2,
+    "fields": [
+      {
+        "name": "*bes",
+        "type": "char",
+        "offset": 0,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*eqp",
+        "type": "char",
+        "offset": 1,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_SpecAnims": {
+    "name": "s_SC_P_SpecAnims",
+    "size": 1,
+    "fields": [
+      {
+        "name": "*sa[SC_PL_SA_MAX]",
+        "type": "char",
+        "offset": 0,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_intel": {
+    "name": "s_SC_P_intel",
+    "size": 4,
+    "fields": [
+      {
+        "name": "intel[SC_P_INTEL_MAX]",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_getinfo": {
+    "name": "s_SC_P_getinfo",
+    "size": 20,
+    "fields": [
+      {
+        "name": "cur_hp",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "max_hp",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "side",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "group",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "member_id",
+        "type": "dword",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_AI_props": {
+    "name": "s_SC_P_AI_props",
+    "size": 128,
+    "fields": [
+      {
+        "name": "max_vis_distance",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "watchfulness_zerodist",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "watchfulness_maxdistance",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "boldness",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "coveramount",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shoot_imprecision",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "extend_searchway",
+        "type": "BOOL",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shortdistance_fight",
+        "type": "float",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "view_angle",
+        "type": "float",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "view_angle_near",
+        "type": "float",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "hear_imprecision",
+        "type": "float",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "hear_distance_mult",
+        "type": "float",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "hear_distance_max",
+        "type": "float",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "grenade_min_distance",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "grenade_timing_imprecision",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "grenade_throw_imprecision",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "grenade_sure_time;)",
+        "type": "float",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "forget_enemy_mult",
+        "type": "float",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shoot_damage_mult",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "disable_peace_crouch",
+        "type": "BOOL",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "peace_fakeenemy_run",
+        "type": "float",
+        "offset": 80,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "peace_fakeenemy_phase",
+        "type": "float",
+        "offset": 84,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shoot_while_hidding",
+        "type": "float",
+        "offset": 88,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "reaction_time",
+        "type": "float",
+        "offset": 92,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "scout",
+        "type": "float",
+        "offset": 96,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "berserk",
+        "type": "float",
+        "offset": 100,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aimtime_max",
+        "type": "float",
+        "offset": 104,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aimtime_canshoot",
+        "type": "float",
+        "offset": 108,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aimtime_rotmult",
+        "type": "float",
+        "offset": 112,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wounded_start_perc",
+        "type": "float",
+        "offset": 116,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wounded_aimtime_mult_max",
+        "type": "float",
+        "offset": 120,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wounded_shoot_imprec_plus",
+        "type": "float",
+        "offset": 124,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_Ai_BattleProps": {
+    "name": "s_SC_P_Ai_BattleProps",
+    "size": 12,
+    "fields": [
+      {
+        "name": "Position",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Aim",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Run",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_P_Ai_Grenade": {
+    "name": "s_SC_P_Ai_Grenade",
+    "size": 12,
+    "fields": [
+      {
+        "name": "valid_uses;",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "use_interval;",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "cur_interval;",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Ai_PlFollow": {
+    "name": "s_SC_Ai_PlFollow",
+    "size": 20,
+    "fields": [
+      {
+        "name": "min_dist",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "max_dist",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "follow_change",
+        "type": "c_Vector3",
+        "offset": 8,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_OBJ_dynamic": {
+    "name": "s_SC_OBJ_dynamic",
+    "size": 28,
+    "fields": [
+      {
+        "name": "velocity",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rot_speed",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rot_axis",
+        "type": "c_Vector3",
+        "offset": 16,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_NOD_transform": {
+    "name": "s_SC_NOD_transform",
+    "size": 36,
+    "fields": [
+      {
+        "name": "loc",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rot",
+        "type": "c_Vector3",
+        "offset": 12,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "scale",
+        "type": "c_Vector3",
+        "offset": 24,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Car_Init": {
+    "name": "s_SC_Car_Init",
+    "size": 160,
+    "fields": [
+      {
+        "name": "*master_nod",
+        "type": "void",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*steeringwheel_nod",
+        "type": "void",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steeringwheel_max_rot",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_max",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_speed",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_backspeed",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_curse",
+        "type": "float",
+        "offset": 24,
+        "size": 44,
+        "is_array": true,
+        "array_size": 11
+      },
+      {
+        "name": "steer_max_mult_at10mpersec",
+        "type": "float",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_speed_mult_at10mpersec",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_backspeed_mult_at10mpersec",
+        "type": "float",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_max_revs",
+        "type": "float",
+        "offset": 80,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freewheel_revs; volnobehu",
+        "type": "float",
+        "offset": 84,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_revs_slowdown",
+        "type": "float",
+        "offset": 88,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_min_revs",
+        "type": "float",
+        "offset": 92,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_sound_pos",
+        "type": "c_Vector3",
+        "offset": 96,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_1",
+        "type": "float",
+        "offset": 108,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_revs1",
+        "type": "float",
+        "offset": 112,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_2",
+        "type": "float",
+        "offset": 116,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_revs2",
+        "type": "float",
+        "offset": 120,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_snd_id",
+        "type": "dword",
+        "offset": 124,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_val_steps",
+        "type": "dword",
+        "offset": 128,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*eng_Nm",
+        "type": "float",
+        "offset": 132,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*eng_kW",
+        "type": "float",
+        "offset": 136,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*eng_sound_volume",
+        "type": "float",
+        "offset": 140,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "trns_delay",
+        "type": "float",
+        "offset": 144,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "trns_gears",
+        "type": "dword",
+        "offset": 148,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*trns_gear",
+        "type": "float",
+        "offset": 152,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "brake_power",
+        "type": "float",
+        "offset": 156,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Car_AddWheel": {
+    "name": "s_SC_Car_AddWheel",
+    "size": 88,
+    "fields": [
+      {
+        "name": "body_point",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "body_vector",
+        "type": "c_Vector3",
+        "offset": 12,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_tmin",
+        "type": "float",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_tmax",
+        "type": "float",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_t",
+        "type": "float",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_absorber",
+        "type": "float",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_looser",
+        "type": "float",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "spring_rate",
+        "type": "float",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_radius",
+        "type": "float",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_friction",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_aspd",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_with_drive",
+        "type": "BOOL",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steering",
+        "type": "BOOL",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "left_side",
+        "type": "BOOL",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_fr_min",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "wheel_fr_dspd",
+        "type": "float",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "ptc_v0_mult",
+        "type": "float",
+        "offset": 80,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "ptc_v1_mult",
+        "type": "float",
+        "offset": 84,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Car_AddEntry": {
+    "name": "s_SC_Car_AddEntry",
+    "size": 93,
+    "fields": [
+      {
+        "name": "function",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "entry_name_nr",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "exit_name_nr",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "entry",
+        "type": "c_Vector3",
+        "offset": 12,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "entry_dist",
+        "type": "float",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "target",
+        "type": "c_Vector3",
+        "offset": 28,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "view",
+        "type": "c_Vector3",
+        "offset": 40,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "min_rx",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "max_rx",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "min_rz",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "max_rz",
+        "type": "float",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shoot_min_rz",
+        "type": "float",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "shoot_max_rz",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "switch_3pv_anim_dir",
+        "type": "dword",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*stg_dir",
+        "type": "char",
+        "offset": 80,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "can_shoot",
+        "type": "BOOL",
+        "offset": 81,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "disabled_for_PC",
+        "type": "BOOL",
+        "offset": 85,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rz",
+        "type": "float",
+        "offset": 89,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Ship_Init": {
+    "name": "s_SC_Ship_Init",
+    "size": 80,
+    "fields": [
+      {
+        "name": "*master_nod",
+        "type": "void",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_max",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_speed",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "steer_backspeed",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_max_revs",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freewheel_revs",
+        "type": "float",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_revs_slowdown",
+        "type": "float",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_sound_pos",
+        "type": "c_Vector3",
+        "offset": 28,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "drive_pos",
+        "type": "c_Vector3",
+        "offset": 40,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_1",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_revs1",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_2",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_freqmult_revs2",
+        "type": "float",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_snd_id",
+        "type": "dword",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "power_front",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "power_back",
+        "type": "float",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_PHS_IWantToFloat": {
+    "name": "s_SC_PHS_IWantToFloat",
+    "size": 80,
+    "fields": [
+      {
+        "name": "_env_normal",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_hydI",
+        "type": "c_Vector3",
+        "offset": 12,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_hydJ",
+        "type": "c_Vector3",
+        "offset": 24,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_hydK",
+        "type": "c_Vector3",
+        "offset": 36,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_CI",
+        "type": "float",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_CJ",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_CK",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_QR",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_QI",
+        "type": "float",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_QJ",
+        "type": "float",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_QIJ",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "_FK",
+        "type": "float",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Heli_Init": {
+    "name": "s_SC_Heli_Init",
+    "size": 24,
+    "fields": [
+      {
+        "name": "*master_nod",
+        "type": "void",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "eng_snd_id",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "snd2_id",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "snd2_turndown_dist",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "snd2_zerodist_volume",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "flags",
+        "type": "dword",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MWP_Create": {
+    "name": "s_SC_MWP_Create",
+    "size": 93,
+    "fields": [
+      {
+        "name": "weap_type",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "use_info_txt_id",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "exit_info_txt_id",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*master_nod",
+        "type": "void",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_base",
+        "type": "void",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_rotate_x",
+        "type": "void",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_rotate_z",
+        "type": "void",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_rotate_last",
+        "type": "void",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_fpv_camera",
+        "type": "void",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_active_pos",
+        "type": "void",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_muzzle",
+        "type": "void",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*nod_entry",
+        "type": "void",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "active_rad",
+        "type": "float",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "active_dist",
+        "type": "float",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rotate_zmin",
+        "type": "float",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rotate_zmax",
+        "type": "float",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rotate_xmin",
+        "type": "float",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rotate_xmax",
+        "type": "float",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rotate_speed",
+        "type": "float",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "flash_rot_step",
+        "type": "float",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "link_at",
+        "type": "dword",
+        "offset": 80,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*link_ptr",
+        "type": "void",
+        "offset": 84,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "link_entry_index",
+        "type": "dword",
+        "offset": 88,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*anim_dir",
+        "type": "char",
+        "offset": 92,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MP_EnumPlayers": {
+    "name": "s_SC_MP_EnumPlayers",
+    "size": 13,
+    "fields": [
+      {
+        "name": "id",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "side",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "status",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*name",
+        "type": "char",
+        "offset": 12,
+        "size": 1,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MP_Recover": {
+    "name": "s_SC_MP_Recover",
+    "size": 16,
+    "fields": [
+      {
+        "name": "pos",
+        "type": "c_Vector3",
+        "offset": 0,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rz",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MP_hud": {
+    "name": "s_SC_MP_hud",
+    "size": 60,
+    "fields": [
+      {
+        "name": "title",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "use_sides",
+        "type": "BOOL",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "disableUSside",
+        "type": "BOOL",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "disableVCside",
+        "type": "BOOL",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "side_name",
+        "type": "dword",
+        "offset": 16,
+        "size": 8,
+        "is_array": true,
+        "array_size": 2
+      },
+      {
+        "name": "side_color",
+        "type": "dword",
+        "offset": 24,
+        "size": 8,
+        "is_array": true,
+        "array_size": 2
+      },
+      {
+        "name": "pl_mask",
+        "type": "dword",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "side_mask",
+        "type": "dword",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "sort_by",
+        "type": "dword",
+        "offset": 40,
+        "size": 20,
+        "is_array": true,
+        "array_size": 5
+      }
+    ]
+  },
+  "s_SC_HUD_MP_icon": {
+    "name": "s_SC_HUD_MP_icon",
+    "size": 16,
+    "fields": [
+      {
+        "name": "icon_id",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "type",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "value",
+        "type": "int",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "color",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MP_SRV_settings": {
+    "name": "s_SC_MP_SRV_settings",
+    "size": 36,
+    "fields": [
+      {
+        "name": "coop_respawn_time",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "coop_respawn_limit",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "dm_weap_resp_time",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "atg_class_limit",
+        "type": "dword",
+        "offset": 12,
+        "size": 24,
+        "is_array": true,
+        "array_size": 6
+      }
+    ]
+  },
+  "s_SC_MP_SRV_AtgSettings": {
+    "name": "s_SC_MP_SRV_AtgSettings",
+    "size": 12,
+    "fields": [
+      {
+        "name": "ATG_round_time",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "tt_respawntime",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "tt_timelimit",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_systime": {
+    "name": "s_SC_systime",
+    "size": 16,
+    "fields": [
+      {
+        "name": "hours",
+        "type": "int",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "minutes",
+        "type": "int",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "seconds",
+        "type": "int",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "msec",
+        "type": "int",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_FpvMapSign": {
+    "name": "s_SC_FpvMapSign",
+    "size": 24,
+    "fields": [
+      {
+        "name": "id",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "color",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "scale",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "pos",
+        "type": "c_Vector3",
+        "offset": 12,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_HUD_TextWrite": {
+    "name": "s_SC_HUD_TextWrite",
+    "size": 48,
+    "fields": [
+      {
+        "name": "fade_in_time",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "stay_in_time_begin",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "stay_in_time_end",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "fade_out_time",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "current_time",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "font_id",
+        "type": "dword",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "text_id",
+        "type": "dword",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "color",
+        "type": "dword",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "alignx",
+        "type": "int",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "aligny",
+        "type": "int",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "max_num_lines",
+        "type": "int",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "scale_ratio",
+        "type": "float",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_Objective": {
+    "name": "s_SC_Objective",
+    "size": 8,
+    "fields": [
+      {
+        "name": "text_id",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "status",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_initside": {
+    "name": "s_SC_initside",
+    "size": 8,
+    "fields": [
+      {
+        "name": "MaxHideOutsStatus",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "MaxGroups",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_initgroup": {
+    "name": "s_SC_initgroup",
+    "size": 20,
+    "fields": [
+      {
+        "name": "SideId",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "GroupId",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "MaxPlayers",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "NoHoldFireDistance",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "follow_point_max_distance",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_MissionSave": {
+    "name": "s_SC_MissionSave",
+    "size": 12,
+    "fields": [
+      {
+        "name": "savename_id",
+        "type": "dword",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "description_id",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "disable_info",
+        "type": "BOOL",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_DebriefInfo": {
+    "name": "s_SC_DebriefInfo",
+    "size": 84,
+    "fields": [
+      {
+        "name": "missionTime",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "difficulty",
+        "type": "dword",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "missionStatus",
+        "type": "dword",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "SF",
+        "type": "dword",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "LLDB",
+        "type": "dword",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "CIDG",
+        "type": "dword",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Heli",
+        "type": "dword",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Jeep",
+        "type": "dword",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "VC",
+        "type": "dword",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Gaz",
+        "type": "dword",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Boobytrap",
+        "type": "dword",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Caches",
+        "type": "dword",
+        "offset": 44,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Tunnels",
+        "type": "dword",
+        "offset": 48,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Facilities",
+        "type": "dword",
+        "offset": 52,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Intelligence",
+        "type": "dword",
+        "offset": 56,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Bangs",
+        "type": "dword",
+        "offset": 60,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Defort",
+        "type": "dword",
+        "offset": 64,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Hornster",
+        "type": "dword",
+        "offset": 68,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Nhut",
+        "type": "dword",
+        "offset": 72,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Bronson",
+        "type": "dword",
+        "offset": 76,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "Crocker",
+        "type": "dword",
+        "offset": 80,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_light": {
+    "name": "s_SC_light",
+    "size": 36,
+    "fields": [
+      {
+        "name": "r",
+        "type": "float",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "g",
+        "type": "float",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "b",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "rad",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "pos",
+        "type": "c_Vector3",
+        "offset": 16,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "time",
+        "type": "float",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "decrease_radius",
+        "type": "BOOL",
+        "offset": 32,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_MusicDef": {
+    "name": "s_MusicDef",
+    "size": 32,
+    "fields": [
+      {
+        "name": "musId",
+        "type": "int",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "musVol",
+        "type": "int",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "musFadeIn",
+        "type": "float",
+        "offset": 8,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "musPlayTime",
+        "type": "float",
+        "offset": 12,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "musFadeOut",
+        "type": "float",
+        "offset": 16,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "heliVol",
+        "type": "int",
+        "offset": 20,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "gameVol",
+        "type": "int",
+        "offset": 24,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "natureVol",
+        "type": "int",
+        "offset": 28,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_BombInfo": {
+    "name": "s_SC_BombInfo",
+    "size": 44,
+    "fields": [
+      {
+        "name": "chats",
+        "type": "dword",
+        "offset": 0,
+        "size": 36,
+        "is_array": true,
+        "array_size": 9
+      },
+      {
+        "name": "radistmarks",
+        "type": "dword",
+        "offset": 36,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "radiomarks",
+        "type": "dword",
+        "offset": 40,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  },
+  "s_SC_FlyOffCartridge": {
+    "name": "s_SC_FlyOffCartridge",
+    "size": 32,
+    "fields": [
+      {
+        "name": "*weap_type",
+        "type": "void",
+        "offset": 0,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "*from",
+        "type": "void",
+        "offset": 4,
+        "size": 4,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "dir",
+        "type": "c_Vector3",
+        "offset": 8,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      },
+      {
+        "name": "add_rot",
+        "type": "c_Vector3",
+        "offset": 20,
+        "size": 12,
+        "is_array": false,
+        "array_size": 0
+      }
+    ]
+  }
+}

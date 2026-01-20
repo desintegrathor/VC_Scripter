@@ -1,0 +1,5744 @@
+{
+  "SC_SetViewAnimEx": {
+    "name": "SC_SetViewAnimEx",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm_name"
+      },
+      {
+        "type": "dword",
+        "name": "start_frame"
+      },
+      {
+        "type": "dword",
+        "name": "end_frame"
+      },
+      {
+        "type": "dword",
+        "name": "callback_id"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      }
+    ]
+  },
+  "SC_CreatePtcVec_Ext": {
+    "name": "SC_CreatePtcVec_Ext",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      },
+      {
+        "type": "float",
+        "name": "interval"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      },
+      {
+        "type": "float",
+        "name": "time_mult"
+      }
+    ]
+  },
+  "SC_CreatePtcInNodSpace_Ext": {
+    "name": "SC_CreatePtcInNodSpace_Ext",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      },
+      {
+        "type": "float",
+        "name": "interval"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      },
+      {
+        "type": "float",
+        "name": "time_mult"
+      }
+    ]
+  },
+  "SC_Ai_SetPlFollow": {
+    "name": "SC_Ai_SetPlFollow",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "mode"
+      },
+      {
+        "type": "s_SC_Ai_PlFollow*",
+        "name": "follow"
+      },
+      {
+        "type": "dword*",
+        "name": "follow_order"
+      },
+      {
+        "type": "dword*",
+        "name": "point_order"
+      },
+      {
+        "type": "dword",
+        "name": "players"
+      }
+    ]
+  },
+  "SC_Ai_FakeEnemy_Add": {
+    "name": "SC_Ai_FakeEnemy_Add",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "fake_enemy"
+      },
+      {
+        "type": "dword",
+        "name": "area_spheres"
+      },
+      {
+        "type": "s_sphere*",
+        "name": "area_sphere"
+      }
+    ]
+  },
+  "SC_MP_P_SetRecoverTime": {
+    "name": "SC_MP_P_SetRecoverTime",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_MP_P_GetAfterRecoverSide": {
+    "name": "SC_MP_P_GetAfterRecoverSide",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_MP_P_GetClass": {
+    "name": "SC_MP_P_GetClass",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_MP_P_GetAfterRecoverClass": {
+    "name": "SC_MP_P_GetAfterRecoverClass",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_MP_SRV_SetForceSide": {
+    "name": "SC_MP_SRV_SetForceSide",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      }
+    ]
+  },
+  "SC_MP_SRV_SetClassLimit": {
+    "name": "SC_MP_SRV_SetClassLimit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "class_id"
+      },
+      {
+        "type": "dword",
+        "name": "limit"
+      }
+    ]
+  },
+  "SC_MP_SRV_SetClassLimitsForDM": {
+    "name": "SC_MP_SRV_SetClassLimitsForDM",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_SRV_GetBestDMrecov": {
+    "name": "SC_MP_SRV_GetBestDMrecov",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "s_SC_MP_Recover*",
+        "name": "list"
+      },
+      {
+        "type": "dword",
+        "name": "items"
+      },
+      {
+        "type": "float*",
+        "name": "no_recov_time"
+      },
+      {
+        "type": "float",
+        "name": "max_recov_time"
+      }
+    ]
+  },
+  "SC_MP_SRV_InitWeaponsRecovery": {
+    "name": "SC_MP_SRV_InitWeaponsRecovery",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_MP_HUD_SetTabInfo": {
+    "name": "SC_MP_HUD_SetTabInfo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_MP_hud*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_MP_HUD_SelectPl": {
+    "name": "SC_MP_HUD_SelectPl",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "color"
+      }
+    ]
+  },
+  "SC_GameInfo": {
+    "name": "SC_GameInfo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "text_id"
+      },
+      {
+        "type": "char*",
+        "name": "text"
+      }
+    ]
+  },
+  "SC_GameInfoW": {
+    "name": "SC_GameInfoW",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "ushort*",
+        "name": "text"
+      }
+    ]
+  },
+  "SC_P_MP_AddPoints": {
+    "name": "SC_P_MP_AddPoints",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "int",
+        "name": "val"
+      }
+    ]
+  },
+  "SC_MP_GetMaxPointsPl": {
+    "name": "SC_MP_GetMaxPointsPl",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "int*",
+        "name": "points"
+      }
+    ]
+  },
+  "SC_MP_GetMaxFragsPl": {
+    "name": "SC_MP_GetMaxFragsPl",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "int*",
+        "name": "frags"
+      }
+    ]
+  },
+  "SC_MP_GetHandleofPl": {
+    "name": "SC_MP_GetHandleofPl",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_MP_GetPlofHandle": {
+    "name": "SC_MP_GetPlofHandle",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_handle"
+      }
+    ]
+  },
+  "SC_MP_SRV_P_SetObtainedDamageMult": {
+    "name": "SC_MP_SRV_P_SetObtainedDamageMult",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "mult"
+      }
+    ]
+  },
+  "SC_MP_SetSideStats": {
+    "name": "SC_MP_SetSideStats",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "int",
+        "name": "frags"
+      },
+      {
+        "type": "int",
+        "name": "points"
+      }
+    ]
+  },
+  "SC_MP_ScriptMessage": {
+    "name": "SC_MP_ScriptMessage",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "param1"
+      },
+      {
+        "type": "dword",
+        "name": "param2"
+      }
+    ]
+  },
+  "SC_MP_AllowStPwD": {
+    "name": "SC_MP_AllowStPwD",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MP_AllowFriendlyFireOFF": {
+    "name": "SC_MP_AllowFriendlyFireOFF",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MP_SetIconHUD": {
+    "name": "SC_MP_SetIconHUD",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_HUD_MP_icon*",
+        "name": "icon"
+      },
+      {
+        "type": "dword",
+        "name": "icons"
+      }
+    ]
+  },
+  "SC_MP_SetInstantRecovery": {
+    "name": "SC_MP_SetInstantRecovery",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MP_SetItemsNoDisappear": {
+    "name": "SC_MP_SetItemsNoDisappear",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "nodisappear"
+      }
+    ]
+  },
+  "SC_MP_EnableBotsFromScene": {
+    "name": "SC_MP_EnableBotsFromScene",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MP_SetChooseValidSides": {
+    "name": "SC_MP_SetChooseValidSides",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "mask"
+      }
+    ]
+  },
+  "SC_MP_EnableC4weapon": {
+    "name": "SC_MP_EnableC4weapon",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MP_LoadNextMap": {
+    "name": "SC_MP_LoadNextMap",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_SetTeamGame": {
+    "name": "SC_MP_SetTeamGame",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "teamgame"
+      }
+    ]
+  },
+  "SC_MP_RecoverAllNoAiPlayers": {
+    "name": "SC_MP_RecoverAllNoAiPlayers",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_RecoverAllAiPlayers": {
+    "name": "SC_MP_RecoverAllAiPlayers",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_EndRule_SetTimeLeft": {
+    "name": "SC_MP_EndRule_SetTimeLeft",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "val"
+      },
+      {
+        "type": "BOOL",
+        "name": "counting"
+      }
+    ]
+  },
+  "SC_MP_GetSRVsettings": {
+    "name": "SC_MP_GetSRVsettings",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_MP_SRV_settings*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_MP_SRV_P_SetSideClass": {
+    "name": "SC_MP_SRV_P_SetSideClass",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "class_id"
+      }
+    ]
+  },
+  "SC_MP_SRV_GetAutoTeamBalance": {
+    "name": "SC_MP_SRV_GetAutoTeamBalance",
+    "return_type": "BOOL",
+    "parameters": []
+  },
+  "SC_MP_SRV_GetTeamsNrDifference": {
+    "name": "SC_MP_SRV_GetTeamsNrDifference",
+    "return_type": "int",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "after_respawn"
+      }
+    ]
+  },
+  "SC_MP_SRV_DoExplosion": {
+    "name": "SC_MP_SRV_DoExplosion",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "dword",
+        "name": "type"
+      }
+    ]
+  },
+  "SC_MP_SRV_ClearPlsStats": {
+    "name": "SC_MP_SRV_ClearPlsStats",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_SRV_InitGameAfterInactive": {
+    "name": "SC_MP_SRV_InitGameAfterInactive",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MP_GetAmmoBoxesEnabled": {
+    "name": "SC_MP_GetAmmoBoxesEnabled",
+    "return_type": "BOOL",
+    "parameters": []
+  },
+  "SC_MP_SRV_GetAtgSettings": {
+    "name": "SC_MP_SRV_GetAtgSettings",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_MP_SRV_AtgSettings*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_MP_SetSpectatorCameras": {
+    "name": "SC_MP_SetSpectatorCameras",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char",
+        "name": "character"
+      }
+    ]
+  },
+  "SC_MP_GetRecovers": {
+    "name": "SC_MP_GetRecovers",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "type"
+      },
+      {
+        "type": "s_SC_MP_Recover*",
+        "name": "list"
+      },
+      {
+        "type": "dword*",
+        "name": "items"
+      }
+    ]
+  },
+  "SC_MP_RecoverPlayer": {
+    "name": "SC_MP_RecoverPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_MP_RecoverAiPlayer": {
+    "name": "SC_MP_RecoverAiPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float",
+        "name": "rz"
+      }
+    ]
+  },
+  "SC_MP_FpvMapSign_Load": {
+    "name": "SC_MP_FpvMapSign_Load",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "fname"
+      }
+    ]
+  },
+  "SC_MP_FpvMapSign_Unload": {
+    "name": "SC_MP_FpvMapSign_Unload",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_MP_FpvMapSign_Set": {
+    "name": "SC_MP_FpvMapSign_Set",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "signs"
+      },
+      {
+        "type": "s_SC_FpvMapSign*",
+        "name": "list"
+      }
+    ]
+  },
+  "SC_P_Speach": {
+    "name": "SC_P_Speach",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "speach_txt"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_P_SpeachMes": {
+    "name": "SC_P_SpeachMes",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "speach_txt"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_P_SpeachRadio": {
+    "name": "SC_P_SpeachRadio",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "speach_txt"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_Wtxt": {
+    "name": "SC_Wtxt",
+    "return_type": "ushort*",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "val"
+      }
+    ]
+  },
+  "SC_StringSame": {
+    "name": "SC_StringSame",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "a"
+      },
+      {
+        "type": "char*",
+        "name": "b"
+      }
+    ]
+  },
+  "SC_ZeroMem": {
+    "name": "SC_ZeroMem",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "ptr"
+      },
+      {
+        "type": "dword",
+        "name": "size"
+      }
+    ]
+  },
+  "SC_GetLineDist": {
+    "name": "SC_GetLineDist",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "line_a"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "line_b"
+      }
+    ]
+  },
+  "SC_GetLineDistXY": {
+    "name": "SC_GetLineDistXY",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "line_a"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "line_b"
+      }
+    ]
+  },
+  "SC_IsNear2D": {
+    "name": "SC_IsNear2D",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "a"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "b"
+      },
+      {
+        "type": "float",
+        "name": "dist"
+      }
+    ]
+  },
+  "SC_IsNear3D": {
+    "name": "SC_IsNear3D",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "a"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "b"
+      },
+      {
+        "type": "float",
+        "name": "dist"
+      }
+    ]
+  },
+  "SC_2VectorsDist": {
+    "name": "SC_2VectorsDist",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "a"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "b"
+      }
+    ]
+  },
+  "SC_VectorLen": {
+    "name": "SC_VectorLen",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_VectorLen2": {
+    "name": "SC_VectorLen2",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_SphereIsVisible": {
+    "name": "SC_SphereIsVisible",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_GetPos_VecRz": {
+    "name": "SC_GetPos_VecRz",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "cpos"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float*",
+        "name": "rz"
+      }
+    ]
+  },
+  "SC_message": {
+    "name": "SC_message",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "txt"
+      }
+    ]
+  },
+  "SC_Log": {
+    "name": "SC_Log",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "level"
+      },
+      {
+        "type": "char*",
+        "name": "txt"
+      }
+    ]
+  },
+  "SC_Osi": {
+    "name": "SC_Osi",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "txt"
+      }
+    ]
+  },
+  "SC_KeyJustPressed": {
+    "name": "SC_KeyJustPressed",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_KeyPressed": {
+    "name": "SC_KeyPressed",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_sgi": {
+    "name": "SC_sgi",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "int",
+        "name": "a"
+      }
+    ]
+  },
+  "SC_ggi": {
+    "name": "SC_ggi",
+    "return_type": "int",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_sgf": {
+    "name": "SC_sgf",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "float",
+        "name": "a"
+      }
+    ]
+  },
+  "SC_ggf": {
+    "name": "SC_ggf",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_MP_Gvar_SetSynchro": {
+    "name": "SC_MP_Gvar_SetSynchro",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_SND_MusicPlay": {
+    "name": "SC_SND_MusicPlay",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "MusicID"
+      },
+      {
+        "type": "dword",
+        "name": "StartVolume"
+      }
+    ]
+  },
+  "SC_SND_PlayMusic": {
+    "name": "SC_SND_PlayMusic",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "music_id"
+      }
+    ]
+  },
+  "SC_SND_MusicStop": {
+    "name": "SC_SND_MusicStop",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "MusicID"
+      }
+    ]
+  },
+  "SC_SND_MusicStopFade": {
+    "name": "SC_SND_MusicStopFade",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "MusicID"
+      },
+      {
+        "type": "dword",
+        "name": "Time"
+      }
+    ]
+  },
+  "SC_SND_MusicFadeVolume": {
+    "name": "SC_SND_MusicFadeVolume",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "MusicID"
+      },
+      {
+        "type": "dword",
+        "name": "Volume"
+      },
+      {
+        "type": "dword",
+        "name": "Time"
+      }
+    ]
+  },
+  "SC_AGS_Set": {
+    "name": "SC_AGS_Set",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "val"
+      }
+    ]
+  },
+  "SC_SND_SetEnvironment": {
+    "name": "SC_SND_SetEnvironment",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "env1_id"
+      },
+      {
+        "type": "dword",
+        "name": "env2_id"
+      },
+      {
+        "type": "float",
+        "name": "env_ratio"
+      }
+    ]
+  },
+  "SC_SND_Ambient_Play": {
+    "name": "SC_SND_Ambient_Play",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      }
+    ]
+  },
+  "SC_SND_Ambient_Stop": {
+    "name": "SC_SND_Ambient_Stop",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_SND_SetHearableRatio": {
+    "name": "SC_SND_SetHearableRatio",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "Ratio"
+      }
+    ]
+  },
+  "SC_SND_CreateCurveSound": {
+    "name": "SC_SND_CreateCurveSound",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm_filename"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float",
+        "name": "max_play_dist"
+      },
+      {
+        "type": "BOOL",
+        "name": "apply_env_volume"
+      }
+    ]
+  },
+  "SC_FadeSoundPlayer": {
+    "name": "SC_FadeSoundPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_player_id"
+      },
+      {
+        "type": "float",
+        "name": "final_volume"
+      },
+      {
+        "type": "float",
+        "name": "fade_time"
+      }
+    ]
+  },
+  "SC_SND_GetSoundLen": {
+    "name": "SC_SND_GetSoundLen",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3D": {
+    "name": "SC_SND_PlaySound3D",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3Dex": {
+    "name": "SC_SND_PlaySound3Dex",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_SND_PlaySound2D": {
+    "name": "SC_SND_PlaySound2D",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3Dlink": {
+    "name": "SC_SND_PlaySound3Dlink",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3Dpl": {
+    "name": "SC_SND_PlaySound3Dpl",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "flags"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3DSpec": {
+    "name": "SC_SND_PlaySound3DSpec",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "dword",
+        "name": "spec_id"
+      }
+    ]
+  },
+  "SC_SND_PlaySound3DexSpec": {
+    "name": "SC_SND_PlaySound3DexSpec",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "spec_id"
+      }
+    ]
+  },
+  "SC_SND_PlaySound2DSpec": {
+    "name": "SC_SND_PlaySound2DSpec",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "dword",
+        "name": "spec_id"
+      }
+    ]
+  },
+  "SC_NOD_GetTransform": {
+    "name": "SC_NOD_GetTransform",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "obj"
+      },
+      {
+        "type": "s_SC_NOD_transform*",
+        "name": "trans"
+      }
+    ]
+  },
+  "SC_NOD_SetTransform": {
+    "name": "SC_NOD_SetTransform",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "obj"
+      },
+      {
+        "type": "s_SC_NOD_transform*",
+        "name": "trans"
+      }
+    ]
+  },
+  "SC_NOD_Hide": {
+    "name": "SC_NOD_Hide",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "obj"
+      },
+      {
+        "type": "BOOL",
+        "name": "hide"
+      }
+    ]
+  },
+  "SC_NOD_GetPosInOtherSpace": {
+    "name": "SC_NOD_GetPosInOtherSpace",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "other_nod"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_DUMMY_Set_DoNotRenHier": {
+    "name": "SC_DUMMY_Set_DoNotRenHier",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "dummy_name"
+      },
+      {
+        "type": "BOOL",
+        "name": "do_not_render_hiearchy"
+      }
+    ]
+  },
+  "SC_DUMMY_Set_DoNotRenHier2": {
+    "name": "SC_DUMMY_Set_DoNotRenHier2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "BOOL",
+        "name": "do_not_render_hiearchy"
+      }
+    ]
+  },
+  "SC_EnableObjectScriptWhileUnipage": {
+    "name": "SC_EnableObjectScriptWhileUnipage",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "master_nod"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_NOD_GetPivotWorld": {
+    "name": "SC_NOD_GetPivotWorld",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_NOD_GetWorldPos": {
+    "name": "SC_NOD_GetWorldPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_NOD_GetWorldRotZ": {
+    "name": "SC_NOD_GetWorldRotZ",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      }
+    ]
+  },
+  "SC_NOD_GetCollision": {
+    "name": "SC_NOD_GetCollision",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "master_nod"
+      },
+      {
+        "type": "char*",
+        "name": "name"
+      },
+      {
+        "type": "BOOL",
+        "name": "clear_it"
+      }
+    ]
+  },
+  "SC_NOD_GetCollision2": {
+    "name": "SC_NOD_GetCollision2",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "BOOL",
+        "name": "clear_it"
+      }
+    ]
+  },
+  "SC_NOD_GetDummySph": {
+    "name": "SC_NOD_GetDummySph",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "master_nod"
+      },
+      {
+        "type": "char*",
+        "name": "dummy_name"
+      },
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_NOD_SetDSTR": {
+    "name": "SC_NOD_SetDSTR",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "char*",
+        "name": "obj_name"
+      },
+      {
+        "type": "char*",
+        "name": "dstr_name"
+      }
+    ]
+  },
+  "SC_NOD_ResetDSTR": {
+    "name": "SC_NOD_ResetDSTR",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "char*",
+        "name": "obj_name"
+      }
+    ]
+  },
+  "SC_DOBJ_CameraLooksAt": {
+    "name": "SC_DOBJ_CameraLooksAt",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "max_dist"
+      }
+    ]
+  },
+  "SC_DOBJ_CameraLooksAtCollision": {
+    "name": "SC_DOBJ_CameraLooksAtCollision",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "max_dist"
+      }
+    ]
+  },
+  "SC_ACTIVE_Add": {
+    "name": "SC_ACTIVE_Add",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "cur_dist"
+      },
+      {
+        "type": "dword",
+        "name": "info_txt"
+      }
+    ]
+  },
+  "SC_DOBJ_SetFrozenFlag": {
+    "name": "SC_DOBJ_SetFrozenFlag",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "BOOL",
+        "name": "frozen"
+      }
+    ]
+  },
+  "SC_NOD_AddDynamic": {
+    "name": "SC_NOD_AddDynamic",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "master_nod"
+      },
+      {
+        "type": "char*",
+        "name": "name"
+      },
+      {
+        "type": "s_SC_OBJ_dynamic*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_DOBJ_IsBurning": {
+    "name": "SC_DOBJ_IsBurning",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "perc"
+      }
+    ]
+  },
+  "SC_DOBJ_IsBurning2": {
+    "name": "SC_DOBJ_IsBurning2",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      }
+    ]
+  },
+  "SC_DOBJ_StopBurning": {
+    "name": "SC_DOBJ_StopBurning",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable_future_burning"
+      }
+    ]
+  },
+  "SC_DOBJ_ClearDamagedHP": {
+    "name": "SC_DOBJ_ClearDamagedHP",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      }
+    ]
+  },
+  "SC_DOBJ_BurnCreateBlockers": {
+    "name": "SC_DOBJ_BurnCreateBlockers",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      },
+      {
+        "type": "dword",
+        "name": "items"
+      }
+    ]
+  },
+  "SC_MANM_Create": {
+    "name": "SC_MANM_Create",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_MANM_Release": {
+    "name": "SC_MANM_Release",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "manm_id"
+      }
+    ]
+  },
+  "SC_MANM_GetIndex": {
+    "name": "SC_MANM_GetIndex",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "manm_id"
+      },
+      {
+        "type": "char*",
+        "name": "objname"
+      }
+    ]
+  },
+  "SC_MANM_Set": {
+    "name": "SC_MANM_Set",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "manm_id"
+      },
+      {
+        "type": "dword",
+        "name": "manm_index"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_MANM_GetLength": {
+    "name": "SC_MANM_GetLength",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "manm_id"
+      },
+      {
+        "type": "dword",
+        "name": "manm_index"
+      }
+    ]
+  },
+  "SC_SetViewAnim": {
+    "name": "SC_SetViewAnim",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm_name"
+      },
+      {
+        "type": "dword",
+        "name": "start_frame"
+      },
+      {
+        "type": "dword",
+        "name": "end_frame"
+      },
+      {
+        "type": "dword",
+        "name": "callback_id"
+      }
+    ]
+  },
+  "SC_NOD_SetFromANM": {
+    "name": "SC_NOD_SetFromANM",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      }
+    ]
+  },
+  "SC_ANM_GetFrameTime": {
+    "name": "SC_ANM_GetFrameTime",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm"
+      },
+      {
+        "type": "int",
+        "name": "frame"
+      }
+    ]
+  },
+  "SC_NOD_GetPosFromANM": {
+    "name": "SC_NOD_GetPosFromANM",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "anm"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_CAR_WheelAdd": {
+    "name": "SC_CAR_WheelAdd",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "car"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "s_SC_Car_AddWheel*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_CAR_EntryAdd": {
+    "name": "SC_CAR_EntryAdd",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "car"
+      },
+      {
+        "type": "s_SC_Car_AddEntry*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_CAR_SetAirResistance": {
+    "name": "SC_CAR_SetAirResistance",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "car"
+      },
+      {
+        "type": "float",
+        "name": "a0"
+      },
+      {
+        "type": "float",
+        "name": "a1"
+      },
+      {
+        "type": "float",
+        "name": "a2"
+      }
+    ]
+  },
+  "SC_SHIP_EntryAdd": {
+    "name": "SC_SHIP_EntryAdd",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "ship"
+      },
+      {
+        "type": "s_SC_Car_AddEntry*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_HELI_EntryAdd": {
+    "name": "SC_HELI_EntryAdd",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "heli"
+      },
+      {
+        "type": "s_SC_Car_AddEntry*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_HELI_ChangeEntryStativ": {
+    "name": "SC_HELI_ChangeEntryStativ",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "void*",
+        "name": "heli"
+      },
+      {
+        "type": "dword",
+        "name": "entry_index"
+      },
+      {
+        "type": "char*",
+        "name": "stg_name"
+      }
+    ]
+  },
+  "SC_FPV_FlyOffCartridge": {
+    "name": "SC_FPV_FlyOffCartridge",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_FlyOffCartridge*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_MWP_Create": {
+    "name": "SC_MWP_Create",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "s_SC_MWP_Create*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_FPV_AttachMagazine": {
+    "name": "SC_FPV_AttachMagazine",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "render"
+      }
+    ]
+  },
+  "SC_EventImpuls": {
+    "name": "SC_EventImpuls",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "ev_name"
+      }
+    ]
+  },
+  "SC_EventEnable": {
+    "name": "SC_EventEnable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "ev_name"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_SetMissileTrace": {
+    "name": "SC_SetMissileTrace",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "color"
+      },
+      {
+        "type": "float",
+        "name": "alpha"
+      }
+    ]
+  },
+  "SC_CreatePtc": {
+    "name": "SC_CreatePtc",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_CreatePtc_Ext": {
+    "name": "SC_CreatePtc_Ext",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "void*",
+        "name": "nod"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      },
+      {
+        "type": "float",
+        "name": "interval"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      },
+      {
+        "type": "float",
+        "name": "time_mult"
+      }
+    ]
+  },
+  "SC_Fnt_Write": {
+    "name": "SC_Fnt_Write",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "x"
+      },
+      {
+        "type": "float",
+        "name": "y"
+      },
+      {
+        "type": "char*",
+        "name": "txt"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      },
+      {
+        "type": "dword",
+        "name": "color"
+      }
+    ]
+  },
+  "SC_Fnt_GetWidth": {
+    "name": "SC_Fnt_GetWidth",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "txt"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      }
+    ]
+  },
+  "SC_Fnt_WriteW": {
+    "name": "SC_Fnt_WriteW",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "x"
+      },
+      {
+        "type": "float",
+        "name": "y"
+      },
+      {
+        "type": "ushort*",
+        "name": "txt"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      },
+      {
+        "type": "dword",
+        "name": "color"
+      }
+    ]
+  },
+  "SC_Fnt_GetWidthW": {
+    "name": "SC_Fnt_GetWidthW",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "ushort*",
+        "name": "txt"
+      },
+      {
+        "type": "float",
+        "name": "scale"
+      }
+    ]
+  },
+  "SC_GetScreenRes": {
+    "name": "SC_GetScreenRes",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float*",
+        "name": "width"
+      },
+      {
+        "type": "float*",
+        "name": "height"
+      }
+    ]
+  },
+  "SC_SetSceneVisibilityMult": {
+    "name": "SC_SetSceneVisibilityMult",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "vis_mult"
+      },
+      {
+        "type": "float",
+        "name": "scene_fog_mult"
+      },
+      {
+        "type": "float",
+        "name": "bckg_fog_mult"
+      }
+    ]
+  },
+  "SC_FadeTo": {
+    "name": "SC_FadeTo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "black"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_SwitchSceneSCS": {
+    "name": "SC_SwitchSceneSCS",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "fname"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_SetMovieBorders": {
+    "name": "SC_SetMovieBorders",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "set_on"
+      }
+    ]
+  },
+  "SC_EnableBloodWhenHit": {
+    "name": "SC_EnableBloodWhenHit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_CreateLight": {
+    "name": "SC_CreateLight",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_light*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_EnableCharacterLOD": {
+    "name": "SC_EnableCharacterLOD",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_GetCameraPos": {
+    "name": "SC_GetCameraPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_Item_Create": {
+    "name": "SC_Item_Create",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_Item_Create2": {
+    "name": "SC_Item_Create2",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "movdir"
+      }
+    ]
+  },
+  "SC_Item_Preload": {
+    "name": "SC_Item_Preload",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      }
+    ]
+  },
+  "SC_Item_GetPos": {
+    "name": "SC_Item_GetPos",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "netid"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_Item_Find": {
+    "name": "SC_Item_Find",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "item_type"
+      }
+    ]
+  },
+  "SC_RemoveItems": {
+    "name": "SC_RemoveItems",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "area"
+      },
+      {
+        "type": "dword",
+        "name": "item_type"
+      }
+    ]
+  },
+  "SC_GetWp": {
+    "name": "SC_GetWp",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "wpname"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_GetRndWp": {
+    "name": "SC_GetRndWp",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "wp"
+      }
+    ]
+  },
+  "SC_ClearImpossibleWayTargets": {
+    "name": "SC_ClearImpossibleWayTargets",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_InitSide": {
+    "name": "SC_InitSide",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "s_SC_initside*",
+        "name": "init"
+      }
+    ]
+  },
+  "SC_SetSideAlly": {
+    "name": "SC_SetSideAlly",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "s1"
+      },
+      {
+        "type": "dword",
+        "name": "s2"
+      },
+      {
+        "type": "float",
+        "name": "status"
+      }
+    ]
+  },
+  "SC_InitSideGroup": {
+    "name": "SC_InitSideGroup",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_initgroup*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_P_Create": {
+    "name": "SC_P_Create",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "s_SC_P_Create*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_P_ScriptMessage": {
+    "name": "SC_P_ScriptMessage",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "param1"
+      },
+      {
+        "type": "dword",
+        "name": "param2"
+      }
+    ]
+  },
+  "SC_P_DoKill": {
+    "name": "SC_P_DoKill",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_DoAnim": {
+    "name": "SC_P_DoAnim",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_P_DoAnimLooped": {
+    "name": "SC_P_DoAnimLooped",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_P_Recover": {
+    "name": "SC_P_Recover",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float",
+        "name": "rz"
+      }
+    ]
+  },
+  "SC_P_Recover2": {
+    "name": "SC_P_Recover2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float",
+        "name": "rz"
+      },
+      {
+        "type": "dword",
+        "name": "phase"
+      }
+    ]
+  },
+  "SC_P_Release": {
+    "name": "SC_P_Release",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_GetGroupPlayers": {
+    "name": "SC_GetGroupPlayers",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      }
+    ]
+  },
+  "SC_GetPls": {
+    "name": "SC_GetPls",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      },
+      {
+        "type": "dword*",
+        "name": "list"
+      },
+      {
+        "type": "dword*",
+        "name": "items"
+      }
+    ]
+  },
+  "SC_GetPlsInLine": {
+    "name": "SC_GetPlsInLine",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "dir"
+      },
+      {
+        "type": "dword*",
+        "name": "list"
+      },
+      {
+        "type": "dword*",
+        "name": "items"
+      }
+    ]
+  },
+  "SC_P_GetActive": {
+    "name": "SC_P_GetActive",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_IsReady": {
+    "name": "SC_P_IsReady",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_GetPos": {
+    "name": "SC_P_GetPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_P_GetRot": {
+    "name": "SC_P_GetRot",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_GetHeadPos": {
+    "name": "SC_P_GetHeadPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_P_GetDir": {
+    "name": "SC_P_GetDir",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "dir"
+      }
+    ]
+  },
+  "SC_P_GetInfo": {
+    "name": "SC_P_GetInfo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_getinfo*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_GetNearestPlayer": {
+    "name": "SC_GetNearestPlayer",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      },
+      {
+        "type": "float*",
+        "name": "dist"
+      }
+    ]
+  },
+  "SC_P_GetBySideGroupMember": {
+    "name": "SC_P_GetBySideGroupMember",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "iside"
+      },
+      {
+        "type": "dword",
+        "name": "igroup"
+      },
+      {
+        "type": "dword",
+        "name": "imember"
+      }
+    ]
+  },
+  "SC_P_GetPhase": {
+    "name": "SC_P_GetPhase",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_GetDistance": {
+    "name": "SC_P_GetDistance",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "to_pl_id"
+      }
+    ]
+  },
+  "SC_P_WriteHealthToGlobalVar": {
+    "name": "SC_P_WriteHealthToGlobalVar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "first_gvar"
+      }
+    ]
+  },
+  "SC_P_IsInSpecStativ": {
+    "name": "SC_P_IsInSpecStativ",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_UsesBinocular": {
+    "name": "SC_P_UsesBinocular",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_ChangeSideGroupMemId": {
+    "name": "SC_P_ChangeSideGroupMemId",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "mem_id"
+      }
+    ]
+  },
+  "SC_P_SetForceClassName": {
+    "name": "SC_P_SetForceClassName",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "name_nr"
+      }
+    ]
+  },
+  "SC_P_SetPos": {
+    "name": "SC_P_SetPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_P_SetRot": {
+    "name": "SC_P_SetRot",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "rz"
+      }
+    ]
+  },
+  "SC_P_AddAttObj": {
+    "name": "SC_P_AddAttObj",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "bes_name"
+      },
+      {
+        "type": "char*",
+        "name": "eqp_name"
+      }
+    ]
+  },
+  "SC_P_SetHp": {
+    "name": "SC_P_SetHp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "hp"
+      }
+    ]
+  },
+  "SC_P_Heal": {
+    "name": "SC_P_Heal",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_SetActive": {
+    "name": "SC_P_SetActive",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "active"
+      }
+    ]
+  },
+  "SC_P_EnableLonelyWolfKiller": {
+    "name": "SC_P_EnableLonelyWolfKiller",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "distance"
+      }
+    ]
+  },
+  "SC_P_SetFaceStatus": {
+    "name": "SC_P_SetFaceStatus",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "face_type"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_SetHandVariation": {
+    "name": "SC_P_SetHandVariation",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "hand_id"
+      },
+      {
+        "type": "dword",
+        "name": "variation"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_Link3pvEqp": {
+    "name": "SC_P_Link3pvEqp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      },
+      {
+        "type": "dword",
+        "name": "plb_id"
+      },
+      {
+        "type": "char*",
+        "name": "eqp_name"
+      }
+    ]
+  },
+  "SC_P_UnLink3pvEqp": {
+    "name": "SC_P_UnLink3pvEqp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      }
+    ]
+  },
+  "SC_P_SetSpecAnims": {
+    "name": "SC_P_SetSpecAnims",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_SpecAnims*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_P_SetPhase": {
+    "name": "SC_P_SetPhase",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "phase"
+      }
+    ]
+  },
+  "SC_P_DoHit": {
+    "name": "SC_P_DoHit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "area_id"
+      },
+      {
+        "type": "float",
+        "name": "hp"
+      }
+    ]
+  },
+  "SC_P_SetRadarColor": {
+    "name": "SC_P_SetRadarColor",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "val"
+      }
+    ]
+  },
+  "SC_P_CloseEyes": {
+    "name": "SC_P_CloseEyes",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "force_close"
+      }
+    ]
+  },
+  "SC_P_EnableBinocular": {
+    "name": "SC_P_EnableBinocular",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_EnableHeadEqpFlyOff": {
+    "name": "SC_P_EnableHeadEqpFlyOff",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_EnableHitAnimations": {
+    "name": "SC_P_EnableHitAnimations",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_ReadHealthFromGlobalVar": {
+    "name": "SC_P_ReadHealthFromGlobalVar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "first_gvar"
+      }
+    ]
+  },
+  "SC_P_SetLinkedView": {
+    "name": "SC_P_SetLinkedView",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "rz"
+      },
+      {
+        "type": "float",
+        "name": "rx"
+      }
+    ]
+  },
+  "SC_P_GetWeapons": {
+    "name": "SC_P_GetWeapons",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_Create*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_P_HasWeapon": {
+    "name": "SC_P_HasWeapon",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "weap_type"
+      }
+    ]
+  },
+  "SC_P_GetHasShoot": {
+    "name": "SC_P_GetHasShoot",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_GetCurWeap": {
+    "name": "SC_P_GetCurWeap",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_AddAllAmmo": {
+    "name": "SC_P_AddAllAmmo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_AddAmmoNoGrenade": {
+    "name": "SC_P_AddAmmoNoGrenade",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_ChangeWeapon": {
+    "name": "SC_P_ChangeWeapon",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      },
+      {
+        "type": "dword",
+        "name": "weap_type"
+      }
+    ]
+  },
+  "SC_P_SetSelWeapon": {
+    "name": "SC_P_SetSelWeapon",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      }
+    ]
+  },
+  "SC_P_SetNoAmmo": {
+    "name": "SC_P_SetNoAmmo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_SetAmmo": {
+    "name": "SC_P_SetAmmo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "ammo_type"
+      },
+      {
+        "type": "dword",
+        "name": "amount"
+      }
+    ]
+  },
+  "SC_P_WriteAmmoToGlobalVar": {
+    "name": "SC_P_WriteAmmoToGlobalVar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "first_gvar"
+      },
+      {
+        "type": "dword",
+        "name": "last_gvar"
+      }
+    ]
+  },
+  "SC_P_ReadAmmoFromGlobalVar": {
+    "name": "SC_P_ReadAmmoFromGlobalVar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "first_gvar"
+      },
+      {
+        "type": "dword",
+        "name": "last_gvar"
+      }
+    ]
+  },
+  "SC_P_GetAmmoInWeap": {
+    "name": "SC_P_GetAmmoInWeap",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      }
+    ]
+  },
+  "SC_P_SetAmmoInWeap": {
+    "name": "SC_P_SetAmmoInWeap",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot_id"
+      },
+      {
+        "type": "dword",
+        "name": "ammo"
+      }
+    ]
+  },
+  "SC_P_IsInCar": {
+    "name": "SC_P_IsInCar",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_IsInCarEx": {
+    "name": "SC_P_IsInCarEx",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword*",
+        "name": "entry_index"
+      }
+    ]
+  },
+  "SC_P_IsInHeli": {
+    "name": "SC_P_IsInHeli",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_IsInShip": {
+    "name": "SC_P_IsInShip",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_SetToHeli": {
+    "name": "SC_P_SetToHeli",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "heli_name"
+      },
+      {
+        "type": "dword",
+        "name": "entry_index"
+      }
+    ]
+  },
+  "SC_P_ExitHeli": {
+    "name": "SC_P_ExitHeli",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "new_pos"
+      }
+    ]
+  },
+  "SC_P_SetToShip": {
+    "name": "SC_P_SetToShip",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "ship_name"
+      },
+      {
+        "type": "dword",
+        "name": "entry_index"
+      }
+    ]
+  },
+  "SC_P_ExitShip": {
+    "name": "SC_P_ExitShip",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "new_pos"
+      }
+    ]
+  },
+  "SC_P_SetToCar": {
+    "name": "SC_P_SetToCar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "car_name"
+      },
+      {
+        "type": "dword",
+        "name": "entry_index"
+      }
+    ]
+  },
+  "SC_P_SetToSceneMwp": {
+    "name": "SC_P_SetToSceneMwp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "mwp_name"
+      }
+    ]
+  },
+  "SC_P_ExitSceneMwp": {
+    "name": "SC_P_ExitSceneMwp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_PC_Get": {
+    "name": "SC_PC_Get",
+    "return_type": "dword",
+    "parameters": []
+  },
+  "SC_PC_GetPos": {
+    "name": "SC_PC_GetPos",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_PC_SetControl": {
+    "name": "SC_PC_SetControl",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "user_control"
+      }
+    ]
+  },
+  "SC_PC_EnableMovementAndLooking": {
+    "name": "SC_PC_EnableMovementAndLooking",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnableMovement": {
+    "name": "SC_PC_EnableMovement",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnablePronePosition": {
+    "name": "SC_PC_EnablePronePosition",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnableWeaponsUsing": {
+    "name": "SC_PC_EnableWeaponsUsing",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnableExit": {
+    "name": "SC_PC_EnableExit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnableEnter": {
+    "name": "SC_PC_EnableEnter",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_PlayFpvAnim": {
+    "name": "SC_PC_PlayFpvAnim",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_PC_PlayFpvAnim2": {
+    "name": "SC_PC_PlayFpvAnim2",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "filename"
+      },
+      {
+        "type": "dword",
+        "name": "plb_id"
+      },
+      {
+        "type": "char*",
+        "name": "eqp"
+      },
+      {
+        "type": "char*",
+        "name": "anm"
+      }
+    ]
+  },
+  "SC_PC_PlayFpvLooped": {
+    "name": "SC_PC_PlayFpvLooped",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_PC_EnableFlashLight": {
+    "name": "SC_PC_EnableFlashLight",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnableHitByAllies": {
+    "name": "SC_PC_EnableHitByAllies",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_EnablePickup": {
+    "name": "SC_PC_EnablePickup",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_PC_SetIntel": {
+    "name": "SC_PC_SetIntel",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_P_intel*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_PC_GetIntel": {
+    "name": "SC_PC_GetIntel",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_P_intel*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_GetPCZoom": {
+    "name": "SC_GetPCZoom",
+    "return_type": "float",
+    "parameters": []
+  },
+  "SC_Ai_SetShootOnHeardEnemyColTest": {
+    "name": "SC_Ai_SetShootOnHeardEnemyColTest",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "do_test"
+      }
+    ]
+  },
+  "SC_Ai_SetFormationType": {
+    "name": "SC_Ai_SetFormationType",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "type"
+      }
+    ]
+  },
+  "SC_Ai_SetFormationSize": {
+    "name": "SC_Ai_SetFormationSize",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "float",
+        "name": "size"
+      }
+    ]
+  },
+  "SC_Ai_SetBattleMode": {
+    "name": "SC_Ai_SetBattleMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "mode"
+      }
+    ]
+  },
+  "SC_Ai_SetBattleModeExt": {
+    "name": "SC_Ai_SetBattleModeExt",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "size"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "battlemode"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_Ai_SetPeaceMode": {
+    "name": "SC_Ai_SetPeaceMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "dword",
+        "name": "mode"
+      }
+    ]
+  },
+  "SC_Ai_SetPointRuns": {
+    "name": "SC_Ai_SetPointRuns",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "BOOL",
+        "name": "runs"
+      }
+    ]
+  },
+  "SC_Ai_ClearCheckPoints": {
+    "name": "SC_Ai_ClearCheckPoints",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      }
+    ]
+  },
+  "SC_Ai_AddCheckPoint": {
+    "name": "SC_Ai_AddCheckPoint",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      },
+      {
+        "type": "dword",
+        "name": "flags"
+      }
+    ]
+  },
+  "SC_Ai_GetCurCheckPoint": {
+    "name": "SC_Ai_GetCurCheckPoint",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_Ai_PointStopDanger": {
+    "name": "SC_Ai_PointStopDanger",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      }
+    ]
+  },
+  "SC_Ai_StopDanger": {
+    "name": "SC_Ai_StopDanger",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "float",
+        "name": "stop_time"
+      }
+    ]
+  },
+  "SC_Ai_SetStealthMode": {
+    "name": "SC_Ai_SetStealthMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "BOOL",
+        "name": "stealth"
+      }
+    ]
+  },
+  "SC_Ai_SetStealthModeOff": {
+    "name": "SC_Ai_SetStealthModeOff",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "float",
+        "name": "agressive_time"
+      }
+    ]
+  },
+  "SC_Ai_GetStealthMode": {
+    "name": "SC_Ai_GetStealthMode",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      }
+    ]
+  },
+  "SC_Ai_EnableRelaxWalk": {
+    "name": "SC_Ai_EnableRelaxWalk",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_Ai_Blocker_Add": {
+    "name": "SC_Ai_Blocker_Add",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_Ai_Blocker_Remove": {
+    "name": "SC_Ai_Blocker_Remove",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "blocker_id"
+      }
+    ]
+  },
+  "SC_Ai_FakeEnemy_Remove": {
+    "name": "SC_Ai_FakeEnemy_Remove",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "fake_enemy"
+      }
+    ]
+  },
+  "SC_Ai_FakeDanger": {
+    "name": "SC_Ai_FakeDanger",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_Ai_SetGroupEnemyUpdate": {
+    "name": "SC_Ai_SetGroupEnemyUpdate",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_Ai_SetPointmanNormalWalking": {
+    "name": "SC_Ai_SetPointmanNormalWalking",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "side"
+      },
+      {
+        "type": "dword",
+        "name": "group"
+      },
+      {
+        "type": "BOOL",
+        "name": "normal"
+      }
+    ]
+  },
+  "SC_P_Ai_GetEnemyShotAround": {
+    "name": "SC_P_Ai_GetEnemyShotAround",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "max_dist"
+      }
+    ]
+  },
+  "SC_P_SetInvisibleForAi": {
+    "name": "SC_P_SetInvisibleForAi",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "invisible"
+      }
+    ]
+  },
+  "SC_P_GetInvisibleForAi": {
+    "name": "SC_P_GetInvisibleForAi",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_EnableSearchDeathBodies": {
+    "name": "SC_P_EnableSearchDeathBodies",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_Ai_CanSeePlayer": {
+    "name": "SC_P_Ai_CanSeePlayer",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "target_id"
+      },
+      {
+        "type": "float",
+        "name": "max_dist"
+      },
+      {
+        "type": "dword",
+        "name": "need_points"
+      }
+    ]
+  },
+  "SC_P_Ai_SetMode": {
+    "name": "SC_P_Ai_SetMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "mode"
+      }
+    ]
+  },
+  "SC_P_Ai_GetMode": {
+    "name": "SC_P_Ai_GetMode",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetBattleMode": {
+    "name": "SC_P_Ai_SetBattleMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "battlemode"
+      }
+    ]
+  },
+  "SC_P_Ai_SetBattleModeExt": {
+    "name": "SC_P_Ai_SetBattleModeExt",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "battlemode"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_P_Ai_GetBattleMode": {
+    "name": "SC_P_Ai_GetBattleMode",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetPeaceMode": {
+    "name": "SC_P_Ai_SetPeaceMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "peacemode"
+      }
+    ]
+  },
+  "SC_P_Ai_GetPeaceMode": {
+    "name": "SC_P_Ai_GetPeaceMode",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_GetSpecTask": {
+    "name": "SC_P_Ai_GetSpecTask",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetMoveMode": {
+    "name": "SC_P_Ai_SetMoveMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "mode"
+      }
+    ]
+  },
+  "SC_P_Ai_SetMovePos": {
+    "name": "SC_P_Ai_SetMovePos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_P_Ai_EnableShooting": {
+    "name": "SC_P_Ai_EnableShooting",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_Ai_Go": {
+    "name": "SC_P_Ai_Go",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_P_Ai_Stop": {
+    "name": "SC_P_Ai_Stop",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_GetProps": {
+    "name": "SC_P_Ai_GetProps",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_AI_props*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Ai_SetProps": {
+    "name": "SC_P_Ai_SetProps",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_AI_props*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Ai_GetGrenateProps": {
+    "name": "SC_P_Ai_GetGrenateProps",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_Ai_Grenade*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Ai_SetGrenateProps": {
+    "name": "SC_P_Ai_SetGrenateProps",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_Ai_Grenade*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Ai_GetEnemies": {
+    "name": "SC_P_Ai_GetEnemies",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_GetSureEnemies": {
+    "name": "SC_P_Ai_GetSureEnemies",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_LookAt": {
+    "name": "SC_P_Ai_LookAt",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      }
+    ]
+  },
+  "SC_P_Ai_EnableSituationUpdate": {
+    "name": "SC_P_Ai_EnableSituationUpdate",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_Ai_KnowsAboutPl": {
+    "name": "SC_P_Ai_KnowsAboutPl",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "target_pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetBattleProps": {
+    "name": "SC_P_Ai_SetBattleProps",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "s_SC_P_Ai_BattleProps*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Ai_GetShooting": {
+    "name": "SC_P_Ai_GetShooting",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword*",
+        "name": "target_pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_GetDanger": {
+    "name": "SC_P_Ai_GetDanger",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetPreferedWeaponSlot": {
+    "name": "SC_P_Ai_SetPreferedWeaponSlot",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "slot"
+      }
+    ]
+  },
+  "SC_P_Ai_GetPreferedWeaponSlot": {
+    "name": "SC_P_Ai_GetPreferedWeaponSlot",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_ShootAt": {
+    "name": "SC_P_Ai_ShootAt",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_Ai_ForgetEnemies": {
+    "name": "SC_P_Ai_ForgetEnemies",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_HideYourself": {
+    "name": "SC_P_Ai_HideYourself",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "danger_pos"
+      },
+      {
+        "type": "float",
+        "name": "max_walk_dist"
+      }
+    ]
+  },
+  "SC_P_Ai_LookingAt": {
+    "name": "SC_P_Ai_LookingAt",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_P_Ai_ShouldLookAt": {
+    "name": "SC_P_Ai_ShouldLookAt",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_Ai_SetStaticMode": {
+    "name": "SC_P_Ai_SetStaticMode",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "is_static"
+      }
+    ]
+  },
+  "SC_P_Ai_GetStaticMode": {
+    "name": "SC_P_Ai_GetStaticMode",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_ThrowGrenade": {
+    "name": "SC_P_Ai_ThrowGrenade",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "target"
+      },
+      {
+        "type": "float",
+        "name": "explode_time"
+      }
+    ]
+  },
+  "SC_P_Ai_GetNearestEnemyDist": {
+    "name": "SC_P_Ai_GetNearestEnemyDist",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_GetNearestEnemy": {
+    "name": "SC_P_Ai_GetNearestEnemy",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_Script_WatchPlayer": {
+    "name": "SC_P_Ai_Script_WatchPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "target_pl_id"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_Ai_UpdateSituation": {
+    "name": "SC_P_Ai_UpdateSituation",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "target_pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable_se"
+      }
+    ]
+  },
+  "SC_P_Ai_JumpInNextFrame": {
+    "name": "SC_P_Ai_JumpInNextFrame",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetIgnoreFlags": {
+    "name": "SC_P_Ai_SetIgnoreFlags",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "flags"
+      }
+    ]
+  },
+  "SC_P_Ai_GetIgnoreFlags": {
+    "name": "SC_P_Ai_GetIgnoreFlags",
+    "return_type": "dword",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_SetPointmanBreaks": {
+    "name": "SC_P_Ai_SetPointmanBreaks",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "min_interval"
+      },
+      {
+        "type": "float",
+        "name": "max_interval"
+      }
+    ]
+  },
+  "SC_P_Ai_WalkThruAIs": {
+    "name": "SC_P_Ai_WalkThruAIs",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_P_Ai_SetMedicIngMaxActiveDist": {
+    "name": "SC_P_Ai_SetMedicIngMaxActiveDist",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "distance"
+      }
+    ]
+  },
+  "SC_P_Ai_EnterCar": {
+    "name": "SC_P_Ai_EnterCar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "car_name"
+      },
+      {
+        "type": "dword",
+        "name": "entry_function"
+      },
+      {
+        "type": "s_sphere*",
+        "name": "enter_pos"
+      }
+    ]
+  },
+  "SC_P_Ai_StepOutCar": {
+    "name": "SC_P_Ai_StepOutCar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_EnterHeli": {
+    "name": "SC_P_Ai_EnterHeli",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "heli_name"
+      },
+      {
+        "type": "dword",
+        "name": "entry_function"
+      }
+    ]
+  },
+  "SC_P_Ai_StepOutHeli": {
+    "name": "SC_P_Ai_StepOutHeli",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_Ai_Drive": {
+    "name": "SC_P_Ai_Drive",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "way_filename"
+      }
+    ]
+  },
+  "SC_MP_AddPlayerScript": {
+    "name": "SC_MP_AddPlayerScript",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "filename"
+      }
+    ]
+  },
+  "SC_MP_EnumPlayers": {
+    "name": "SC_MP_EnumPlayers",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "s_SC_MP_EnumPlayers*",
+        "name": "list"
+      },
+      {
+        "type": "dword*",
+        "name": "items"
+      },
+      {
+        "type": "dword",
+        "name": "side"
+      }
+    ]
+  },
+  "SC_NET_FillRecover": {
+    "name": "SC_NET_FillRecover",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "s_SC_MP_Recover*",
+        "name": "recov"
+      },
+      {
+        "type": "char*",
+        "name": "wpname"
+      }
+    ]
+  },
+  "SC_MP_RestartMission": {
+    "name": "SC_MP_RestartMission",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_P_SetSpeachDist": {
+    "name": "SC_P_SetSpeachDist",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "max_dist_subtitle_write"
+      }
+    ]
+  },
+  "SC_P_Speech2": {
+    "name": "SC_P_Speech2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "speech_txt"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_P_SpeechMes2": {
+    "name": "SC_P_SpeechMes2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "speech_txt"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_P_SpeechMes3": {
+    "name": "SC_P_SpeechMes3",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "char*",
+        "name": "speech_str"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_P_SpeechMes3W": {
+    "name": "SC_P_SpeechMes3W",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "ushort*",
+        "name": "speech_str"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_P_SetChat": {
+    "name": "SC_P_SetChat",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_P_CanChat": {
+    "name": "SC_P_CanChat",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_RadioSetDist": {
+    "name": "SC_RadioSetDist",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "max_dist_subtitle_write"
+      }
+    ]
+  },
+  "SC_SpeachRadio": {
+    "name": "SC_SpeachRadio",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "speach_txt"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_SpeachRadioMes": {
+    "name": "SC_SpeachRadioMes",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "speach_txt"
+      },
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_SpeechRadio2": {
+    "name": "SC_SpeechRadio2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "speech_txt"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      }
+    ]
+  },
+  "SC_SpeechRadioMes2": {
+    "name": "SC_SpeechRadioMes2",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "speech_txt"
+      },
+      {
+        "type": "float*",
+        "name": "timeout"
+      },
+      {
+        "type": "dword",
+        "name": "param"
+      }
+    ]
+  },
+  "SC_SpeechSet3Dto3Dincamera": {
+    "name": "SC_SpeechSet3Dto3Dincamera",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "incamera3D"
+      }
+    ]
+  },
+  "SC_RadioGetWillTalk": {
+    "name": "SC_RadioGetWillTalk",
+    "return_type": "float",
+    "parameters": []
+  },
+  "SC_P_GetWillTalk": {
+    "name": "SC_P_GetWillTalk",
+    "return_type": "float",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_GetTalking": {
+    "name": "SC_P_GetTalking",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_RemoveAllSpeech": {
+    "name": "SC_P_RemoveAllSpeech",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      }
+    ]
+  },
+  "SC_P_RemoveAllSpeechEx": {
+    "name": "SC_P_RemoveAllSpeechEx",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "include_active"
+      }
+    ]
+  },
+  "SC_P_DisableSpeaking": {
+    "name": "SC_P_DisableSpeaking",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "disable"
+      }
+    ]
+  },
+  "SC_P_Ai_EnableSayTo": {
+    "name": "SC_P_Ai_EnableSayTo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MissionCompleted": {
+    "name": "SC_MissionCompleted",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MissionFailed": {
+    "name": "SC_MissionFailed",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_MissionFailedEx": {
+    "name": "SC_MissionFailedEx",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "music_id"
+      },
+      {
+        "type": "dword",
+        "name": "start_volume"
+      }
+    ]
+  },
+  "SC_MissionFailedDeathPlayer": {
+    "name": "SC_MissionFailedDeathPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "death_plid"
+      }
+    ]
+  },
+  "SC_MissionDone": {
+    "name": "SC_MissionDone",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_TheEnd": {
+    "name": "SC_TheEnd",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_Radio_Enable": {
+    "name": "SC_Radio_Enable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "radio_id"
+      }
+    ]
+  },
+  "SC_Radio_Disable": {
+    "name": "SC_Radio_Disable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "radio_id"
+      }
+    ]
+  },
+  "SC_Radio_Get": {
+    "name": "SC_Radio_Get",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword*",
+        "name": "radio_id"
+      }
+    ]
+  },
+  "SC_RadioBatch_Begin": {
+    "name": "SC_RadioBatch_Begin",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_RadioBatch_End": {
+    "name": "SC_RadioBatch_End",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_RadistBatch_Begin": {
+    "name": "SC_RadistBatch_Begin",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_RadistBatch_End": {
+    "name": "SC_RadistBatch_End",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_RadioSet2D": {
+    "name": "SC_RadioSet2D",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "willbe2D"
+      }
+    ]
+  },
+  "SC_RadioSet3DButDistanceLimit": {
+    "name": "SC_RadioSet3DButDistanceLimit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_RadioBreak_Set": {
+    "name": "SC_RadioBreak_Set",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_SpeachBreakProps*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_RadioBreak_Get": {
+    "name": "SC_RadioBreak_Get",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_SpeachBreakProps*",
+        "name": "props"
+      }
+    ]
+  },
+  "SC_P_Radio_Enable": {
+    "name": "SC_P_Radio_Enable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "radio_id"
+      }
+    ]
+  },
+  "SC_P_Radio_Used": {
+    "name": "SC_P_Radio_Used",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "radio_id"
+      }
+    ]
+  },
+  "SC_PC_EnableRadioBreak": {
+    "name": "SC_PC_EnableRadioBreak",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_MissionSave": {
+    "name": "SC_MissionSave",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_MissionSave*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_EnableQuickSave": {
+    "name": "SC_EnableQuickSave",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_SetObjectScript": {
+    "name": "SC_SetObjectScript",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "obj_name"
+      },
+      {
+        "type": "char*",
+        "name": "script_name"
+      }
+    ]
+  },
+  "SC_DisplayBinocular": {
+    "name": "SC_DisplayBinocular",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_DeathCamera_Enable": {
+    "name": "SC_DeathCamera_Enable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_Set_GoToPC_snd": {
+    "name": "SC_Set_GoToPC_snd",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "member_id"
+      },
+      {
+        "type": "dword",
+        "name": "peace"
+      },
+      {
+        "type": "dword",
+        "name": "agressive"
+      },
+      {
+        "type": "dword",
+        "name": "stealth"
+      }
+    ]
+  },
+  "SC_Set_RadioMan_RunDist": {
+    "name": "SC_Set_RadioMan_RunDist",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "dist"
+      }
+    ]
+  },
+  "SC_PreloadBES": {
+    "name": "SC_PreloadBES",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "id"
+      },
+      {
+        "type": "char*",
+        "name": "bes_name"
+      }
+    ]
+  },
+  "SC_PreloadWeapon": {
+    "name": "SC_PreloadWeapon",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "type"
+      },
+      {
+        "type": "BOOL",
+        "name": "fpv_to"
+      }
+    ]
+  },
+  "SC_PreloadSound": {
+    "name": "SC_PreloadSound",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "snd_id"
+      },
+      {
+        "type": "BOOL",
+        "name": "is3D"
+      }
+    ]
+  },
+  "SC_LevScr_Event": {
+    "name": "SC_LevScr_Event",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "param1"
+      },
+      {
+        "type": "dword",
+        "name": "param2"
+      }
+    ]
+  },
+  "SC_StorySkipEnable": {
+    "name": "SC_StorySkipEnable",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_SetObjectives": {
+    "name": "SC_SetObjectives",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "objectives"
+      },
+      {
+        "type": "s_SC_Objective*",
+        "name": "objective"
+      },
+      {
+        "type": "float",
+        "name": "force_display_time"
+      }
+    ]
+  },
+  "SC_SetObjectivesNoSound": {
+    "name": "SC_SetObjectivesNoSound",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "objectives"
+      },
+      {
+        "type": "s_SC_Objective*",
+        "name": "objective"
+      },
+      {
+        "type": "float",
+        "name": "force_display_time"
+      }
+    ]
+  },
+  "SC_GetScriptHelper": {
+    "name": "SC_GetScriptHelper",
+    "return_type": "BOOL",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "name"
+      },
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_DoExplosion": {
+    "name": "SC_DoExplosion",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      },
+      {
+        "type": "dword",
+        "name": "type"
+      }
+    ]
+  },
+  "SC_ArtillerySupport": {
+    "name": "SC_ArtillerySupport",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_SetBombInfo": {
+    "name": "SC_SetBombInfo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_BombInfo*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_SetMapFpvModel": {
+    "name": "SC_SetMapFpvModel",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "char*",
+        "name": "bes_filename"
+      }
+    ]
+  },
+  "SC_MakeBurning": {
+    "name": "SC_MakeBurning",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_GetLoudShot": {
+    "name": "SC_GetLoudShot",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_SetCommandMenu": {
+    "name": "SC_SetCommandMenu",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "text_id"
+      }
+    ]
+  },
+  "SC_GetVisibility": {
+    "name": "SC_GetVisibility",
+    "return_type": "float",
+    "parameters": []
+  },
+  "SC_ShowHelp": {
+    "name": "SC_ShowHelp",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword*",
+        "name": "txt"
+      },
+      {
+        "type": "dword",
+        "name": "texts"
+      },
+      {
+        "type": "float",
+        "name": "time"
+      }
+    ]
+  },
+  "SC_SetAmmobagAmmo": {
+    "name": "SC_SetAmmobagAmmo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "ammo_type"
+      },
+      {
+        "type": "BOOL",
+        "name": "enable"
+      }
+    ]
+  },
+  "SC_ShowMovieInfo": {
+    "name": "SC_ShowMovieInfo",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword*",
+        "name": "txt"
+      }
+    ]
+  },
+  "SC_Debrief_Clear": {
+    "name": "SC_Debrief_Clear",
+    "return_type": "void",
+    "parameters": []
+  },
+  "SC_Debrief_Add": {
+    "name": "SC_Debrief_Add",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_DebriefInfo*",
+        "name": "add_info"
+      }
+    ]
+  },
+  "SC_Debrief_Get": {
+    "name": "SC_Debrief_Get",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_DebriefInfo*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_HUD_DisableRadar": {
+    "name": "SC_HUD_DisableRadar",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "BOOL",
+        "name": "disable"
+      }
+    ]
+  },
+  "SC_HUD_RadarShowPlayer": {
+    "name": "SC_HUD_RadarShowPlayer",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "pl_id"
+      },
+      {
+        "type": "dword",
+        "name": "color"
+      }
+    ]
+  },
+  "SC_HUD_RadarShowPos": {
+    "name": "SC_HUD_RadarShowPos",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "vec"
+      },
+      {
+        "type": "dword",
+        "name": "color"
+      }
+    ]
+  },
+  "SC_HUD_TextWriterInit": {
+    "name": "SC_HUD_TextWriterInit",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_HUD_TextWrite*",
+        "name": "initdata"
+      }
+    ]
+  },
+  "SC_HUD_TextWriterRelease": {
+    "name": "SC_HUD_TextWriterRelease",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "float",
+        "name": "fade_out_time"
+      }
+    ]
+  },
+  "SC_CreateMissile": {
+    "name": "SC_CreateMissile",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "missile_id"
+      },
+      {
+        "type": "dword",
+        "name": "author_pl_id"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "from"
+      },
+      {
+        "type": "c_Vector3*",
+        "name": "at"
+      }
+    ]
+  },
+  "SC_GetSystemTime": {
+    "name": "SC_GetSystemTime",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_SC_systime*",
+        "name": "info"
+      }
+    ]
+  },
+  "SC_Fauna_DoSoundAlert": {
+    "name": "SC_Fauna_DoSoundAlert",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "c_Vector3*",
+        "name": "pos"
+      }
+    ]
+  },
+  "SC_Fauna_KillThemAll": {
+    "name": "SC_Fauna_KillThemAll",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "s_sphere*",
+        "name": "sph"
+      }
+    ]
+  },
+  "SC_UP_Open": {
+    "name": "SC_UP_Open",
+    "return_type": "void",
+    "parameters": [
+      {
+        "type": "dword",
+        "name": "what"
+      },
+      {
+        "type": "dword",
+        "name": "level"
+      }
+    ]
+  }
+}

@@ -43,7 +43,8 @@ class FunctionSignature:
 def detect_function_signature(
     ssa_func: SSAFunction,
     func_start: int,
-    func_end: Optional[int] = None
+    func_end: Optional[int] = None,
+    func_name: str = None
 ) -> FunctionSignature:
     """
     Detect function signature by analyzing bytecode patterns.
@@ -53,6 +54,8 @@ def detect_function_signature(
     2. ASP N at function start = allocating N DWORDs of local space
     3. FADD/FMUL/FDIV with parameter = float parameter
     4. RET N = returns N values
+
+    Special case: Entry point function uses header information.
 
     Args:
         ssa_func: SSA function data
@@ -64,6 +67,24 @@ def detect_function_signature(
     """
     cfg = ssa_func.cfg
     sig = FunctionSignature()
+
+    # CRITICAL FIX: For ScriptMain entry point, use header information
+    # Entry point parameters are defined in SCR header, not detected from LCP patterns
+    if func_name == "ScriptMain" and ssa_func.scr and hasattr(ssa_func.scr, 'header'):
+        header = ssa_func.scr.header
+        if header.enter_size > 0:
+            sig.param_count = header.enter_size
+            # For entry point, first parameter is always s_SC_NET_info *info
+            if header.enter_size == 1:
+                sig.param_types = ["s_SC_NET_info *info"]
+            else:
+                # Multiple parameters - use generic types for additional ones
+                sig.param_types = ["s_SC_NET_info *info"]
+                for i in range(1, header.enter_size):
+                    sig.param_types.append(f"int param_{i}")
+            # Entry point always returns int
+            sig.return_type = "int"
+            return sig
 
     # Find entry block for this function
     entry_block_id = None

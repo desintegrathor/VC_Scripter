@@ -1,1225 +1,1470 @@
-/*
-	Eric multiplayer script - TT - TurnTable
-*/
+// Structured decompilation of decompiler_source_tests/test3/LEVEL.SCR
+// Functions: 10
 
-#include <inc\sc_MPglobal.h>
+#include <inc\sc_global.h>
+#include <inc\sc_def.h>
 
+// Global variables
+dword gVar;
+int gphase;
+int g_dialog;
+dword g_will_group[4];
+int g_dochange;
+float g_final_enter_timer;
+dword g_will_pos[12];
+dword g_vill_visited[4];
+int g_pilot_phase;
+float g_pilot_timer;
+dword g_pilot_vill_nr;
+float g_showinfo_timer;
+int g_trashes_enabled;
+dword gShot_pos[3];
+float gEndTimer;
+float gPilotCommTime;
+dword g_save[2];
+dword g_music[2];
+float gStartMusicTime;
 
-#define NORECOV_TIME					3.0f
+int _init(s_SC_L_info *info) {
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    int side;
+    int side2;
+    int side3;
+    int side4;
+    int side5;
+    int sideB;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp12;
+    int tmp13;
+    int tmp14;
+    int tmp15;
+    int tmp16;
+    int tmp17;
+    int tmp18;
+    int tmp19;
+    int tmp2;
+    int tmp20;
+    int tmp21;
+    int tmp22;
+    int tmp23;
+    int tmp24;
+    int tmp25;
+    int tmp26;
+    int tmp27;
+    int tmp28;
+    int tmp29;
+    int tmp3;
+    int tmp30;
+    int tmp31;
+    int tmp32;
+    int tmp33;
+    int tmp34;
+    int tmp35;
+    int tmp36;
+    int tmp37;
+    int tmp38;
+    int tmp39;
+    int tmp4;
+    int tmp40;
+    int tmp41;
+    int tmp42;
+    int tmp43;
+    int tmp44;
+    int tmp45;
+    int tmp46;
+    int tmp47;
+    int tmp48;
+    int tmp49;
+    int tmp5;
+    int tmp50;
+    int tmp51;
+    int tmp52;
+    int tmp53;
+    int tmp54;
+    int tmp55;
+    int tmp56;
+    int tmp57;
+    int tmp58;
+    int tmp59;
+    int tmp6;
+    int tmp60;
+    int tmp61;
+    int tmp62;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_P_getinfo local_75;
 
-// defines uf used global variables
-#define GVAR_SIDE0POINTS				500
-#define GVAR_SIDE1POINTS				501
-#define GVAR_MAINPHASE					502
-#define GVAR_GAMEPHASE					503
-#define GVAR_MISSIONTIME				504
-#define GVAR_MISSIONTIME_UPDATE			505
-#define GVAR_LASTSCORES					506
-#define GVAR_CURSTEP					507
-#define GVAR_STEPS						508
-#define GVAR_LASTWIN					509
-#define GVAR_SCORING_PLAYER				510
-
-
-
-#define STEP_MAX		6				// maximum of attacking steps
-#define REC_MAX			32				// maximum of recovers around one flag
-
-
-// values for gMission_phase
-#define MISSION_PHASE_NOACTIVE			0
-#define MISSION_PHASE_INGAME			1
-#define MISSION_PHASE_WIN_ATTACKERS		2
-#define MISSION_PHASE_WIN_DEFENDERS		3
-
-
-
-dword gSteps = 0;				// number of steps
-dword gRecs[2][STEP_MAX];		// 0-Attackers, 1-Defenders
-s_SC_MP_Recover gRec[2][STEP_MAX][REC_MAX];
-float gRecTimer[2][STEP_MAX][REC_MAX];
-
-s_sphere gStepSwitch[STEP_MAX];	// switches to the next attack step
-
-dword gEndRule;
-dword gEndValue;
-float gTime;
-dword gSidePoints[2];
-dword gCLN_SidePoints[2];
-dword gCLN_gamephase;
-
-dword gMainPhase = 0;
-dword gAttackingSide = 0;
-dword gCurStep = 0;
-BOOL gMission_phase = MISSION_PHASE_NOACTIVE;
-float gNoActiveTime = 0.0f;
-float gPhaseTimer;
-
-float gMissionTime_update = 10.0f;
-float gMissionTime;
-float gMissionTimeToBeat;
-
-dword gCLN_MissionTimePrevID;
-float gCLN_MissionTime;
-dword gCLN_CurStep;
-float gCLN_ShowInfo = 0.0f;
-float gCLN_ShowStartInfo = 0.0f;
-float gCLN_ShowWaitingInfo = 0.0f;
-
-float gMission_starting_timer = 0.0f;
-float gMission_afterstart_time = 0.0f;
-
-
-float gNextRecover = 0.0f;
-
-void *gFlagNod[STEP_MAX][3];
-c_Vector3 gFlagPos[STEP_MAX];
-
-dword abl_lists = 0;
-dword abl_list[64];
-
-
-#if _GE_VERSION_ >= 133
-dword gRespawn_id[2][STEP_MAX] = {
-	{0,SC_MP_RESPAWN_TT_ATT_1,SC_MP_RESPAWN_TT_ATT_2,SC_MP_RESPAWN_TT_ATT_3,SC_MP_RESPAWN_TT_ATT_4,SC_MP_RESPAWN_TT_ATT_5},
-	{SC_MP_RESPAWN_TT_DEF_0,SC_MP_RESPAWN_TT_DEF_1,SC_MP_RESPAWN_TT_DEF_2,SC_MP_RESPAWN_TT_DEF_3,SC_MP_RESPAWN_TT_DEF_4,0}
-};
-#endif
-
-
-#if _GE_VERSION_ >= 138
-dword g_FPV_UsFlag = 0;
-dword g_FPV_VcFlag = 0;
-dword g_FPV_NeFlag = 0;
-#endif
-
-
-BOOL SRV_CheckEndRule(float time){
-	// function that checks end rule, running on server only
-
-	switch(gEndRule){
-		case SC_MP_ENDRULE_TIME:
-
-			// increase game time when the game is active only
-			if (gMission_phase>MISSION_PHASE_NOACTIVE) gTime += time;
-
-			// set time left to engine that will send it to clients time to time
-			SC_MP_EndRule_SetTimeLeft(gTime,gMission_phase);
-
-			if (gTime>gEndValue){
-				// timelimit reached, load next map...
-				SC_MP_LoadNextMap();
-				return TRUE;
-			}
-
-			break;
-
-		case SC_MP_ENDRULE_POINTS:
-
-			if ((gSidePoints[0]>=gEndValue)||(gSidePoints[1]>=gEndValue)){
-				// end rule points reached
-				SC_MP_LoadNextMap();
-				return TRUE;
-			}
-
-			break;
-
-		default:			
-			SC_message("EndRule unsupported: %d",gEndRule);
-			break;
-
-	}// switch(gEndRule)
-
-	return FALSE;
-
-}// void SRV_CheckEndRule(float time)
-
-
-float GetRecovTime(void){
-	// gets respawn time set by level.c, if not set (0) use default (30)
-	//   every level using this TT script can have different respawn settings
-	float val;
-	s_SC_MP_SRV_AtgSettings set;
-
-	SC_MP_SRV_GetAtgSettings(&set);
-
-	if (set.tt_respawntime>1.0f){
-		return set.tt_respawntime;
-	}	
-
-	val = SC_ggf(400);
-	if (val==0) val = 30;
-	return val;
-}
-	
-float GetRecovLimitTime(void){
-	// gets respawn time limit set by level.c
-	float val;
-	s_SC_MP_SRV_AtgSettings set;
-
-	SC_MP_SRV_GetAtgSettings(&set);
-
-	if (set.tt_respawntime>1.0f){
-		val = set.tt_respawntime/3;
-		if (val<5.0f) val = 5.0f;
-		if (val>10.0f) val = 10.0f;
-		return val;
-	}	
-
-	val = SC_ggf(401);
-	if (val==0) val = 10;
-	return val;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
-float GetTimeLimit(void){
-	// gets game time limit set by level.c
-	float val;
-	s_SC_MP_SRV_AtgSettings set;
+int func_0292(void) {
+    int t321_ret;  // Auto-generated
+    int t332_ret;  // Auto-generated
+    int z;  // Auto-generated
 
-	SC_MP_SRV_GetAtgSettings(&set);
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    c_Vector3 vec;
+    int i;
+    int k;
+    int local_;
+    int tmp;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    s_SC_P_getinfo local_75;
 
-	if (set.tt_timelimit>59.0f){
-		return set.tt_timelimit;
-	}
-
-	val = SC_ggf(402);
-	if (val==0) val = 8*60;
-	return val;
+    SC_sgi(SGI_LEVPILOT_HELI3_ATTACK, 0);
+    SC_ZeroMem(&local_2, 12);
+    local_2.z = -20000.0f;
+    i = 0;
+    // Loop header - Block 2 @312
+    for (i = 0; (i < 16); i = tmp8) {
+        if (!tmp5) break;  // exit loop @354
+        t321_ret = SC_P_GetBySideGroupMember(tmp2, tmp3, i);
+        local_ = SC_P_GetBySideGroupMember(tmp2, tmp3, i);
+        if (!local_) {
+            SC_P_SetActive(local_, tmp4);
+            SC_P_SetPos(local_, &local_2);
+        } else {
+            i = tmp8;
+        }
+        t332_ret = SC_P_IsReady(local_);
+        if (!SC_P_IsReady(local_)) goto block_7; // @345
+    }
+    return i;
 }
 
+int func_0355(void) {
+    int t383_ret;  // Auto-generated
+    int t426_ret;  // Auto-generated
 
-void UpdateSidePoints(void){
-	// update global variables when some side scores
-	SC_sgi(GVAR_SIDE0POINTS,gSidePoints[0]);
-	SC_sgi(GVAR_SIDE1POINTS,gSidePoints[1]);
-}// void UpdateSidePoints(void)
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_7;
+    int i;
+    int idx;
+    int k;
+    int local_;
+    int local_2;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_P_getinfo local_75;
 
-
-void SRV_UpdateMissionTime(float time){
-	// check updating of mission time to clients
-
-	gMissionTime_update -= time;
-	if (gMissionTime_update<0.0f){
-
-		gMissionTime_update = 10.0f;
-
-		SC_sgf(GVAR_MISSIONTIME,gMissionTime);
-		SC_sgi(GVAR_MISSIONTIME_UPDATE,SC_ggi(GVAR_MISSIONTIME_UPDATE)+1);		
-	}// if (gMissionTime_update<0.0f)
+    i = 0;
+    // Loop header - Block 10 @362
+    for (i = 0; (i < 12); i = tmp6) {
+        if (!tmp) break;  // exit loop @413
+        if (!tmp1) {
+            idx = 0;
+        } else {
+            i = tmp6;
+        }
+        // Loop header - Block 13 @374
+        for (idx = 0; (idx < 16); idx = tmp5) {
+            if (!tmp3) break;  // exit loop @404
+            t383_ret = SC_P_GetBySideGroupMember(1, i, idx);
+            local_ = SC_P_GetBySideGroupMember(1, i, idx);
+            if (!local_) {
+                SC_P_SetActive(local_, tmp2);
+            } else {
+                idx = tmp5;
+            }
+        }
+    }
+    i = 0;
+    // Loop header - Block 19 @417
+    for (i = 0; (i < 16); i = tmp11) {
+        if (!tmp9) break;  // exit loop @447
+        t426_ret = SC_P_GetBySideGroupMember(3, tmp7, i);
+        local_ = SC_P_GetBySideGroupMember(3, tmp7, i);
+        if (!local_) {
+            SC_P_SetActive(local_, tmp8);
+        } else {
+            i = tmp11;
+        }
+    }
+    return i;
 }
 
+int func_0448(int param_0, int param_1) {
+    int t453_ret;  // Auto-generated
+
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    int tmp;
+    s_SC_P_getinfo local_75;
+
+    t453_ret = SC_P_GetBySideGroupMember(2, 0, 1);
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int func_0511(int param_0, int param_1) {
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    c_Vector3 vec;
+    dword local_3[16];
+    float t539_ret;
+    int i;
+    int k;
+    int local_;
+    int local_5;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp12;
+    int tmp13;
+    int tmp14;
+    int tmp16;
+    int tmp18;
+    int tmp2;
+    int tmp20;
+    int tmp21;
+    int tmp22;
+    int tmp23;
+    int tmp25;
+    int tmp27;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    int tmp6;
+    int tmp7;
+    int tmp8;
+    int tmp9;
+    s_SC_P_getinfo local_75;
+
+    SC_P_GetPos(param_0, &tmp);
+    SC_ZeroMem(local_3, 8);
+    i = 0;
+    // Loop header - Block 32 @527
+    for (i = 0; (i < 4); i = tmp27) {
+        if (!tmp1) break;  // exit loop @611
+        t539_ret = SC_2VectorsDist(&tmp, tmp3);
+        local_ = SC_2VectorsDist(&tmp, tmp3);
+        if (!tmp7) {
+            local_3.field_4 = tmp9;
+            tmp14 = tmp13;
+            local_ = tmp16;
+            tmp18 = i;
+        } else {
+        }
+        local_ = tmp23;
+        tmp25 = i;
+        i = tmp27;
+        continue;  // back to loop header @527
+    }
+    return i;
+}
+
+int func_0612(float param_0) {
+    int t625_ret;  // Auto-generated
+    int t654_ret;  // Auto-generated
+    float t729_ret;  // Auto-generated
+    int t759_ret;  // Auto-generated
+    int t767_ret;  // Auto-generated
+    float t790_ret;  // Auto-generated
+    int t804_ret;  // Auto-generated
+    float t843_ret;  // Auto-generated
+    int t870_ret;  // Auto-generated
+    int t886_ret;  // Auto-generated
+    int t916_ret;  // Auto-generated
+    int t944_ret;  // Auto-generated
+    int t960_ret;  // Auto-generated
+
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    c_Vector3 vec;
+    float t947_ret;
+    int data_;
+    int data_258;
+    int i;
+    int k;
+    int local_;
+    int local_1;
+    int local_10;
+    int local_11;
+    int local_12;
+    int local_13;
+    int local_4;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp11;
+    int tmp13;
+    int tmp14;
+    int tmp15;
+    int tmp16;
+    int tmp17;
+    int tmp18;
+    int tmp19;
+    int tmp2;
+    int tmp20;
+    int tmp21;
+    int tmp22;
+    int tmp23;
+    int tmp24;
+    int tmp25;
+    int tmp26;
+    int tmp27;
+    int tmp28;
+    int tmp29;
+    int tmp3;
+    int tmp30;
+    int tmp31;
+    int tmp32;
+    int tmp33;
+    int tmp34;
+    int tmp35;
+    int tmp36;
+    int tmp37;
+    int tmp38;
+    int tmp39;
+    int tmp4;
+    int tmp40;
+    int tmp41;
+    int tmp42;
+    int tmp43;
+    int tmp44;
+    int tmp45;
+    int tmp46;
+    int tmp47;
+    int tmp48;
+    int tmp49;
+    int tmp5;
+    int tmp50;
+    int tmp51;
+    int tmp52;
+    int tmp53;
+    int tmp54;
+    int tmp55;
+    int tmp56;
+    int tmp57;
+    int tmp58;
+    int tmp59;
+    int tmp6;
+    int tmp60;
+    int tmp61;
+    int tmp62;
+    int tmp63;
+    int tmp64;
+    int tmp65;
+    int tmp66;
+    int tmp67;
+    int tmp68;
+    int tmp69;
+    int tmp7;
+    int tmp70;
+    int tmp71;
+    int tmp72;
+    int tmp8;
+    int tmp9;
+    s_SC_P_getinfo local_75;
+
+    switch (g_pilot_phase) {
+    case 0:
+        t625_ret = SC_PC_GetPos(&local_);
+        i = 0;
+        break;
+    case 1:
+        tmp25 = tmp28;
+        if (tmp29) {
+            data_ = 2;
+            t759_ret = SC_PC_Get();
+            func_0511(SC_PC_Get(), &tmp43);
+            t767_ret = rand();
+            data_258 = tmp35;
+            func_0448();
+            SC_P_ScriptMessage(local_12, tmp44, data_258);
+            t790_ret = frnd(30.0f);
+            tmp25 = tmp37;
+            t804_ret = rand();
+            SC_SpeechRadio2(tmp42, tmp46);
+            func_0448();
+            SC_HUD_RadarShowPlayer(local_12, tmp47);
+        }
+        return tmp60;
+    case 2:
+        tmp25 = tmp49;
+        if (tmp50) {
+            data_ = 1;
+            t843_ret = frnd(10.0f);
+            tmp25 = tmp52;
+            data_258 = 255;
+            func_0448();
+            SC_P_ScriptMessage(local_12, 0, data_258);
+            SC_HUD_RadarShowPlayer(0, 0);
+        } else {
+            t870_ret = SC_PC_GetPos(&local_);
+            func_0448(SC_PC_GetPos(&local_));
+            t886_ret = SC_IsNear2D(&local_, &local_7, tmp55);
+            if (t886_ret = SC_IsNear2D(&local_, &local_7, tmp55)) {
+                data_ = 4;
+                tmp25 = 0;
+                SC_SetSideAlly(tmp56, tmp57, tmp58);
+                SC_sgi(tmp59, tmp60);
+            }
+        }
+        break;
+    case 4:
+        t916_ret = SC_ggi(tmp72);
+        if (tmp63) {
+        } else {
+            tmp25 = tmp64;
+            if (tmp65) {
+                tmp25 = 1069547520;
+                func_0448();
+                t944_ret = SC_PC_Get();
+                t947_ret = SC_P_GetDistance(tmp71, SC_PC_Get());
+                local_10 = SC_P_GetDistance(tmp71, SC_PC_Get());
+                if (tmp68) {
+                    t960_ret = SC_PC_GetPos(&local_7);
+                    func_0448(SC_PC_GetPos(&local_7));
+                    SC_P_Ai_Go(local_12, &local_7);
+                } else {
+                    if (tmp70) {
+                        func_0448();
+                        SC_P_Ai_Stop(local_12);
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    if (!tmp6) {
+    } else {
+        t654_ret = SC_IsNear2D(tmp8, &local_, tmp2);
+    }
+    g_vill_visited[i] = 1;
+    i = tmp13;
+    local_1 = 0;
+    i = 0;
+    // Loop header - Block 48 @683
+    for (i = 0; (i < 3); i = tmp19) {
+        if (!tmp14) break;  // exit loop @711
+        if (!tmp17) {
+            local_1 = tmp18;
+        } else {
+            i = tmp19;
+        }
+    }
+    if (!tmp20) {
+        data_ = 1;
+        t729_ret = frnd(10.0f);
+        tmp25 = tmp24;
+    } else {
+    }
+    if (!tmp22) goto block_56; // @736
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+void func_0985(int param_0) {
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    s_SC_P_getinfo local_75;
+
+    SC_P_Ai_SetMoveMode(param_0, SC_P_AI_MOVEMODE_RUN);
+    SC_P_Ai_SetMovePos(param_0, SC_P_AI_MOVEPOS_STAND);
+    return;
+}
+
+int func_0994(int param_0) {
+    int t1003_ret;  // Auto-generated
+
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    int local_;
+    int tmp;
+    int tmp1;
+    s_SC_P_getinfo local_75;
+
+    tmp = param_0;
+    t1003_ret = SC_NOD_Get(0, "maj_uh-1d_vreck");
+    local_ = SC_NOD_Get(0, "maj_uh-1d_vreck");
+    if (!local_) {
+        SC_DUMMY_Set_DoNotRenHier2(local_, 1);
+    }
+    return TRUE;
+}
+
+int func_1021(void) {
+    int t1040_ret;  // Auto-generated
+
+    c_Vector3 enum_pl;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    int local_;
+    int local_256;
+    int tmp;
+    int tmp1;
+    int tmp2;
+    int tmp3;
+    int tmp4;
+    int tmp5;
+    s_SC_P_getinfo local_75;
+
+    local_ = 64;
+    SC_sgi(SGI_DEBR_01, 0);
+    SC_sgi(SGI_REWARD_PILOT, 1);
+    t1040_ret = SC_MP_EnumPlayers(&enum_pl, &local_, 1);
+    if (!SC_MP_EnumPlayers(&enum_pl, &local_, 1)) {
+        SC_sgi(tmp2, tmp3);
+        SC_sgi(tmp4, tmp5);
+    } else {
+        return tmp5;
+    }
+    if (!tmp1) goto block_91; // @1056
+    return 0;  // FIX (06-05): Synthesized return value
+}
+
+int ScriptMain(s_SC_L_info *info) {
+    int c;  // Auto-generated
+    int d;  // Auto-generated
+    dword heli1;  // Auto-generated
+    dword heli2;  // Auto-generated
+    dword heli3;  // Auto-generated
+    dword ivq_kopac;  // Auto-generated
+    dword map_ricefield;  // Auto-generated
+    dword param_1;  // Auto-generated
+    int ricefield;  // Auto-generated
+    int t1544_ret;  // Auto-generated
+    int t1556_ret;  // Auto-generated
+    int t1618_ret;  // Auto-generated
+    int t1635_ret;  // Auto-generated
+    int t1700_ret;  // Auto-generated
+    int t1785_ret;  // Auto-generated
+    int t1797_ret;  // Auto-generated
+    int t1808_ret;  // Auto-generated
+    int t1819_ret;  // Auto-generated
+    int t1856_ret;  // Auto-generated
+    int t1868_ret;  // Auto-generated
+    int t1894_ret;  // Auto-generated
+    int t1970_ret;  // Auto-generated
+    int t2061_ret;  // Auto-generated
+    int t2155_ret;  // Auto-generated
+    int t2171_ret;  // Auto-generated
+    int t2182_ret;  // Auto-generated
+    int t2311_ret;  // Auto-generated
+    int t2325_ret;  // Auto-generated
+    int t2333_ret;  // Auto-generated
+    int t2341_ret;  // Auto-generated
+    int t2576_ret;  // Auto-generated
+    int t2622_ret;  // Auto-generated
+    int t2664_ret;  // Auto-generated
+    int t2673_ret;  // Auto-generated
+    int t2696_ret;  // Auto-generated
+    int t2766_ret;  // Auto-generated
+    int t2941_ret;  // Auto-generated
+    int y;  // Auto-generated
+    int z;  // Auto-generated
+
+    c_Vector3 j;
+    c_Vector3 local_0;
+    c_Vector3 local_11;
+    c_Vector3 local_2;
+    c_Vector3 local_7;
+    c_Vector3 vec;
+    char local_67[32];
+    float t2350_ret;
+    float t2484_ret;
+    float t2542_ret;
+    int data_;
+    int data_225;
+    int data_266;
+    int data_268;
+    int i;
+    int idx;
+    int initgroup;
+    int initside;
+    int k;
+    int local_;
+    int local_17;
+    int local_22;
+    int local_23;
+    int local_24;
+    int local_25;
+    int local_26;
+    int local_27;
+    int local_4;
+    int local_43;
+    int local_63;
+    int local_80;
+    int local_83;
+    int local_87;
+    int local_88;
+    int local_89;
+    int local_90;
+    int missionsave;
+    int objective;
+    int plfollow;
+    int plinfo;
+    int side;
+    int side2;
+    int sideB;
+    int t1463_;
+    int t1481_;
+    int t2409_;
+    int t2523_;
+    int tmp;
+    int tmp1;
+    int tmp10;
+    int tmp100;
+    int tmp101;
+    int tmp102;
+    int tmp103;
+    int tmp104;
+    int tmp105;
+    int tmp106;
+    int tmp107;
+    int tmp108;
+    int tmp109;
+    int tmp11;
+    int tmp110;
+    int tmp111;
+    int tmp112;
+    int tmp113;
+    int tmp114;
+    int tmp115;
+    int tmp116;
+    int tmp117;
+    int tmp118;
+    int tmp119;
+    int tmp12;
+    int tmp120;
+    int tmp121;
+    int tmp122;
+    int tmp123;
+    int tmp124;
+    int tmp125;
+    int tmp126;
+    int tmp127;
+    int tmp128;
+    int tmp129;
+    int tmp13;
+    int tmp130;
+    int tmp131;
+    int tmp132;
+    int tmp133;
+    int tmp134;
+    int tmp136;
+    int tmp138;
+    int tmp139;
+    int tmp140;
+    int tmp141;
+    int tmp142;
+    int tmp143;
+    int tmp144;
+    int tmp145;
+    int tmp146;
+    int tmp147;
+    int tmp148;
+    int tmp149;
+    int tmp15;
+    int tmp151;
+    int tmp152;
+    int tmp153;
+    int tmp154;
+    int tmp155;
+    int tmp156;
+    int tmp157;
+    int tmp158;
+    int tmp159;
+    int tmp160;
+    int tmp161;
+    int tmp162;
+    int tmp163;
+    int tmp164;
+    int tmp165;
+    int tmp166;
+    int tmp167;
+    int tmp168;
+    int tmp169;
+    int tmp17;
+    int tmp170;
+    int tmp171;
+    int tmp172;
+    int tmp173;
+    int tmp174;
+    int tmp175;
+    int tmp176;
+    int tmp177;
+    int tmp178;
+    int tmp179;
+    int tmp180;
+    int tmp181;
+    int tmp182;
+    int tmp183;
+    int tmp184;
+    int tmp185;
+    int tmp186;
+    int tmp187;
+    int tmp188;
+    int tmp189;
+    int tmp19;
+    int tmp190;
+    int tmp191;
+    int tmp192;
+    int tmp193;
+    int tmp194;
+    int tmp195;
+    int tmp196;
+    int tmp197;
+    int tmp198;
+    int tmp199;
+    int tmp2;
+    int tmp20;
+    int tmp200;
+    int tmp201;
+    int tmp202;
+    int tmp203;
+    int tmp204;
+    int tmp205;
+    int tmp206;
+    int tmp207;
+    int tmp208;
+    int tmp209;
+    int tmp21;
+    int tmp211;
+    int tmp212;
+    int tmp213;
+    int tmp214;
+    int tmp215;
+    int tmp216;
+    int tmp217;
+    int tmp218;
+    int tmp219;
+    int tmp22;
+    int tmp220;
+    int tmp221;
+    int tmp222;
+    int tmp223;
+    int tmp224;
+    int tmp225;
+    int tmp226;
+    int tmp227;
+    int tmp228;
+    int tmp229;
+    int tmp23;
+    int tmp231;
+    int tmp233;
+    int tmp234;
+    int tmp235;
+    int tmp236;
+    int tmp237;
+    int tmp238;
+    int tmp239;
+    int tmp24;
+    int tmp240;
+    int tmp241;
+    int tmp242;
+    int tmp243;
+    int tmp244;
+    int tmp245;
+    int tmp246;
+    int tmp247;
+    int tmp249;
+    int tmp251;
+    int tmp253;
+    int tmp254;
+    int tmp255;
+    int tmp256;
+    int tmp257;
+    int tmp258;
+    int tmp259;
+    int tmp26;
+    int tmp260;
+    int tmp261;
+    int tmp262;
+    int tmp263;
+    int tmp264;
+    int tmp265;
+    int tmp266;
+    int tmp267;
+    int tmp268;
+    int tmp269;
+    int tmp270;
+    int tmp271;
+    int tmp272;
+    int tmp273;
+    int tmp274;
+    int tmp275;
+    int tmp277;
+    int tmp278;
+    int tmp279;
+    int tmp28;
+    int tmp280;
+    int tmp281;
+    int tmp282;
+    int tmp283;
+    int tmp284;
+    int tmp285;
+    int tmp286;
+    int tmp287;
+    int tmp288;
+    int tmp290;
+    int tmp292;
+    int tmp293;
+    int tmp294;
+    int tmp295;
+    int tmp296;
+    int tmp297;
+    int tmp298;
+    int tmp299;
+    int tmp3;
+    int tmp30;
+    int tmp301;
+    int tmp303;
+    int tmp304;
+    int tmp305;
+    int tmp306;
+    int tmp307;
+    int tmp308;
+    int tmp309;
+    int tmp310;
+    int tmp311;
+    int tmp312;
+    int tmp313;
+    int tmp314;
+    int tmp315;
+    int tmp316;
+    int tmp317;
+    int tmp318;
+    int tmp319;
+    int tmp32;
+    int tmp321;
+    int tmp322;
+    int tmp323;
+    int tmp324;
+    int tmp325;
+    int tmp326;
+    int tmp327;
+    int tmp328;
+    int tmp330;
+    int tmp331;
+    int tmp332;
+    int tmp333;
+    int tmp334;
+    int tmp335;
+    int tmp336;
+    int tmp337;
+    int tmp338;
+    int tmp339;
+    int tmp34;
+    int tmp340;
+    int tmp341;
+    int tmp342;
+    int tmp343;
+    int tmp344;
+    int tmp345;
+    int tmp346;
+    int tmp347;
+    int tmp348;
+    int tmp349;
+    int tmp350;
+    int tmp351;
+    int tmp352;
+    int tmp353;
+    int tmp354;
+    int tmp355;
+    int tmp356;
+    int tmp357;
+    int tmp358;
+    int tmp359;
+    int tmp36;
+    int tmp360;
+    int tmp361;
+    int tmp362;
+    int tmp364;
+    int tmp365;
+    int tmp366;
+    int tmp367;
+    int tmp368;
+    int tmp369;
+    int tmp370;
+    int tmp371;
+    int tmp372;
+    int tmp373;
+    int tmp374;
+    int tmp375;
+    int tmp376;
+    int tmp377;
+    int tmp378;
+    int tmp379;
+    int tmp38;
+    int tmp380;
+    int tmp381;
+    int tmp382;
+    int tmp383;
+    int tmp384;
+    int tmp385;
+    int tmp386;
+    int tmp387;
+    int tmp388;
+    int tmp389;
+    int tmp390;
+    int tmp391;
+    int tmp392;
+    int tmp393;
+    int tmp394;
+    int tmp395;
+    int tmp396;
+    int tmp397;
+    int tmp399;
+    int tmp4;
+    int tmp40;
+    int tmp400;
+    int tmp401;
+    int tmp402;
+    int tmp403;
+    int tmp404;
+    int tmp405;
+    int tmp407;
+    int tmp42;
+    int tmp44;
+    int tmp46;
+    int tmp47;
+    int tmp49;
+    int tmp5;
+    int tmp51;
+    int tmp53;
+    int tmp54;
+    int tmp56;
+    int tmp58;
+    int tmp60;
+    int tmp62;
+    int tmp64;
+    int tmp66;
+    int tmp68;
+    int tmp7;
+    int tmp70;
+    int tmp72;
+    int tmp74;
+    int tmp76;
+    int tmp77;
+    int tmp78;
+    int tmp79;
+    int tmp8;
+    int tmp80;
+    int tmp81;
+    int tmp83;
+    int tmp84;
+    int tmp86;
+    int tmp87;
+    int tmp89;
+    int tmp9;
+    int tmp90;
+    int tmp91;
+    int tmp92;
+    int tmp93;
+    int tmp94;
+    int tmp95;
+    int tmp96;
+    int tmp97;
+    int tmp98;
+    int tmp99;
+    s_SC_P_getinfo local_75;
+    s_SC_P_getinfo player_info;
+
+    switch (info->message) {
+    case 0:
+        local_ = func_0448();
+        if (local_ && tmp4) {
+            SC_MissionFailed();
+            return TRUE;
+        }
+        &param_1.field_20 = 0.2f;
+        if (tmp7) {
+            local_0 = data_;
+            data_ = tmp10;
+            if (tmp11 && tmp12) {
+                tmp13 = 0;
+                local_63.field_4 = 3490;
+                local_63.field_8 = 3491;
+                SC_ShowMovieInfo(&local_63);
+            }
+            if (tmp19 && tmp20) {
+                SC_ShowMovieInfo(tmp21);
+            }
+        }
+        if (tmp22) {
+            initside = 32;
+            initside.y = 4;
+            SC_InitSide(0, &initside);
+            initgroup = 0;
+            initgroup.y = 0.0f;
+            initgroup.z = 16;
+            initgroup.field_12 = 100.0f;
+            SC_InitSideGroup(&initgroup);
+            initgroup = 0;
+            initgroup.y = 1;
+            initgroup.z = 2;
+            initgroup.field_12 = 100.0f;
+            SC_InitSideGroup(&initgroup);
+            initgroup = 0;
+            initgroup.y = 2;
+            initgroup.z = 16;
+            initgroup.field_12 = 100.0f;
+            SC_InitSideGroup(&initgroup);
+            initside.y = 12;
+            SC_InitSide(1, &initside);
+            i = 0;
+        } else {
+            if (tmp128) {
+                t1618_ret = SC_ggi(tmp154);
+                i = SC_ggi(tmp154);
+                if (tmp131) {
+                } else {
+                    t1635_ret = SC_P_GetBySideGroupMember(tmp138, tmp139, tmp140);
+                    local_22 = SC_P_GetBySideGroupMember(tmp138, tmp139, tmp140);
+                    if (local_22 && SC_P_IsReady(local_22)) {
+                        g_save[0] = 1;
+                        missionsave = 9136;
+                        missionsave.y = 9137;
+                        SC_MissionSave(&missionsave);
+                    }
+                }
+                if (tmp142) {
+                } else {
+                    if (tmp143 && tmp148) {
+                        tmp149 = 1;
+                        t1700_ret = SC_AGS_Set(tmp152);
+                    }
+                }
+                if (tmp153) {
+                    if (tmp155) {
+                        local_0 = 1056964608;
+                        SC_SpeechRadio2(3400, &local_0);
+                        local_0 = tmp156;
+                        SC_SpeechRadio2(3401, &local_0);
+                        local_0 = tmp157;
+                        SC_SpeechRadio2(3402, &local_0);
+                        local_0 = tmp158;
+                        SC_SpeechRadio2(3403, &local_0);
+                        local_0 = tmp159;
+                        SC_SpeechRadio2(3404, &local_0);
+                        local_0 = tmp160;
+                        data_225 = 1;
+                    } else {
+                        if (tmp161) {
+                            t1785_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK);
+                            if (tmp163) {
+                            } else {
+                                t1797_ret = SC_P_GetBySideGroupMember(0, 0, 2);
+                                tmp165 = SC_P_GetBySideGroupMember(0, 0, 2);
+                                t1808_ret = SC_P_GetBySideGroupMember(0, 0, 5);
+                                local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
+                                t1819_ret = SC_P_GetBySideGroupMember(0, 0, 4);
+                                tmp168 = SC_P_GetBySideGroupMember(0, 0, 4);
+                                local_0 = 1077936128;
+                                SC_P_Speech2(tmp165, 3420, &local_0);
+                                local_0 = 1078774989;
+                                SC_P_Speech2(local_25, 3421, &local_0);
+                                data_225 = 2;
+                            }
+                        } else {
+                            if (tmp169) {
+                                t1856_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK);
+                                if (tmp171) {
+                                } else {
+                                    t1868_ret = SC_P_GetBySideGroupMember(0, 2, 1);
+                                    local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                                    local_0 = 1065353216;
+                                    SC_P_Speech2(local_26, 3422, &local_0);
+                                    local_0 = tmp173;
+                                    t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                                    SC_P_Speech2(SC_P_GetBySideGroupMember(0, 0, 0), 3423, &local_0);
+                                    local_0 = tmp175;
+                                    SC_P_Speech2(local_26, 3422, &local_0);
+                                    local_0 = tmp176;
+                                    SC_SpeechRadio2(3416, &local_0);
+                                    local_0 = tmp177;
+                                    SC_SpeechRadio2(3417, &local_0);
+                                    local_0 = tmp178;
+                                    SC_SpeechRadio2(tmp212, &local_0);
+                                    local_0 = tmp179;
+                                    SC_P_Speech2(local_26, tmp213, &local_0);
+                                    local_0 = tmp180;
+                                    local_2 = tmp181;
+                                    t1970_ret = SC_P_GetBySideGroupMember(tmp214, tmp215, tmp216);
+                                    SC_P_Speech2(SC_P_GetBySideGroupMember(tmp214, tmp215, tmp216), tmp217, &local_2);
+                                    local_2 = tmp183;
+                                    SC_P_Speech2(local_25, tmp218, &local_0);
+                                    SC_SpeechRadio2(tmp219, &local_0);
+                                    local_0 = tmp184;
+                                    SC_SpeechRadio2(tmp220, &local_0);
+                                    local_0 = tmp185;
+                                    SC_SpeechRadio2(tmp221, &local_0);
+                                    local_0 = tmp186;
+                                    SC_SpeechRadio2(tmp222, &local_0);
+                                    local_0 = tmp187;
+                                    SC_SpeechRadio2(tmp223, &local_0);
+                                    local_0 = tmp188;
+                                    SC_SpeechRadio2(tmp224, &local_0);
+                                    local_0 = tmp189;
+                                    data_225 = 3;
+                                }
+                            } else {
+                                if (tmp190) {
+                                    t2061_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK);
+                                    if (tmp192) {
+                                    } else {
+                                        local_0 = 0;
+                                        SC_SpeechRadio2(3440, &local_0);
+                                        local_0 = tmp193;
+                                        SC_SpeechRadio2(3441, &local_0);
+                                        local_0 = tmp194;
+                                        SC_SpeechRadio2(3442, &local_0);
+                                        local_0 = tmp195;
+                                        SC_SpeechRadio2(3443, &local_0);
+                                        local_0 = tmp196;
+                                        SC_SpeechRadio2(3444, &local_0);
+                                        local_0 = tmp197;
+                                        SC_SpeechRadio2(3445, &local_0);
+                                        local_0 = tmp198;
+                                        SC_SpeechRadio2(3446, &local_0);
+                                        local_0 = tmp199;
+                                        data_225 = 4;
+                                    }
+                                } else {
+                                    if (tmp200) {
+                                        t2155_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK);
+                                        if (tmp202) {
+                                        } else {
+                                            data_225 = 5;
+                                            t2171_ret = SC_P_GetBySideGroupMember(0, 2, 1);
+                                            local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                                            t2182_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                                            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                                            local_0 = 0;
+                                            SC_P_Speech2(local_26, 3447, &local_0);
+                                            local_0 = tmp205;
+                                            SC_P_Speech2(local_22, 3448, &local_0);
+                                            local_0 = tmp206;
+                                            SC_P_Speech2(local_26, 3449, &local_0);
+                                            local_0 = tmp207;
+                                            &param_1.field_20 = tmp208;
+                                            SC_P_Speech2(local_22, 3450, &local_0);
+                                        }
+                                    } else {
+                                        if (tmp211) {
+                                            SC_PC_EnableExit(1);
+                                            data_225 = 6;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (tmp225) {
+                        if (tmp226) {
+                            func_0292();
+                            func_0355();
+                            tmp226 = 0;
+                            if (tmp228) {
+                            } else {
+                                g_save[1] = 1;
+                                missionsave = 9138;
+                                missionsave.y = 9139;
+                                SC_MissionSave(&missionsave);
+                            }
+                        }
+                        func_0612(tmp234);
+                    } else {
+                        if (tmp235) {
+                            func_0612(tmp237);
+                            t2311_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                            if (local_ && local_22) {
+                                t2325_ret = SC_P_GetActive(local_);
+                                if (t2325_ret = SC_P_GetActive(local_)) {
+                                    t2333_ret = SC_P_IsReady(local_);
+                                    if (t2333_ret = SC_P_IsReady(local_)) {
+                                        t2341_ret = SC_P_IsReady(local_22);
+                                        if (t2341_ret = SC_P_IsReady(local_22)) {
+                                            t2350_ret = SC_P_GetDistance(local_, local_22);
+                                            tmp243 = SC_P_GetDistance(local_, local_22);
+                                            if (tmp244) {
+                                                SC_sgi(tmp253, tmp254);
+                                                local_0 = 0;
+                                                SC_P_Speech2(local_22, tmp255, &local_0);
+                                                local_0 = tmp245;
+                                                SC_P_Speech2(local_, tmp256, &local_0);
+                                                local_0 = tmp246;
+                                                SC_P_Speech2(local_22, tmp257, &local_0);
+                                                local_0 = tmp247;
+                                                tmp249 = 3471;
+                                                *tmp251 = 2;
+                                                SC_SetObjectives(tmp258, &objective, tmp259);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            if (tmp260) {
+                                SC_Radio_Enable(20);
+                                SC_PC_EnableRadioBreak(1);
+                                SC_sgi(SGI_LEVELPHASE, 4);
+                            } else {
+                                if (tmp261) {
+                                } else {
+                                    if (tmp262) {
+                                        if (tmp263) {
+                                            tmp267 = tmp266;
+                                        } else {
+                                            func_0612(tmp269);
+                                            SC_P_GetPos(local_, &local_11);
+                                            i = 0;
+                                        }
+                                    } else {
+                                        if (tmp309) {
+                                            func_0612(tmp311);
+                                        } else {
+                                            if (tmp312) {
+                                                i = 2;
+                                                tmp316 = tmp315;
+                                                t2622_ret = SC_P_IsInHeli(local_);
+                                                if (t2622_ret = SC_P_IsInHeli(local_)) {
+                                                    i = tmp322;
+                                                } else {
+                                                    if (tmp318) {
+                                                        SC_P_SetToHeli(local_, "heli2", 3);
+                                                    } else {
+                                                        func_0985(local_);
+                                                        SC_P_Ai_EnterHeli(local_, "heli2", tmp321);
+                                                        &param_1.field_20 = 4.0f;
+                                                    }
+                                                }
+                                                t2664_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                                                local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                                                t2673_ret = SC_P_IsInHeli(local_22);
+                                                if (t2673_ret = SC_P_IsInHeli(local_22)) {
+                                                    i = tmp325;
+                                                }
+                                                if (tmp326) {
+                                                    SC_sgi(tmp331, tmp332);
+                                                    t2696_ret = SC_AGS_Set(tmp333);
+                                                    &param_1.field_20 = 0.1f;
+                                                    tmp330 = 1097859072;
+                                                }
+                                            } else {
+                                                if (tmp334) {
+                                                    tmp330 = tmp337;
+                                                    if (tmp338) {
+                                                        func_1021();
+                                                        SC_TheEnd();
+                                                        SC_sgi(tmp339, tmp340);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Loop header - Block 111 @1272
+        for (i = 0; (i < 12); i = tmp53) {
+            initgroup = 1;
+            initgroup.y = i;
+            initgroup.z = 16;
+            initgroup.field_12 = 100.0f;
+            SC_InitSideGroup(&initgroup);
+        }
+        initside = 2;
+        initside.y = 2;
+        SC_InitSide(tmp90, &initside);
+        initgroup = 2;
+        initgroup.y = 0.0f;
+        initgroup.z = 1;
+        initgroup.field_12 = 100.0f;
+        SC_InitSideGroup(&initgroup);
+        initgroup = 2;
+        initgroup.y = 1;
+        initgroup.z = 20;
+        initgroup.field_12 = 0.0f;
+        SC_InitSideGroup(&initgroup);
+        SC_SetSideAlly(tmp91, tmp92, tmp93);
+        SC_SetSideAlly(tmp94, tmp95, tmp96);
+        initside = 2;
+        initside.y = 1;
+        SC_InitSide(tmp97, &initside);
+        initgroup = 3;
+        initgroup.y = 0.0f;
+        initgroup.z = 16;
+        initgroup.field_12 = 0.0f;
+        SC_InitSideGroup(&initgroup);
+        SC_SetSideAlly(tmp98, tmp99, tmp100);
+        SC_SetSideAlly(tmp101, tmp102, tmp103);
+        SC_SetSideAlly(tmp104, tmp105, tmp106);
+        func_0994(tmp107);
+        tmp23 = 1;
+        SC_sgi(tmp108, tmp109);
+        SC_sgi(tmp110, tmp111);
+        SC_sgi(tmp112, tmp113);
+        SC_sgi(tmp114, tmp115);
+        SC_sgi(tmp76, tmp116);
+        i = 0;
+        // Loop header - Block 114 @1455
+        for (i = 0; (i < 4); i = tmp89) {
+            SC_ZeroMem(tmp79, 12);
+            local_43[i] = 1069547520;
+            *tmp84 = 1084227584;
+            local_63[i] = i;
+        }
+        i = 0;
+        // Loop header - Block 117 @1506
+        for (i = 0; (i < 10); i = tmp119) {
+            SC_Ai_SetPlFollow(1, i, 0, &plfollow, &local_63, &local_63, tmp117);
+        }
+        i = 0;
+        // Loop header - Block 120 @1532
+        for (i = 0; (i < 4); i = tmp127) {
+            t1544_ret = sprintf(&tmp120, "WP_will%d", tmp122);
+            t1556_ret = SC_GetWp(&tmp120, tmp125);
+        }
+        SC_sgi(SGI_LEVELPHASE, 0);
+        SC_sgi(SGI_LEVPILOT_HELI3_ATTACK, 0);
+        SC_sgi(SGI_LEVPILOT_JUSTLOADEDVALUE, 0);
+        SC_RadioSetDist(10.0f);
+        SC_ZeroMem(&data_266, tmp341);
+        SC_ZeroMem(&data_268, tmp342);
+        SC_ArtillerySupport(tmp343);
+        SC_SetViewAnim(&tmp344, tmp345, tmp346, tmp347);
+        SC_FadeTo(tmp348, tmp349);
+        SC_FadeTo(tmp350, tmp351);
+        // Loop header - Block 199 @2472
+        for (i = 0; (i < 4); i = tmp304) {
+            t2484_ret = SC_2VectorsDist(&local_11, tmp272);
+            if (tmp274) {
+                SC_sgi(tmp305, tmp306);
+                SC_sgi(tmp307, i);
+                local_11.z = side2;
+                local_17 = tmp281;
+                local_17.y = tmp287;
+                local_17.z = 0.0f;
+                t2542_ret = SC_VectorLen(&local_17);
+                local_0 = tmp293;
+                local_17 = tmp295;
+                local_17.y = tmp298;
+                local_17.z = 7.0f;
+                t2576_ret = SC_Item_Create2(tmp308, &local_11, &local_17);
+            } else {
+                i = tmp304;
+            }
+        }
+        break;
+    case 1:
+        if (tmp355) {
+            SC_sgi(tmp364, tmp365);
+            SC_RadioBatch_Begin();
+            local_0 = 0;
+            t2766_ret = SC_P_GetBySideGroupMember(tmp366, tmp367, tmp368);
+            local_22 = SC_P_GetBySideGroupMember(tmp366, tmp367, tmp368);
+            SC_P_Speech2(local_22, tmp369, &local_0);
+            local_0 = tmp357;
+            SC_SpeechRadio2(tmp370, &local_0);
+            local_0 = tmp358;
+            SC_P_Speech2(local_22, tmp371, &local_0);
+            local_0 = tmp359;
+            SC_SpeechRadio2(tmp372, &local_0);
+            local_0 = tmp360;
+            SC_P_SpeechMes2(local_22, tmp373, &local_0, tmp374);
+            tmp267 = tmp361;
+            &param_1.field_20 = 0.1f;
+            SC_RadioBatch_End();
+        }
+        break;
+    case 2:
+        if (tmp378) {
+            SC_message(&tmp380);
+            if (tmp379) {
+                tmp267 = 1077936128;
+            }
+        }
+        break;
+    case 4:
+        if (tmp385) {
+            func_0994(tmp387);
+        } else {
+            if (tmp386) {
+            }
+        }
+        break;
+    case 3:
+        break;
+    case 7:
+        SC_SetObjectScript("heli1", "levels\\ricefield\\data\\pilot\\scripts\\heli1.c");
+        SC_SetObjectScript("heli2", "levels\\ricefield\\data\\pilot\\scripts\\heli2.c");
+        SC_SetObjectScript("heli3", "levels\\ricefield\\data\\pilot\\scripts\\heli3.c");
+        SC_Item_Preload(147);
+        SC_SetMapFpvModel("g\\weapons\\Vvh_map\\map_ricefield.bes");
+        SC_sgi(SGI_CURRENTMISSION, 25);
+        SC_PreloadBES(1, "Levels\\Ricefield\\data\\Pilot\\objects\\ivq_kopac.bes");
+        tmp147 = 1045220557;
+        break;
+    case 11:
+        t2941_ret = SC_ggi(SGI_LEVPILOT_JUSTLOADEDVALUE);
+        SC_sgi(SGI_LEVPILOT_JUSTLOADEDVALUE, tmp392);
+        func_0994(g_trashes_enabled);
+        break;
+    case 15:
+        if (tmp396) {
+            &param_1.field_12 = 0.0f;
+        } else {
+            tmp405 = tmp403;
+            &param_1.field_12 = 1;
+        }
+        break;
+    default:
+        break;
+    }
+    return 0;  // FIX (06-05): Synthesized return value
+}
 
-void ResetMission(void){
-	// reset mission, it's used when the round is ended
-
-	gCurStep = gSteps-1;
-
-	SC_sgi(GVAR_CURSTEP,gCurStep);
-
-	if ((gMainPhase%2)==0)
-		gMissionTime = GetTimeLimit();
-	else 
-		gMissionTime = gMissionTimeToBeat;
-
-	gMissionTime_update = -1.0;					
-	SRV_UpdateMissionTime(0.0f);	
-
-}// void ResetMission(void)
-
-dword GetAttackingSide(dword main_phase){
-	// returns attacking side (0-US or 1-VC) depending on main_phase
-
-	switch(main_phase%4){
-		case 0:
-		case 3:return 0;			
-	}// switch(main_phase%4)
-
-	return 1;
-
-}// dword GetAttackingSide(dword main_phase)
-
-void RoundEnd(void){
-	// is called when round ends
-	// depending on gMission_phase and gMainPhase chooses the next progress
-
-
-	switch(gMission_phase){
-
-		case MISSION_PHASE_WIN_DEFENDERS:
-			gSidePoints[1-gAttackingSide]++;
-			UpdateSidePoints();
-
-			SC_sgi(GVAR_LASTSCORES,1-gAttackingSide);
-			SC_sgi(GVAR_LASTWIN,1-gAttackingSide);			
-
-			if (gMainPhase % 2) gMainPhase++;
-				else gMainPhase+=2;
-			
-			break;
-
-		case MISSION_PHASE_WIN_ATTACKERS:
-
-			SC_sgi(GVAR_LASTWIN,gAttackingSide);
-
-			if (gMainPhase % 2){
-				gSidePoints[gAttackingSide]++;
-				UpdateSidePoints();
-				SC_sgi(GVAR_LASTSCORES,gAttackingSide);
-			}
-			else
-				gMissionTimeToBeat = GetTimeLimit() - gMissionTime;
-
-			gMainPhase++;
-
-			break;
-
-	}// switch(gMission_phase)
-
-	SC_sgi(GVAR_MAINPHASE,gMainPhase);
-
-	gAttackingSide = GetAttackingSide(gMainPhase);
-
-
-	SC_sgi(GVAR_CURSTEP,STEP_MAX);
-
-}// void RoundEnd(void)
-
-
-
-void SetFlagStatus(dword attacking_side, dword cur_step){
-	// sets flags visibility depending on current game status
-
-	BOOL us,vc,ne;
-	dword i,flags;
-#if _GE_VERSION_ >= 138
-	s_SC_FpvMapSign fpv_list[STEP_MAX];
-#endif
-
-
-	flags = 0;
-
-	for (i=0;i<STEP_MAX;i++){
-
-		us = FALSE;
-		vc = FALSE;
-		ne = FALSE;
-
-		if ((i+1)==cur_step){
-
-			switch(attacking_side){
-				case 0:
-					vc = TRUE;
-					break;
-				case 1:
-					us = TRUE;
-					break;
-				case 2:
-					ne = TRUE;
-					break;
-
-			}// switch(attacking_side)
-
-		}
-		else
-		if (i<cur_step){
-			ne = TRUE;
-		}
-
-		if (gFlagNod[i][0]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][0],!us);				
-		if (gFlagNod[i][1]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][1],!vc);				
-		if (gFlagNod[i][2]) SC_DUMMY_Set_DoNotRenHier2(gFlagNod[i][2],!ne);				
-
-
-		fpv_list[flags].id = 0;
-		if (us) fpv_list[flags].id = g_FPV_UsFlag;
-		else
-		if (vc) fpv_list[flags].id = g_FPV_VcFlag;
-		else
-		if (ne) fpv_list[flags].id = g_FPV_NeFlag;
-
-		if (fpv_list[flags].id){
-			fpv_list[flags].color = 0xffffffff;
-			fpv_list[flags].pos = gFlagPos[i];
-			fpv_list[flags].scale = 1.0f;				
-			flags++;
-		}
-
-
-	}// for (i=0;i<STEP_MAX;i++)
-
-	SC_MP_FpvMapSign_Set(flags,fpv_list);
-
-}// void SetFlagStatus(dword attacking_side, dword cur_step)
-
-
-void Check_ABL(dword pl_handle){
-	// checking autobalance
-	int val;
-	dword to_change;
-	s_SC_P_getinfo info;
-
-	if (!SC_MP_SRV_GetAutoTeamBalance()) return;
-
-	val = SC_MP_SRV_GetTeamsNrDifference(TRUE);
-
-	if ((val<3)&&(val>-3)) return;	// no big difference
-
-	SC_P_GetInfo(pl_handle,&info);	
-
-	if ((info.side==0)&&(val>0)) to_change = 1;
-	else
-	if ((info.side==1)&&(val<0)) to_change = 0;
-	else
-		return;
-
-	SC_MP_SRV_P_SetSideClass(pl_handle,to_change,1 + 20*to_change);
-
-	if (abl_lists<64){
-		abl_list[abl_lists] = pl_handle;
-		abl_lists++;
-	}
-
-}// void Check_ABL(dword pl_handle)
-
-
-void Check_ABL_Restart(void){
-	int val;
-	dword side,nr_to_change;
-	s_SC_P_getinfo info;
-	s_SC_MP_EnumPlayers enum_pl[64];
-	dword i,j,k;
-
-
-	if (!SC_MP_SRV_GetAutoTeamBalance()) return;
-
-	val = SC_MP_SRV_GetTeamsNrDifference(TRUE);
-
-	if ((val<3)&&(val>-3)) return;	// no big difference
-
-	if (val>0){
-		side = 0;
-		nr_to_change = val/2;
-	}
-	else{
-		side = 1;
-		nr_to_change = -val/2;
-	}
-	
-
-	// find nr_to_change players of beste players of side 0
-	
-
-	j = 64;
-
-	if (SC_MP_EnumPlayers(enum_pl,&j,side)){				
-
-		if (!j) return;
-		
-		while(nr_to_change!=0){
-
-			k = rand()%j;
-			i = k;
-
-			while(
-				(enum_pl[i].id==0)
-				||(enum_pl[i].status==SC_MP_P_STATUS_NOTINGAME)){
-
-				i++;
-				if (i==j) i = 0;
-				if (i==k) return;	// no valid found
-			}						
-
-			SC_MP_SRV_P_SetSideClass(enum_pl[i].id,1-side,1 + 20*(1-side));
-			enum_pl[i].id = 0;
-
-			nr_to_change--;
-
-		}// while(nr_to_change!=0)
-							
-	}// if (SC_MP_EnumPlayers(enum_pl,&j,SC_MP_ENUMPLAYER_SIDE_ALL))
-
-
-
-}// void Check_ABL_Restart(void)
-
-
-
-void RecoverDeathDefenders(void){
-#if _GE_VERSION_ >= 136
-	s_SC_MP_EnumPlayers enum_pl[64];
-	dword i,side,pls;
-
-	side = 1-GetAttackingSide(SC_ggi(GVAR_MAINPHASE));
-
-	pls = 64;
-
-	if (SC_MP_EnumPlayers(enum_pl,&pls,side)){
-
-		for (i=0;i<pls;i++)
-			if (enum_pl[i].status==SC_MP_P_STATUS_INGAMEDEATH){
-				SC_MP_RecoverPlayer(enum_pl[i].id);
-			}
-
-	}// if (SC_MP_EnumPlayers(enum_pl,&pls,side))
-
-#endif
-}// void RecoverDeathDefenders(void)
-
-
-
-int ScriptMain(s_SC_NET_info *info){
-	char txt[32];
-	dword i,j,k,icons,pls;
-	s_SC_MP_Recover *precov;
-	s_SC_MP_hud hudinfo;
-	s_SC_MP_EnumPlayers enum_pl[64];
-	s_SC_MP_SRV_settings SRVset;
-	char side_char;
-	void *nod;
-	BOOL side[2],in_middle;
-	s_SC_HUD_MP_icon icon[3];
-	c_Vector3 pos;
-	ushort *witxt,wtxt[128],wtxt2[64];
-	float val,valy;
-	s_SC_P_getinfo plinfo;
-
-
-	switch(info->message){
-		
-		case SC_NET_MES_SERVER_TICK:	
-			// server tick, this part of the code is executed on server side only ( dedicated and no-dedicated too)
-
-			if (SRV_CheckEndRule(info->elapsed_time)) break;
-
-			
-			side[0] = side[1] = FALSE;
-			
-			pls = 64;
-
-			// enumerate players
-			if (SC_MP_EnumPlayers(enum_pl,&pls,SC_MP_ENUMPLAYER_SIDE_ALL)){				
-
-				// no players found, clear score
-				if ((pls==0)&&((gSidePoints[0]+gSidePoints[1])!=0)){
-					gSidePoints[0] = 0;
-					gSidePoints[1] = 0;
-					UpdateSidePoints();
-				}// if ((side[0]+side[1])==0)
-				
-
-				// check if there are players of both sides
-				for (i=0;i<pls;i++)
-					if (enum_pl[i].status!=SC_MP_P_STATUS_NOTINGAME){
-						
-						if (enum_pl[i].side<2) side[enum_pl[i].side] = TRUE;
-						
-					}// if (enum_pl[i].status==SC_MP_P_STATUS_INGAME)
-
-				gMission_starting_timer -= info->elapsed_time;
-
-				if ((side[0])&&(side[1])){					
-
-					SC_MP_SetInstantRecovery(FALSE);
-
-					if (gMission_phase==MISSION_PHASE_NOACTIVE){												
-						// start the game !
-						gMission_phase = MISSION_PHASE_INGAME;										
-
-						gMission_afterstart_time = 0.0f;
-						SC_sgi(GVAR_GAMEPHASE,gMission_phase);
-						ResetMission();						
-						SC_MP_SRV_InitGameAfterInactive();
-
-						if (gNoActiveTime>6.0f){
-							SC_MP_RestartMission();							
-							SC_MP_RecoverAllNoAiPlayers();
-						}
-
-						gMission_starting_timer = 8.0f;
-					}
-				}// if ((side[0])&&(side[1]))
-				else{
-
-					if (gMission_starting_timer<=0.0f){
-
-						SC_MP_SetInstantRecovery(TRUE);
-
-						if (gMission_phase>MISSION_PHASE_NOACTIVE){							
-							// make the game inactive - no both sides are present
-							gMission_phase = MISSION_PHASE_NOACTIVE;
-							gMission_afterstart_time = 0.0f;
-							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
-							Check_ABL_Restart();
-							ResetMission();
-						}
-
-					}
-
-				}// else if ((side[0])&&(side[1]))
-
-			}// if (SC_MP_EnumPlayers(enum_pl,&pls,SC_MP_ENUMPLAYER_SIDE_ALL))
-							
-						
-			
-			// update timers for respawn points
-			for (i=0;i<2;i++)
-			for (j=0;j<gSteps;j++)
-				for (k=0;k<gRecs[i][j];k++)
-					gRecTimer[i][j][k] -= info->elapsed_time;
-
-
-			gNextRecover -= info->elapsed_time;
-			if (gNextRecover<0.0f) gNextRecover = GetRecovTime(); 
-
-			switch(gMission_phase){
-
-				case MISSION_PHASE_NOACTIVE:
-
-						gNoActiveTime += info->elapsed_time;
-
-						if (gMissionTime>-10.0f){
-							gMissionTime = -10.0f;
-							gMissionTime_update = -1.0;					
-							SRV_UpdateMissionTime(0.0f);
-						}
-
-						break;
-
-				case MISSION_PHASE_INGAME:
-			
-						gMission_afterstart_time += info->elapsed_time;
-
-						gMissionTime -= info->elapsed_time;
-						SRV_UpdateMissionTime(info->elapsed_time);
-
-						if (gMissionTime<=0.0f){	
-							// mission time left, defenders win
-							gMission_phase = MISSION_PHASE_WIN_DEFENDERS;
-							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
-							gPhaseTimer = 8.0f;
-							RoundEnd();
-						}
-						else					
-						if (gMission_afterstart_time>5.0f){
-							// check for the next step_area ( next flags captured by attackers)
-							
-							if (gCurStep>0)
-							for (i=0;i<pls;i++)
-								if (((enum_pl[i].side==gAttackingSide)
-									&&(enum_pl[i].status==SC_MP_P_STATUS_INGAME))){																		
-										// it's attacker
-
-										SC_P_GetPos(enum_pl[i].id,&pos);
-
-										//for (j=0;j<gCurStep;j++)										
-										for (j=gCurStep-1;j<gCurStep;j++)
-											if (SC_IsNear3D(&pos,&gStepSwitch[j].pos,gStepSwitch[j].rad)){
-												// some attacker is near to the flag
-												if (j){								
-													// it's not the last one
-													gCurStep = j;
-													SC_sgi(GVAR_SCORING_PLAYER,SC_MP_GetHandleofPl(enum_pl[i].id));
-													SC_sgi(GVAR_CURSTEP,gCurStep);													
-													RecoverDeathDefenders();
-												}
-												else{
-													// mission done, attacker reaches the final flag																
-													gMission_phase = MISSION_PHASE_WIN_ATTACKERS;
-													SC_sgi(GVAR_SCORING_PLAYER,SC_MP_GetHandleofPl(enum_pl[i].id));
-													SC_sgi(GVAR_GAMEPHASE,gMission_phase);													
-													gPhaseTimer = 8.0f;
-													RoundEnd();
-												}
-											}
-
-									}
-
-						}// if (gMission_afterstart_time>5.0f)
-
-						break;// MISSION_PHASE_INGAME
-
-					case MISSION_PHASE_WIN_DEFENDERS:
-					case MISSION_PHASE_WIN_ATTACKERS:
-						// short time at the end of the round
-
-						gPhaseTimer -= info->elapsed_time;
-						if (gPhaseTimer<0.0f){							
-							gNoActiveTime = 0.0f;
-							gMission_phase = MISSION_PHASE_NOACTIVE;
-							SC_sgi(GVAR_GAMEPHASE,gMission_phase);
-							Check_ABL_Restart();
-							SC_MP_SetInstantRecovery(TRUE);
-							SC_MP_RecoverAllNoAiPlayers();													
-						}
-
-						break;
-
-			}// switch(gMission_phase)
-
-			break;
-
-		case SC_NET_MES_CLIENT_TICK:
-			// client tick, this part is executed on client only ( including client on no-dedicated server)
-
-			gCLN_ShowInfo -= info->elapsed_time;						
-			if (gCLN_ShowStartInfo>0.0f) gCLN_ShowStartInfo -= info->elapsed_time;
-			if (gCLN_ShowWaitingInfo>0.0f) gCLN_ShowWaitingInfo -= info->elapsed_time;
-			
-
-			// set flags rendering
-			switch(SC_ggi(GVAR_GAMEPHASE)){
-				case MISSION_PHASE_NOACTIVE:
-					SetFlagStatus(SC_ggi(GVAR_STEPS)-1,2);
-					break;
-				case MISSION_PHASE_INGAME:
-					
-					if (gCLN_CurStep!=SC_ggi(GVAR_CURSTEP)){
-
-						gCLN_CurStep = SC_ggi(GVAR_CURSTEP);						
-
-						if ((gCLN_CurStep<(SC_ggi(GVAR_STEPS)-1))&&(gCLN_CurStep>0)){
-							// set info about attackers reaching the flag
-							gCLN_ShowInfo = 5.0f;	
-							SC_SND_PlaySound2D(10425);							
-						}
-					}
-
-					SetFlagStatus(GetAttackingSide(SC_ggi(GVAR_MAINPHASE)),gCLN_CurStep);
-
-					break;
-			}// switch(SC_ggi(GVAR_GAMEPHASE))		
-
-
-			// check for mission time update
-			if (gCLN_MissionTimePrevID!=SC_ggi(GVAR_MISSIONTIME_UPDATE)){
-				gCLN_MissionTimePrevID = SC_ggi(GVAR_MISSIONTIME_UPDATE);
-				gCLN_MissionTime = SC_ggf(GVAR_MISSIONTIME);
-			}
-			else{
-				if (SC_ggi(GVAR_GAMEPHASE)==MISSION_PHASE_INGAME)
-					gCLN_MissionTime -= info->elapsed_time;
-				
-			}
-
-			// update HUD info - icons at left top corner
-			
-			for (i=0;i<2;i++){
-
-				gCLN_SidePoints[i] = SC_ggi(GVAR_SIDE0POINTS+i);			
-				SC_MP_SetSideStats(i,0,gCLN_SidePoints[i]);
-										
-
-				icon[i].type = SC_HUD_MP_ICON_TYPE_NUMBER;
-				icon[i].icon_id = 3*i;
-				icon[i].value = gCLN_SidePoints[i];
-				icon[i].color = 0xbbffffff;
-
-			}// for (i)
-
-			icons = 2;
-
-			if ((gCLN_MissionTime>0.0f)&&(SC_ggi(GVAR_GAMEPHASE))){
-				icon[icons].color = 0xbbffffff;
-				icon[icons].icon_id = 6;
-									
-				if (SC_ggi(GVAR_GAMEPHASE)==MISSION_PHASE_WIN_DEFENDERS)
-					icon[icons].value = 0;					
-				else
-					icon[icons].value = (int)(gCLN_MissionTime+0.99f);					
-
-				icon[icons].type = SC_HUD_MP_ICON_TYPE_TIME;
-				icons++;
-			}
-
-			SC_MP_SetIconHUD(icon,icons);
-
-
-			break;// SC_NET_MES_CLIENT_TICK
-
-		case SC_NET_MES_LEVELPREINIT:
-			// is called before level.c SC_LEV_MES_INITSCENE is called
-			// use it for set gametype and some basic setting that has to be done before scene initialization
-
-			SC_sgi(GVAR_MP_MISSIONTYPE,GVAR_MP_MISSIONTYPE_TT);
-
-			gEndRule = info->param1;
-			gEndValue = info->param2;
-			gTime = 0.0f;
-
-			SC_MP_EnableBotsFromScene(FALSE);
-
-			//SC_MP_SetSpectatorCameras('T');		// this function is supported from v1.33
-
-			break;// SC_NET_MES_LEVELPREINIT
-
-		case SC_NET_MES_LEVELINIT:
-			// initialization
-
-		#if _GE_VERSION_ >= 138
-			g_FPV_UsFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_USflag.BES");
-			g_FPV_VcFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_VCflag.BES");
-			g_FPV_NeFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_emptyflag.BES");
-		#endif
-
-			
-			SC_MP_SRV_SetForceSide(0xffffffff);
-			SC_MP_SetChooseValidSides(3);
-
-			// set class limits depending on server settings and perhaps on script preferences too
-			SC_MP_SRV_SetClassLimit(18,0);
-			SC_MP_SRV_SetClassLimit(19,0);
-			SC_MP_SRV_SetClassLimit(39,0);
-
-			SC_MP_GetSRVsettings(&SRVset);
-
-			for (i=0;i<6;i++){
-				SC_MP_SRV_SetClassLimit(i+1,SRVset.atg_class_limit[i]);
-				SC_MP_SRV_SetClassLimit(i+21,SRVset.atg_class_limit[i]);
-			}// for (i)
-
-
-			// set 'TAB' windows appearance
-
-			CLEAR(hudinfo);
-			hudinfo.title = 5100;
-			
-			hudinfo.sort_by[0] = SC_HUD_MP_SORTBY_KILLS;
-			hudinfo.sort_by[1] = SC_HUD_MP_SORTBY_DEATHS | SC_HUD_MP_SORT_DOWNUP;
-			hudinfo.sort_by[2] = SC_HUD_MP_SORTBY_PINGS | SC_HUD_MP_SORT_DOWNUP;
-
-
-			hudinfo.pl_mask = SC_HUD_MP_PL_MASK_CLASS | SC_HUD_MP_PL_MASK_KILLS | SC_HUD_MP_PL_MASK_DEATHS;
-			hudinfo.use_sides = TRUE;
-			hudinfo.side_name[0] = 1010;
-			hudinfo.side_color[0] = 0x440000ff;
-			hudinfo.side_name[1] = 1011;
-			hudinfo.side_color[1] = 0x44ff0000;
-
-			hudinfo.side_mask = SC_HUD_MP_SIDE_MASK_POINTS;
-			
-			SC_MP_HUD_SetTabInfo(&hudinfo);
-
-			// set some MP attributes
-			SC_MP_AllowStPwD(TRUE);
-			SC_MP_AllowFriendlyFireOFF(TRUE);
-
-			SC_MP_SetItemsNoDisappear(FALSE);
-			
-
-			if (info->param2){	// TRUE means initialization for the first time
-
-
-				// find flags in the scene
-				CLEAR(gFlagNod);
-
-				for (i=0;i<STEP_MAX;i++){
-
-					sprintf(txt,"TT_flag_%d",i);
-
-					nod = SC_NOD_GetNoMessage(NULL,txt);
-
-					
-					
-				
-					if (nod){
-						SC_NOD_GetPivotWorld(nod,&gFlagPos[i]);
-						gFlagNod[i][0] = SC_NOD_Get(nod,"vlajkaUS");
-						gFlagNod[i][1] = SC_NOD_Get(nod,"Vlajka VC");
-						gFlagNod[i][2] = SC_NOD_Get(nod,"vlajka N");
-					}// if (nod)
-
-				}// for (i=0;i<STEP_MAX;i++)
-
-
-				if (info->param1){	// TRUE means it's a server
-					
-					// set used global variables network synchronization ( for those that require it )
-					
-					SC_MP_Gvar_SetSynchro(GVAR_SIDE0POINTS);
-					SC_MP_Gvar_SetSynchro(GVAR_SIDE1POINTS);
-					UpdateSidePoints();
-
-					SC_MP_Gvar_SetSynchro(GVAR_GAMEPHASE);
-					SC_sgi(GVAR_GAMEPHASE,0);
-
-					SC_MP_Gvar_SetSynchro(GVAR_MAINPHASE);
-					SC_sgi(GVAR_MAINPHASE,0);
-
-					SC_MP_Gvar_SetSynchro(GVAR_LASTSCORES);
-					SC_sgi(GVAR_LASTSCORES,0);
-
-					SC_MP_Gvar_SetSynchro(GVAR_LASTWIN);
-					SC_sgi(GVAR_LASTWIN,0);
-
-					SC_MP_Gvar_SetSynchro(GVAR_SCORING_PLAYER);
-					SC_sgi(GVAR_SCORING_PLAYER,0);			
-				
-
-					SC_MP_Gvar_SetSynchro(GVAR_CURSTEP);
-					SC_sgi(GVAR_CURSTEP,0);
-
-					SC_MP_Gvar_SetSynchro(GVAR_STEPS);
-					
-
-					SC_MP_Gvar_SetSynchro(GVAR_MISSIONTIME);
-					SC_MP_Gvar_SetSynchro(GVAR_MISSIONTIME_UPDATE);
-					SC_sgf(GVAR_MISSIONTIME,0.0f);
-					SC_sgi(GVAR_MISSIONTIME_UPDATE,0);		
-
-
-					// find respawn points					
-					CLEAR(gRecs);
-
-					for (k=0;k<2;k++){
-
-						if (k) side_char = 'D';
-							else side_char = 'A';
-
-						for (j=0;j<STEP_MAX;j++){
-
-							for (i=0;i<REC_MAX;i++){
-
-								sprintf(txt,"TT_%c%d_%d",side_char,j,i);
-								
-								if (SC_NET_FillRecover(&gRec[k][j][gRecs[k][j]],txt)){
-									gRecs[k][j]++;								
-								}
-							}//for (i) - for all recovers on current step
-							
-
-#if _GE_VERSION_ >= 133
-							if (gRespawn_id[k][j]){
-								i = REC_MAX - gRecs[k][j];
-								SC_MP_GetRecovers(gRespawn_id[k][j],&gRec[k][j][gRecs[k][j]],&i);
-								gRecs[k][j] += i;								
-							}
-#endif
-
-
-						}// for (j) - steps
-
-					}// for (k)				
-					
-					gSteps = 0;
-
-					for (i=0;i<STEP_MAX;i++)
-						if (gRecs[0][i]) gSteps = i+1;
-							
-
-					for (i=0;i<gSteps;i++)
-						SC_Log(3,"TurnTable recovers #%d: att:%d  def:%d",i,gRecs[0][i],gRecs[1][i]);
-
-					CLEAR(gRecTimer);
-
-
-					// find script helpers for flags capturing
-
-					for (i=0;i<gSteps-1;i++){
-
-						sprintf(txt,"TTS_%d",i);
-
-						if (!SC_GetScriptHelper(txt,&gStepSwitch[i])){
-							SC_message("helper %s not found",txt);
-						}
-
-					}
-
-					SC_sgi(GVAR_STEPS,gSteps);
-
-				}// if (info->param1)
-
-			}//if (info->param2)
-
-			break;// SC_NET_MES_LEVELINIT
-
-
-		case SC_NET_MES_RENDERHUD:
-
-			// is called on every client in every frame - enables rendering some on screen info
-
-			i = 0;
-			witxt = NULL;
-			in_middle = FALSE;
-
-			k = SC_ggi(GVAR_MAINPHASE);
-
-			if (gCLN_gamephase!=SC_ggi(GVAR_GAMEPHASE)){
-				gCLN_gamephase = SC_ggi(GVAR_GAMEPHASE);
-				switch(gCLN_gamephase){
-					case MISSION_PHASE_WIN_ATTACKERS:
-					case MISSION_PHASE_WIN_DEFENDERS:
-						if (SC_ggi(GVAR_LASTWIN)==0) SC_SND_PlaySound2D(11117);
-							else SC_SND_PlaySound2D(11116);
-						break;					
-				}
-			}
-
-			// write info about game status
-
-			switch(gCLN_gamephase){
-
-				case MISSION_PHASE_NOACTIVE:// waiting for players
-					if (gCLN_ShowWaitingInfo<=0.0f)					
-						witxt = SC_Wtxt(1076);
-
-					gCLN_ShowStartInfo = 0.0f;
-					break;
-
-				case MISSION_PHASE_INGAME:
-
-					gCLN_ShowWaitingInfo = 3.0f;
-
-					if (gCLN_ShowStartInfo==0.0f){
-						gCLN_ShowStartInfo = 3.0f;
-					}
-
-					if (gCLN_ShowStartInfo>0.0f){
-
-						i = SC_PC_Get();
-						if (i){
-							SC_P_GetInfo(i,&plinfo);
-
-							if (plinfo.side==GetAttackingSide(SC_ggi(GVAR_MAINPHASE)))
-								witxt = SC_Wtxt(5108);
-							else
-								witxt = SC_Wtxt(5109);
-
-							SC_GameInfoW(witxt);
-							witxt = NULL;
-						}					
-
-					}
-					else					
-					if ((gCLN_ShowInfo>0.0f)&&(gCLN_CurStep>0)){
-
-						j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
-						if (j){						
-							SC_AnsiToUni(SC_P_GetName(j),wtxt2);
-						}
-						else
-							SC_AnsiToUni("'disconnected'",wtxt2);
-
-						swprintf(wtxt,SC_Wtxt(5107),wtxt2,gCLN_CurStep);
-						witxt = wtxt;
-					}
-					else{
-						// write attack/defend info						
-
-						i = SC_PC_Get();
-						if (i){
-							SC_P_GetInfo(i,&plinfo);
-
-							if (plinfo.side==GetAttackingSide(SC_ggi(GVAR_MAINPHASE))){
-								if (gCLN_CurStep==1){
-									witxt = SC_Wtxt(5111);
-								}
-								else{
-									swprintf(wtxt,SC_Wtxt(5110),gCLN_CurStep-1);
-									witxt = wtxt;
-								}
-							}
-							else{
-								if (gCLN_CurStep==1){
-									witxt = SC_Wtxt(5113);
-								}
-								else{
-									swprintf(wtxt,SC_Wtxt(5112),gCLN_CurStep-1);
-									witxt = wtxt;
-								}
-							}
-								
-						}// if (i)
-
-					}
-					
-					break;
-
-				case MISSION_PHASE_WIN_ATTACKERS:
-					// US attackers win and scores - 5101
-					// VC attackers win and scores - 5102
-
-					// US attackers win, VC have to beat their time now ! - 5103
-					// VC attackers win, US have to beat their time now ! - 5104
-
-					j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
-					if (j){						
-						SC_AnsiToUni(SC_P_GetName(j),wtxt2);
-					}
-					else
-						SC_AnsiToUni("'disconnected'",wtxt2);
-					
-					switch(k%4){
-						case 0:i = 5101;break;
-						case 1:i = 5103;break;
-						case 2:i = 5102;break;
-						case 3:i = 5104;break;
-					}// switch(k%4)
-					
-
-					swprintf(wtxt,SC_Wtxt(i),wtxt2);
-					witxt = wtxt;
-					gCLN_ShowStartInfo = 0.0f;
-					break;
-
-				case MISSION_PHASE_WIN_DEFENDERS:
-					// US defenders win and scores - 5105
-					// VC defenders win and scores - 5106
-
-					j = SC_MP_GetPlofHandle(SC_ggi(GVAR_SCORING_PLAYER));
-					if (j){						
-						SC_AnsiToUni(SC_P_GetName(j),wtxt2);
-					}
-					else
-						SC_AnsiToUni("'disconnected'",wtxt2);
-
-
-					switch(SC_ggi(GVAR_LASTSCORES)){
-						case 0:i = 5105;break;
-						case 1:i = 5106;break;
-					}
-
-					swprintf(wtxt,SC_Wtxt(i),wtxt2);
-					witxt = wtxt;	
-					gCLN_ShowStartInfo = 0.0f;
-
-					break;
-
-			}// switch(SC_ggi(GVAR_GAMEPHASE))
-			
-				
-			if (witxt){
-				
-				SC_GetScreenRes(&val,&valy);
-
-				val -= SC_Fnt_GetWidthW(witxt,1); 
-
-				if (in_middle) valy = 0.5f * valy - 40.0f;
-					else valy = 15;
-
-				SC_Fnt_WriteW(val * 0.5f,valy,witxt,1,0xffffffff);
-
-			}//if (i)
-
-
-			break;
-
-		case SC_NET_MES_SERVER_RECOVER_TIME:
-			// game engine asks server for time to respawn selected player
-
-			if (info->param2){
-				// player just connects to the game, respawn immediatelly
-				info->fval1 = 0.1f;
-			}
-			else{
-				// player is killed
-				switch(gMission_phase){
-
-					case MISSION_PHASE_INGAME:
-
-						// check if he is not autobalanced
-						for (i=0;i<abl_lists;i++)
-							if (info->param1==abl_list[i]){
-								abl_lists--;
-								abl_list[i] = abl_list[abl_lists];
-								break;
-							}
-
-						if (i<abl_lists){							
-							info->fval1 = 0.1f;
-						}
-						else{
-							if (gNextRecover>GetRecovLimitTime()) info->fval1 = gNextRecover;
-								else info->fval1 = gNextRecover + GetRecovTime();
-						}
-						break;
-
-					case MISSION_PHASE_NOACTIVE:
-						info->fval1 = 3.0f;
-						break;
-
-					default:
-						// do not respawn
-						info->fval1 = -1.0f;
-						break;
-				}// switch(gMission_phase)
-
-			}
-
-			break;
-
-		case SC_NET_MES_SERVER_RECOVER_PLACE:
-			// game engine asks for place where to recover some player
-
-			precov = (s_SC_MP_Recover*)info->param2;
-
-			j = info->param1; // side
-			if (gAttackingSide) j = 1-j;
-				
-			if (j){
-				// defenders
-				if (gMission_phase==MISSION_PHASE_INGAME){
-					if (gCurStep<2) k = 0;
-						else k = gCurStep-1-rand()%2;
-				}
-				else k = 0;
-
-			}
-			else{
-				// attackers
-				if (gMission_phase==MISSION_PHASE_INGAME){
-					k = gCurStep;
-				}
-				else k = gSteps-1;
-			}			
-
-			i = SC_MP_SRV_GetBestDMrecov(gRec[j][k],gRecs[j][k],gRecTimer[j][k],NORECOV_TIME);
-			
-			gRecTimer[j][k][i] = NORECOV_TIME;
-			*precov = gRec[j][k][i];
-															
-			break;
-
-
-
-		case SC_NET_MES_RESTARTMAP:
-			// command restart map came
-
-			gTime = 0;
-
-			CLEAR(gSidePoints);			
-			UpdateSidePoints();			
-
-			SC_MP_SetInstantRecovery(TRUE);
-
-			if (gMission_phase!=MISSION_PHASE_NOACTIVE){
-				SC_MP_RestartMission();							
-				SC_MP_RecoverAllNoAiPlayers();			
-				gMission_phase = MISSION_PHASE_NOACTIVE;				
-				SC_sgi(GVAR_GAMEPHASE,gMission_phase);				
-			}
-
-			gCLN_ShowInfo = 0.0f;
-			SC_MP_SRV_ClearPlsStats();
-
-			break;// SC_NET_MES_RESTARTMAP
-
-		case SC_NET_MES_RULESCHANGED:
-			// command change end rule came
-			gEndRule = info->param1;
-			gEndValue = info->param2;
-			gTime = 0.0f;
-			break;
-
-		case SC_NET_MES_SERVER_KILL:
-			// some player is killed, check autobalance
-			Check_ABL(info->param1);			
-			break;// SC_NET_MES_SERVER_KILL
-			
-
-	}// switch(info->message)
-	
-
-
-	return 1;
-
-}// int ScriptMain(void)

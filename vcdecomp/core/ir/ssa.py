@@ -22,6 +22,7 @@ class SSAValue:
     phi_sources: Optional[List[Tuple[int, str]]] = None  # (pred block id, source value name)
     alias: Optional[str] = None
     producer_inst: Optional["SSAInstruction"] = None
+    metadata: Dict = field(default_factory=dict)  # Additional metadata for SDK integration
 
 
 @dataclass

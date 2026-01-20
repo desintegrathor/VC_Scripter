@@ -203,6 +203,37 @@ class FieldAccessTracker:
                     # DEBUG: Log when we find a known function
                     print(f"DEBUG FieldTracker: Found known function {func_name}, scanning for LADR", file=sys.stderr)
 
+                    # IMPROVED: Use XCALL inputs to match LADR to actual parameter indices
+                    # inst.inputs contains the arguments in order (param 0, param 1, ...)
+                    for param_idx, struct_type in param_map.items():
+                        if param_idx >= len(inst.inputs):
+                            continue
+
+                        arg_value = inst.inputs[param_idx]
+                        addr_var = arg_value.alias or arg_value.name
+
+                        if not addr_var:
+                            continue
+
+                        # Check if this is an address (starts with & or comes from LADR)
+                        is_address = addr_var.startswith("&")
+                        if not is_address and arg_value.producer_inst:
+                            is_address = arg_value.producer_inst.mnemonic == "LADR"
+
+                        if not is_address:
+                            continue
+
+                        # Get the base variable name
+                        base_var = addr_var[1:] if addr_var.startswith("&") else addr_var
+
+                        # Mark this variable as having the detected struct type
+                        if base_var not in self.var_struct_types:
+                            self.var_struct_types[base_var] = struct_type
+                            self.var_struct_types[f"&{base_var}"] = struct_type
+                            print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx})", file=sys.stderr)
+                        continue  # Skip the old LADR scanning
+
+                    # Legacy LADR scanning (kept for functions not using the improved method)
                     # Look backwards for LADR instructions (load address) before the call
                     # Stack is built backwards: last parameter is closest to XCALL
                     # For func(arg0, arg1), stack is: PUSH arg0, PUSH arg1, XCALL
@@ -406,12 +437,17 @@ class FieldAccessTracker:
 
         print(f"DEBUG PNT: SUCCESS - base={base_var}, struct={struct_type}, offset={offset}, field={field_name}", file=sys.stderr)
 
+        # CRITICAL FIX: Determine if base is a pointer or structure
+        # PNT can be used on both pointers and structures
+        # If base is local_X, it's a structure; if param_X or info, it's a pointer
+        is_pointer_access = base_var.startswith("param_") or base_var == "info"
+
         return FieldAccess(
             base_var=base_var,
             struct_type=struct_type,
             field_offset=offset,
             field_name=field_name,
-            is_pointer=True,  # PNT is pointer arithmetic
+            is_pointer=is_pointer_access,  # True for params, False for locals
         )
 
     def _analyze_dadr_chain(self, dadr_inst: SSAInstruction) -> Optional[FieldAccess]:
@@ -464,12 +500,18 @@ class FieldAccessTracker:
         # Lookup field at this offset
         field_name = get_field_at_offset(struct_type, offset)
 
+        # CRITICAL FIX: Determine if base is a pointer or structure
+        # Pattern: LADR(&local_X) + DADR(offset) + DCP
+        # If base is local_X (without &), it's a structure (not pointer)
+        # If base is param_X or other parameter, it's a pointer
+        is_pointer_access = base_var.startswith("param_") or base_var == "info"
+
         return FieldAccess(
             base_var=base_var,
             struct_type=struct_type,
             field_offset=offset,
             field_name=field_name,
-            is_pointer=True,  # Dereferencing pointer
+            is_pointer=is_pointer_access,  # True for params, False for locals
         )
 
     def _get_constant_value(self, value: SSAValue) -> Optional[int]:

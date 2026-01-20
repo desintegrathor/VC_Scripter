@@ -978,21 +978,21 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
                 if param_index >= 0:
                     return f"param_{param_index}"
 
-            # PHASE 8B.3: Handle positive offsets for parameters (alternative convention)
-            # In VC compiler, parameters can also be at positive offsets like +4, +8, +12
-            # Typically local variables start at higher offsets (300+)
-            if 0 < stack_offset < 100:  # Likely parameter range
-                if stack_offset < 20:
-                    # Standard parameter range: +4, +8, +12, etc.
-                    param_index = (stack_offset // 4) - 1  # +4 → param_0, +8 → param_1
-                    if param_index >= 0:
-                        return f"param_{param_index}"
-                else:
-                    # High offset - trace backward to find parameter source
-                    # Pattern: LCP [sp-4] → (store) → [sp+41] → LCP [sp+41]
-                    param_source = _trace_stack_slot_to_parameter(producer, ssa_func, max_depth=max_depth)
-                    if param_source:
-                        return param_source
+            # PHASE 8B.3: Handle positive offsets
+            # In VC compiler, positive stack offsets are LOCAL VARIABLES, not parameters.
+            # Parameters are ONLY at negative offsets (sp-4, sp-8, etc.)
+            # The compiler allocates locals with ASP, then accesses them with LCP [sp+N]
+            #
+            # DISABLED: The previous heuristic (stack_offset < 20 → param_N) was WRONG
+            # and caused false positives like LCP [sp+11] being treated as param_1.
+            #
+            # Only trace backward for values that might have been STORED from parameters:
+            if 0 < stack_offset < 100:  # Local variable range, might be param copy
+                # Trace backward to find if this local was assigned from a parameter
+                # Pattern: LCP [sp-4] → (store) → [sp+41] → LCP [sp+41]
+                param_source = _trace_stack_slot_to_parameter(producer, ssa_func, max_depth=max_depth)
+                if param_source:
+                    return param_source
 
             # Fallback: check if this is a simple parameter load
             # Try to use parameter name mapping if available

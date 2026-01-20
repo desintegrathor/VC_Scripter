@@ -1,5 +1,7 @@
 """
 Header database for fast lookup of function signatures and constants.
+
+Now enhanced with SDK integration for improved type inference and constant resolution.
 """
 
 import json
@@ -19,14 +21,41 @@ class FieldInfo:
 
 
 class HeaderDatabase:
-    """Database for header information with fast lookup."""
+    """
+    Database for header information with fast lookup.
 
-    def __init__(self):
+    Enhanced with SDK integration to prioritize SDK data over header files.
+    Lookup priority:
+    1. SDK database (most accurate, from official documentation)
+    2. Header files (parsed from C headers)
+    """
+
+    def __init__(self, use_sdk: bool = True):
+        """
+        Initialize header database.
+
+        Args:
+            use_sdk: If True, load and use SDK database (default: True)
+        """
         self.functions: Dict = {}
         self.constants: Dict = {}
         self.structures: Dict = {}
         self._constant_value_map: Dict[int, List[str]] = {}  # value → [names]
         self.struct_fields: Dict[str, Dict[int, FieldInfo]] = {}  # struct_type → {offset: FieldInfo}
+
+        # SDK integration
+        self.use_sdk = use_sdk
+        self.sdk_db = None
+
+        if use_sdk:
+            try:
+                from ...sdk import SDKDatabase
+                self.sdk_db = SDKDatabase()
+                # Merge SDK constants into constant value map
+                self._merge_sdk_constants()
+            except Exception:
+                # SDK not available, fall back to header-only mode
+                self.sdk_db = None
 
     def load_from_json(self, json_dir: Path):
         """Load parsed header data from JSON files."""
@@ -70,9 +99,48 @@ class HeaderDatabase:
                 # Not an integer constant
                 pass
 
+    def _merge_sdk_constants(self):
+        """Merge SDK constants into reverse lookup map."""
+        if not self.sdk_db:
+            return
+
+        for const_name, const_value in self.sdk_db.constants.items():
+            if const_value not in self._constant_value_map:
+                self._constant_value_map[const_value] = []
+            # Add to front of list (SDK constants are prioritized)
+            if const_name not in self._constant_value_map[const_value]:
+                self._constant_value_map[const_value].insert(0, const_name)
+
     def get_function_signature(self, name: str) -> Optional[Dict]:
-        """Get function signature by name."""
-        return self.functions.get(name)
+        """
+        Get function signature by name.
+
+        Lookup priority:
+        1. SDK database (if available and enabled)
+        2. Header files
+
+        Returns:
+            Dict with 'return_type', 'parameters' (list of [type, name] tuples),
+            and optionally 'is_variadic' flag
+        """
+        # PRIORITY 1: SDK database (most accurate)
+        if self.sdk_db:
+            sdk_sig = self.sdk_db.get_function_signature(name)
+            if sdk_sig:
+                # Convert SDK signature to header database format
+                return {
+                    'return_type': sdk_sig.return_type,
+                    'parameters': sdk_sig.parameters,
+                    'is_variadic': False,  # SDK signatures don't track varargs yet
+                    'source': 'SDK'  # Mark source for debugging
+                }
+
+        # PRIORITY 2: Header files
+        header_sig = self.functions.get(name)
+        if header_sig:
+            return header_sig
+
+        return None
 
     def get_constant(self, name: str) -> Optional[Dict]:
         """Get constant by name."""

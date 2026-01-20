@@ -217,13 +217,37 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             if var_name.startswith('local_') or (var_name.startswith('&') and var_name[1:].startswith('local_')):
                 # Remove & prefix if present
                 clean_var_name = var_name[1:] if var_name.startswith('&') else var_name
-                # Store with HIGH confidence (0.9) - these come from field tracker
+
+                # ARRAY-FILLING FUNCTIONS: Use reduced confidence instead of skipping
+                # Some engine functions take array parameters that get filled, but the same
+                # stack variables are often reused for other purposes after the call.
+                # However, we still emit the correct struct type to avoid compilation errors.
+                #
+                # Known array-filling functions:
+                # - SC_MP_EnumPlayers: Fills s_SC_MP_EnumPlayers[64] array
+                #
+                # Example in tt.scr:
+                #   ASP 256                           ; Allocate 256 dwords (1024 bytes)
+                #   SC_MP_EnumPlayers(&local_X, ...) ; Fills array (field tracker sees struct)
+                #   Must emit: s_SC_MP_EnumPlayers local_X; (or array)
+                #
+                ARRAY_FILLING_FUNCTIONS = {"s_SC_MP_EnumPlayers"}
+                final_struct_type = struct_type
+                confidence = 0.9  # Default high confidence from field tracker
+
+                if struct_type in ARRAY_FILLING_FUNCTIONS:
+                    # Still track it, but with lower confidence to indicate potential reuse
+                    confidence = 0.7  # Lower than normal field tracker confidence
+                    print(f"DEBUG variables.py: Using {struct_type} for {clean_var_name} with reduced confidence (array-filling function)", file=sys.stderr)
+                else:
+                    print(f"DEBUG variables.py: Imported {clean_var_name} -> {final_struct_type} (confidence={confidence}, source=field_tracker)", file=sys.stderr)
+
+                # Store with confidence (0.9 normal, 0.7 for array-filling functions)
                 inferred_struct_types[clean_var_name] = StructTypeInfo(
-                    struct_type=struct_type,
-                    confidence=0.9,  # High confidence from field tracker
+                    struct_type=final_struct_type,
+                    confidence=confidence,  # Variable confidence based on function type
                     source="field_tracker"
                 )
-                print(f"DEBUG variables.py: Imported {clean_var_name} -> {struct_type} (confidence=0.9, source=field_tracker)", file=sys.stderr)
 
     # FIX (07-04): Track loop bounds for array dimension inference
     from .value_trace import trace_loop_bounds
@@ -255,6 +279,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         if var_name.startswith("phi_"):  # Skip PHI nodes (SSA internals)
             return
         if var_name.startswith("gData") or var_name.startswith("gVar"):  # Skip globals
+            return
+        # Skip global variables named from save_info (start with 'g' + uppercase letter)
+        # Examples: gSidePoints, gEndRule, gAttackingSide
+        if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
             return
 
         # Check if variable has semantic name (i, player_info, etc.)
@@ -343,8 +371,12 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 print(f"DEBUG variables.py: Using field_tracker type for {display_name}: {var_type}", file=sys.stderr)
             # else: skip - generic high-confidence types still cause false positives
         # Priority 3: Check MEDIUM confidence struct types (0.5-0.8)
-        # elif struct_type_info and struct_type_info.confidence >= 0.5:
-        #     var_type = struct_type_info.struct_type
+        # Re-enabled for field_tracker and function_call sources
+        elif struct_type_info and struct_type_info.confidence >= 0.5:
+            # Use medium-confidence types from field_tracker or function_call
+            if struct_type_info.source in ("field_tracker", "function_call"):
+                var_type = struct_type_info.struct_type
+                print(f"DEBUG variables.py: Using {struct_type_info.source} type for {display_name}: {var_type} (medium confidence={struct_type_info.confidence})", file=sys.stderr)
         # Priority 4: DISABLED - Legacy _struct_ranges causes false positives
         # Field access patterns alone are insufficient evidence for struct types
         # Only use confidence-scored struct inference from struct_type_map
@@ -404,20 +436,12 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     continue
 
                 # SKIP storing struct types from function calls - TOO MANY FALSE POSITIVES
-                # Variables passed to functions are frequently reused for other purposes
-                # Only trust field access patterns and explicit opcode types
-                # This prevents Pattern 2 type mismatches (int assigned to struct)
-
-                # EXCEPTION: Whitelist certain functions where we're 100% certain
-                # SC_MP_EnumPlayers first param is ALWAYS s_SC_MP_EnumPlayers array
-                if call_name == "SC_MP_EnumPlayers" and arg_idx == 0:
-                    # This is an array of structs, allocated as ASP 256 (256 dwords)
-                    # s_SC_MP_EnumPlayers struct is 4 dwords → 256/4 = 64 elements
-                    inferred_struct_types[var_name] = StructTypeInfo(
-                        struct_type="s_SC_MP_EnumPlayers[64]",
-                        confidence=1.0,
-                        source="SC_MP_EnumPlayers_call"
-                    )
+                # Variables passed to functions are frequently reused for other purposes.
+                # Only trust field access patterns and explicit opcode types.
+                # This prevents Pattern 2 type mismatches (int assigned to struct).
+                #
+                # Array-filling functions like SC_MP_EnumPlayers are handled by the skip
+                # logic in the field_tracker import section above (lines 221-239).
 
                 # Original logic (disabled):
                 # struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.4, source="function_call")
@@ -558,6 +582,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     # Skip globals
                     if buf_name and buf_name.startswith("&local_"):
                         var_name = buf_name[1:]  # Strip &
+
+                        # Skip if this variable has a high-confidence struct type from field_tracker
+                        # (e.g., c_Vector3 with .x/.y/.z field access)
+                        struct_info = inferred_struct_types.get(var_name)
+                        if struct_info and struct_info.confidence >= 0.8:
+                            print(f"DEBUG variables.py: Skipping SC_ZeroMem array detection for {var_name} - has struct type {struct_info.struct_type} (confidence={struct_info.confidence})", file=sys.stderr)
+                            continue
+
                         # Try to get constant size
                         size = 64  # Default
                         if hasattr(size_arg, 'constant_value'):
@@ -570,6 +602,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                         # Infer element type from size
                         if size == 60 or size == 156:  # Known struct sizes
                             # This is likely a struct, keep as int for now
+                            pass
+                        # c_Vector3 is 12 bytes - skip array detection for this size
+                        elif size == 12:
+                            # Likely a c_Vector3 struct, not an array
                             pass
                         elif size >= 8:
                             # Likely an array
@@ -605,11 +641,17 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             for arg_idx, arg_value in enumerate(inst.inputs):
                 # Infer struct type from function signature
                 struct_type = infer_struct_from_function(call_name, arg_idx)
-                if not struct_type:
-                    continue
 
                 # Extract variable name from &local_X or local_X
                 var_name = arg_value.alias or arg_value.name
+
+                # Debug output for SC_P_GetPos specifically
+                if call_name == "SC_P_GetPos":
+                    print(f"DEBUG variables.py: SC_P_GetPos arg {arg_idx}: var_name={var_name}, struct_type={struct_type}", file=sys.stderr)
+
+                if not struct_type:
+                    continue
+
                 if not var_name:
                     continue
 
@@ -617,18 +659,28 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if var_name.startswith("&"):
                     var_name = var_name[1:]
 
-                # Only process local variables
-                if not var_name.startswith("local_"):
+                # Process local and tmp variables (struct buffer patterns)
+                # Skip globals (data_), params (param_)
+                if var_name.startswith("data_") or var_name.startswith("param_"):
                     continue
 
-                # SKIP storing struct types from function calls - TOO MANY FALSE POSITIVES
-                # Variables passed to functions are frequently reused for other purposes
-                # Only trust field access patterns and explicit opcode types
-                # This prevents Pattern 2 type mismatches (int assigned to struct)
+                # Re-enable struct inference from function calls with medium confidence
+                # This is needed for patterns like: SC_P_GetPos(pl, &tmp)
+                # where tmp must be c_Vector3 for the call to work
+                # Only add if not already in inferred_struct_types with higher confidence
+                if var_name not in inferred_struct_types or inferred_struct_types[var_name].confidence < 0.5:
+                    struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.5, source="function_call")
+                    inferred_struct_types[var_name] = struct_info
+                    print(f"DEBUG variables.py: Inferred struct type {struct_type} for {var_name} from {call_name} arg {arg_idx}", file=sys.stderr)
 
-                # Original logic (disabled):
-                # struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.4, source="function_call")
-                # inferred_struct_types[var_name] = struct_info
+    # FIX (01-20): Infer variable types from XCALL return types (SDK)
+    # Track variables that receive return values from external functions
+    # This allows proper type inference for things like ushort* from SC_Wtxt
+    return_type_vars: Dict[str, str] = {}  # var_name -> return_type
+
+    # NOTE: SSA XCALL instructions don't have outputs populated, so we can't infer
+    # types from XCALL outputs directly. Instead, we scan formatted expressions
+    # for assignment patterns like "local_X = SC_FuncName(...)" below.
 
     # FIX (07-04): Detect multi-dimensional arrays from indexing patterns
     multidim_arrays = _detect_multidim_arrays(
@@ -670,6 +722,26 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             if "local_1" in expr.text:
                 print(f"DEBUG variables.py: Expression mentions local_1: '{expr.text}'", file=sys.stderr)
 
+        # FIX (01-20): Scan expressions for function call assignments to infer return types
+        # Pattern: "var_name = SC_FuncName(...)" -> look up SC_FuncName return type
+        for expr in block_exprs:
+            # Match: local_X = SC_FuncName(...) or t*_ret = SC_FuncName(...)
+            assign_match = re.match(r'^\s*(local_\d+|t\d+_ret)\s*=\s*(SC_\w+)\(', expr.text)
+            if assign_match:
+                var_name = assign_match.group(1)
+                func_name = assign_match.group(2)
+                # Look up function return type
+                if hasattr(formatter, '_header_db') and formatter._header_db:
+                    func_sig = formatter._header_db.get_function_signature(func_name)
+                    if func_sig and func_sig.get('return_type'):
+                        return_type = func_sig['return_type']
+                        # Only add if it's a meaningful type (not void/dword/int)
+                        if return_type and return_type not in ('void', 'dword', 'int', 'BOOL'):
+                            # Store in return_type_vars if not already set
+                            if var_name not in return_type_vars:
+                                return_type_vars[var_name] = return_type
+                                logger.debug(f"Inferred {var_name} type from {func_name}: {return_type}")
+
         for expr in block_exprs:
             # Extract address-of references: &varname
             # These are the most common cause of undeclared variables
@@ -687,6 +759,10 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # Phase 2: DON'T skip local_ - they may only appear as &local_X (address-of)
                 if var_name.startswith('param_') or var_name.startswith('data_'):
                     continue
+                # Skip global variables named from save_info (start with 'g' + uppercase letter)
+                # Examples: gSidePoints, gEndRule, gAttackingSide
+                if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
+                    continue
                 # Skip constants and keywords
                 if var_name.isupper() or var_name.isdigit():
                     continue
@@ -695,23 +771,46 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # Phase 2: Check field_tracker struct types FIRST
                 var_type = "int"  # Default
                 struct_info = inferred_struct_types.get(var_name)
-                if struct_info and struct_info.source == "field_tracker" and struct_info.confidence >= 0.8:
-                    # Use high-confidence field_tracker types (these are reliable)
+                if struct_info and struct_info.source == "field_tracker" and struct_info.confidence >= 0.5:
+                    # Use medium+ confidence field_tracker types (includes array-filling functions)
                     var_type = struct_info.struct_type
-                    print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type}", file=sys.stderr)
+                    print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type} (confidence={struct_info.confidence})", file=sys.stderr)
                 # else: use int default (generic struct inference still disabled due to false positives)
 
                 # Add to var_types
                 var_types[var_name] = var_type
 
-    # Phase 2: Add all high-confidence field_tracker struct types to var_types
+    # Phase 2: Add all medium+ confidence struct types to var_types
     # These may not have been processed by process_value (e.g., only used as &local_X)
+    # Includes array-filling functions with confidence=0.7 and function_call with confidence=0.5
     for var_name, struct_info in inferred_struct_types.items():
-        if struct_info.source == "field_tracker" and struct_info.confidence >= 0.8:
+        if struct_info.confidence >= 0.5:
             # Only add if not already declared
             if var_name not in var_types:
                 var_types[var_name] = struct_info.struct_type
-                print(f"DEBUG variables.py: Added field_tracker var {var_name} -> {struct_info.struct_type}", file=sys.stderr)
+                print(f"DEBUG variables.py: Added {struct_info.source} var {var_name} -> {struct_info.struct_type} (confidence={struct_info.confidence})", file=sys.stderr)
+
+            # Also check if this variable has a semantic name and apply struct type there too
+            if hasattr(formatter, '_semantic_names'):
+                semantic_name = formatter._semantic_names.get(var_name)
+                if semantic_name and semantic_name not in var_types:
+                    var_types[semantic_name] = struct_info.struct_type
+                    print(f"DEBUG variables.py: Added semantic name {semantic_name} (from {var_name}) -> {struct_info.struct_type}", file=sys.stderr)
+                elif semantic_name and semantic_name in var_types and var_types[semantic_name] == 'int':
+                    # Override int default with struct type
+                    var_types[semantic_name] = struct_info.struct_type
+                    print(f"DEBUG variables.py: Updated semantic name {semantic_name} from int -> {struct_info.struct_type}", file=sys.stderr)
+
+    # FIX (01-20): Apply XCALL return types to variables
+    # This allows proper type inference for things like ushort* from SC_Wtxt
+    # Applied after other type inference but with medium priority - override defaults but not field_tracker
+    for var_name, return_type in return_type_vars.items():
+        current_type = var_types.get(var_name, 'int')
+        # Only override if current type is a generic default (int, dword)
+        # Don't override high-confidence types from field_tracker
+        if current_type in ('int', 'dword'):
+            var_types[var_name] = return_type
+            logger.debug(f"Variable {var_name} type changed {current_type} -> {return_type} (from function return)")
 
     # FIX (07-04): Generate declarations (multi-dim arrays, 1D arrays, then regular variables)
     declarations = []
@@ -745,6 +844,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Second, declare 1D arrays (not in multidim_arrays)
     for var_name in sorted(var_types.keys()):
         if var_name in local_arrays and var_name not in multidim_arrays:
+            # Check if this variable has a high-confidence struct type from field_tracker
+            # If so, declare as struct, not as array
+            struct_info = inferred_struct_types.get(var_name)
+            if struct_info and struct_info.confidence >= 0.8 and struct_info.source == "field_tracker":
+                # Declare as struct, skip array declaration
+                declarations.append(f"{struct_info.struct_type} {var_name}")
+                print(f"DEBUG variables.py: Declaring {var_name} as {struct_info.struct_type} (field_tracker) instead of array", file=sys.stderr)
+                continue
             element_type, array_size = local_arrays[var_name]
             declarations.append(f"{element_type} {var_name}[{array_size}]")
 
@@ -780,4 +887,23 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     continue
         cleaned_declarations.append(decl)
 
-    return cleaned_declarations
+    # CRITICAL FIX: Deduplicate declarations
+    # A variable may appear in both struct and int declarations if it has multiple inferred types
+    # Keep only the first declaration (which should be the struct type, since structs are declared first)
+    seen_vars = set()
+    deduplicated_declarations = []
+    for decl in cleaned_declarations:
+        # Extract variable name from declaration
+        # Handle: "type varname", "type varname[size]", "type varname[size1][size2]"
+        parts = decl.split()
+        if len(parts) >= 2:
+            var_name = parts[1].split('[')[0].rstrip(';')  # Remove array brackets and semicolons
+            if var_name not in seen_vars:
+                seen_vars.add(var_name)
+                deduplicated_declarations.append(decl)
+            else:
+                print(f"DEBUG variables.py: Skipping duplicate declaration for {var_name}: {decl}", file=sys.stderr)
+        else:
+            deduplicated_declarations.append(decl)
+
+    return deduplicated_declarations

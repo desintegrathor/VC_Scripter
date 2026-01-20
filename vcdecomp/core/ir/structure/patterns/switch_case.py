@@ -672,12 +672,11 @@ def _detect_switch_patterns(
                 variable_priority[var_name] = max(variable_priority.get(var_name, 0), var_priority)
                 variable_to_ssa[var_name] = var_value
 
-                # PHASE 3 FIX: Don't reject different variables during BFS
-                # Instead, collect ALL cases and filter after BFS completes
-                # This allows us to find switches where the compiler uses different
-                # variable names or expressions for the same underlying value
+                # NESTED SWITCH FIX: When we see a different variable, it's likely a nested switch
+                # Only collect cases for the SAME variable to preserve switch structure
+                # The nested switch will be detected when we process case bodies later
 
-                # Still track for first case establishment
+                # Track for first case establishment
                 if test_var is None:
                     test_var = var_name
                     test_ssa_value = var_value
@@ -686,11 +685,14 @@ def _detect_switch_patterns(
                     chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
                     print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}", file=sys.stderr)
                 elif test_var != var_name:
-                    # Different variable name - log but DON'T skip (Phase 3 fix)
-                    _switch_debug(f"Different variable seen: {test_var} -> {var_name} (will be filtered later)")
+                    # NESTED SWITCH FIX: Different variable = likely nested switch
+                    # Skip this block - it will be processed when we analyze the case body
+                    _switch_debug(f"Different variable seen: {test_var} -> {var_name} (skipping - likely nested switch)")
                     chain_debug['variables_seen'].append(var_name)
                     chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
-                    print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (collecting anyway)", file=sys.stderr)
+                    print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)", file=sys.stderr)
+                    # Don't add successors for nested switch blocks - let them be detected later
+                    continue
 
                 # Same variable (or first case), try to extract constant value using ConstantPropagator
                 _switch_debug(f"About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")
@@ -805,11 +807,26 @@ def _detect_switch_patterns(
 
         cases = unique_cases
 
-        # If we found at least 1 case, it's a switch (or single-case if-statement)
+        # If we found at least 3 cases, it's a switch
+        # (1-2 cases are just regular if/else statements, not switch)
         print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)", file=sys.stderr)
-        if len(cases) >= 1:
+        if len(cases) >= 3:
             print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'", file=sys.stderr)
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
+
+            # HEURISTIC FIX: For ScriptMain with network message cases, use info->message
+            # Network message constants typically include SC_NET_MES_* values (0-20)
+            case_values = [case.value for case in cases if case.value is not None]
+            print(f"DEBUG SWITCH: Heuristic check - test_var={test_var}, case_values={case_values[:5] if case_values else None}", file=sys.stderr)
+            # Check if test_var is a generic parameter AND we're in ScriptMain
+            if test_var and test_var.startswith('param_'):
+                # Get function name from formatter if available
+                func_name = getattr(formatter, 'func_name', None) if formatter else None
+                print(f"DEBUG SWITCH: func_name from formatter = {func_name}", file=sys.stderr)
+                # For ScriptMain, assume first parameter field (param_0, param_1, param_2) is info->message
+                if func_name == "ScriptMain" and case_values and all(isinstance(v, int) and 0 <= v <= 20 for v in case_values):
+                    test_var = "info->message"
+                    print(f"DEBUG SWITCH: ScriptMain heuristic applied: {test_var}", file=sys.stderr)
 
             # Find the exit block - common successor of all case blocks
             # For now, we'll use a simple heuristic: find the most common successor

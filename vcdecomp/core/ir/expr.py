@@ -334,6 +334,17 @@ class ExpressionFormatter:
                 self._var_struct_types[var_name] = struct_type
         # Initialize header database for function signatures
         self._header_db = get_header_database()
+
+        # Initialize SDK constant resolver for replacing magic numbers with named constants
+        self._constant_resolver = None
+        if self._header_db and self._header_db.sdk_db:
+            try:
+                from ...sdk.constant_resolver import ConstantResolver
+                self._constant_resolver = ConstantResolver(self._header_db.sdk_db)
+            except Exception:
+                # SDK constant resolver not available, continue without it
+                pass
+
         # Initialize DataResolver for type-aware data segment reading
         # FIXED (Phase 1): Create DataResolver even if _global_type_info is empty
         # The DataResolver can still use heuristic float detection for constants
@@ -346,6 +357,34 @@ class ExpressionFormatter:
             )
         else:
             self._data_resolver = None
+
+    def _resolve_field_name(self, base_var: str, offset: int) -> str:
+        """
+        Resolve field name from struct type and offset.
+
+        Args:
+            base_var: Variable name (e.g., "local_296", "enum_pl")
+            offset: Byte offset into the struct
+
+        Returns:
+            Field name if resolved (e.g., "side"), otherwise generic "field_N"
+        """
+        # Check if we know the struct type for this variable
+        struct_type = self._field_tracker.var_struct_types.get(base_var)
+        if not struct_type:
+            # Also check _var_struct_types (from variables.py)
+            struct_type = self._var_struct_types.get(base_var)
+
+        if not struct_type:
+            return f"field_{offset}"
+
+        # Try to resolve field name from struct definition
+        field_name = get_field_at_offset(struct_type, offset)
+        if field_name:
+            return field_name
+
+        # Fallback to generic notation
+        return f"field_{offset}"
 
     def _analyze_struct_types(self) -> None:
         """
@@ -810,6 +849,7 @@ class ExpressionFormatter:
         # Allow multi-use inlining for:
         # 1. Comparison operations (used in conditions)
         # 2. Simple operations (CAST, ADD with constants) - SSA may count uses incorrectly
+        # 3. Address/pointer operations (PNT, DCP) - always inline
         if len(value.uses) != 1:
             # Always inline comparisons
             if inst.mnemonic in COMPARISON_OPS:
@@ -821,6 +861,12 @@ class ExpressionFormatter:
                 # Allow inlining simple arithmetic if used ≤10 times
                 # (SSA may count incorrectly due to dead code or loop unrolling)
                 pass  # Allow
+            # Always inline pointer operations (struct field access patterns)
+            elif inst.mnemonic in {"PNT", "DCP"}:
+                pass  # Allow - pointer expressions should always inline
+            # Always inline address load operations
+            elif inst.mnemonic in {"LADR", "GADR", "DADR"}:
+                pass  # Allow - address expressions should always inline
             else:
                 return False
 
@@ -842,7 +888,7 @@ class ExpressionFormatter:
             return True
         return False
 
-    def _load_literal(self, alias: str, value_type: opcodes.ResultType = opcodes.ResultType.UNKNOWN, expected_type_str: str = None) -> Optional[str]:
+    def _load_literal(self, alias: str, value_type: opcodes.ResultType = opcodes.ResultType.UNKNOWN, expected_type_str: str = None, context: ExpressionContext = None) -> Optional[str]:
         """
         Load literal value from data segment (REFACTORED to use DataResolver).
 
@@ -850,6 +896,7 @@ class ExpressionFormatter:
             alias: Data reference (e.g., 'data_322' or '&data_322')
             value_type: Opcode result type hint (legacy, mostly unused now)
             expected_type_str: Explicit type hint (from function signature)
+            context: Expression context (e.g., IN_ARRAY_INDEX forces integer rendering)
 
         Returns:
             Formatted value string or None if not a data reference
@@ -861,6 +908,11 @@ class ExpressionFormatter:
         is_address, offset = self._parse_data_offset(alias)
         if offset is None:
             return None
+
+        # Override expected_type based on context
+        # Context-aware type inference: array indices MUST be integers
+        if context == ExpressionContext.IN_ARRAY_INDEX and not expected_type_str:
+            expected_type_str = 'int'  # Force integer rendering for array indices
 
         # Use DataResolver if available (Fáze 2)
         if self._data_resolver:
@@ -912,6 +964,65 @@ class ExpressionFormatter:
     ) -> str:
         return self._render_value(value, expected_type_str=expected_type_str, context=context, parent_operator=parent_operator)
 
+    def _try_resolve_constant(self, value: SSAValue, int_value: int) -> Optional[str]:
+        """
+        Try to resolve an integer value to an SDK constant name.
+
+        Uses context from:
+        1. Value metadata (function parameter context)
+        2. Variable name patterns
+        3. Struct field access patterns
+
+        Args:
+            value: SSA value being rendered
+            int_value: Integer value to resolve
+
+        Returns:
+            Constant name or None
+        """
+        if not self._constant_resolver:
+            return None
+
+        # Strategy 1: Check if value has SDK parameter context metadata
+        # (This is set during XCALL processing in stack_lifter.py)
+        if hasattr(value, 'metadata') and 'sdk_param_context' in value.metadata:
+            func_name, param_index = value.metadata['sdk_param_context']
+            const_name = self._constant_resolver.resolve_from_function_param(
+                int_value, func_name, param_index
+            )
+            if const_name:
+                return const_name
+
+        # Strategy 2: Check if value comes from struct field access
+        # e.g., info->message = 0 → SC_LEV_MES_TIME
+        field_expr = self._field_tracker.get_field_expression(value)
+        if field_expr and '->' in field_expr:
+            # Parse "struct_var->field" or "struct_var.field"
+            parts = field_expr.replace('->', '.').split('.')
+            if len(parts) == 2:
+                base_var, field_name = parts
+                # Try to get struct type from field tracker
+                struct_type = self._field_tracker.var_struct_types.get(base_var)
+                if struct_type:
+                    const_name = self._constant_resolver.resolve_from_struct_field(
+                        int_value, struct_type, field_name
+                    )
+                    if const_name:
+                        return const_name
+
+        # Strategy 3: Infer from variable name in the value's alias
+        if value.alias and (value.alias.startswith('local_') or value.alias.startswith('param_')):
+            # Check if this variable has a semantic name
+            semantic_name = self._semantic_names.get(value.alias)
+            if semantic_name:
+                context = self._constant_resolver.infer_context_from_variable_name(semantic_name)
+                if context:
+                    const_name = self._constant_resolver.resolve_constant(int_value, context)
+                    if const_name:
+                        return const_name
+
+        return None
+
     def _find_array_load_in_chain(self, value: SSAValue, depth: int = 0) -> Optional[str]:
         """
         Recursively search for DCP(array_pattern) in the value's producer chain.
@@ -947,6 +1058,19 @@ class ExpressionFormatter:
         context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
         parent_operator: Optional[str] = None
     ) -> str:
+        # PRIORITY 0: Inline XCALL/CALL return values for nested function calls
+        # This enables patterns like: SC_AnsiToUni(SC_P_GetName(x), y)
+        # MUST come before rename_map check, otherwise t2998_ret gets renamed to tmp109
+        # and we lose the ability to inline it
+        # BUT only inline when used once (as function argument) - if result is stored
+        # to a variable and reused, don't inline to avoid duplicate function calls
+        if value.producer_inst and value.producer_inst.mnemonic in {"XCALL", "CALL"}:
+            # Count only "real" uses (positive addresses are actual code locations,
+            # negative addresses are PHI/block boundary markers from SSA construction)
+            real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
+            if real_uses == 1:
+                return self._inline_expression(value, context, parent_operator)
+
         # PRIORITY 1: Check if value represents struct field access (ABSOLUTE HIGHEST)
         # This MUST come before rename_map to preserve field expressions like "ai_props.watchfulness"
         # Otherwise, if rename_map contains {"t456_0": "j"}, we'd return "j" and lose field access
@@ -1038,6 +1162,7 @@ class ExpressionFormatter:
                     global_name = self._global_names.get(offset)
                     if global_name:
                         return global_name
+                    # FALLTHROUGH: No global name found, check data segment value below
                 except ValueError:
                     pass
             elif value.alias.startswith("&data_"):
@@ -1052,11 +1177,44 @@ class ExpressionFormatter:
             # PRIORITY 2: Check if alias is a numeric literal that might be a float
             try:
                 val = int(value.alias)
-                # If expected type is float, format as float
-                if expected_type_str and 'float' in expected_type_str.lower():
-                    return _format_float(val)
+
+                # PRIORITY 2a: Explicit type hint takes precedence
+                if expected_type_str:
+                    # POINTER NULL CHECK: If expected type is a pointer and value is 0,
+                    # render as "0" (NULL pointer) instead of "0.0f"
+                    # This fixes cases like SC_SpeechRadio2(speech, 0) where 0 is NULL for *float
+                    if '*' in expected_type_str and val == 0:
+                        return "0"  # NULL pointer
+                    if 'float' in expected_type_str.lower() and '*' not in expected_type_str:
+                        # Only convert to float literal if NOT a pointer
+                        return _format_float(val)
+                    if 'int' in expected_type_str.lower() or 'dword' in expected_type_str.lower():
+                        # Try SDK constant resolution before returning plain integer
+                        if self._constant_resolver and self._constant_resolver.should_resolve_constant(val):
+                            # Try to infer context from value metadata
+                            const_name = self._try_resolve_constant(value, val)
+                            if const_name:
+                                return const_name
+                        return str(val)
+
+                # PRIORITY 2b: Expression context (context-aware type inference)
+                # Force integer rendering in contexts where integers are required
+                if context in (ExpressionContext.IN_ARRAY_INDEX,):
+                    # Array indices MUST be integers in C
+                    return str(val)
+
+                # PRIORITY 2c: SDK constant resolution (before float heuristic)
+                # Try to resolve small integers to named constants
+                if self._constant_resolver and self._constant_resolver.should_resolve_constant(val):
+                    const_name = self._try_resolve_constant(value, val)
+                    if const_name:
+                        return const_name
+
+                # PRIORITY 2d: Float heuristic (fallback for general contexts)
                 if _is_likely_float(val):
                     return _format_float(val)
+
+                return str(val)
             except ValueError:
                 pass
 
@@ -1084,7 +1242,7 @@ class ExpressionFormatter:
 
             # PRIORITY 5: Load literal from data segment (LAST RESORT)
             # Only used if no global name was found
-            literal = self._load_literal(value.alias, value.value_type, expected_type_str=expected_type_str)
+            literal = self._load_literal(value.alias, value.value_type, expected_type_str=expected_type_str, context=context)
             if literal is not None:
                 return literal
 
@@ -1280,6 +1438,74 @@ class ExpressionFormatter:
             return True
         return False
 
+    def _detect_target_field_type(self, target: str) -> Optional[str]:
+        """
+        Detect the type of a struct field target for proper source rendering.
+
+        Args:
+            target: Rendered target string (e.g., "vec.z", "&local_11.field_8", "initside.y")
+
+        Returns:
+            Field type string ('float', 'int', etc.) or None if unknown
+        """
+        # Extract field access pattern: structname.fieldname or &structname.fieldname
+        if '.' not in target:
+            return None
+
+        # Remove & prefix if present
+        clean_target = target.lstrip('&')
+
+        # Parse struct.field pattern
+        parts = clean_target.rsplit('.', 1)
+        if len(parts) != 2:
+            return None
+
+        struct_part, field_name = parts
+
+        # Remove array indexing if present (e.g., "g_will_pos[i]" -> "g_will_pos")
+        if '[' in struct_part:
+            struct_part = struct_part.split('[')[0]
+
+        # FLOAT FIELDS: c_Vector3 (x, y, z are all floats)
+        if field_name in ('x', 'y', 'z'):
+            # Check if this is a c_Vector3 type based on tracked struct types
+            base_var = struct_part
+            if base_var in self._var_struct_types:
+                struct_type = self._var_struct_types[base_var]
+                if struct_type in ('c_Vector3', 'c_vector3'):
+                    return 'float'
+            # Also check common variable names that are vectors
+            if any(name in struct_part.lower() for name in ['vec', 'pos', 'dir', 'movdir', 'plpos', 'shot_pos']):
+                return 'float'
+
+        # FLOAT FIELDS: Generic field_N where N is 0, 4, or 8 for c_Vector3
+        if field_name in ('field_0', 'field_4', 'field_8'):
+            base_var = struct_part
+            if base_var in self._var_struct_types:
+                struct_type = self._var_struct_types[base_var]
+                if struct_type in ('c_Vector3', 'c_vector3'):
+                    return 'float'
+
+        # Use structure database for known types
+        from ..structures import get_struct_by_name, get_field_at_offset
+
+        # Try to resolve struct type from our tracked types
+        base_var = struct_part
+        if base_var in self._var_struct_types:
+            struct_type = self._var_struct_types[base_var]
+            struct_def = get_struct_by_name(struct_type)
+            if struct_def:
+                # Find field by name
+                for offset, f_info in struct_def.fields.items():
+                    if f_info.name == field_name or f_info.name == field_name.replace('field_', ''):
+                        # Check if field type contains 'float'
+                        if 'float' in f_info.type.lower():
+                            return 'float'
+                        elif 'int' in f_info.type.lower() or 'dword' in f_info.type.lower():
+                            return 'int'
+
+        return None
+
     def _detect_array_indexing(self, value: SSAValue) -> Optional[str]:
         """
         Detect array indexing pattern: GADR/DADR base + (index * element_size)
@@ -1327,7 +1553,8 @@ class ExpressionFormatter:
 
                             # Reasonable field offset range
                             if 0 <= total_offset < 256:
-                                result = f"{base_name}.field{total_offset//4}"
+                                field_name = self._resolve_field_name(base_name, total_offset)
+                                result = f"{base_name}.{field_name}"
                                 return result
                         except (ValueError, AttributeError):
                             pass
@@ -1354,7 +1581,8 @@ class ExpressionFormatter:
 
                             # Make sure this isn't actually array indexing (check if right is MUL result OR base is array)
                             if not (right.producer_inst and right.producer_inst.mnemonic == "MUL") and not base_is_array:
-                                return f"{base_name}.field{offset//4}"
+                                field_name = self._resolve_field_name(base_name, offset)
+                                return f"{base_name}.{field_name}"
                     except (ValueError, AttributeError):
                         pass
 
@@ -1381,8 +1609,11 @@ class ExpressionFormatter:
                         field_offset_str = self._render_value(right)
                         field_offset = int(field_offset_str)
                         if 0 <= field_offset < 128:  # Reasonable field offset range
+                            # Extract base variable from array notation (e.g., "enum_pl[0]" -> "enum_pl")
+                            base_var = array_notation.split('[')[0] if '[' in array_notation else array_notation
+                            field_name = self._resolve_field_name(base_var, field_offset)
                             # Return struct field access
-                            result = f"{array_notation}.field{field_offset//4}"
+                            result = f"{array_notation}.{field_name}"
                             return result
                     except (ValueError, AttributeError) as e:
                         pass
@@ -1406,8 +1637,11 @@ class ExpressionFormatter:
                         field_offset_str = self._render_value(right)
                         field_offset = int(field_offset_str)
                         if 0 <= field_offset < 128:  # Reasonable field offset range
+                            # Extract base variable from array notation (e.g., "enum_pl[0]" -> "enum_pl")
+                            base_var = array_notation.split('[')[0] if '[' in array_notation else array_notation
+                            field_name = self._resolve_field_name(base_var, field_offset)
                             # Return struct field access
-                            result = f"{array_notation}.field{field_offset//4}"
+                            result = f"{array_notation}.{field_name}"
                             return result
                     except (ValueError, AttributeError) as e:
                         pass
@@ -1467,13 +1701,13 @@ class ExpressionFormatter:
 
                 # If size is 1, 2, 4, 8, 16, etc., treat as array element size
                 if size_val and size_val > 0 and size_val <= 256:
-                    index_expr = self._render_value(mul_left)
+                    index_expr = self._render_value(mul_left, context=ExpressionContext.IN_ARRAY_INDEX)
 
             # Also handle simple offset (no multiplication)
             # NEW: Only treat as array if base is marked as is_array_base
             elif right.alias or (right.producer_inst and right.producer_inst.mnemonic in {"LCP", "GCP"}):
                 # Simple offset - could be array[constant]
-                index_rendered = self._render_value(right)
+                index_rendered = self._render_value(right, context=ExpressionContext.IN_ARRAY_INDEX)
 
                 # Check if base is a known array from global_resolver
                 is_base_array = False
@@ -1536,8 +1770,43 @@ class ExpressionFormatter:
                     # dadr_inst.instruction is LiftedInstruction, which has .instruction (Instruction)
                     if dadr_inst.instruction and dadr_inst.instruction.instruction:
                         field_offset = dadr_inst.instruction.instruction.arg1
-                        # Format as base->field_offset (later Fix #6 will resolve field names)
-                        return f"{base_name}->field_{field_offset}"
+
+                        # CRITICAL FIX: Always use . operator for local structures
+                        # Pattern LADR(&local_X) + DADR(offset) means local_X is a structure (not pointer)
+                        # If we took its address with LADR, it's definitely a structure
+                        # Use . operator and return address of field
+                        field_name = self._resolve_field_name(base_name, field_offset)
+                        return f"&{base_name}.{field_name}"
+
+        # FIX: Handle PNT instruction (pointer arithmetic) for field access
+        # Pattern: PNT(base_addr, offset) → struct field access
+        # This MUST come before _render_value to avoid getting tmp names
+        if value.producer_inst and value.producer_inst.mnemonic == "PNT":
+            pnt_inst = value.producer_inst
+            if len(pnt_inst.inputs) > 0:
+                base_val = pnt_inst.inputs[0]
+                # Get field offset from PNT instruction
+                if pnt_inst.instruction and pnt_inst.instruction.instruction:
+                    field_offset = pnt_inst.instruction.instruction.arg1
+
+                    # Check if base is an address (starts with &)
+                    base_rendered = self._render_value(base_val)
+                    if base_rendered.startswith("&"):
+                        base_name = base_rendered[1:]
+                        # Resolve field name and return direct field access
+                        field_name = self._resolve_field_name(base_name, field_offset)
+
+                        # FALLBACK: If field_name is generic (field_N), try common struct types
+                        # This handles cases where struct type isn't tracked but offset matches known structs
+                        if field_name.startswith("field_"):
+                            # Try c_Vector3 (common 12-byte struct with x, y, z)
+                            if field_offset in (0, 4, 8):
+                                from ..structures import get_field_at_offset as struct_field_lookup
+                                vec3_field = struct_field_lookup("c_Vector3", field_offset)
+                                if vec3_field:
+                                    field_name = vec3_field  # x, y, or z
+
+                        return f"{base_name}.{field_name}"
 
         rendered = self._render_value(value)
 
@@ -1737,6 +2006,25 @@ class ExpressionFormatter:
             # This is likely a broken store - skip it entirely
             return None
 
+        # FLOAT CONSTANT FIX: If target is a known float field (e.g., vec.x, vec.z),
+        # re-render the source value with float type hint
+        target_field_type = self._detect_target_field_type(target)
+        if target_field_type == 'float' and not call_expr_override:
+            # Re-render source with float type hint
+            # Determine which input is the source based on the same logic above
+            source_input = inst.inputs[0] if target == self._format_pointer_target(inst.inputs[1]) else inst.inputs[1]
+            source = self._render_value(source_input, expected_type_str='float')
+        elif target_field_type is None and '.' in target and not call_expr_override:
+            # Unknown struct field - check if source looks like a float constant
+            # and re-render with float type hint if so
+            try:
+                source_val = int(source)
+                if _is_likely_float(source_val):
+                    source_input = inst.inputs[0] if target == self._format_pointer_target(inst.inputs[1]) else inst.inputs[1]
+                    source = self._render_value(source_input, expected_type_str='float')
+            except ValueError:
+                pass
+
         # Expression simplification: x = x ± 1 → x++/x--
         # Match patterns: (target + 1), (target - 1), target + 1, target - 1
         import re
@@ -1790,18 +2078,20 @@ class ExpressionFormatter:
                 left_str = self._render_value(inst.inputs[0])
                 right_str = self._render_value(inst.inputs[1])
 
-                # Pattern: &local_X.fieldN + offset
-                if left_str.startswith("&") and ".field" in left_str:
+                # Pattern: &local_X.fieldN + offset (legacy field_N format only)
+                # Note: This handles old field_N format for backward compatibility
+                if left_str.startswith("&") and ".field_" in left_str:
                     import re
-                    match = re.match(r'^&(\w+)\.field(\d+)$', left_str)
+                    match = re.match(r'^&(\w+)\.field_(\d+)$', left_str)
                     if match:
                         base_var = match.group(1)
-                        field_num = int(match.group(2))
+                        base_offset = int(match.group(2))
                         offset_add = int(right_str)
 
-                        # Calculate new field number
-                        new_field_num = field_num + (offset_add // 4)
-                        expr = f"&{base_var}.field{new_field_num}"
+                        # Calculate new field offset (byte offset, not dword index)
+                        new_offset = base_offset + offset_add
+                        field_name = self._resolve_field_name(base_var, new_offset)
+                        expr = f"&{base_var}.{field_name}"
                         self._visiting.remove(cache_key)
                         self._inline_cache[cache_key] = expr
                         return expr
@@ -1968,12 +2258,15 @@ class ExpressionFormatter:
                 offset_num = inst.instruction.instruction.arg1
 
             # SPECIAL CASE 1: Check if input is array indexing and offset is field offset
-            # Pattern: PNT(ADD(base, index*size), field_offset) → array[index].fieldN
+            # Pattern: PNT(ADD(base, index*size), field_offset) → array[index].field_N
             if offset_num > 0 and offset_num < 128:  # Reasonable field offset range
                 array_notation = self._detect_array_indexing(inst.inputs[0])
                 if array_notation:
+                    # Extract base variable from array notation (e.g., "enum_pl[0]" -> "enum_pl")
+                    base_var = array_notation.split('[')[0] if '[' in array_notation else array_notation
+                    field_name = self._resolve_field_name(base_var, offset_num)
                     # Input is array indexing, create struct field access
-                    expr = f"{array_notation}.field{offset_num//4}"
+                    expr = f"{array_notation}.{field_name}"
                     self._visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
@@ -1998,12 +2291,13 @@ class ExpressionFormatter:
                                 field_offset_str = self._render_value(right)
                                 field_offset = int(field_offset_str)
 
-                                # Add PNT offset to field offset
+                                # Add PNT offset to field offset (both are byte offsets)
                                 total_offset = field_offset + offset_num
 
                                 # Reasonable field offset range
                                 if 0 <= total_offset < 256:
-                                    expr = f"&{base_name}.field{total_offset//4}"
+                                    field_name = self._resolve_field_name(base_name, total_offset)
+                                    expr = f"&{base_name}.{field_name}"
                                     self._visiting.remove(cache_key)
                                     self._inline_cache[cache_key] = expr
                                     return expr
@@ -2011,13 +2305,14 @@ class ExpressionFormatter:
                                 pass
 
             # SPECIAL CASE 3: Simple structure field access
-            # Pattern: PNT(ADR(local_X), offset) → &local_X.fieldN
+            # Pattern: PNT(ADR(local_X), offset) → &local_X.field_N
             if inst.inputs[0].producer_inst and inst.inputs[0].producer_inst.mnemonic in {"LADR", "GADR", "DADR"}:
                 base_name = self._render_value(inst.inputs[0])
                 if base_name.startswith("&") and offset_num > 0:
                     base_name = base_name[1:]
-                    # Simple structure field access
-                    expr = f"&{base_name}.field{offset_num//4}"
+                    # Simple structure field access (offset is byte offset)
+                    field_name = self._resolve_field_name(base_name, offset_num)
+                    expr = f"&{base_name}.{field_name}"
                     self._visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
@@ -2057,6 +2352,17 @@ class ExpressionFormatter:
             # Pattern: DCP(pointer_expr) → *pointer_expr (explicit dereference)
             else:
                 expr = f"(*{addr_rendered})"
+        elif inst.mnemonic == "XCALL":
+            # XCALL return value - inline the function call expression
+            # This enables nested calls like SC_AnsiToUni(SC_P_GetName(x), ...)
+            call_expr = self._format_call(inst)
+            # _format_call returns "func(args);" - strip the trailing semicolon
+            if call_expr.endswith(";"):
+                call_expr = call_expr[:-1]
+            # Also strip any assignment prefix if present (e.g., "ret = func(args)")
+            if " = " in call_expr:
+                call_expr = call_expr.split(" = ", 1)[1]
+            expr = call_expr
         else:
             expr = value.name
         self._visiting.remove(cache_key)
@@ -2253,7 +2559,14 @@ class ExpressionFormatter:
                 arg_str = self._substitute_constant(func_name, i, arg_str)
                 rendered_args.append(arg_str)
             args = ", ".join(rendered_args)
-            return f"{func_name}({args});"
+
+            # Check if XCALL has an output (return value)
+            # External functions can return values too!
+            if inst.outputs:
+                dest = self._format_target(inst.outputs[0])
+                return f"{dest} = {func_name}({args});"
+            else:
+                return f"{func_name}({args});"
 
         args = ", ".join(self._render_value(val) for val in inst.inputs)
 

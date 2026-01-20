@@ -51,6 +51,103 @@ def _is_return_value_store(instr: Instruction, stack: List, resolver: opcodes.Op
     return offset == -3 and len(stack) > 0
 
 
+def _is_xcall_return_copy(
+    instr: Instruction,
+    prev_instr: Optional[Instruction],
+    stack: List,
+    resolver: opcodes.OpcodeResolver,
+    scr: Optional["SCRFile"]
+) -> bool:
+    """
+    Detect LLD [sp+X] after XCALL with return value pattern.
+
+    When LLD immediately follows an XCALL that returns a value, the LLD is copying
+    the return value from eval stack to a local variable WITHOUT consuming it.
+    In this case, LLD should have pops=0, pushes=0 (copy, not load).
+
+    Pattern:
+        XCALL $func_with_return_value
+        LLD [sp+X]  ; X > 0, copies ret val to local_X
+
+    The return value stays on eval stack for potential use as argument to next call.
+    """
+    if not prev_instr:
+        return False
+
+    mnemonic = resolver.get_mnemonic(instr.opcode)
+    if mnemonic != "LLD":
+        return False
+
+    prev_mnemonic = resolver.get_mnemonic(prev_instr.opcode)
+    if prev_mnemonic != "XCALL":
+        return False
+
+    # Check if the previous XCALL returns a value
+    if not scr:
+        return False
+
+    xfn_idx = prev_instr.arg1
+    returns_value, _ = _get_xcall_return_info(xfn_idx, scr)
+    if not returns_value:
+        return False
+
+    # Check offset is positive (local variable, not return slot)
+    offset = _to_signed(instr.arg1)
+    if offset < 0:
+        return False
+
+    # Stack should have the return value on it
+    return len(stack) > 0
+
+
+def _get_xcall_return_info(
+    xfn_idx: int,
+    scr: Optional["SCRFile"],
+    sdk_db: Optional[object] = None
+) -> Tuple[bool, "opcodes.ResultType"]:
+    """
+    Determine if an XCALL returns a value and its type.
+
+    Uses XFN table's ret_size field (primary) and SDK database (secondary).
+
+    Args:
+        xfn_idx: Index into XFN table
+        scr: SCRFile containing XFN table
+        sdk_db: Optional SDK database for precise type info
+
+    Returns:
+        (returns_value, result_type) tuple
+    """
+    if not scr:
+        return False, opcodes.ResultType.UNKNOWN
+
+    xfn_entry = scr.get_xfn(xfn_idx)
+    if not xfn_entry:
+        return False, opcodes.ResultType.UNKNOWN
+
+    # Primary: XFN table's ret_size (0 = void, >0 = returns value)
+    if xfn_entry.ret_size == 0:
+        return False, opcodes.ResultType.VOID
+
+    # Function returns a value - determine type
+    result_type = opcodes.ResultType.INT  # Default for non-void
+
+    # Secondary: SDK database for precise type info
+    if sdk_db:
+        get_sig = getattr(sdk_db, 'get_function_signature', None)
+        if get_sig:
+            sig = get_sig(xfn_entry.name)
+            if sig:
+                ret_type = getattr(sig, 'return_type', None)
+                if ret_type:
+                    if ret_type == "float":
+                        result_type = opcodes.ResultType.FLOAT
+                    elif ret_type.endswith("*"):
+                        result_type = opcodes.ResultType.POINTER
+
+    return True, result_type
+
+
 def _derive_alias(instr: Instruction, resolver: opcodes.OpcodeResolver) -> Optional[str]:
     mnemonic = resolver.get_mnemonic(instr.opcode)
 
@@ -255,16 +352,21 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
         stack = _merge_stacks(predecessor_states, block, merge_fn)
     block._in_stack = stack.copy()  # type: ignore[attr-defined]
     lifted: List[LiftedInstruction] = []
+    prev_instr: Optional[Instruction] = None
 
     for instr in instructions:
         info = resolver.get_info(instr.opcode)
 
         # FÁZE 1.6: Handle context-dependent LLD behavior
-        # LLD has two usage patterns:
+        # LLD has multiple usage patterns:
         # 1. LLD [sp-3] with value on stack = store to return slot (pops=1, pushes=0)
-        # 2. LLD [sp+offset] = load from stack offset to eval stack (pops=0, pushes=1)
+        # 2. LLD [sp+X] after XCALL with return = copy ret val to local (pops=0, pushes=0)
+        # 3. LLD [sp+offset] normal = load from stack offset to eval stack (pops=0, pushes=1)
         if _is_return_value_store(instr, stack, resolver):
-            pops, pushes = 1, 0  # Store pattern
+            pops, pushes = 1, 0  # Store pattern for function return
+        elif _is_xcall_return_copy(instr, prev_instr, stack, resolver, scr):
+            pops, pushes = 0, 0  # Copy pattern - ret val stays on stack
+            logger.info(f"LLD {instr.arg1} after XCALL: copy pattern (pops=0, pushes=0)")
         else:
             pops = info.pops if info else 0
             pushes = info.pushes if info else 0
@@ -308,18 +410,37 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
             outputs.append(stack_val)
 
         # Special handling for XCALL and CALL: capture stack values as arguments
-        mnemonic = resolver.get_mnemonic(instr.opcode)
+        # IMPORTANT: Snapshot must be captured BEFORE return value is pushed!
         if mnemonic == "XCALL" and stack:
-            # XCALL consumes arguments from stack - we'll capture current stack state
-            # The actual arg count will be determined by SSP after XCALL
-            # For now, store stack snapshot for later processing
+            # XCALL consumes arguments from stack - capture BEFORE return value is added
             instr._xcall_stack_snapshot = stack.copy()  # type: ignore[attr-defined]
         elif mnemonic == "CALL" and stack:
             # CALL also consumes arguments from stack (similar pattern)
-            # Arguments are pushed via ASP/LADR/value/ASGN sequences, but end up on eval stack
             instr._call_stack_snapshot = stack.copy()  # type: ignore[attr-defined]
 
+        # Special handling: XCALL return values
+        # XCALL opcode has pushes=0 but external functions CAN return values.
+        # Check XFN table's ret_size to determine if we should create an output.
+        if mnemonic == "XCALL" and scr:
+            xfn_idx = instr.arg1
+            returns_value, ret_type = _get_xcall_return_info(xfn_idx, scr)
+
+            if returns_value:
+                xfn_entry = scr.get_xfn(xfn_idx)
+                func_name = xfn_entry.name if xfn_entry else f"xfn_{xfn_idx}"
+                ret_value = StackValue(
+                    name=f"t{instr.address}_ret",
+                    producer=instr,
+                    value_type=ret_type,
+                    alias=None,
+                )
+                stack.append(ret_value)
+                outputs.append(ret_value)
+                logger.info(f"XCALL {func_name} returns value, created output {ret_value.name}")
+
+
         lifted.append(LiftedInstruction(instruction=instr, inputs=inputs, outputs=outputs))
+        prev_instr = instr  # Track for next iteration
 
     # Post-process: find XCALL+SSP pairs and assign arguments
     _assign_xcall_arguments(lifted, resolver, scr)
@@ -391,27 +512,96 @@ def _assign_xcall_arguments(lifted: List[LiftedInstruction], resolver: opcodes.O
                 inst.inputs = args
 
 
+def _simulate_eval_stack_depth(lifted: List[LiftedInstruction],
+                                call_idx: int,
+                                resolver: opcodes.OpcodeResolver) -> int:
+    """
+    Simulate eval stack depth before CALL instruction using precise opcode semantics.
+
+    This function tracks the evaluation stack (NOT the frame stack) by simulating
+    push/pop operations from the last basic block boundary up to the CALL.
+
+    Key insight: CALL arguments are on the eval stack, while ASP-allocated locals
+    are in frame slots. We must distinguish between these two.
+
+    Returns:
+        Number of values on eval stack before CALL (= argument count)
+    """
+    depth = 0
+    lookback = 15  # Wide enough for complex expressions
+
+    for j in range(max(0, call_idx - lookback), call_idx):
+        inst = lifted[j]
+        opcode = inst.instruction.opcode
+        mnem = resolver.get_mnemonic(opcode)
+
+        # Reset at basic block boundaries (control flow instructions)
+        if mnem in {"JZ", "JNZ", "JMP", "CALL", "XCALL", "RET"}:
+            depth = 0
+            continue
+
+        # Get opcode info to determine stack effect
+        opcode_info = resolver.get_info(opcode)
+        if opcode_info:
+            # Apply stack effect: depth += (pushes - pops)
+            # Note: ASP/SSP have pops=0, pushes=0 (they don't affect eval stack)
+            depth -= opcode_info.pops
+            depth += opcode_info.pushes
+            depth = max(0, depth)  # Stack depth never goes negative
+
+    return depth
+
+
+def _find_ssp_after_call(lifted: List[LiftedInstruction],
+                         call_idx: int,
+                         resolver: opcodes.OpcodeResolver) -> Optional[int]:
+    """
+    Find SSP immediately after CALL (within 3 instructions).
+
+    Returns:
+        SSP value if found and reliable, None otherwise.
+
+    SSP is unreliable if there's an LLD/GLD/DLD before it, indicating
+    local variable cleanup is included in the SSP value.
+    """
+    for j in range(call_idx + 1, min(call_idx + 4, len(lifted))):
+        mnem = resolver.get_mnemonic(lifted[j].instruction.opcode)
+
+        # Stop at control flow boundaries
+        if mnem in {"CALL", "XCALL", "RET", "JZ", "JNZ", "JMP"}:
+            return None
+
+        # Found SSP
+        if mnem == "SSP":
+            # Check if there's LLD before SSP (indicates local var cleanup)
+            if j > call_idx + 1:
+                prev_mnem = resolver.get_mnemonic(lifted[j-1].instruction.opcode)
+                if prev_mnem in {"LLD", "GLD", "DLD"}:
+                    # SSP includes local cleanup, unreliable
+                    return None
+
+            return lifted[j].instruction.arg1
+
+    return None
+
+
 def _assign_call_arguments(lifted: List[LiftedInstruction], resolver: opcodes.OpcodeResolver, scr: Optional["SCRFile"] = None) -> None:
     """
     Post-process lifted instructions to assign CALL arguments from stack snapshots.
 
-    CALL pattern analysis from bytecode:
+    Uses hybrid approach combining three methods:
+    1. Precise eval stack depth simulation (primary)
+    2. SSP after CALL (cross-validation)
+    3. Stack snapshot size (constraint)
 
-    func_0010(info->field_16):
-        ASP 1          ; Allocate stack slot
-        LADR [sp-4]    ; Address on eval stack
-        DADR 16        ; Modified address on eval stack
-        DCP 4          ; VALUE on eval stack ← THIS IS THE ARGUMENT
-        ASP 1          ; Stack cleanup
-        CALL func_0010 ; Argument is on eval stack
+    This implementation fixes the critical issue where functions with 3+ arguments
+    were incorrectly detected as void functions.
 
-    func_0096():  (no arguments)
-        <prev operation leaves value on eval stack>
-        SSP 1          ; Clean up that value
-        CALL func_0096 ; No arguments!
-
-    Key insight: Look for values PRODUCED RECENTLY (last 1-3 instructions before CALL).
-    Old values on stack are leftovers, not arguments.
+    Algorithm:
+    - Simulate eval stack depth using opcode pops/pushes metadata
+    - Cross-validate with SSP if available
+    - Use minimum of both for conservative estimate
+    - Constrain by stack snapshot size
     """
     for i, inst in enumerate(lifted):
         mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
@@ -423,44 +613,34 @@ def _assign_call_arguments(lifted: List[LiftedInstruction], resolver: opcodes.Op
         if not stack_snapshot:
             continue
 
-        # Find values that were pushed to stack in the last few instructions before CALL
-        # These are likely arguments
-        recent_values = []  # Use list instead of set since StackValue is not hashable
-        for j in range(max(0, i - 6), i):  # Look back 6 instructions
-            prev_inst = lifted[j]
-            prev_mnemonic = resolver.get_mnemonic(prev_inst.instruction.opcode)
+        # Method 1: Precise eval stack simulation
+        stack_depth = _simulate_eval_stack_depth(lifted, i, resolver)
 
-            # Stop at control flow (new basic block starts, can't be same argument chain)
-            if prev_mnemonic in {"JZ", "JNZ", "JMP", "JE", "JNE"}:
-                recent_values.clear()  # Reset - arguments must be after control flow
-                continue
+        # Method 2: SSP cross-validation
+        ssp_value = _find_ssp_after_call(lifted, i, resolver)
 
-            # Stop at previous CALL/XCALL (separate operation)
-            if prev_mnemonic in {"CALL", "XCALL"}:
-                recent_values.clear()
-                continue
+        # Method 3: Determine arg count using hybrid approach
+        if ssp_value is not None and stack_depth > 0:
+            # Both available - use minimum (conservative)
+            arg_count = min(ssp_value, stack_depth)
+        elif stack_depth > 0:
+            # Only stack depth - use it
+            arg_count = stack_depth
+        elif ssp_value is not None:
+            # Only SSP - use it (but might be unreliable)
+            arg_count = ssp_value
+        else:
+            # Neither available - assume 0 args (void function)
+            arg_count = 0
 
-            # SSP before CALL means values are being REMOVED, not added for arguments
-            if prev_mnemonic == "SSP":
-                recent_values.clear()  # Values removed = no arguments follow
-                continue
+        # Validate against snapshot size
+        arg_count = min(arg_count, len(stack_snapshot))
 
-            # Track values produced by this instruction
-            if prev_inst.outputs:
-                for out_val in prev_inst.outputs:
-                    if out_val not in recent_values:  # Avoid duplicates
-                        recent_values.append(out_val)
-
-        # Extract arguments: stack values that were produced recently
-        # Maintain order from stack (last pushed = rightmost argument)
-        args = []
-        for stack_val in stack_snapshot:
-            if stack_val in recent_values:
-                args.append(stack_val)
-
-        # Assign arguments to CALL
-        if args:
-            inst.inputs = args
+        # Assign arguments from stack snapshot
+        if arg_count > 0:
+            inst.inputs = stack_snapshot[-arg_count:]
+        else:
+            inst.inputs = []
 
 
 def lift_function(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -> Tuple[CFG, Dict[int, List[LiftedInstruction]]]:

@@ -209,7 +209,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # FÁZE 3.3: Detect function signature to get parameter names
     from ..function_signature import detect_function_signature
-    func_sig = detect_function_signature(ssa_func, entry_addr, end_addr)
+    func_sig = detect_function_signature(ssa_func, entry_addr, end_addr, func_name=func_name)
 
     # Find the entry block for this function
     # For negative entry addresses (e.g., ScriptMain at -1098), use CFG's resolved entry_block
@@ -329,7 +329,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     local_vars = []
     lowered_var_names = set()
     for var_type, var_name in lowering_result.variable_declarations:
-        local_vars.append(f"{var_type} {var_name}")
+        # FIX: Handle array types correctly (e.g., "s_SC_MP_EnumPlayers[64]")
+        # Array syntax should be after variable name: "s_SC_MP_EnumPlayers local_296[64]"
+        if "[" in var_type:
+            base_type = var_type[:var_type.index("[")]
+            array_part = var_type[var_type.index("["):]
+            local_vars.append(f"{base_type} {var_name}{array_part}")
+        else:
+            local_vars.append(f"{var_type} {var_name}")
         lowered_var_names.add(var_name)
 
     # Also collect array declarations and struct types from old system
@@ -347,19 +354,27 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             var_name = parts[-1].split('[')[0]
 
             # BUGFIX: If this variable was already declared by lowering, but the old system
-            # has better type info (struct types, arrays), REPLACE the lowering declaration
+            # has better type info (struct types, arrays, pointers), REPLACE the lowering declaration
             if var_name in lowered_var_names:
                 # Check if this declaration has better type info than the lowered one
-                # Better = has struct type (s_SC_) or array syntax ([)
-                has_better_type = var_decl.startswith("s_SC_") or "[" in var_decl
+                # Better = has struct type (s_SC_), array syntax ([), or pointer type (*)
+                # Also check for specific SDK types like ushort* from SC_Wtxt
+                has_better_type = (var_decl.startswith("s_SC_") or
+                                   var_decl.startswith("c_") or
+                                   "[" in var_decl or
+                                   "*" in var_decl)
                 if has_better_type:
                     # Remove the lowered declaration and add this better one
                     lowered_decl = None
                     for i, decl in enumerate(local_vars):
-                        if f" {var_name}" in decl or decl.endswith(var_name):
-                            lowered_decl = decl
-                            local_vars[i] = var_decl
-                            break
+                        # Extract variable name from existing declaration for precise matching
+                        decl_parts = decl.split()
+                        if len(decl_parts) >= 2:
+                            decl_var = decl_parts[-1].split('[')[0]  # Handle arrays
+                            if decl_var == var_name:
+                                lowered_decl = decl
+                                local_vars[i] = var_decl
+                                break
                     if lowered_decl:
                         continue
                 else:
@@ -597,6 +612,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     global_map
                 )
                 lines.extend(default_lines)
+                # FIX: Ensure default case has at least a break statement if body is empty
+                # An empty default: case is a C syntax error
+                if not default_lines or all(line.strip() == "" for line in default_lines):
+                    lines.append(f"{base_indent}    break;")
             lines.append(f"{base_indent}}}")
             emitted_switches.add(block_id)
 
