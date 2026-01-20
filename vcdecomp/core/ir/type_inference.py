@@ -794,6 +794,7 @@ class TypeInferenceEngine:
         - a = b + 0 → type(a) = type(b)
         - a = NEG(b) → type(a) = type(b)
         - a = DCP(ptr) → type(ptr) = pointer
+        - Struct type propagation: if source is s_SC_* or c_*, propagate to target
 
         Returns:
             True if any new evidence was added
@@ -809,6 +810,9 @@ class TypeInferenceEngine:
                     if source.name and dest.name:
                         if self._propagate_type_forward(source, dest, 0.90):
                             changes = True
+                        # Also try struct type propagation
+                        if self._propagate_struct_type(source, dest):
+                            changes = True
 
                 # Identity operations: a = b + 0, a = b * 1
                 elif self._check_identity_op(inst):
@@ -816,6 +820,9 @@ class TypeInferenceEngine:
                     dest = inst.outputs[0]
                     if source.name and dest.name:
                         if self._propagate_type_forward(source, dest, 0.85):
+                            changes = True
+                        # Also try struct type propagation
+                        if self._propagate_struct_type(source, dest):
                             changes = True
 
                 # Unary operations: NEG, ABS, etc.
@@ -828,6 +835,80 @@ class TypeInferenceEngine:
                                 changes = True
 
         return changes
+
+    def _propagate_struct_type(self, source: SSAValue, dest: SSAValue) -> bool:
+        """
+        Propagate struct types through assignments.
+
+        If source has a struct type (s_SC_* or c_*), propagate it to destination
+        with confidence decay.
+
+        Example:
+            local_5 = SC_GetPlayer();  // local_5 is s_SC_Player*
+            local_6 = local_5;          // local_6 should ALSO be s_SC_Player*
+
+        Args:
+            source: Source SSA value
+            dest: Destination SSA value
+
+        Returns:
+            True if new struct type evidence was added
+        """
+        if not source.name or not dest.name:
+            return False
+
+        source_info = self.type_info.get(source.name)
+        if not source_info or not source_info.evidence:
+            return False
+
+        # Find struct type in source evidence
+        struct_type = None
+        struct_confidence = 0.0
+
+        for ev in source_info.evidence:
+            inferred_type = ev.inferred_type
+            # Check if this is a struct type (s_SC_*, c_*, or struct pointer)
+            if inferred_type and (
+                inferred_type.startswith('s_SC_') or
+                inferred_type.startswith('s_') or
+                inferred_type.startswith('c_') or
+                (inferred_type.endswith('*') and ('SC_' in inferred_type or '_' in inferred_type))
+            ):
+                if ev.confidence > struct_confidence:
+                    struct_type = inferred_type
+                    struct_confidence = ev.confidence
+
+        if not struct_type:
+            return False
+
+        # Apply confidence decay for propagation
+        propagated_confidence = struct_confidence * (1.0 - self.propagation_decay)
+
+        # Check minimum confidence threshold
+        if propagated_confidence < self.propagation_min_confidence:
+            return False
+
+        # Check if destination already has this or better evidence
+        dest_info = self._get_or_create_type_info(dest.name)
+        for existing_ev in dest_info.evidence:
+            if existing_ev.inferred_type == struct_type:
+                if existing_ev.confidence >= propagated_confidence:
+                    return False  # Already have equal or better evidence
+
+        # Add propagated struct type evidence
+        dest_info.add_evidence(TypeEvidence(
+            confidence=propagated_confidence,
+            source=TypeSource.ASSIGNMENT,
+            inferred_type=struct_type,
+            reason=f'Struct type propagated from {source.name}'
+        ))
+
+        logger.debug(
+            f"Struct type propagation: {source.name} ({struct_type}) → {dest.name} "
+            f"(confidence: {struct_confidence:.2f} → {propagated_confidence:.2f})"
+        )
+
+        return True
 
     def _propagate_type_forward(self, source: SSAValue, dest: SSAValue,
                                 base_confidence: float) -> bool:
@@ -1002,6 +1083,7 @@ class TypeInferenceEngine:
         Propagate types through PHI nodes (control flow merges).
 
         Pattern: PHI(a, b, c) → merge types with conflict resolution
+        Special handling: Struct types (s_SC_*, c_*) are prioritized
 
         Returns:
             True if any new evidence was added
@@ -1018,6 +1100,7 @@ class TypeInferenceEngine:
 
                 # Collect types from all PHI inputs
                 input_types: Dict[str, float] = {}  # type → max confidence
+                struct_types: Dict[str, float] = {}  # struct types separately
 
                 for input_val in inst.inputs:
                     if not input_val or not input_val.name:
@@ -1032,13 +1115,35 @@ class TypeInferenceEngine:
                         current_conf = input_types.get(ev.inferred_type, 0.0)
                         input_types[ev.inferred_type] = max(current_conf, ev.confidence)
 
+                        # Track struct types separately for priority handling
+                        if ev.inferred_type and (
+                            ev.inferred_type.startswith('s_SC_') or
+                            ev.inferred_type.startswith('s_') or
+                            ev.inferred_type.startswith('c_') or
+                            (ev.inferred_type.endswith('*') and ('SC_' in ev.inferred_type or '_' in ev.inferred_type))
+                        ):
+                            struct_conf = struct_types.get(ev.inferred_type, 0.0)
+                            struct_types[ev.inferred_type] = max(struct_conf, ev.confidence)
+
                 if not input_types:
                     continue
 
-                # Get dominant type (highest total confidence)
-                dominant_type = max(input_types.items(), key=lambda x: x[1])
-                merged_type = dominant_type[0]
-                merged_confidence = dominant_type[1] * 0.85  # 15% penalty for PHI merge
+                # Prefer struct types if available with reasonable confidence
+                merged_type = None
+                merged_confidence = 0.0
+
+                if struct_types:
+                    # Get best struct type
+                    best_struct = max(struct_types.items(), key=lambda x: x[1])
+                    if best_struct[1] >= 0.70:  # Min confidence for struct type preference
+                        merged_type = best_struct[0]
+                        merged_confidence = best_struct[1] * 0.90  # 10% penalty for PHI merge (less than normal)
+
+                if not merged_type:
+                    # Fall back to dominant type (highest confidence)
+                    dominant_type = max(input_types.items(), key=lambda x: x[1])
+                    merged_type = dominant_type[0]
+                    merged_confidence = dominant_type[1] * 0.85  # 15% penalty for PHI merge
 
                 # Apply to PHI output
                 output = inst.outputs[0]
@@ -1101,6 +1206,41 @@ class TypeInferenceEngine:
         """
         info = self.type_info.get(var_name)
         return info.evidence if info else []
+
+    def get_confidence(self, var_name: str) -> float:
+        """
+        Get the maximum confidence score for a variable's type.
+
+        Used by PHI resolution to prefer versions with higher type confidence.
+
+        Args:
+            var_name: SSA value name
+
+        Returns:
+            Maximum confidence (0.0-1.0), or 0.0 if no evidence
+        """
+        info = self.type_info.get(var_name)
+        if not info or not info.evidence:
+            return 0.0
+        return max(ev.confidence for ev in info.evidence)
+
+    def get_type_and_confidence(self, var_name: str) -> tuple:
+        """
+        Get both the inferred type and its confidence for a variable.
+
+        Args:
+            var_name: SSA value name
+
+        Returns:
+            Tuple of (type_string, confidence) or (None, 0.0) if no evidence
+        """
+        info = self.type_info.get(var_name)
+        if not info or not info.evidence:
+            return (None, 0.0)
+
+        # Find evidence with highest confidence
+        best_evidence = max(info.evidence, key=lambda ev: ev.confidence)
+        return (best_evidence.inferred_type, best_evidence.confidence)
 
     def infer_parameter_types(self) -> List['ParamInfo']:
         """

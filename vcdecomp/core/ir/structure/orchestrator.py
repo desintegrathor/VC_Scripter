@@ -98,10 +98,17 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     symbol_db = _load_symbol_db()
 
     # FIX 2: Variable name collision resolution (simplified for legacy function)
-    # Note: This function is likely deprecated, main function is format_structured_function_v3
+    # Note: This function is likely deprecated, main function is format_structured_function_named
     from ..variable_renaming import VariableRenamer
     all_block_ids = set(cfg.blocks.keys()) if cfg and cfg.blocks else set()
-    renamer = VariableRenamer(ssa_func, all_block_ids)
+    # FÁZE 3 (01-20-26): Run quick type inference for PHI resolution (legacy function)
+    quick_type_engine = None
+    try:
+        quick_type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        quick_type_engine.infer_types()
+    except Exception:
+        pass  # Silently continue without type inference in legacy function
+    renamer = VariableRenamer(ssa_func, all_block_ids, type_engine=quick_type_engine)
     rename_map = renamer.analyze_and_rename()
 
     formatter = ExpressionFormatter(ssa_func, symbol_db=symbol_db, rename_map=rename_map)
@@ -242,8 +249,16 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # FIX 2: Variable name collision resolution
     # Run variable renaming BEFORE creating formatter to detect and resolve collisions
+    # FÁZE 3 (01-20-26): Run quick type inference for PHI resolution with type confidence
     from ..variable_renaming import VariableRenamer
-    renamer = VariableRenamer(ssa_func, func_block_ids)
+    quick_type_engine = None
+    try:
+        quick_type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        quick_type_engine.infer_types()  # Just infer types, don't update SSA values yet
+    except Exception as e:
+        logger.debug(f"Quick type inference for PHI resolution failed: {e}")
+
+    renamer = VariableRenamer(ssa_func, func_block_ids, type_engine=quick_type_engine)
     rename_map = renamer.analyze_and_rename()
 
     # SSA LOWERING: Collapse versioned SSA variables to unversioned C variables

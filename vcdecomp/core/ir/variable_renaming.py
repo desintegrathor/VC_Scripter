@@ -103,9 +103,10 @@ class VariableRenamer:
     4. Vygeneruj nové jméno podle typu
     """
 
-    def __init__(self, ssa_func: SSAFunction, func_block_ids: Set[int]):
+    def __init__(self, ssa_func: SSAFunction, func_block_ids: Set[int], type_engine=None):
         self.ssa_func = ssa_func
         self.func_block_ids = func_block_ids
+        self.type_engine = type_engine  # Optional TypeInferenceEngine for PHI resolution
 
         # Trackování verzí
         self.variable_versions: Dict[str, List[VariableVersion]] = defaultdict(list)
@@ -475,25 +476,26 @@ class VariableRenamer:
 
     def _resolve_phi_version(self, phi_inst, var_name: str) -> Optional[int]:
         """
-        Determine which version a PHI node should map to using semantic heuristics.
+        Determine which version a PHI node should map to.
 
-        Heuristics (in order of priority):
-        1. If one input is from constant assignment (-1, 0, etc.), pick the other
-        2. If inputs have different semantic types, pick higher priority:
-           side_value > loop_counter > temp > general
-        3. Otherwise, pick first input
+        Resolution priority:
+        1. Type confidence from TypeInferenceEngine (if available)
+           - Prefer inputs with higher type confidence (>0.5 threshold)
+        2. Semantic heuristics (fallback):
+           a. Skip constant producers (GCP/LCP/ICP/FCP/DCP)
+           b. Pick first non-constant version
 
         Returns:
             Version number (0, 1, 2, ...) or None if cannot determine
         """
-        # Collect input mappings
+        # Collect input mappings with SSA value names for type lookup
         input_mappings = []
         for inp in phi_inst.inputs:
             mapping = self.value_to_version.get(inp.name)
             if mapping:
                 base_name, version_num, alias = mapping
                 if base_name == var_name:  # Same variable
-                    input_mappings.append((inp, version_num))
+                    input_mappings.append((inp, version_num, inp.name))
 
         if not input_mappings:
             return None
@@ -502,15 +504,28 @@ class VariableRenamer:
             # Only one input maps to this variable
             return input_mappings[0][1]
 
+        # Priority 1: Use type confidence if TypeInferenceEngine is available
+        if self.type_engine:
+            scored_inputs = []
+            for inp, version_num, ssa_name in input_mappings:
+                confidence = self.type_engine.get_confidence(ssa_name)
+                scored_inputs.append((confidence, version_num, ssa_name))
+
+            # Sort by confidence (descending)
+            scored_inputs.sort(reverse=True, key=lambda x: x[0])
+
+            # If best input has confidence > 0.5, use it
+            if scored_inputs and scored_inputs[0][0] > 0.5:
+                return scored_inputs[0][1]
+
+        # Fallback: Semantic heuristics
         # Heuristic 1: Check for constant producers
         non_constant_versions = []
-        import sys
-        for inp, version_num in input_mappings:
+        for inp, version_num, ssa_name in input_mappings:
             # Check if this input comes from constant assignment
             if inp.producer_inst:
                 # GCP/LCP/ICP = constant load
                 if inp.producer_inst.mnemonic in {'GCP', 'LCP', 'ICP', 'FCP', 'DCP'}:
-                    # Check if it loads a small constant value (heuristic for -1, 0, 1, etc.)
                     # Skip this version (it's likely the constant branch)
                     continue
             non_constant_versions.append(version_num)
@@ -519,9 +534,7 @@ class VariableRenamer:
             # Return first non-constant version
             return non_constant_versions[0]
 
-        # Heuristic 2: Pick version with highest semantic priority
-        # (Will be applied AFTER _infer_semantic_types, so this is backup)
-        # For now, just return first version
+        # Last resort: return first version
         return input_mappings[0][1]
 
     def _infer_semantic_types(self):
@@ -574,6 +587,56 @@ class VariableRenamer:
                             return True
         return False
 
+    def _is_asp_allocated_counter(self, var_name: str, ver: VariableVersion) -> bool:
+        """
+        Detect ASP-based loop counter pattern.
+
+        Pattern:
+            ASP 1       ; Allocate 1 stack slot for counter
+            ...
+            INC local_X ; Increment counter
+            JLT loop    ; Loop while less than
+
+        This pattern is common when the compiler allocates a loop counter
+        using ASP instruction instead of using pre-existing local variables.
+
+        Args:
+            var_name: Variable name to check
+            ver: Variable version
+
+        Returns:
+            True if this appears to be an ASP-allocated loop counter
+        """
+        # Look for ASP instruction near first_def
+        asp_found = False
+        inc_dec_found = False
+        comparison_found = False
+
+        for block_id in self.func_block_ids:
+            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+            for inst in ssa_instrs:
+                # Check for ASP near first_def (within 10 instructions before)
+                if inst.mnemonic == 'ASP':
+                    if ver.first_def - 10 <= inst.address <= ver.first_def:
+                        asp_found = True
+
+                # Check for INC/DEC of this variable
+                if inst.mnemonic in {'INC', 'DEC'}:
+                    for output in inst.outputs:
+                        extracted = self._extract_local_name(output)
+                        if extracted == var_name:
+                            inc_dec_found = True
+
+                # Check for comparison operations
+                if inst.mnemonic in {'ULE', 'UGE', 'ULT', 'UGT', 'ILE', 'IGE', 'ILT', 'IGT', 'EQU', 'NEQ'}:
+                    for inp in inst.inputs:
+                        extracted = self._extract_local_name(inp)
+                        if extracted == var_name:
+                            comparison_found = True
+
+        # ASP + (INC/DEC) + comparison = likely loop counter
+        return asp_found and inc_dec_found and comparison_found
+
     def _guess_semantic_type(self, var_name: str, ver: VariableVersion) -> str:
         """
         Hádej sémantický typ z usage patterns.
@@ -598,6 +661,10 @@ class VariableRenamer:
                     # This variable is used for struct field access (e.g., ai_props.watchfulness)
                     # Return struct_value to prevent renaming to 'i', 'j', 'k'
                     return "struct_value"
+
+        # NEW: Check for ASP-based loop counter pattern
+        if self._is_asp_allocated_counter(var_name, ver):
+            return "loop_counter"
 
         # Prozkoumej instrukce mezi first_def a last_use
         uses = []
