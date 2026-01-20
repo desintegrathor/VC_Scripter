@@ -346,6 +346,10 @@ class ExpressionFormatter:
                 # SDK constant resolver not available, continue without it
                 pass
 
+        # LOCAL TYPE TRACKER: Unified tracker for coordinating declarations with usage
+        # This is set by the orchestrator after SSA pattern analysis
+        self._type_tracker = None
+
         # Initialize DataResolver for type-aware data segment reading
         # FIXED (Phase 1): Create DataResolver even if _global_type_info is empty
         # The DataResolver can still use heuristic float detection for constants
@@ -364,16 +368,40 @@ class ExpressionFormatter:
         Resolve field name from struct type and offset.
 
         Args:
-            base_var: Variable name (e.g., "local_296", "enum_pl")
+            base_var: Variable name (e.g., "local_296", "enum_pl", "hudinfo")
             offset: Byte offset into the struct
 
         Returns:
             Field name if resolved (e.g., "side"), otherwise generic "field_N"
         """
+        # Reverse lookup: semantic name -> SSA name
+        # _semantic_names maps: SSA_name -> semantic_name
+        # We need to find SSA_name from semantic_name
+        ssa_name = base_var
+        for ssa_n, sem_n in self._semantic_names.items():
+            if sem_n == base_var:
+                ssa_name = ssa_n
+                break
+
         # Check if we know the struct type for this variable
-        struct_type = self._field_tracker.var_struct_types.get(base_var)
+        struct_type = None
+
+        # PRIORITY 1: Check type_tracker (unified tracker)
+        if self._type_tracker:
+            info = self._type_tracker.get_usage_info(ssa_name)
+            if info and info.struct_type:
+                struct_type = info.struct_type
+
+        # PRIORITY 2: Check field_tracker with SSA name
+        if not struct_type and self._field_tracker:
+            struct_type = self._field_tracker.var_struct_types.get(ssa_name)
+
+        # PRIORITY 3: Check _var_struct_types with SSA name
         if not struct_type:
-            # Also check _var_struct_types (from variables.py)
+            struct_type = self._var_struct_types.get(ssa_name)
+
+        # PRIORITY 4: Check with original name (fallback)
+        if not struct_type:
             struct_type = self._var_struct_types.get(base_var)
 
         if not struct_type:
@@ -386,6 +414,19 @@ class ExpressionFormatter:
 
         # Fallback to generic notation
         return f"field_{offset}"
+
+    def set_type_tracker(self, tracker):
+        """
+        Set the LocalVariableTypeTracker for coordinating declarations with usage.
+
+        The type tracker is used to:
+        1. Check if array/field notation should be emitted
+        2. Record usage patterns discovered during expression formatting
+
+        Args:
+            tracker: LocalVariableTypeTracker instance
+        """
+        self._type_tracker = tracker
 
     def _analyze_struct_types(self) -> None:
         """
@@ -1597,33 +1638,65 @@ class ExpressionFormatter:
                             # FIX (01-20): Also check if local var has struct array type from field tracker
                             # If the variable is a struct array, we need to access element [0]
                             elif left.producer_inst.mnemonic == "LADR":
-                                # Check if field tracker knows this is a struct array
-                                if hasattr(self, '_field_tracker') and self._field_tracker:
+                                # Check if type_tracker or field_tracker knows this is a struct array
+                                tracked_type = None
+                                is_struct_array = False
+
+                                # PRIORITY 1: Check type_tracker (unified tracker)
+                                if self._type_tracker:
+                                    info = self._type_tracker.get_usage_info(base_name)
+                                    if info and (info.is_struct_array or (info.is_array and info.struct_type)):
+                                        tracked_type = info.struct_type
+                                        is_struct_array = True
+
+                                # PRIORITY 2: Check field_tracker
+                                if not tracked_type and hasattr(self, '_field_tracker') and self._field_tracker:
                                     tracked_type = self._field_tracker.get_struct_type(base_name)
                                     if tracked_type:
-                                        # If it has a struct type AND we're accessing a field offset,
-                                        # it could be array[0].field - emit with [0]
-                                        # Check if offset matches a known struct field
-                                        struct_def = get_struct_by_name(tracked_type)
-                                        if struct_def and struct_def.size > offset:
-                                            field_name = get_field_at_offset(tracked_type, offset)
-                                            if field_name:
-                                                # Return as array[0].field for struct arrays
-                                                return f"{base_name}[0].{field_name}"
+                                        is_struct_array = True
+
+                                if is_struct_array and tracked_type:
+                                    # If it has a struct type AND we're accessing a field offset,
+                                    # it could be array[0].field - emit with [0]
+                                    # Check if offset matches a known struct field
+                                    struct_def = get_struct_by_name(tracked_type)
+                                    if struct_def and struct_def.size > offset:
+                                        field_name = get_field_at_offset(tracked_type, offset)
+                                        if field_name:
+                                            # Return as array[0].field for struct arrays
+                                            result = f"{base_name}[0].{field_name}"
+                                            if self._type_tracker:
+                                                self._type_tracker.record_array_usage(base_name, result)
+                                                self._type_tracker.record_field_usage(base_name, result)
+                                            return result
 
                             # Make sure this isn't actually array indexing (check if right is MUL result OR base is array)
                             if not (right.producer_inst and right.producer_inst.mnemonic == "MUL") and not base_is_array:
                                 # FIX (01-20): Only emit struct field notation if we know the variable is a struct
                                 # Otherwise we get `int_var.field_4` which won't compile
                                 struct_type = None
-                                if hasattr(self, '_field_tracker') and self._field_tracker:
+
+                                # PRIORITY 1: Check type_tracker for unified type resolution
+                                if self._type_tracker and self._type_tracker.should_emit_field_notation(base_name):
+                                    info = self._type_tracker.get_usage_info(base_name)
+                                    if info:
+                                        struct_type = info.struct_type
+
+                                # PRIORITY 2: Check field_tracker
+                                if not struct_type and hasattr(self, '_field_tracker') and self._field_tracker:
                                     struct_type = self._field_tracker.get_struct_type(base_name)
+
+                                # PRIORITY 3: Check _var_struct_types
                                 if not struct_type:
                                     struct_type = self._var_struct_types.get(base_name)
 
                                 if struct_type:
                                     field_name = self._resolve_field_name(base_name, offset)
-                                    return f"{base_name}.{field_name}"
+                                    result = f"{base_name}.{field_name}"
+                                    # Notify type_tracker of field usage
+                                    if self._type_tracker:
+                                        self._type_tracker.record_field_usage(base_name, result)
+                                    return result
                                 # else: fall through to other patterns or raw pointer arithmetic
                     except (ValueError, AttributeError):
                         pass
@@ -1721,15 +1794,23 @@ class ExpressionFormatter:
             if is_local_var:
                 # Check if this local variable is tracked as a struct array
                 is_local_array = False
-                if hasattr(self, '_field_tracker') and self._field_tracker:
+
+                # PRIORITY 1: Check type_tracker (unified tracker - most reliable)
+                if self._type_tracker and self._type_tracker.should_emit_array_notation(base_name):
+                    is_local_array = True
+
+                # PRIORITY 2: Check field_tracker (XCALL-based detection)
+                if not is_local_array and hasattr(self, '_field_tracker') and self._field_tracker:
                     struct_type = self._field_tracker.get_struct_type(base_name)
                     if struct_type:
                         is_local_array = True  # Struct arrays are OK
+
+                # PRIORITY 3: Check _var_struct_types for struct arrays
                 if not is_local_array:
-                    # Check _var_struct_types for struct arrays
                     struct_type = self._var_struct_types.get(base_name)
                     if struct_type:
                         is_local_array = True
+
                 if not is_local_array:
                     # Not a known array - skip array notation to avoid compilation errors
                     return None
@@ -1810,6 +1891,9 @@ class ExpressionFormatter:
 
             if index_expr:
                 result = f"{base_name}[{index_expr}]"
+                # Notify type tracker of array usage (for runtime pattern collection)
+                if self._type_tracker:
+                    self._type_tracker.record_array_usage(base_name, result)
                 return result
 
         return None
@@ -1832,13 +1916,26 @@ class ExpressionFormatter:
             if base_var:
                 # Check if this is a struct array (element size > 4)
                 tracked_type = None
-                if hasattr(self, '_field_tracker') and self._field_tracker:
+
+                # PRIORITY 1: Check type_tracker (unified tracker)
+                if self._type_tracker:
+                    info = self._type_tracker.get_usage_info(base_var)
+                    if info and info.struct_type:
+                        tracked_type = info.struct_type
+
+                # PRIORITY 2: Check field_tracker
+                if not tracked_type and hasattr(self, '_field_tracker') and self._field_tracker:
                     tracked_type = self._field_tracker.get_struct_type(base_var)
+
                 if tracked_type:
                     # Get first field of the struct
                     first_field = get_field_at_offset(tracked_type, 0)
                     if first_field:
-                        return f"{array_notation}.{first_field}"
+                        result = f"{array_notation}.{first_field}"
+                        # Notify type tracker of field usage
+                        if self._type_tracker:
+                            self._type_tracker.record_field_usage(base_var, result)
+                        return result
                 else:
                     # No tracked type - check if we can infer from array indexing pattern
                     # by checking the element size (from the MUL pattern in ADD)
@@ -1862,7 +1959,11 @@ class ExpressionFormatter:
                                     if structs:
                                         first_field = structs[0].get_field_name_at_offset(0)
                                         if first_field:
-                                            return f"{array_notation}.{first_field}"
+                                            result = f"{array_notation}.{first_field}"
+                                            # Notify type tracker of field usage
+                                            if self._type_tracker:
+                                                self._type_tracker.record_field_usage(base_var, result)
+                                            return result
             return array_notation
 
         # FIX: Detect DADR(LADR(param)) pattern for struct field access
@@ -1928,12 +2029,42 @@ class ExpressionFormatter:
             if '.' not in var_name and '[' not in var_name:
                 # Check if this is a known struct type
                 tracked_type = None
-                if hasattr(self, '_field_tracker') and self._field_tracker:
-                    tracked_type = self._field_tracker.get_struct_type(var_name)
+
+                # Reverse lookup: semantic name -> SSA name
+                # _semantic_names maps: SSA_name -> semantic_name
+                # We need to find SSA_name from semantic_name
+                ssa_name = var_name
+                for ssa_n, sem_n in self._semantic_names.items():
+                    if sem_n == var_name:
+                        ssa_name = ssa_n
+                        break
+
+                # PRIORITY 1: Check type_tracker (unified tracker) with SSA name
+                if self._type_tracker:
+                    info = self._type_tracker.get_usage_info(ssa_name)
+                    if info and info.struct_type and not info.is_array:
+                        # Plain struct (not array) - add first field
+                        tracked_type = info.struct_type
+
+                # PRIORITY 2: Check field_tracker with SSA name
+                if not tracked_type and hasattr(self, '_field_tracker') and self._field_tracker:
+                    tracked_type = self._field_tracker.get_struct_type(ssa_name)
+
+                # PRIORITY 3: Check _var_struct_types with SSA name
+                if not tracked_type:
+                    tracked_type = self._var_struct_types.get(ssa_name)
+
+                # PRIORITY 4: Check _var_struct_types with semantic name (fallback)
+                if not tracked_type:
+                    tracked_type = self._var_struct_types.get(var_name)
+
                 if tracked_type:
                     first_field = get_field_at_offset(tracked_type, 0)
                     if first_field:
-                        return f"{var_name}.{first_field}"
+                        result = f"{var_name}.{first_field}"
+                        if self._type_tracker:
+                            self._type_tracker.record_field_usage(ssa_name, result)
+                        return result
             return var_name
 
         # If it's a structure field access, use it directly

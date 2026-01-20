@@ -189,9 +189,15 @@ def _detect_multidim_arrays(
     return multidim_arrays
 
 
-def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter) -> List[str]:
+def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter, type_tracker=None) -> List[str]:
     """
     Collect local variable declarations for a function.
+
+    Args:
+        ssa_func: SSA function data
+        func_block_ids: Block IDs belonging to this function
+        formatter: ExpressionFormatter instance
+        type_tracker: Optional LocalVariableTypeTracker for unified type resolution
 
     Returns list of declaration strings like "int i", "float local_2", etc.
     """
@@ -965,7 +971,20 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Finally, declare regular variables (skip all arrays including struct arrays)
     for var_name in sorted(var_types.keys()):
         if var_name not in local_arrays and var_name not in multidim_arrays and var_name not in struct_array_vars:
-            var_type = var_types[var_name]
+            # UNIFIED TYPE TRACKER: Priority 0 - Use type_tracker if available
+            # This provides unified type resolution based on all gathered evidence
+            if type_tracker:
+                tracker_type = type_tracker.resolve_type(var_name)
+                # Only use tracker type if it's not the default "int" OR var_types is also "int"
+                # This allows more specific types from var_types to override tracker defaults
+                if tracker_type != "int" or var_types[var_name] == "int":
+                    if tracker_type != "int":
+                        print(f"DEBUG variables.py: type_tracker resolved {var_name} -> {tracker_type}", file=sys.stderr)
+                    var_type = tracker_type
+                else:
+                    var_type = var_types[var_name]
+            else:
+                var_type = var_types[var_name]
 
             # BUGFIX: Handle array syntax in type string
             # If var_type contains "[...]", split it properly: "Type[256]" -> "Type var[256]"
