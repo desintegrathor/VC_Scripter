@@ -65,10 +65,14 @@ class FieldAccessTracker:
             print(expr)  # "info->master_nod"
     """
 
-    def __init__(self, ssa_func: SSAFunction, func_name: str = None):
+    def __init__(self, ssa_func: SSAFunction, func_name: str = None, func_start: int = None, func_end: int = None):
         self.ssa = ssa_func
         self.scr = ssa_func.scr
         self.func_name = func_name or "ScriptMain"
+        # Function boundaries for scoped analysis - prevents struct types from
+        # leaking between functions that reuse the same variable names (local_0, etc.)
+        self._func_start = func_start
+        self._func_end = func_end
 
         # SSA value name → FieldAccess
         self.field_map: Dict[str, FieldAccess] = {}
@@ -78,6 +82,26 @@ class FieldAccessTracker:
 
         # Semantic names for base variables (param_0 → info)
         self.semantic_names: Dict[str, str] = {}
+
+    def get_struct_type(self, var_name: str) -> Optional[str]:
+        """Get the struct type for a variable if tracked."""
+        return self.var_struct_types.get(var_name)
+
+    def _is_block_in_function(self, block_id: int) -> bool:
+        """Check if a block belongs to the current function based on address bounds."""
+        if self._func_start is None or self._func_end is None:
+            return True  # No bounds specified, include all blocks
+
+        # BUGFIX: block_id is a sequential ID (0, 1, 2...), not an instruction address!
+        # We need to look up the block in the CFG to get its actual start address.
+        cfg = self.ssa.cfg
+        block = cfg.blocks.get(block_id)
+        if block is None:
+            return False  # Block doesn't exist
+
+        block_start_addr = block.start
+        in_range = self._func_start <= block_start_addr < self._func_end
+        return in_range
 
     def analyze(self):
         """Main analysis entry point - runs all tracking passes."""
@@ -167,11 +191,18 @@ class FieldAccessTracker:
 
         Looks for XCALL instructions and checks if arguments are LADR of local variables.
         Then infers struct type from the function signature.
+
+        IMPORTANT: Only analyzes blocks within this function's address range
+        (func_start <= block_id < func_end) to prevent struct types from leaking
+        between functions that reuse the same variable names.
         """
         import sys
         from ..structures import FUNCTION_STRUCT_PARAMS
 
         for block_id, instructions in self.ssa.instructions.items():
+            # CRITICAL: Only analyze blocks belonging to this function
+            if not self._is_block_in_function(block_id):
+                continue
             for i, inst in enumerate(instructions):
                 # Look for XCALL (external function call) instructions
                 if inst.mnemonic == "XCALL" and inst.instruction:
@@ -230,59 +261,14 @@ class FieldAccessTracker:
                         if base_var not in self.var_struct_types:
                             self.var_struct_types[base_var] = struct_type
                             self.var_struct_types[f"&{base_var}"] = struct_type
-                            print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx})", file=sys.stderr)
-                        continue  # Skip the old LADR scanning
-
-                    # Legacy LADR scanning (kept for functions not using the improved method)
-                    # Look backwards for LADR instructions (load address) before the call
-                    # Stack is built backwards: last parameter is closest to XCALL
-                    # For func(arg0, arg1), stack is: PUSH arg0, PUSH arg1, XCALL
-                    # So we scan backwards: i-1 = arg1 (param index 1), i-2 = arg0 (param index 0)
-
-                    # Collect LADR instructions working backwards from XCALL
-                    ladr_instructions = []
-                    j = i - 1
-                    while j >= 0 and len(ladr_instructions) < 10:  # Max 10 params
-                        prev_inst = instructions[j]
-                        if prev_inst.mnemonic == "LADR" and prev_inst.outputs:
-                            ladr_instructions.append((j, prev_inst))
-                        elif prev_inst.mnemonic == "XCALL":
-                            # Stop at another XCALL (different function call)
-                            break
-                        j -= 1
-
-                    # Map LADR positions to parameter indices
-                    # ladr_instructions[0] is closest to XCALL (last parameter)
-                    # If we have 2 LADRs: [0] = param 1, [1] = param 0
-                    for ladr_idx, (inst_pos, ladr_inst) in enumerate(ladr_instructions):
-                        # Parameter index is reversed from LADR position
-                        # ladr_idx 0 (last LADR before XCALL) = highest param index
-                        param_idx = len(ladr_instructions) - 1 - ladr_idx
-
-                        # Check if this parameter index has a known struct type
-                        struct_type = param_map.get(param_idx)
-                        if not struct_type:
-                            continue
-
-                        # The LADR output is &local_X, get the base variable
-                        addr_var = ladr_inst.outputs[0].alias or ladr_inst.outputs[0].name
-
-                        # Remove & prefix if present
-                        if addr_var.startswith("&"):
-                            base_var = addr_var[1:]
-                        else:
-                            base_var = addr_var
-
-                        # Mark this variable as having the detected struct type
-                        # We need to track BOTH local_1 and &local_1 because:
-                        # - local_1 is the actual variable
-                        # - &local_1 is used in PNT (pointer arithmetic) instructions
-                        if base_var not in self.var_struct_types:
-                            self.var_struct_types[base_var] = struct_type
-                            self.var_struct_types[f"&{base_var}"] = struct_type
-                            # DON'T set semantic name for local variables - use the variable name as-is
-                            # (semantic names are only for parameters like param_0 → "info")
-                            print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx})", file=sys.stderr)
+                            # DEBUG: Show which block this detection is from
+                            block = self.ssa.cfg.blocks.get(block_id)
+                            block_start = block.start if block else "?"
+                            print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx}) [block_id={block_id}, block_start={block_start}, func_range=[{self._func_start},{self._func_end})]", file=sys.stderr)
+                        # NOTE: Legacy LADR scanning was removed (01-20-2026)
+                        # It was fundamentally broken - it scanned ALL LADR instructions before XCALL
+                        # without checking which instructions actually supply XCALL parameters,
+                        # causing false positives (e.g., LADR for ASGN targets being mistaken for params)
 
     def _propagate_struct_types(self):
         """
@@ -294,6 +280,8 @@ class FieldAccessTracker:
         Handles patterns:
         - ASGN: local = param  (assignment)
         - SSP/LLD: stack operations that copy values
+
+        IMPORTANT: Only analyzes blocks within this function's address range.
         """
         import sys
 
@@ -305,6 +293,9 @@ class FieldAccessTracker:
             iterations += 1
 
             for block_id, instructions in self.ssa.instructions.items():
+                # CRITICAL: Only analyze blocks belonging to this function
+                if not self._is_block_in_function(block_id):
+                    continue
                 for inst in instructions:
                     # Pattern 1: ASGN instruction (value1 = value2)
                     if inst.mnemonic == "ASGN" and len(inst.inputs) >= 1 and inst.outputs:
@@ -353,6 +344,8 @@ class FieldAccessTracker:
             → result is param_0->field_at_offset_4
 
         This detects field accesses through pointers.
+
+        IMPORTANT: Only analyzes blocks within this function's address range.
         """
         import sys
         dcp_count = 0
@@ -360,6 +353,9 @@ class FieldAccessTracker:
         dadr_found = 0
 
         for block_id, instructions in self.ssa.instructions.items():
+            # CRITICAL: Only analyze blocks belonging to this function
+            if not self._is_block_in_function(block_id):
+                continue
             for inst in instructions:
                 # Look for DCP instructions (dereference)
                 if inst.mnemonic != "DCP":

@@ -577,7 +577,7 @@ class TestRenderBlocksWithLoops(unittest.TestCase):
 
         # Should have while loop
         result_text = '\n'.join(result)
-        self.assertIn("while (true)", result_text)
+        self.assertIn("while (TRUE)", result_text)
         self.assertIn("x++;", result_text)
 
     def test_skip_already_emitted(self):

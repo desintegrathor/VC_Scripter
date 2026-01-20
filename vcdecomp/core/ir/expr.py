@@ -323,8 +323,9 @@ class ExpressionFormatter:
         # Initialize constant propagation
         self._constant_propagator = ConstantPropagator(ssa)
         self._constant_propagator.analyze()
-        # Initialize field access tracking
-        self._field_tracker = FieldAccessTracker(ssa, func_name=func_name)
+        # Initialize field access tracking with function boundaries
+        # This ensures struct types detected in one function don't leak to other functions
+        self._field_tracker = FieldAccessTracker(ssa, func_name=func_name, func_start=func_start, func_end=func_end)
         self._field_tracker.analyze()
         # Phase 2: Transfer field tracker results to formatter's var_struct_types
         # This enables struct-typed variable declarations for locals
@@ -1082,7 +1083,20 @@ class ExpressionFormatter:
         # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
         # This allows sideA and sideB to have different names even though both have alias="local_2"
         # NOTE: This comes AFTER field_expr check to avoid losing struct field accesses
-        if self._rename_map and value.name in self._rename_map:
+        # BUGFIX: Skip rename_map for LADR values - these produce address-of expressions (&local_X)
+        # that should preserve the original variable name for proper struct type detection
+        # FIX (01-20): Also skip rename_map for ADD values that are array indexing patterns
+        # Pattern: ADD(GADR, MUL(...)) should be inlined as &array[index], not renamed to tmpN
+        is_ladr = value.producer_inst and value.producer_inst.mnemonic == "LADR"
+        is_array_indexing = False
+        if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
+            left = value.producer_inst.inputs[0]
+            right = value.producer_inst.inputs[1]
+            # Check if left is GADR/DADR (global/data address) and right is MUL (index * size)
+            if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
+                if right.producer_inst and right.producer_inst.mnemonic == "MUL":
+                    is_array_indexing = True
+        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing:
             return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -1496,12 +1510,14 @@ class ExpressionFormatter:
             struct_def = get_struct_by_name(struct_type)
             if struct_def:
                 # Find field by name
-                for offset, f_info in struct_def.fields.items():
+                # BUGFIX: struct_def.fields is a List[StructField], not a dict
+                # BUGFIX: StructField has type_name, not type
+                for f_info in struct_def.fields:
                     if f_info.name == field_name or f_info.name == field_name.replace('field_', ''):
                         # Check if field type contains 'float'
-                        if 'float' in f_info.type.lower():
+                        if 'float' in f_info.type_name.lower():
                             return 'float'
-                        elif 'int' in f_info.type.lower() or 'dword' in f_info.type.lower():
+                        elif 'int' in f_info.type_name.lower() or 'dword' in f_info.type_name.lower():
                             return 'int'
 
         return None
@@ -1578,11 +1594,37 @@ class ExpressionFormatter:
                                 gadr_offset = left.producer_inst.instruction.instruction.arg1
                                 if gadr_offset in self._global_type_info:
                                     base_is_array = self._global_type_info[gadr_offset].is_array_base
+                            # FIX (01-20): Also check if local var has struct array type from field tracker
+                            # If the variable is a struct array, we need to access element [0]
+                            elif left.producer_inst.mnemonic == "LADR":
+                                # Check if field tracker knows this is a struct array
+                                if hasattr(self, '_field_tracker') and self._field_tracker:
+                                    tracked_type = self._field_tracker.get_struct_type(base_name)
+                                    if tracked_type:
+                                        # If it has a struct type AND we're accessing a field offset,
+                                        # it could be array[0].field - emit with [0]
+                                        # Check if offset matches a known struct field
+                                        struct_def = get_struct_by_name(tracked_type)
+                                        if struct_def and struct_def.size > offset:
+                                            field_name = get_field_at_offset(tracked_type, offset)
+                                            if field_name:
+                                                # Return as array[0].field for struct arrays
+                                                return f"{base_name}[0].{field_name}"
 
                             # Make sure this isn't actually array indexing (check if right is MUL result OR base is array)
                             if not (right.producer_inst and right.producer_inst.mnemonic == "MUL") and not base_is_array:
-                                field_name = self._resolve_field_name(base_name, offset)
-                                return f"{base_name}.{field_name}"
+                                # FIX (01-20): Only emit struct field notation if we know the variable is a struct
+                                # Otherwise we get `int_var.field_4` which won't compile
+                                struct_type = None
+                                if hasattr(self, '_field_tracker') and self._field_tracker:
+                                    struct_type = self._field_tracker.get_struct_type(base_name)
+                                if not struct_type:
+                                    struct_type = self._var_struct_types.get(base_name)
+
+                                if struct_type:
+                                    field_name = self._resolve_field_name(base_name, offset)
+                                    return f"{base_name}.{field_name}"
+                                # else: fall through to other patterns or raw pointer arithmetic
                     except (ValueError, AttributeError):
                         pass
 
@@ -1672,6 +1714,26 @@ class ExpressionFormatter:
             if not base_name:
                 return None
 
+            # FIX (01-20): For LADR-based variables (locals), only generate array notation if
+            # the variable is known to be an array or struct array. Otherwise, we generate
+            # local_X[idx] but declare int local_X which won't compile.
+            is_local_var = left.producer_inst and left.producer_inst.mnemonic == "LADR"
+            if is_local_var:
+                # Check if this local variable is tracked as a struct array
+                is_local_array = False
+                if hasattr(self, '_field_tracker') and self._field_tracker:
+                    struct_type = self._field_tracker.get_struct_type(base_name)
+                    if struct_type:
+                        is_local_array = True  # Struct arrays are OK
+                if not is_local_array:
+                    # Check _var_struct_types for struct arrays
+                    struct_type = self._var_struct_types.get(base_name)
+                    if struct_type:
+                        is_local_array = True
+                if not is_local_array:
+                    # Not a known array - skip array notation to avoid compilation errors
+                    return None
+
             # Check if right is (index * element_size) pattern
             index_expr = None
             if right.producer_inst and right.producer_inst.mnemonic == "MUL" and len(right.producer_inst.inputs) == 2:
@@ -1702,6 +1764,10 @@ class ExpressionFormatter:
                 # If size is 1, 2, 4, 8, 16, etc., treat as array element size
                 if size_val and size_val > 0 and size_val <= 256:
                     index_expr = self._render_value(mul_left, context=ExpressionContext.IN_ARRAY_INDEX)
+                    # NOTE (01-20): Don't add first field access here. This is array indexing detection,
+                    # not value assignment. When we compute &array[index], the result IS a pointer to
+                    # the struct element, not to a field within it. First field access should only be
+                    # added when assigning a scalar value to a struct array element (handled elsewhere).
 
             # Also handle simple offset (no multiplication)
             # NEW: Only treat as array if base is marked as is_array_base
@@ -1754,6 +1820,49 @@ class ExpressionFormatter:
         # First, check if this is array indexing pattern
         array_notation = self._detect_array_indexing(value)
         if array_notation:
+            # FIX (01-20): For assignment targets, if the array element is a struct,
+            # we need to add the first field to make scalar assignment valid.
+            # Pattern: local_5[i] = 0 → local_5[i].id = 0 (if local_5 is s_SC_FpvMapSign[])
+            # BUT: Only if there's no field access already (e.g., local_296[0].side is fine)
+            # Extract base variable name from array notation (e.g., "local_5[i]" -> "local_5")
+            # Skip if already has field access (contains '.' after ']')
+            if '.' in array_notation.split(']')[-1]:
+                return array_notation  # Already has field access, don't add more
+            base_var = array_notation.split('[')[0] if '[' in array_notation else None
+            if base_var:
+                # Check if this is a struct array (element size > 4)
+                tracked_type = None
+                if hasattr(self, '_field_tracker') and self._field_tracker:
+                    tracked_type = self._field_tracker.get_struct_type(base_var)
+                if tracked_type:
+                    # Get first field of the struct
+                    first_field = get_field_at_offset(tracked_type, 0)
+                    if first_field:
+                        return f"{array_notation}.{first_field}"
+                else:
+                    # No tracked type - check if we can infer from array indexing pattern
+                    # by checking the element size (from the MUL pattern in ADD)
+                    if value.producer_inst and value.producer_inst.mnemonic == "ADD":
+                        add_inst = value.producer_inst
+                        if len(add_inst.inputs) >= 2:
+                            right = add_inst.inputs[1]
+                            if right.producer_inst and right.producer_inst.mnemonic == "MUL":
+                                mul_right = right.producer_inst.inputs[1]
+                                # Get element size from constant
+                                size_val = None
+                                if mul_right.alias and mul_right.alias.startswith("data_"):
+                                    try:
+                                        offset = int(mul_right.alias[5:])
+                                        if self.data_segment:
+                                            size_val = self.data_segment.get_dword(offset * 4)
+                                    except (ValueError, AttributeError):
+                                        pass
+                                if size_val and size_val > 4:
+                                    structs = get_struct_by_size(size_val)
+                                    if structs:
+                                        first_field = structs[0].get_field_name_at_offset(0)
+                                        if first_field:
+                                            return f"{array_notation}.{first_field}"
             return array_notation
 
         # FIX: Detect DADR(LADR(param)) pattern for struct field access
@@ -1812,7 +1921,20 @@ class ExpressionFormatter:
 
         # If it's an address reference, strip the & to get variable name
         if rendered.startswith("&"):
-            return rendered[1:]
+            var_name = rendered[1:]
+            # FIX (01-20): For local struct assignment targets (not arrays, not already field access),
+            # we need to add first field to make scalar assignment valid.
+            # Pattern: hudinfo = 5100 → hudinfo.x = 5100 (if hudinfo is s_SC_MP_hud)
+            if '.' not in var_name and '[' not in var_name:
+                # Check if this is a known struct type
+                tracked_type = None
+                if hasattr(self, '_field_tracker') and self._field_tracker:
+                    tracked_type = self._field_tracker.get_struct_type(var_name)
+                if tracked_type:
+                    first_field = get_field_at_offset(tracked_type, 0)
+                    if first_field:
+                        return f"{var_name}.{first_field}"
+            return var_name
 
         # If it's a structure field access, use it directly
         if "." in rendered and not rendered.startswith('"'):
@@ -2836,24 +2958,34 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
             continue
         # Handle RET instruction
         if inst.mnemonic == "RET":
-            # RET instruction: arg1 specifies number of values to return
-            # Even though opcode has pops=0, it actually pops arg1 values from stack
-            # We need to look at the preceding instruction's output for the return value
-            return_count = inst.instruction.instruction.arg1 if inst.instruction and inst.instruction.instruction else 0
+            # RET instruction: arg1 is the STACK CLEANUP SIZE (number of dwords to pop),
+            # NOT the number of values returned. A function returns a value only if there's
+            # an LLD [sp-3] instruction before the RET that stores to the return slot.
 
-            if return_count > 0:
-                # Look for the value to return in previous instructions
-                # The value should be the last output before this RET
-                return_value = None
-                for prev_inst in reversed(instructions[:instructions.index(inst)]):
-                    if prev_inst.outputs:
-                        return_value = formatter.render_value(prev_inst.outputs[-1])
-                        break
+            # Look for LLD [sp-3] pattern in preceding instructions
+            # This pattern stores a value to the return slot
+            return_value = None
+            inst_idx = instructions.index(inst)
+            for prev_idx in range(inst_idx - 1, max(0, inst_idx - 5), -1):
+                prev_inst = instructions[prev_idx]
+                if prev_inst.mnemonic == "LLD":
+                    # Check if this LLD stores to return slot (offset -3)
+                    if prev_inst.instruction and prev_inst.instruction.instruction:
+                        offset = prev_inst.instruction.instruction.arg1
+                        # Convert unsigned to signed
+                        if offset >= 0x80000000:
+                            offset = offset - 0x100000000
+                        if offset == -3:
+                            # This LLD stores to return slot - find the value
+                            # The value was pushed before LLD (look at prev_inst's input)
+                            if prev_inst.inputs:
+                                return_value = formatter.render_value(prev_inst.inputs[0])
+                            break
+                # Stop searching if we hit another control flow instruction
+                elif prev_inst.mnemonic in {"JMP", "JZ", "JNZ", "CALL", "XCALL"}:
+                    break
 
-                if return_value is None:
-                    # Fallback: use arg1 as literal value
-                    return_value = str(return_count)
-
+            if return_value:
                 # Replace 0/1 with FALSE/TRUE for boolean returns
                 if return_value == "1":
                     return_value = "TRUE"

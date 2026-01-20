@@ -357,10 +357,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             # has better type info (struct types, arrays, pointers), REPLACE the lowering declaration
             if var_name in lowered_var_names:
                 # Check if this declaration has better type info than the lowered one
-                # Better = has struct type (s_SC_), array syntax ([), or pointer type (*)
+                # Better = has struct type (s_SC_), array syntax ([), pointer type (*), or dword (handle type)
                 # Also check for specific SDK types like ushort* from SC_Wtxt
+                # FIX (01-20): Added "void*" and "dword" as better types - used for pointer/handle types in Vietcong scripting
                 has_better_type = (var_decl.startswith("s_SC_") or
                                    var_decl.startswith("c_") or
+                                   var_decl.startswith("dword ") or
+                                   var_decl.startswith("void* ") or
+                                   var_decl.startswith("void *") or
                                    "[" in var_decl or
                                    "*" in var_decl)
                 if has_better_type:
@@ -785,7 +789,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; {for_info.condition}; {for_info.increment}) {{")
             else:
-                lines.append(f"{indent}while (true) {{  // loop body: blocks {sorted(header_loop.body)}")
+                lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
         # Calculate current indentation based on active loops
         base_indent = "    " + "    " * len(active_loops)
@@ -1193,10 +1197,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         declared_vars.add(clean_name)
 
     # Scan lines for existing declarations (type keyword followed by identifier)
-    type_keywords = {'int', 'float', 'double', 'void', 'char', 'short', 'long', 'dword', 'BOOL', 'byte'}
+    type_keywords = {'int', 'float', 'double', 'void', 'char', 'short', 'long', 'dword', 'BOOL', 'byte', 'ushort'}
     for line in lines:
-        # Match patterns like "int foo;" or "c_Vector3 bar;"
-        decl_match = re.search(r'\b(\w+)\s+([a-zA-Z_]\w*)\s*[;=\[]', line)
+        # Match patterns like "int foo;", "c_Vector3 bar;", or "ushort* ptr;"
+        # BUGFIX: Added \*?\s* to handle pointer types like "ushort* t2881_ret;"
+        decl_match = re.search(r'\b(\w+)\*?\s+\*?([a-zA-Z_]\w*)\s*[;=\[]', line)
         if decl_match:
             type_name = decl_match.group(1)
             var_name = decl_match.group(2)
@@ -1227,6 +1232,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
         # Skip type names (s_*, c_*)
         if var_name.startswith('s_') or var_name.startswith('c_'):
+            continue
+
+        # Skip global variables (gVarname pattern - 'g' followed by uppercase letter)
+        # These are already declared at file scope, don't shadow them locally
+        if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
             continue
 
         # Now check if this variable SHOULD be declared
@@ -1260,6 +1270,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Pattern 7: Variables that look like semantic names from variable renaming
         elif var_name in {'ai_props', 'player_info', 'obj_info', 'srv_settings', 'hudinfo',
                           'side', 'sideA', 'sideB', 'master', 'nod', 'enemy'}:
+            needs_declaration = True
+
+        # Pattern 8: Variables used with array indexing (var[index])
+        # BUGFIX: Global arrays like abl_list need to be declared
+        elif any(f'{var_name}[' in line for line in lines):
             needs_declaration = True
 
         if needs_declaration:

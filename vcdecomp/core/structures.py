@@ -532,6 +532,12 @@ FUNCTION_STRUCT_PARAMS: Dict[str, Dict[int, str]] = {
     "SC_MP_SRV_GetAtgSettings": {0: "s_SC_MP_SRV_AtgSettings"},
     "SC_NOD_GetInfo": {0: "s_SC_OBJ_info"},
     "SC_L_GetInfo": {0: "s_SC_L_info"},
+    # FIX (01-20): FpvMapSign functions
+    "SC_MP_FpvMapSign_Set": {1: "s_SC_FpvMapSign"},
+    # FIX (01-20): Vector functions that take c_Vector3* arguments
+    "SC_IsNear3D": {0: "c_Vector3", 1: "c_Vector3"},
+    "SC_GetScriptHelper": {1: "c_Vector3"},
+    "SC_GetNearestScriptHelper": {0: "c_Vector3", 1: "c_Vector3"},
 }
 
 

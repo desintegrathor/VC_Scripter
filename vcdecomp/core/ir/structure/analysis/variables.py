@@ -209,7 +209,21 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
 
     # Phase 2: Import struct types from field tracker (via formatter._var_struct_types)
     # These are high-confidence struct types detected from function call patterns
+    # BUGFIX: Only import struct types for variables that are actually used in the current function
     import sys
+
+    # First, collect all variable names used in the current function's blocks
+    vars_used_in_func = set()
+    for block_id in func_block_ids:
+        ssa_instrs = ssa_func.instructions.get(block_id, [])
+        for inst in ssa_instrs:
+            for output in inst.outputs:
+                if output.alias:
+                    vars_used_in_func.add(output.alias.lstrip('&'))
+            for inp in inst.inputs:
+                if inp.alias:
+                    vars_used_in_func.add(inp.alias.lstrip('&'))
+
     if hasattr(formatter, '_var_struct_types'):
         print(f"DEBUG variables.py: formatter._var_struct_types has {len(formatter._var_struct_types)} entries", file=sys.stderr)
         for var_name, struct_type in formatter._var_struct_types.items():
@@ -217,6 +231,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             if var_name.startswith('local_') or (var_name.startswith('&') and var_name[1:].startswith('local_')):
                 # Remove & prefix if present
                 clean_var_name = var_name[1:] if var_name.startswith('&') else var_name
+
+                # BUGFIX: Skip variables not used in the current function
+                # This prevents struct types from other functions leaking into this function
+                if clean_var_name not in vars_used_in_func:
+                    print(f"DEBUG variables.py: Skipping {clean_var_name} -> {struct_type} (not used in current function)", file=sys.stderr)
+                    continue
+
 
                 # ARRAY-FILLING FUNCTIONS: Use reduced confidence instead of skipping
                 # Some engine functions take array parameters that get filled, but the same
@@ -742,6 +763,64 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                                 return_type_vars[var_name] = return_type
                                 logger.debug(f"Inferred {var_name} type from {func_name}: {return_type}")
 
+        # FIX (01-20): Scan expressions for function calls with pointer arguments
+        # Pattern: "SC_FuncName(tmp_var, ...)" where arg 0 expects void*/dword
+        # This fixes issues like SC_DUMMY_Set_DoNotRenHier2(tmp16, ...) where tmp16 should be dword
+        for expr in block_exprs:
+            # Match: SC_FuncName(arg0, arg1, ...)
+            call_match = re.search(r'(SC_\w+)\(([^)]*)\)', expr.text)
+            if call_match:
+                func_name = call_match.group(1)
+                args_str = call_match.group(2)
+                if args_str and hasattr(formatter, '_header_db') and formatter._header_db:
+                    func_sig = formatter._header_db.get_function_signature(func_name)
+                    # SDK database uses 'parameters' as list of (type, name) tuples
+                    params = func_sig.get('parameters') if func_sig else None
+                    if params:
+                        # Split args by comma (simple parsing, may fail on complex expressions)
+                        args = [a.strip() for a in args_str.split(',')]
+                        for idx, arg in enumerate(args):
+                            if idx >= len(params):
+                                break
+                            # params is a list of tuples: [(type, name), ...]
+                            param_type = params[idx][0] if isinstance(params[idx], tuple) else ''
+                            # Check if param expects pointer type (void*, or any type ending in *)
+                            # NOTE: "dword" is NOT a pointer type - it's a 32-bit unsigned int
+                            # Only types with "*" in them are actual pointers
+                            if param_type and '*' in param_type:
+                                # IMPORTANT: Only infer pointer type if the variable is passed DIRECTLY,
+                                # not via address-of (&). If passed as &var, then var is the THING BEING
+                                # POINTED TO, not a pointer itself.
+                                if arg.startswith('&'):
+                                    # Variable is passed by address - don't change its type
+                                    continue
+
+                                # Check if arg is a simple variable name (tmp*, local_*)
+                                if re.match(r'^(tmp\d*|local_\d+)$', arg):
+                                    # This variable should be void* (pointer type)
+                                    # FIX (01-20): Use "void*" instead of "dword" for pointer types
+                                    # The Vietcong compiler is strict about pointer types
+                                    if arg not in return_type_vars:
+                                        return_type_vars[arg] = 'void*'
+                                        logger.debug(f"Inferred {arg} type from {func_name} param {idx} ({param_type}): void* (pointer arg)")
+
+        # FIX (01-20): Detect dereferenced variables that need pointer types
+        # Pattern: *var_name = value  or  value = *var_name
+        # These variables must be pointer types
+        for expr in block_exprs:
+            # Match: *var_name = (dereference on left side of assignment)
+            deref_matches = re.findall(r'\*\s*(tmp\d+|local_\d+)\s*=', expr.text)
+            for var_name in deref_matches:
+                if var_name not in return_type_vars:
+                    return_type_vars[var_name] = 'dword*'
+                    print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from *{var_name} = ...)", file=sys.stderr)
+            # Match: = *var_name (dereference on right side)
+            deref_read_matches = re.findall(r'=\s*\*\s*(tmp\d+|local_\d+)\b', expr.text)
+            for var_name in deref_read_matches:
+                if var_name not in return_type_vars:
+                    return_type_vars[var_name] = 'dword*'
+                    print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from = *{var_name})", file=sys.stderr)
+
         for expr in block_exprs:
             # Extract address-of references: &varname
             # These are the most common cause of undeclared variables
@@ -812,6 +891,27 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             var_types[var_name] = return_type
             logger.debug(f"Variable {var_name} type changed {current_type} -> {return_type} (from function return)")
 
+    # FIX (01-20): Detect struct-typed variables used with array subscripting
+    # Pattern: local_5[tmp] = value when local_5 is typed as a struct
+    # If the struct type is used with array indexing, declare as array of that struct
+    struct_array_vars: Dict[str, Tuple[str, int]] = {}  # var_name -> (struct_type, array_size)
+    for block_id in func_block_ids:
+        block_exprs = format_block_expressions(ssa_func, block_id, formatter=formatter)
+        for expr in block_exprs:
+            # Match: var_name[index] (any subscript access, not just assignment)
+            subscript_match = re.search(r'\b(local_\d+)\s*\[', expr.text)
+            if subscript_match:
+                var_name = subscript_match.group(1)
+                # Check if this variable has a struct type
+                var_type = var_types.get(var_name)
+                if var_type and (var_type.startswith('s_SC_') or var_type.startswith('c_')):
+                    # This struct variable is used with array subscripting
+                    # Declare as array of that struct type
+                    if var_name not in struct_array_vars:
+                        # Default to 4 elements (common for sides arrays: US, VC, Neutral, +1)
+                        struct_array_vars[var_name] = (var_type, 4)
+                        print(f"DEBUG variables.py: Struct {var_name} ({var_type}) used with subscript - declaring as {var_type}[4]", file=sys.stderr)
+
     # FIX (07-04): Generate declarations (multi-dim arrays, 1D arrays, then regular variables)
     declarations = []
 
@@ -855,9 +955,16 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             element_type, array_size = local_arrays[var_name]
             declarations.append(f"{element_type} {var_name}[{array_size}]")
 
-    # Finally, declare regular variables (skip all arrays)
-    for var_name in sorted(var_types.keys()):
+    # Third, declare struct array variables (detected from subscripting patterns)
+    for var_name in sorted(struct_array_vars.keys()):
         if var_name not in local_arrays and var_name not in multidim_arrays:
+            struct_type, array_size = struct_array_vars[var_name]
+            declarations.append(f"{struct_type} {var_name}[{array_size}]")
+            print(f"DEBUG variables.py: Declaring {var_name} as {struct_type}[{array_size}] (subscript detection)", file=sys.stderr)
+
+    # Finally, declare regular variables (skip all arrays including struct arrays)
+    for var_name in sorted(var_types.keys()):
+        if var_name not in local_arrays and var_name not in multidim_arrays and var_name not in struct_array_vars:
             var_type = var_types[var_name]
 
             # BUGFIX: Handle array syntax in type string

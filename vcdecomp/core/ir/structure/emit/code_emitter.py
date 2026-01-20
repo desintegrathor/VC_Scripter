@@ -376,7 +376,7 @@ def _render_blocks_with_loops(
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; {for_info.condition}; {for_info.increment}) {{")
             else:
-                lines.append(f"{indent}while (true) {{  // loop body: blocks {sorted(header_loop.body)}")
+                lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
             # Render loop body blocks
             loop_body_sorted = sorted(header_loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)

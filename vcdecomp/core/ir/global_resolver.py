@@ -123,6 +123,9 @@ class GlobalResolver:
         # if self.infer_structs:
         #     self._infer_struct_definitions()
 
+        # NEW Pattern 7: Infer struct types from XCALL arguments
+        self._analyze_xcall_struct_args()
+
         # Pojmenuj globály podle patterns (SGI names override auto-generated)
         self._assign_names()
 
@@ -460,6 +463,106 @@ class GlobalResolver:
                     usage.sgi_index = sgi_index
                     usage.sgi_name = sgi_name
                     usage.read_count += 1
+
+    def _analyze_xcall_struct_args(self):
+        """
+        Analyze XCALL arguments to infer struct types for global arrays.
+
+        When a global array element is passed to a function expecting a typed pointer
+        (e.g., SC_IsNear3D expects c_Vector3*), infer the global's element type.
+
+        Pattern detected:
+            GADR data[X] + (index * size) → passed to XCALL arg expecting struct*
+        """
+        from ..structures import FUNCTION_STRUCT_PARAMS
+
+        for block_id, ssa_instrs in self.ssa_func.instructions.items():
+            for instr in ssa_instrs:
+                if instr.mnemonic != 'XCALL':
+                    continue
+
+                if not instr.instruction or not instr.instruction.instruction:
+                    continue
+
+                xfn_index = instr.instruction.instruction.arg1
+                if not self.scr.xfn_table:
+                    continue
+
+                # Get XFN entry
+                xfn_entries = getattr(self.scr.xfn_table, 'entries', [])
+                if xfn_index >= len(xfn_entries):
+                    continue
+
+                xfn_entry = xfn_entries[xfn_index]
+                if not xfn_entry.name:
+                    continue
+
+                # Extract function name
+                func_name = xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
+
+                # Get struct parameter mapping for this function
+                param_map = FUNCTION_STRUCT_PARAMS.get(func_name)
+                if not param_map:
+                    continue
+
+                # Check each argument
+                for arg_idx, expected_type in param_map.items():
+                    if arg_idx >= len(instr.inputs):
+                        continue
+
+                    arg_value = instr.inputs[arg_idx]
+
+                    # Look for pattern: ADD(GADR, MUL(...)) - global array element address
+                    if not arg_value.producer_inst:
+                        continue
+
+                    prod = arg_value.producer_inst
+                    if prod.mnemonic != 'ADD' or len(prod.inputs) < 2:
+                        continue
+
+                    left = prod.inputs[0]
+                    right = prod.inputs[1]
+
+                    # Check if left is GADR (global address)
+                    if not left.producer_inst or left.producer_inst.mnemonic != 'GADR':
+                        continue
+
+                    # Get global offset from GADR
+                    gadr_inst = left.producer_inst
+                    if not gadr_inst.instruction or not gadr_inst.instruction.instruction:
+                        continue
+
+                    dword_offset = gadr_inst.instruction.instruction.arg1
+                    byte_offset = dword_offset * 4
+
+                    # Check if right is MUL (index * element_size)
+                    element_size = None
+                    if right.producer_inst and right.producer_inst.mnemonic == 'MUL':
+                        mul_inst = right.producer_inst
+                        if len(mul_inst.inputs) >= 2:
+                            size_input = mul_inst.inputs[1]
+                            # Try to get constant size
+                            if size_input.alias and size_input.alias.startswith("data_"):
+                                try:
+                                    size_offset = int(size_input.alias[5:])
+                                    if self.scr.data_segment:
+                                        element_size = self.scr.data_segment.get_dword(size_offset * 4)
+                                except (ValueError, AttributeError):
+                                    pass
+
+                    # Update global usage with inferred struct type
+                    if byte_offset not in self.globals:
+                        self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
+
+                    usage = self.globals[byte_offset]
+
+                    # Set the array element type based on function parameter expectation
+                    if expected_type and not usage.inferred_type:
+                        usage.inferred_type = expected_type
+                        usage.type_confidence = 0.9  # High confidence from function signature
+                        usage.is_array_base = True
+                        if element_size:
+                            usage.array_element_size = element_size
 
     def _infer_global_types(self):
         """
