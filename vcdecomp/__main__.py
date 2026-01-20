@@ -247,6 +247,12 @@ Příklady:
     # structure
     p_structure = subparsers.add_parser('structure', help='Strukturovaná dekompilace všech funkcí')
     p_structure.add_argument('file', help='Cesta k SCR souboru')
+    p_structure.add_argument(
+        '--style',
+        choices=['quiet', 'normal', 'verbose'],
+        default='normal',
+        help='Output verbosity: quiet (no debug), normal (default), verbose (full debug)'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -436,6 +442,11 @@ def cmd_structure(args):
     from .core.ir.ssa import build_ssa_all_blocks
     from .core.headers.detector import generate_include_block
     from .core.ir.global_resolver import GlobalResolver
+    from .core.ir.debug_output import set_debug_enabled
+
+    # FÁZE 2 (--style): Set global debug output state early, before any processing
+    style = getattr(args, 'style', 'normal')
+    set_debug_enabled(style != 'quiet')
 
     scr = SCRFile.load(args.file, variant=args.variant)
     disasm = Disassembler(scr)
@@ -561,8 +572,9 @@ def cmd_structure(args):
 
     # Zpracuj funkce v pořadí podle adresy
     # FÁZE 4: Pass function_bounds for CALL instruction resolution
+    # FÁZE 2 (--style): Pass style parameter for debug output control (style already set above)
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-        text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds)
+        text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds, style=style)
         print(text)
         print()
 

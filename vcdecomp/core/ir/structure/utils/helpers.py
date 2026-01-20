@@ -18,6 +18,12 @@ from vcdecomp.parsing.symbol_db import SymbolDatabase
 SHOW_BLOCK_COMMENTS = False  # Set to True to show "// Block X @addr" comments
 
 
+# =============================================================================
+# Global debug output control (re-exported from vcdecomp.core.ir.debug_output)
+# =============================================================================
+from ...debug_output import set_debug_enabled, debug_print
+
+
 def _load_symbol_db() -> Optional[SymbolDatabase]:
     """Load symbol database from compiler/symbol_db.json if available."""
     try:

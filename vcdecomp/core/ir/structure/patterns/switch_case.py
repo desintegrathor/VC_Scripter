@@ -29,6 +29,7 @@ from ..analysis.value_trace import (
     _check_ssa_value_equivalence
 )
 from .jump_table import _detect_binary_search_switch
+from ..utils.helpers import debug_print
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def _switch_debug(msg: str):
     Enable with: VCDECOMP_SWITCH_DEBUG=1
     """
     if SWITCH_DEBUG:
-        print(f"[SWITCH] {msg}", file=sys.stderr)
+        debug_print(f"[SWITCH] {msg}")
 
 
 def _find_mod_in_predecessors(block_id: int, ssa_func: SSAFunction, max_depth: int = 2, visited: Optional[Set[int]] = None) -> Optional[any]:
@@ -362,14 +363,14 @@ def _detect_switch_patterns(
     scriptmain_blocks = [bid for bid in cfg.blocks.keys() if 1090 <= cfg.blocks[bid].start <= 1200]
     scriptmain_in_func = [bid for bid in scriptmain_blocks if bid in func_block_ids]
     scriptmain_missing = [bid for bid in scriptmain_blocks if bid not in func_block_ids]
-    print(f"DEBUG SWITCH: ScriptMain area blocks (1090-1200): {sorted(scriptmain_blocks)}", file=sys.stderr)
-    print(f"DEBUG SWITCH: ScriptMain blocks in func_block_ids: {sorted(scriptmain_in_func)}", file=sys.stderr)
+    debug_print(f"DEBUG SWITCH: ScriptMain area blocks (1090-1200): {sorted(scriptmain_blocks)}")
+    debug_print(f"DEBUG SWITCH: ScriptMain blocks in func_block_ids: {sorted(scriptmain_in_func)}")
     if scriptmain_missing:
-        print(f"DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: {sorted(scriptmain_missing)}", file=sys.stderr)
+        debug_print(f"DEBUG SWITCH: ScriptMain blocks MISSING from func_block_ids: {sorted(scriptmain_missing)}")
         for bid in sorted(scriptmain_missing):
             if bid in cfg.blocks:
                 block = cfg.blocks[bid]
-                print(f"DEBUG SWITCH:   Block {bid}: start={block.start}, end={block.end}, preds={len(block.predecessors)}", file=sys.stderr)
+                debug_print(f"DEBUG SWITCH:   Block {bid}: start={block.start}, end={block.end}, preds={len(block.predecessors)}")
 
     # Iterate through blocks looking for switch headers
     for block_id in func_block_ids:
@@ -381,7 +382,7 @@ def _detect_switch_patterns(
             continue
 
         logger.debug(f"Checking block {block_id} for switch pattern (start addr: {block.start})")
-        print(f"DEBUG SWITCH: Checking block {block_id} for switch pattern (start addr: {block.start})", file=sys.stderr)
+        debug_print(f"DEBUG SWITCH: Checking block {block_id} for switch pattern (start addr: {block.start})")
 
         # PHASE 8A: Try binary search detection first (for large switches)
         binary_switch = _detect_binary_search_switch(
@@ -683,45 +684,45 @@ def _detect_switch_patterns(
                     _switch_debug(f"First case established: {test_var} (SSA: {var_value.name if hasattr(var_value, 'name') else var_value})")
                     chain_debug['variables_seen'].append(test_var)
                     chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
-                    print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}", file=sys.stderr)
+                    debug_print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}")
                 elif test_var != var_name:
                     # NESTED SWITCH FIX: Different variable = likely nested switch
                     # Skip this block - it will be processed when we analyze the case body
                     _switch_debug(f"Different variable seen: {test_var} -> {var_name} (skipping - likely nested switch)")
                     chain_debug['variables_seen'].append(var_name)
                     chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
-                    print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)", file=sys.stderr)
+                    debug_print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)")
                     # Don't add successors for nested switch blocks - let them be detected later
                     continue
 
                 # Same variable (or first case), try to extract constant value using ConstantPropagator
                 _switch_debug(f"About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")
-                print(f"DEBUG SWITCH: About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}", file=sys.stderr)
+                debug_print(f"DEBUG SWITCH: About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")
                 case_val = None
                 const_info = formatter._constant_propagator.get_constant(const_value)
                 if const_info is not None:
                     case_val = const_info.value
                     _switch_debug(f"  Successfully extracted case value: {case_val}")
-                    print(f"DEBUG SWITCH: Successfully extracted case value: {case_val}", file=sys.stderr)
+                    debug_print(f"DEBUG SWITCH: Successfully extracted case value: {case_val}")
                 else:
                     _switch_debug(f"  Failed to extract constant - const_value alias={const_value.alias if hasattr(const_value, 'alias') else 'None'}, producer={const_value.producer_inst.mnemonic if const_value.producer_inst else 'None'}")
-                    print(f"DEBUG SWITCH: Failed to extract constant for SSA value: {const_value.name}", file=sys.stderr)
+                    debug_print(f"DEBUG SWITCH: Failed to extract constant for SSA value: {const_value.name}")
 
                 if case_val is not None:
                         # This is a valid case!
-                        print(f"DEBUG SWITCH: case_val is not None: {case_val}", file=sys.stderr)
+                        debug_print(f"DEBUG SWITCH: case_val is not None: {case_val}")
                         # Determine which successor is the case body
                         # JZ means jump if zero (condition false), so arg1 is NOT the case
                         # JNZ means jump if not zero (condition true), so arg1 IS the case
                         mnemonic = resolver.get_mnemonic(opcode)
-                        print(f"DEBUG SWITCH: mnemonic={mnemonic}, opcode={opcode}", file=sys.stderr)
+                        debug_print(f"DEBUG SWITCH: mnemonic={mnemonic}, opcode={opcode}")
                         if mnemonic == "JNZ":
                             case_block = last_instr.arg1
                         else:  # JZ
                             # Fall-through is the case body
                             case_block = last_instr.address + 1
 
-                        print(f"DEBUG SWITCH: case_block address={case_block}", file=sys.stderr)
+                        debug_print(f"DEBUG SWITCH: case_block address={case_block}")
 
                         # Convert address to block ID
                         case_block_id = None
@@ -730,7 +731,7 @@ def _detect_switch_patterns(
                                 case_block_id = bid
                                 break
 
-                        print(f"DEBUG SWITCH: case_block_id={case_block_id}", file=sys.stderr)
+                        debug_print(f"DEBUG SWITCH: case_block_id={case_block_id}")
                         if case_block_id is not None:
                             # PHASE 3 FIX: Store all potential cases with their variable info
                             # Don't filter yet - we'll do that after BFS completes
@@ -741,7 +742,7 @@ def _detect_switch_patterns(
                             cases.append(case_info)
                             chain_blocks.append(current_block)
                             found_equ = True
-                            print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}", file=sys.stderr)
+                            debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}")
 
                             # BFS: Add ALL successors of this comparison block to the queue
                             # This allows us to find comparison blocks even if they're not directly chained
@@ -809,24 +810,24 @@ def _detect_switch_patterns(
 
         # If we found at least 3 cases, it's a switch
         # (1-2 cases are just regular if/else statements, not switch)
-        print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)", file=sys.stderr)
+        debug_print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)")
         if len(cases) >= 3:
-            print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'", file=sys.stderr)
+            debug_print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'")
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
             # HEURISTIC FIX: For ScriptMain with network message cases, use info->message
             # Network message constants typically include SC_NET_MES_* values (0-20)
             case_values = [case.value for case in cases if case.value is not None]
-            print(f"DEBUG SWITCH: Heuristic check - test_var={test_var}, case_values={case_values[:5] if case_values else None}", file=sys.stderr)
+            debug_print(f"DEBUG SWITCH: Heuristic check - test_var={test_var}, case_values={case_values[:5] if case_values else None}")
             # Check if test_var is a generic parameter AND we're in ScriptMain
             if test_var and test_var.startswith('param_'):
                 # Get function name from formatter if available
                 func_name = getattr(formatter, 'func_name', None) if formatter else None
-                print(f"DEBUG SWITCH: func_name from formatter = {func_name}", file=sys.stderr)
+                debug_print(f"DEBUG SWITCH: func_name from formatter = {func_name}")
                 # For ScriptMain, assume first parameter field (param_0, param_1, param_2) is info->message
                 if func_name == "ScriptMain" and case_values and all(isinstance(v, int) and 0 <= v <= 20 for v in case_values):
                     test_var = "info->message"
-                    print(f"DEBUG SWITCH: ScriptMain heuristic applied: {test_var}", file=sys.stderr)
+                    debug_print(f"DEBUG SWITCH: ScriptMain heuristic applied: {test_var}")
 
             # Find the exit block - common successor of all case blocks
             # For now, we'll use a simple heuristic: find the most common successor
@@ -859,11 +860,11 @@ def _detect_switch_patterns(
                             exit_block = real_exit
 
             # Collect all blocks belonging to the switch (initially just chain and case entries)
-            print(f"DEBUG SWITCH: Building all_blocks for {test_var}, chain_blocks={chain_blocks}, header_block={block_id}", file=sys.stderr)
+            debug_print(f"DEBUG SWITCH: Building all_blocks for {test_var}, chain_blocks={chain_blocks}, header_block={block_id}")
             all_blocks = set(chain_blocks)
             all_blocks.add(block_id)  # CRITICAL FIX: Always include header block
             all_blocks.update(all_case_blocks)
-            print(f"DEBUG SWITCH: all_blocks after adding chain and cases: {all_blocks}", file=sys.stderr)
+            debug_print(f"DEBUG SWITCH: all_blocks after adding chain and cases: {all_blocks}")
             if current_block is not None:
                 all_blocks.add(current_block)  # default block
 
@@ -954,7 +955,7 @@ def _detect_switch_patterns(
                 all_blocks=all_blocks,
                 _internal_type=switch_type,
             )
-            print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases", file=sys.stderr)
+            debug_print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases")
             switches.append(switch)
             processed_blocks.update(chain_blocks)
 

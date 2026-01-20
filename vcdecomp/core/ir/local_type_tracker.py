@@ -22,6 +22,7 @@ from typing import Dict, Set, List, Optional, Tuple
 from ..disasm import opcodes
 from .ssa import SSAFunction, SSAValue, SSAInstruction
 from ..structures import get_struct_by_name, get_field_at_offset, get_struct_by_size
+from .debug_output import debug_print
 
 
 @dataclass
@@ -253,7 +254,7 @@ class LocalVariableTypeTracker:
                         struct_type = self._infer_struct_from_size(element_size)
                         info.mark_struct_array(element_size, struct_type, source="ssa_pattern")
 
-                    print(f"DEBUG TypeTracker: Array pattern detected - {base_var}[*{element_size}]", file=sys.stderr)
+                    debug_print(f"DEBUG TypeTracker: Array pattern detected - {base_var}[*{element_size}]")
 
                 # Check if right is small constant (struct field offset)
                 offset = self._extract_constant(right)
@@ -272,7 +273,7 @@ class LocalVariableTypeTracker:
                 # PNT with offset indicates struct access
                 existing_struct = info.struct_type
                 info.update_struct_evidence(existing_struct, offset, source="ssa_pattern")
-                print(f"DEBUG TypeTracker: PNT pattern detected - {base_var}.field_{offset}", file=sys.stderr)
+                debug_print(f"DEBUG TypeTracker: PNT pattern detected - {base_var}.field_{offset}")
 
     def _extract_local_from_ladr(self, value: SSAValue) -> Optional[str]:
         """Extract local variable name if value comes from LADR."""
@@ -375,7 +376,7 @@ class LocalVariableTypeTracker:
             if "field_tracker" not in info.evidence_sources:
                 info.evidence_sources.append("field_tracker")
 
-            print(f"DEBUG TypeTracker: Imported field_tracker type - {clean_name} = {struct_type}", file=sys.stderr)
+            debug_print(f"DEBUG TypeTracker: Imported field_tracker type - {clean_name} = {struct_type}")
 
     # =========================================================================
     # Pass 2: Runtime callbacks from ExpressionFormatter
@@ -400,7 +401,7 @@ class LocalVariableTypeTracker:
         if "." in notation.split("]")[-1]:
             info.is_struct_array = True
 
-        print(f"DEBUG TypeTracker: Runtime array usage - {notation}", file=sys.stderr)
+        debug_print(f"DEBUG TypeTracker: Runtime array usage - {notation}")
 
     def record_field_usage(self, var_name: str, notation: str):
         """
@@ -419,7 +420,7 @@ class LocalVariableTypeTracker:
         if "runtime" not in info.evidence_sources:
             info.evidence_sources.append("runtime")
 
-        print(f"DEBUG TypeTracker: Runtime field usage - {notation}", file=sys.stderr)
+        debug_print(f"DEBUG TypeTracker: Runtime field usage - {notation}")
 
     # =========================================================================
     # Finalization and Type Resolution
@@ -449,10 +450,10 @@ class LocalVariableTypeTracker:
         self._finalized = True
 
         # Log final state
-        print(f"DEBUG TypeTracker: Finalized with {len(self._usage_info)} tracked variables", file=sys.stderr)
+        debug_print(f"DEBUG TypeTracker: Finalized with {len(self._usage_info)} tracked variables")
         for name, info in sorted(self._usage_info.items()):
             type_str = self.resolve_type(name)
-            print(f"DEBUG TypeTracker:   {name} -> {type_str} (confidence={info.confidence:.2f})", file=sys.stderr)
+            debug_print(f"DEBUG TypeTracker:   {name} -> {type_str} (confidence={info.confidence:.2f})")
 
     def resolve_type(self, var_name: str) -> str:
         """

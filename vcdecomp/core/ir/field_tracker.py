@@ -12,12 +12,14 @@ Pattern detection:
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Dict, Optional, Set
 
 from ..disasm import opcodes
 from .ssa import SSAFunction, SSAValue, SSAInstruction
 from ..structures import get_field_at_offset, get_struct_by_name
+from .debug_output import debug_print
 
 
 # Known function signatures: func_name → (struct_type, param_index)
@@ -140,7 +142,7 @@ class FieldAccessTracker:
 
         # DEBUG: Log field access mapping
         import sys
-        print(f"DEBUG FieldTracker: {value.name} → {base_name}{operator}{field_name} (offset={field_access.field_offset}, struct={field_access.struct_type})", file=sys.stderr)
+        debug_print(f"DEBUG FieldTracker: {value.name} → {base_name}{operator}{field_name} (offset={field_access.field_offset}, struct={field_access.struct_type})")
 
         return f"{base_name}{operator}{field_name}"
 
@@ -180,7 +182,7 @@ class FieldAccessTracker:
 
         # DEBUG: Log detected struct type
         import sys
-        print(f"DEBUG FieldTracker: {self.func_name} param_0 detected as {struct_type}", file=sys.stderr)
+        debug_print(f"DEBUG FieldTracker: {self.func_name} param_0 detected as {struct_type}")
 
     def _detect_local_structs(self):
         """
@@ -224,7 +226,7 @@ class FieldAccessTracker:
 
                     # DEBUG: Log all function names
                     if "GetAtgSettings" in func_name or "GetInfo" in func_name:
-                        print(f"DEBUG FieldTracker: Checking func_name='{func_name}' (from '{func_name_with_sig}')", file=sys.stderr)
+                        debug_print(f"DEBUG FieldTracker: Checking func_name='{func_name}' (from '{func_name_with_sig}')")
 
                     # Check if this function has known struct parameters
                     param_map = FUNCTION_STRUCT_PARAMS.get(func_name)
@@ -232,7 +234,7 @@ class FieldAccessTracker:
                         continue
 
                     # DEBUG: Log when we find a known function
-                    print(f"DEBUG FieldTracker: Found known function {func_name}, scanning for LADR", file=sys.stderr)
+                    debug_print(f"DEBUG FieldTracker: Found known function {func_name}, scanning for LADR")
 
                     # IMPROVED: Use XCALL inputs to match LADR to actual parameter indices
                     # inst.inputs contains the arguments in order (param 0, param 1, ...)
@@ -264,7 +266,7 @@ class FieldAccessTracker:
                             # DEBUG: Show which block this detection is from
                             block = self.ssa.cfg.blocks.get(block_id)
                             block_start = block.start if block else "?"
-                            print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx}) [block_id={block_id}, block_start={block_start}, func_range=[{self._func_start},{self._func_end})]", file=sys.stderr)
+                            debug_print(f"DEBUG FieldTracker: {base_var} detected as {struct_type} (from {func_name}, param {param_idx}) [block_id={block_id}, block_start={block_start}, func_range=[{self._func_start},{self._func_end})]")
                         # NOTE: Legacy LADR scanning was removed (01-20-2026)
                         # It was fundamentally broken - it scanned ALL LADR instructions before XCALL
                         # without checking which instructions actually supply XCALL parameters,
@@ -311,7 +313,7 @@ class FieldAccessTracker:
                             if target_var not in self.var_struct_types:
                                 self.var_struct_types[target_var] = self.var_struct_types[source_var]
                                 self.semantic_names[target_var] = self.semantic_names.get(source_var, "info")
-                                print(f"DEBUG Propagate: {target_var} = {source_var} ({self.var_struct_types[source_var]})", file=sys.stderr)
+                                debug_print(f"DEBUG Propagate: {target_var} = {source_var} ({self.var_struct_types[source_var]})")
                                 changed = True
 
                     # Pattern 2: LADR instruction (load address of variable)
@@ -327,10 +329,10 @@ class FieldAccessTracker:
                                 if target_var not in self.var_struct_types:
                                     self.var_struct_types[target_var] = self.var_struct_types[base_var]
                                     self.semantic_names[target_var] = self.semantic_names.get(base_var, "info")
-                                    print(f"DEBUG Propagate LADR: {target_var} → {self.var_struct_types[base_var]}", file=sys.stderr)
+                                    print(f"DEBUG Propagate LADR: {target_var} → {self.var_struct_types[base_var]}")
                                     changed = True
 
-        print(f"DEBUG Propagate: Completed in {iterations} iterations, tracking {len(self.var_struct_types)} struct variables", file=sys.stderr)
+        debug_print(f"DEBUG Propagate: Completed in {iterations} iterations, tracking {len(self.var_struct_types)} struct variables")
 
     def _track_pnt_dcp_pattern(self):
         """
@@ -381,7 +383,7 @@ class FieldAccessTracker:
                     if field_access and inst.outputs:
                         # Map output of DCP to field access
                         self.field_map[inst.outputs[0].name] = field_access
-                        print(f"DEBUG FieldTracker: Found PNT pattern: {inst.outputs[0].name} = {field_access.base_var}.field at offset {field_access.field_offset}", file=sys.stderr)
+                        debug_print(f"DEBUG FieldTracker: Found PNT pattern: {inst.outputs[0].name} = {field_access.base_var}.field at offset {field_access.field_offset}")
                     continue
 
                 # Pattern 2: DADR followed by earlier pointer
@@ -391,10 +393,10 @@ class FieldAccessTracker:
                     field_access = self._analyze_dadr_chain(producer)
                     if field_access and inst.outputs:
                         self.field_map[inst.outputs[0].name] = field_access
-                        print(f"DEBUG FieldTracker: Found DADR pattern: {inst.outputs[0].name} = {field_access.base_var}.field at offset {field_access.field_offset}", file=sys.stderr)
+                        debug_print(f"DEBUG FieldTracker: Found DADR pattern: {inst.outputs[0].name} = {field_access.base_var}.field at offset {field_access.field_offset}")
                     continue
 
-        print(f"DEBUG FieldTracker: Scanned {dcp_count} DCP instructions, found {pnt_found} PNT patterns, {dadr_found} DADR patterns", file=sys.stderr)
+        debug_print(f"DEBUG FieldTracker: Scanned {dcp_count} DCP instructions, found {pnt_found} PNT patterns, {dadr_found} DADR patterns")
 
     def _analyze_pnt_instruction(self, pnt_inst: SSAInstruction) -> Optional[FieldAccess]:
         """
@@ -407,7 +409,7 @@ class FieldAccessTracker:
         import sys
 
         if not pnt_inst.inputs:
-            print(f"DEBUG PNT: Rejected - no inputs", file=sys.stderr)
+            debug_print(f"DEBUG PNT: Rejected - no inputs")
             return None
 
         base_value = pnt_inst.inputs[0]
@@ -418,12 +420,12 @@ class FieldAccessTracker:
         # Check if base is a known struct
         struct_type = self.var_struct_types.get(base_var)
         if not struct_type:
-            print(f"DEBUG PNT: Rejected - base_var '{base_var}' not in var_struct_types {list(self.var_struct_types.keys())}", file=sys.stderr)
+            debug_print(f"DEBUG PNT: Rejected - base_var '{base_var}' not in var_struct_types {list(self.var_struct_types.keys())}")
             return None
 
         # Get offset from instruction arg1 (PNT uses immediate offset)
         if not pnt_inst.instruction or not pnt_inst.instruction.instruction:
-            print(f"DEBUG PNT: Rejected - no instruction data", file=sys.stderr)
+            debug_print(f"DEBUG PNT: Rejected - no instruction data")
             return None
 
         offset = pnt_inst.instruction.instruction.arg1
@@ -431,7 +433,7 @@ class FieldAccessTracker:
         # Lookup field at this offset
         field_name = get_field_at_offset(struct_type, offset)
 
-        print(f"DEBUG PNT: SUCCESS - base={base_var}, struct={struct_type}, offset={offset}, field={field_name}", file=sys.stderr)
+        debug_print(f"DEBUG PNT: SUCCESS - base={base_var}, struct={struct_type}, offset={offset}, field={field_name}")
 
         # CRITICAL FIX: Determine if base is a pointer or structure
         # PNT can be used on both pointers and structures

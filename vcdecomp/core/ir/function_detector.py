@@ -14,6 +14,7 @@ import logging
 
 from vcdecomp.core.loader.scr_loader import SCRFile
 from vcdecomp.core.disasm.opcodes import OpcodeResolver
+from .debug_output import debug_print
 
 logger = logging.getLogger(__name__)
 
@@ -77,15 +78,14 @@ def detect_function_boundaries_v2(
 
     # Add entry point if provided
     if entry_point is not None:
-        import sys
         # BUGFIX: Negative entry points are relative to code end
         # entry_point=-1097 means 1097 instructions from end
         if entry_point < 0:
             actual_entry = len(instructions) + entry_point
-            print(f"DEBUG: Entry point = {entry_point} (resolves to {actual_entry})", file=sys.stderr)
+            debug_print(f"DEBUG: Entry point = {entry_point} (resolves to {actual_entry})")
             function_starts.append(actual_entry)
         else:
-            print(f"DEBUG: Entry point = {entry_point}", file=sys.stderr)
+            debug_print(f"DEBUG: Entry point = {entry_point}")
             function_starts.append(entry_point)
         logger.debug(f"Entry point at address {entry_point}")
 

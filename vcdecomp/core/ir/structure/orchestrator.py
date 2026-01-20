@@ -28,6 +28,8 @@ from .utils.helpers import (
     _dominates,
     _is_control_flow_only,
     SHOW_BLOCK_COMMENTS,
+    set_debug_enabled,
+    debug_print,
 )
 from .patterns.models import SwitchPattern, IfElsePattern
 from .patterns.if_else import _detect_if_else_pattern, _detect_early_return_pattern
@@ -185,7 +187,7 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     return "\n".join(lines)
 
 
-def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None) -> str:
+def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal") -> str:
     """
     Format structured output for a specific function with custom name and entry point.
 
@@ -195,11 +197,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         entry_addr: Entry address of the function
         end_addr: End address of the function (optional, for linear output mode)
         function_bounds: Optional dict {func_name: (start_addr, end_addr)} for CALL resolution (FÁZE 4)
+        style: Output verbosity - 'quiet' (no DEBUG), 'normal' (default), 'verbose' (full DEBUG)
 
     Uses per-function ExpressionFormatter with function boundaries for 100% reliable
     structure field detection. This ensures local_0 in different functions correctly
     maps to different structure types.
     """
+    # FÁZE 2 (--style): Set global debug output state
+    set_debug_enabled(style != 'quiet')
     cfg = ssa_func.cfg
     resolver = getattr(ssa_func.scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     start_to_block = _build_start_map(cfg)
@@ -231,8 +236,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     reachable_blocks = _find_reachable_blocks(cfg, entry_block)
     func_block_ids = func_block_ids & reachable_blocks
 
-    import sys
-    print(f"DEBUG: {func_name} entry={entry_addr} end={end_addr} blocks={len(func_block_ids)}", file=sys.stderr)
+    debug_print(f"DEBUG: {func_name} entry={entry_addr} end={end_addr} blocks={len(func_block_ids)}")
 
     logger.debug(f"{func_name}: {len(func_block_ids)} reachable blocks (out of {len([b for b in cfg.blocks.values() if entry_addr <= b.start <= (end_addr or float('inf'))])})")
 
@@ -287,17 +291,17 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # Detect switch/case patterns
     switch_patterns = _detect_switch_patterns(ssa_func, func_block_ids, formatter, start_to_block)
-    print(f"DEBUG ORCHESTRATOR: _detect_switch_patterns returned {len(switch_patterns)} switches", file=sys.stderr)
+    debug_print(f"DEBUG ORCHESTRATOR: _detect_switch_patterns returned {len(switch_patterns)} switches")
     for i, sw in enumerate(switch_patterns):
-        print(f"DEBUG ORCHESTRATOR: Switch {i}: {sw.test_var} with {len(sw.cases)} cases, header_block={sw.header_block}", file=sys.stderr)
+        debug_print(f"DEBUG ORCHESTRATOR: Switch {i}: {sw.test_var} with {len(sw.cases)} cases, header_block={sw.header_block}")
 
     # Build map: block_id -> switch pattern (for quick lookup)
     block_to_switch: Dict[int, SwitchPattern] = {}
     for switch in switch_patterns:
-        print(f"DEBUG ORCHESTRATOR: Adding switch {switch.test_var} to map, all_blocks={switch.all_blocks}", file=sys.stderr)
+        debug_print(f"DEBUG ORCHESTRATOR: Adding switch {switch.test_var} to map, all_blocks={switch.all_blocks}")
         for block_id in switch.all_blocks:
             block_to_switch[block_id] = switch
-    print(f"DEBUG ORCHESTRATOR: block_to_switch contains {len(block_to_switch)} entries", file=sys.stderr)
+    debug_print(f"DEBUG ORCHESTRATOR: block_to_switch contains {len(block_to_switch)} entries")
 
     # FÁZE 2A: Removed if/else pre-detection - now done during rendering
     # This allows detection to work correctly after switch emission modifies CFG structure
@@ -515,7 +519,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Check if this is a switch header
         if block_id in block_to_switch:
             sw = block_to_switch[block_id]
-            print(f"DEBUG ORCHESTRATOR: Block {block_id} is in block_to_switch, header_block={sw.header_block}, is_header={block_id == sw.header_block}", file=sys.stderr)
+            debug_print(f"DEBUG ORCHESTRATOR: Block {block_id} is in block_to_switch, header_block={sw.header_block}, is_header={block_id == sw.header_block}")
         if block_id in block_to_switch and block_id == block_to_switch[block_id].header_block:
             switch = block_to_switch[block_id]
             base_indent = "    " + "    " * len(active_loops)
@@ -528,10 +532,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 lines.append(f"{base_indent}block_{block_id}:")
 
             # Render switch statement
-            print(f"DEBUG ORCHESTRATOR: Rendering switch for {switch.test_var} with {len(switch.cases)} cases at block {block_id}", file=sys.stderr)
+            debug_print(f"DEBUG ORCHESTRATOR: Rendering switch for {switch.test_var} with {len(switch.cases)} cases at block {block_id}")
             switch_line = f"{base_indent}switch ({switch.test_var}) {{"
             lines.append(switch_line)
-            print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'", file=sys.stderr)
+            debug_print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'")
             for case in switch.cases:
                 lines.append(f"{base_indent}case {case.value}:")
                 # Render all blocks in case body (sorted by address) with loop support
@@ -1351,5 +1355,5 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # DEBUG: Check if lines contain switches
     switch_count = sum(1 for line in lines if "switch (" in line)
-    print(f"DEBUG ORCHESTRATOR FINAL: Returning {len(lines)} lines, {switch_count} contain 'switch ('", file=sys.stderr)
+    debug_print(f"DEBUG ORCHESTRATOR FINAL: Returning {len(lines)} lines, {switch_count} contain 'switch ('")
     return "\n".join(lines)

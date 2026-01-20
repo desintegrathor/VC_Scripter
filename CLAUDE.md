@@ -10,23 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Decompiler
 ```bash
-# Decompile a script (full structured output with debug)
-python -m vcdecomp structure script.scr > output.c
+# Decompile a script (clean output, no DEBUG - recommended for recompilation)
+python -m vcdecomp structure --style quiet script.scr > output.c
 
-# Decompile without debug output (clean version)
-# Method 1: Filter out DEBUG lines with Python
-python -m vcdecomp structure script.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > output_clean.c
+# Decompile with DEBUG output (default - for development/debugging)
+python -m vcdecomp structure script.scr > output.c 2>debug.log
 
-# Method 2: Filter with grep (Linux/Mac/Git Bash)
-python -m vcdecomp structure script.scr | grep -v "^DEBUG" > output_clean.c
-
-# Method 3: Post-process existing file
-python -c "
-with open('output.c', 'r', encoding='utf-8') as f:
-    lines = [line for line in f if not line.startswith('DEBUG')]
-with open('output_clean.c', 'w', encoding='utf-8') as f:
-    f.writelines(lines)
-"
+# Decompile with verbose DEBUG (same as normal, extensible for future)
+python -m vcdecomp structure --style verbose script.scr > output.c 2>debug.log
 
 # Show script info
 python -m vcdecomp info script.scr
@@ -206,96 +197,62 @@ When modifying control flow reconstruction:
 3. Ensure for-loop patterns (init, condition, increment) are detected
 4. Check early return patterns don't break if/else chains
 
-## Clean Decompilation Output
+## Output Verbosity (--style flag)
+
+The `structure` command supports a `--style` flag to control DEBUG output:
+
+| Style | Description | Use Case |
+|-------|-------------|----------|
+| `--style quiet` | No DEBUG output | **Recommended for recompilation** |
+| `--style normal` | DEBUG to stderr (default) | Development, debugging decompiler |
+| `--style verbose` | Full DEBUG (same as normal) | Future: extended diagnostics |
+
+### Quick Examples
+```bash
+# Clean output for recompilation (RECOMMENDED)
+py -3 -m vcdecomp structure --style quiet script.scr > output.c
+
+# Debug output to separate file
+py -3 -m vcdecomp structure script.scr > output.c 2>debug.log
+
+# See DEBUG inline (mixed with code)
+py -3 -m vcdecomp structure script.scr 2>&1 | less
+```
 
 ### Understanding Debug Output
-The decompiler outputs DEBUG lines to show its internal analysis process:
+DEBUG lines (written to stderr) show internal analysis:
 - `DEBUG: Entry point = 9054` - Entry point identification
 - `DEBUG FieldTracker: ...` - Struct field detection
 - `DEBUG PNT: SUCCESS ...` - Pointer-to-field pattern recognition
 - `DEBUG SWITCH: ...` - Switch/case detection analysis
 - `DEBUG Propagate: ...` - Type propagation iterations
 
-These lines are helpful for debugging the decompiler itself, but clutter the decompiled code.
-
-### Removing Debug Output
-
-**Real-world example from TUNNELS01:**
+### Batch Processing
 ```bash
-# Original decompilation (with debug)
-py -3 -m vcdecomp structure level.scr > level_decompiled.c
-# Result: 9,825 lines (2,617 DEBUG lines + 7,208 code lines)
-
-py -3 -m vcdecomp structure player.scr > player_decompiled.c
-# Result: 4,045 lines (2,017 DEBUG lines + 2,028 code lines)
-
-# Clean decompilation (debug removed)
-py -3 -m vcdecomp structure level.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > level_clean.c
-# Result: 1,845 lines (clean code only)
-
-py -3 -m vcdecomp structure player.scr | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > player_clean.c
-# Result: 401 lines (clean code only)
+# Batch decompile all .scr files cleanly
+for f in *.scr; do
+    py -3 -m vcdecomp structure --style quiet "$f" > "${f%.scr}.c"
+done
 ```
 
-### Batch Processing Multiple Files
-
-**Python script for batch clean decompilation:**
-```python
-import os
-import subprocess
-from pathlib import Path
-
-def clean_decompile(scr_file, output_dir):
-    """Decompile .scr file and remove DEBUG lines"""
-    scr_path = Path(scr_file)
-    output_file = Path(output_dir) / f"{scr_path.stem}_clean.c"
-
-    # Run decompiler
-    result = subprocess.run(
-        ['python', '-m', 'vcdecomp', 'structure', str(scr_path)],
-        capture_output=True,
-        text=True,
-        encoding='utf-8'
-    )
-
-    # Filter DEBUG lines
-    clean_lines = [line for line in result.stdout.splitlines(keepends=True)
-                   if not line.startswith('DEBUG')]
-
-    # Write clean output
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.writelines(clean_lines)
-
-    print(f"Decompiled {scr_path.name} -> {output_file.name}")
-    print(f"  Original: {len(result.stdout.splitlines())} lines")
-    print(f"  Clean: {len(clean_lines)} lines")
-
-# Example usage:
-# clean_decompile('level.scr', 'output/')
-# clean_decompile('player.scr', 'output/')
-```
-
-### On Windows (PowerShell)
 ```powershell
-# Single file
-py -3 -m vcdecomp structure script.scr | Where-Object { -not $_.StartsWith("DEBUG") } > output_clean.c
-
-# Multiple files
+# PowerShell batch
 Get-ChildItem *.scr | ForEach-Object {
-    $output = "$($_.BaseName)_clean.c"
-    py -3 -m vcdecomp structure $_.Name | Where-Object { -not $_.StartsWith("DEBUG") } > $output
+    py -3 -m vcdecomp structure --style quiet $_.Name > "$($_.BaseName).c"
 }
 ```
 
-### File Size Comparison
+### Legacy: Manual DEBUG Filtering
+Before `--style quiet` was added, DEBUG lines had to be filtered manually:
+```bash
+# Method 1: grep filter (Linux/Mac/Git Bash)
+py -3 -m vcdecomp structure script.scr 2>&1 | grep -v "^DEBUG" > output.c
 
-From TUNNELS01 analysis:
-| File | With DEBUG | Clean | Reduction |
-|------|-----------|-------|-----------|
-| level.scr | 925 KB | 50 KB | 94.6% smaller |
-| player.scr | 317 KB | 15 KB | 95.3% smaller |
+# Method 2: Python filter
+py -3 -m vcdecomp structure script.scr 2>&1 | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > output.c
+```
 
-**Recommendation:** Always generate clean versions for code analysis, reconstruction, or recompilation. Keep debug versions only when troubleshooting decompiler issues.
+**Recommendation:** Always use `--style quiet` for clean output intended for recompilation or code analysis.
 
 ## Common Development Tasks
 

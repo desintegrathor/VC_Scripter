@@ -7,12 +7,14 @@ from SSA function instructions and generating properly-typed declarations.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, Optional
 import logging
 
 from ....disasm import opcodes
 from ...ssa import SSAFunction
+from ..utils.helpers import debug_print
 
 logger = logging.getLogger(__name__)
 
@@ -231,7 +233,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     vars_used_in_func.add(inp.alias.lstrip('&'))
 
     if hasattr(formatter, '_var_struct_types'):
-        print(f"DEBUG variables.py: formatter._var_struct_types has {len(formatter._var_struct_types)} entries", file=sys.stderr)
+        debug_print(f"DEBUG variables.py: formatter._var_struct_types has {len(formatter._var_struct_types)} entries")
         for var_name, struct_type in formatter._var_struct_types.items():
             # Only import local variables (skip params and globals)
             if var_name.startswith('local_') or (var_name.startswith('&') and var_name[1:].startswith('local_')):
@@ -241,7 +243,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # BUGFIX: Skip variables not used in the current function
                 # This prevents struct types from other functions leaking into this function
                 if clean_var_name not in vars_used_in_func:
-                    print(f"DEBUG variables.py: Skipping {clean_var_name} -> {struct_type} (not used in current function)", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Skipping {clean_var_name} -> {struct_type} (not used in current function)")
                     continue
 
 
@@ -265,9 +267,9 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if struct_type in ARRAY_FILLING_FUNCTIONS:
                     # Still track it, but with lower confidence to indicate potential reuse
                     confidence = 0.7  # Lower than normal field tracker confidence
-                    print(f"DEBUG variables.py: Using {struct_type} for {clean_var_name} with reduced confidence (array-filling function)", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Using {struct_type} for {clean_var_name} with reduced confidence (array-filling function)")
                 else:
-                    print(f"DEBUG variables.py: Imported {clean_var_name} -> {final_struct_type} (confidence={confidence}, source=field_tracker)", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Imported {clean_var_name} -> {final_struct_type} (confidence={confidence}, source=field_tracker)")
 
                 # Store with confidence (0.9 normal, 0.7 for array-filling functions)
                 inferred_struct_types[clean_var_name] = StructTypeInfo(
@@ -369,7 +371,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
 
         # DEBUG: Log when processing local_1
         if display_name == "local_1" or var_name == "local_1":
-            print(f"DEBUG variables.py: Processing {display_name} (var_name={var_name}), struct_type_info={struct_type_info}", file=sys.stderr)
+            debug_print(f"DEBUG variables.py: Processing {display_name} (var_name={var_name}), struct_type_info={struct_type_info}")
 
         # Priority 1: ABSOLUTE PRIORITY - Opcode-based types (concrete evidence)
         # Variables used in FADD/IADD/IMUL operations MUST use opcode-derived types
@@ -395,7 +397,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # Only use high-confidence types from field_tracker (not generic function calls)
             if struct_type_info.source == "field_tracker":
                 var_type = struct_type_info.struct_type
-                print(f"DEBUG variables.py: Using field_tracker type for {display_name}: {var_type}", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Using field_tracker type for {display_name}: {var_type}")
             # else: skip - generic high-confidence types still cause false positives
         # Priority 3: Check MEDIUM confidence struct types (0.5-0.8)
         # Re-enabled for field_tracker and function_call sources
@@ -403,7 +405,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # Use medium-confidence types from field_tracker or function_call
             if struct_type_info.source in ("field_tracker", "function_call"):
                 var_type = struct_type_info.struct_type
-                print(f"DEBUG variables.py: Using {struct_type_info.source} type for {display_name}: {var_type} (medium confidence={struct_type_info.confidence})", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Using {struct_type_info.source} type for {display_name}: {var_type} (medium confidence={struct_type_info.confidence})")
         # Priority 4: DISABLED - Legacy _struct_ranges causes false positives
         # Field access patterns alone are insufficient evidence for struct types
         # Only use confidence-scored struct inference from struct_type_map
@@ -614,7 +616,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                         # (e.g., c_Vector3 with .x/.y/.z field access)
                         struct_info = inferred_struct_types.get(var_name)
                         if struct_info and struct_info.confidence >= 0.8:
-                            print(f"DEBUG variables.py: Skipping SC_ZeroMem array detection for {var_name} - has struct type {struct_info.struct_type} (confidence={struct_info.confidence})", file=sys.stderr)
+                            debug_print(f"DEBUG variables.py: Skipping SC_ZeroMem array detection for {var_name} - has struct type {struct_info.struct_type} (confidence={struct_info.confidence})")
                             continue
 
                         # Try to get constant size
@@ -674,7 +676,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
 
                 # Debug output for SC_P_GetPos specifically
                 if call_name == "SC_P_GetPos":
-                    print(f"DEBUG variables.py: SC_P_GetPos arg {arg_idx}: var_name={var_name}, struct_type={struct_type}", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: SC_P_GetPos arg {arg_idx}: var_name={var_name}, struct_type={struct_type}")
 
                 if not struct_type:
                     continue
@@ -698,7 +700,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if var_name not in inferred_struct_types or inferred_struct_types[var_name].confidence < 0.5:
                     struct_info = StructTypeInfo(struct_type=struct_type, confidence=0.5, source="function_call")
                     inferred_struct_types[var_name] = struct_info
-                    print(f"DEBUG variables.py: Inferred struct type {struct_type} for {var_name} from {call_name} arg {arg_idx}", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Inferred struct type {struct_type} for {var_name} from {call_name} arg {arg_idx}")
 
     # FIX (01-20): Infer variable types from XCALL return types (SDK)
     # Track variables that receive return values from external functions
@@ -739,7 +741,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     func_name = ssa_func.name if hasattr(ssa_func, 'name') else "unknown"
     func_entry = ssa_func.entry_block if hasattr(ssa_func, 'entry_block') else None
     if func_entry == 119:  # func_0119 has entry block 119
-        print(f"DEBUG variables.py: Processing func with entry 119, name={func_name}, func_block_ids={func_block_ids}", file=sys.stderr)
+        debug_print(f"DEBUG variables.py: Processing func with entry 119, name={func_name}, func_block_ids={func_block_ids}")
 
     for block_id in func_block_ids:
         block_exprs = format_block_expressions(ssa_func, block_id, formatter=formatter)
@@ -747,7 +749,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # DEBUG: Log all expressions that mention local_1
         for expr in block_exprs:
             if "local_1" in expr.text:
-                print(f"DEBUG variables.py: Expression mentions local_1: '{expr.text}'", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Expression mentions local_1: '{expr.text}'")
 
         # FIX (01-20): Scan expressions for function call assignments to infer return types
         # Pattern: "var_name = SC_FuncName(...)" -> look up SC_FuncName return type
@@ -819,13 +821,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             for var_name in deref_matches:
                 if var_name not in return_type_vars:
                     return_type_vars[var_name] = 'dword*'
-                    print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from *{var_name} = ...)", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from *{var_name} = ...)")
             # Match: = *var_name (dereference on right side)
             deref_read_matches = re.findall(r'=\s*\*\s*(tmp\d+|local_\d+)\b', expr.text)
             for var_name in deref_read_matches:
                 if var_name not in return_type_vars:
                     return_type_vars[var_name] = 'dword*'
-                    print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from = *{var_name})", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Deref var {var_name} -> dword* (from = *{var_name})")
 
         for expr in block_exprs:
             # Extract address-of references: &varname
@@ -834,7 +836,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
 
             # DEBUG: Log address-of variables found
             if "local_1" in addr_of_vars:
-                print(f"DEBUG variables.py: Found &local_1 in expression: {expr.text}", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Found &local_1 in expression: {expr.text}")
 
             for var_name in addr_of_vars:
                 # Skip if already declared
@@ -859,7 +861,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if struct_info and struct_info.source == "field_tracker" and struct_info.confidence >= 0.5:
                     # Use medium+ confidence field_tracker types (includes array-filling functions)
                     var_type = struct_info.struct_type
-                    print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type} (confidence={struct_info.confidence})", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type} (confidence={struct_info.confidence})")
                 # else: use int default (generic struct inference still disabled due to false positives)
 
                 # Add to var_types
@@ -873,18 +875,18 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # Only add if not already declared
             if var_name not in var_types:
                 var_types[var_name] = struct_info.struct_type
-                print(f"DEBUG variables.py: Added {struct_info.source} var {var_name} -> {struct_info.struct_type} (confidence={struct_info.confidence})", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Added {struct_info.source} var {var_name} -> {struct_info.struct_type} (confidence={struct_info.confidence})")
 
             # Also check if this variable has a semantic name and apply struct type there too
             if hasattr(formatter, '_semantic_names'):
                 semantic_name = formatter._semantic_names.get(var_name)
                 if semantic_name and semantic_name not in var_types:
                     var_types[semantic_name] = struct_info.struct_type
-                    print(f"DEBUG variables.py: Added semantic name {semantic_name} (from {var_name}) -> {struct_info.struct_type}", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Added semantic name {semantic_name} (from {var_name}) -> {struct_info.struct_type}")
                 elif semantic_name and semantic_name in var_types and var_types[semantic_name] == 'int':
                     # Override int default with struct type
                     var_types[semantic_name] = struct_info.struct_type
-                    print(f"DEBUG variables.py: Updated semantic name {semantic_name} from int -> {struct_info.struct_type}", file=sys.stderr)
+                    debug_print(f"DEBUG variables.py: Updated semantic name {semantic_name} from int -> {struct_info.struct_type}")
 
     # FIX (01-20): Apply XCALL return types to variables
     # This allows proper type inference for things like ushort* from SC_Wtxt
@@ -916,7 +918,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     if var_name not in struct_array_vars:
                         # Default to 4 elements (common for sides arrays: US, VC, Neutral, +1)
                         struct_array_vars[var_name] = (var_type, 4)
-                        print(f"DEBUG variables.py: Struct {var_name} ({var_type}) used with subscript - declaring as {var_type}[4]", file=sys.stderr)
+                        debug_print(f"DEBUG variables.py: Struct {var_name} ({var_type}) used with subscript - declaring as {var_type}[4]")
 
     # FIX (07-04): Generate declarations (multi-dim arrays, 1D arrays, then regular variables)
     declarations = []
@@ -956,7 +958,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             if struct_info and struct_info.confidence >= 0.8 and struct_info.source == "field_tracker":
                 # Declare as struct, skip array declaration
                 declarations.append(f"{struct_info.struct_type} {var_name}")
-                print(f"DEBUG variables.py: Declaring {var_name} as {struct_info.struct_type} (field_tracker) instead of array", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Declaring {var_name} as {struct_info.struct_type} (field_tracker) instead of array")
                 continue
             element_type, array_size = local_arrays[var_name]
             declarations.append(f"{element_type} {var_name}[{array_size}]")
@@ -966,7 +968,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         if var_name not in local_arrays and var_name not in multidim_arrays:
             struct_type, array_size = struct_array_vars[var_name]
             declarations.append(f"{struct_type} {var_name}[{array_size}]")
-            print(f"DEBUG variables.py: Declaring {var_name} as {struct_type}[{array_size}] (subscript detection)", file=sys.stderr)
+            debug_print(f"DEBUG variables.py: Declaring {var_name} as {struct_type}[{array_size}] (subscript detection)")
 
     # Finally, declare regular variables (skip all arrays including struct arrays)
     for var_name in sorted(var_types.keys()):
@@ -979,7 +981,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # This allows more specific types from var_types to override tracker defaults
                 if tracker_type != "int" or var_types[var_name] == "int":
                     if tracker_type != "int":
-                        print(f"DEBUG variables.py: type_tracker resolved {var_name} -> {tracker_type}", file=sys.stderr)
+                        debug_print(f"DEBUG variables.py: type_tracker resolved {var_name} -> {tracker_type}")
                     var_type = tracker_type
                 else:
                     var_type = var_types[var_name]
@@ -1028,7 +1030,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 seen_vars.add(var_name)
                 deduplicated_declarations.append(decl)
             else:
-                print(f"DEBUG variables.py: Skipping duplicate declaration for {var_name}: {decl}", file=sys.stderr)
+                debug_print(f"DEBUG variables.py: Skipping duplicate declaration for {var_name}: {decl}")
         else:
             deduplicated_declarations.append(decl)
 
