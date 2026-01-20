@@ -261,15 +261,28 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     renamer = VariableRenamer(ssa_func, func_block_ids, type_engine=quick_type_engine)
     rename_map = renamer.analyze_and_rename()
 
+    # PHASE 4: Compute liveness analysis for smart variable merging
+    # This enables interference-aware merging: only variables that aren't
+    # live at the same time can be merged into a single C variable
+    from ..liveness import LivenessAnalyzer, InterferenceGraph
+    liveness_analyzer = LivenessAnalyzer(ssa_func, func_block_ids)
+    liveness_info = liveness_analyzer.compute_liveness()
+
+    # Build interference graph from liveness information
+    interference = InterferenceGraph(liveness_info, ssa_func)
+    debug_print(f"DEBUG: Liveness analysis: {len(liveness_info)} blocks, {len(interference.edges)} interference edges")
+
     # SSA LOWERING: Collapse versioned SSA variables to unversioned C variables
     # This transforms rename_map: {"t100_0": "sideA", "t200_0": "sideB"} → {"t100_0": "side", "t200_0": "side"}
+    # Phase 4: Pass interference graph for smart merging
     from ..ssa_lowering import SSALowerer
     lowerer = SSALowerer(
         rename_map=rename_map,
         variable_versions=renamer.variable_versions,
         cfg=cfg,
         ssa_func=ssa_func,
-        loops=[]  # Will be populated with func_loops after loop detection
+        loops=[],  # Will be populated with func_loops after loop detection
+        interference_graph=interference  # Phase 4: interference-aware merging
     )
     lowering_result = lowerer.lower()
 

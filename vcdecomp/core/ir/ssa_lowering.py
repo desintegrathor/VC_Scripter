@@ -7,15 +7,22 @@ all SSA versions of the same variable into a single unversioned name.
 Example:
     Before: {"t100_0": "sideA", "t200_0": "sideB"}  # Two versions
     After:  {"t100_0": "side", "t200_0": "side"}    # One unversioned variable
+
+Phase 4 enhancement: Uses liveness analysis to ensure only non-interfering
+variables are merged. Variables that are live simultaneously cannot share
+the same C variable.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set, Tuple, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
 from .variable_renaming import VariableVersion
 from .ssa import SSAFunction, SSAValue
 from .cfg import CFG, NaturalLoop
+
+if TYPE_CHECKING:
+    from .liveness import InterferenceGraph
 
 
 @dataclass
@@ -63,6 +70,10 @@ class SSALowerer:
     2. Chooses a single lowered name for each base variable
     3. Updates rename_map to use lowered names
     4. Handles special cases: loop counters, PHI nodes, address-of
+
+    Phase 4 enhancement: When an InterferenceGraph is provided, the lowerer
+    checks for interference before merging variables. Only non-interfering
+    versions are collapsed into a single C variable.
     """
 
     def __init__(
@@ -71,7 +82,8 @@ class SSALowerer:
         variable_versions: Dict[str, List[VariableVersion]],
         cfg: CFG,
         ssa_func: SSAFunction,
-        loops: List[NaturalLoop]
+        loops: List[NaturalLoop],
+        interference_graph: Optional["InterferenceGraph"] = None
     ):
         """
         Initialize SSA lowerer.
@@ -82,12 +94,14 @@ class SSALowerer:
             cfg: Control flow graph
             ssa_func: SSA function representation
             loops: Detected natural loops
+            interference_graph: Optional interference graph for smart merging
         """
         self.rename_map = rename_map
         self.variable_versions = variable_versions
         self.cfg = cfg
         self.ssa_func = ssa_func
         self.loops = loops
+        self.interference = interference_graph
 
         # Build reverse mapping: versioned_name → SSA value names
         self.versioned_to_ssa: Dict[str, Set[str]] = {}
@@ -162,7 +176,10 @@ class SSALowerer:
 
     def _choose_lowered_names(self, base_vars: List[BaseVariable]) -> None:
         """
-        Choose a single lowered name for each base variable.
+        Choose lowered names for each base variable.
+
+        Phase 4 enhancement: When interference graph is available, only merge
+        versions that don't interfere. Interfering versions get separate names.
 
         Strategy:
         - Loop counters: Keep shortest name (i, j, k preferred over idx1)
@@ -170,73 +187,224 @@ class SSALowerer:
         - Temps: Strip version suffix (tmp1, tmp2 → tmp)
         - General: Use base_name if only 1 version, else strip suffix
 
+        With interference analysis:
+        - Before merging, check if versions interfere
+        - If they interfere, keep separate names (sideA, sideB)
+        - If they don't interfere, merge to single name (side)
+
         Handles collisions by adding numeric suffix.
         """
         used_names: Set[str] = set()
 
+        # Maps to track which versions get which lowered name
+        # Key: (base_name, version_num), Value: lowered_name
+        self._version_to_lowered: Dict[Tuple[str, int], str] = {}
+
         for base_var in base_vars:
-            candidate_names = set()
+            # Check if we need interference-aware merging
+            if self.interference and len(base_var.versions) > 1:
+                self._choose_names_with_interference(base_var, used_names)
+            else:
+                # Original logic: merge all versions to single name
+                self._choose_single_name(base_var, used_names)
 
-            # Collect all assigned names from versions
-            for version in base_var.versions:
-                name = version.assigned_name
-                if not name:
-                    continue
+    def _get_ssa_names_for_version(self, base_name: str, version_num: int) -> Set[str]:
+        """Get all SSA value names that belong to a specific version."""
+        ssa_names = set()
+        for ssa_name, (vbase, vnum, _) in getattr(self, '_value_to_version_map', {}).items():
+            if vbase == base_name and vnum == version_num:
+                ssa_names.add(ssa_name)
+        return ssa_names
 
-                # Add original name
-                candidate_names.add(name)
+    def _choose_names_with_interference(self, base_var: BaseVariable, used_names: Set[str]) -> None:
+        """
+        Choose names for a base variable using interference analysis.
 
-                # Add de-versioned variants
-                # Pattern 1: sideA, sideB → side
-                if len(name) > 1 and name[-1].isupper():
-                    candidate_names.add(name[:-1])
+        Groups versions by non-interference, then assigns names to each group.
+        """
+        # Collect all SSA names for each version
+        version_ssa_names: Dict[int, Set[str]] = {}
+        for version in base_var.versions:
+            ssa_names = set()
+            versioned_name = version.assigned_name
+            if versioned_name and versioned_name in self.versioned_to_ssa:
+                ssa_names = self.versioned_to_ssa[versioned_name].copy()
+            version_ssa_names[version.version] = ssa_names
 
-                # Pattern 2: side2, side3 → side
-                if len(name) > 1 and name[-1].isdigit():
-                    # Strip all trailing digits
-                    base = name.rstrip('0123456789')
-                    if base:
-                        candidate_names.add(base)
+        # Check interference between versions
+        # Two versions interfere if any of their SSA names interfere
+        interfering_pairs: Set[Tuple[int, int]] = set()
+        version_nums = [v.version for v in base_var.versions]
 
-                # Pattern 3: local_8_v1 → local_8
-                if '_v' in name:
-                    parts = name.split('_v')
-                    if len(parts) == 2 and parts[1].isdigit():
-                        candidate_names.add(parts[0])
+        for i, v1 in enumerate(version_nums):
+            for v2 in version_nums[i+1:]:
+                # Check if any SSA name from v1 interferes with any from v2
+                names1 = version_ssa_names.get(v1, set())
+                names2 = version_ssa_names.get(v2, set())
+                for n1 in names1:
+                    for n2 in names2:
+                        if self.interference.interferes(n1, n2):
+                            interfering_pairs.add((min(v1, v2), max(v1, v2)))
+                            break
+                    else:
+                        continue
+                    break
 
-            # Special handling for loop counters
-            if base_var.is_loop_counter:
-                # Prefer i, j, k, then idx, then longer names
-                priority = ['i', 'j', 'k', 'idx', 'idx2', 'idx3']
-                for p in priority:
-                    if p in candidate_names and p not in used_names:
-                        base_var.lowered_name = p
-                        used_names.add(p)
+        # Group non-interfering versions together
+        # Use greedy coloring
+        groups: List[List[VariableVersion]] = []
+        assigned: Set[int] = set()
+
+        for version in base_var.versions:
+            if version.version in assigned:
+                continue
+
+            # Find a group where this version doesn't interfere
+            placed = False
+            for group in groups:
+                can_place = True
+                for member in group:
+                    pair = (min(version.version, member.version), max(version.version, member.version))
+                    if pair in interfering_pairs:
+                        can_place = False
                         break
+                if can_place:
+                    group.append(version)
+                    assigned.add(version.version)
+                    placed = True
+                    break
 
-            # Choose best candidate
-            if not base_var.lowered_name:
-                # Sort by: shortest first, then alphabetically
-                sorted_candidates = sorted(
-                    candidate_names,
-                    key=lambda n: (len(n), n)
-                )
+            if not placed:
+                groups.append([version])
+                assigned.add(version.version)
 
-                for candidate in sorted_candidates:
-                    if candidate not in used_names:
-                        base_var.lowered_name = candidate
-                        used_names.add(candidate)
-                        break
+        # Assign names to each group
+        if len(groups) == 1:
+            # All versions can be merged - use original merging logic
+            self._choose_single_name(base_var, used_names)
+        else:
+            # Multiple groups - assign different names to each
+            for group_idx, group in enumerate(groups):
+                group_name = self._generate_group_name(base_var, group, group_idx, used_names)
+                used_names.add(group_name)
 
-            # Fallback: use base_name with collision resolution
-            if not base_var.lowered_name:
-                candidate = base_var.base_name
-                counter = 1
-                while candidate in used_names:
-                    candidate = f"{base_var.base_name}_{counter}"
-                    counter += 1
-                base_var.lowered_name = candidate
-                used_names.add(candidate)
+                # Record which versions map to this name
+                for version in group:
+                    self._version_to_lowered[(base_var.base_name, version.version)] = group_name
+
+            # Set base_var.lowered_name to first group's name (for compatibility)
+            base_var.lowered_name = self._version_to_lowered.get(
+                (base_var.base_name, base_var.versions[0].version),
+                base_var.base_name
+            )
+
+    def _generate_group_name(self, base_var: BaseVariable, group: List[VariableVersion],
+                             group_idx: int, used_names: Set[str]) -> str:
+        """Generate a name for a group of non-interfering versions."""
+        # Use the assigned name from the first version in the group
+        if group and group[0].assigned_name:
+            candidate = group[0].assigned_name
+            if candidate not in used_names:
+                return candidate
+
+        # Generate a name based on semantic type
+        if base_var.is_loop_counter:
+            priority = ['i', 'j', 'k', 'idx', 'idx2', 'idx3']
+            for p in priority:
+                if p not in used_names:
+                    return p
+            return f"idx{group_idx + 4}"
+
+        # For side values, use sideA, sideB, etc.
+        if base_var.semantic_type == "side_value":
+            side_chars = 'ABCDEFGHIJ'
+            if group_idx < len(side_chars):
+                candidate = f"side{side_chars[group_idx]}"
+            else:
+                candidate = f"side{group_idx}"
+            if candidate not in used_names:
+                return candidate
+
+        # Default: use base_name with suffix
+        candidate = base_var.base_name if group_idx == 0 else f"{base_var.base_name}_{group_idx}"
+        counter = group_idx
+        while candidate in used_names:
+            counter += 1
+            candidate = f"{base_var.base_name}_{counter}"
+        return candidate
+
+    def _choose_single_name(self, base_var: BaseVariable, used_names: Set[str]) -> None:
+        """
+        Original logic: choose a single lowered name for all versions.
+
+        Used when there's no interference or when interference analysis is disabled.
+        """
+        candidate_names = set()
+
+        # Collect all assigned names from versions
+        for version in base_var.versions:
+            name = version.assigned_name
+            if not name:
+                continue
+
+            # Add original name
+            candidate_names.add(name)
+
+            # Add de-versioned variants
+            # Pattern 1: sideA, sideB → side
+            if len(name) > 1 and name[-1].isupper():
+                candidate_names.add(name[:-1])
+
+            # Pattern 2: side2, side3 → side
+            if len(name) > 1 and name[-1].isdigit():
+                # Strip all trailing digits
+                base = name.rstrip('0123456789')
+                if base:
+                    candidate_names.add(base)
+
+            # Pattern 3: local_8_v1 → local_8
+            if '_v' in name:
+                parts = name.split('_v')
+                if len(parts) == 2 and parts[1].isdigit():
+                    candidate_names.add(parts[0])
+
+        # Special handling for loop counters
+        if base_var.is_loop_counter:
+            # Prefer i, j, k, then idx, then longer names
+            priority = ['i', 'j', 'k', 'idx', 'idx2', 'idx3']
+            for p in priority:
+                if p in candidate_names and p not in used_names:
+                    base_var.lowered_name = p
+                    used_names.add(p)
+                    break
+
+        # Choose best candidate
+        if not base_var.lowered_name:
+            # Sort by: shortest first, then alphabetically
+            sorted_candidates = sorted(
+                candidate_names,
+                key=lambda n: (len(n), n)
+            )
+
+            for candidate in sorted_candidates:
+                if candidate not in used_names:
+                    base_var.lowered_name = candidate
+                    used_names.add(candidate)
+                    break
+
+        # Fallback: use base_name with collision resolution
+        if not base_var.lowered_name:
+            candidate = base_var.base_name
+            counter = 1
+            while candidate in used_names:
+                candidate = f"{base_var.base_name}_{counter}"
+                counter += 1
+            base_var.lowered_name = candidate
+            used_names.add(candidate)
+
+        # Record all versions mapping to this name
+        for version in base_var.versions:
+            self._version_to_lowered[(base_var.base_name, version.version)] = base_var.lowered_name
 
     def _build_lowered_rename_map(
         self,
@@ -245,17 +413,20 @@ class SSALowerer:
         """
         Build new rename_map with lowered names.
 
+        Phase 4 enhancement: Uses _version_to_lowered for interference-aware
+        naming when available.
+
         Args:
             base_vars: List of base variables with chosen lowered_name
 
         Returns:
             New rename_map: SSA value name → lowered name
         """
-        # Build mapping: versioned_name → base_var
-        versioned_to_base: Dict[str, BaseVariable] = {}
+        # Build mapping: versioned_name → (base_var, version_num)
+        versioned_to_info: Dict[str, Tuple[BaseVariable, int]] = {}
         for base_var in base_vars:
             for version in base_var.versions:
-                versioned_to_base[version.assigned_name] = base_var
+                versioned_to_info[version.assigned_name] = (base_var, version.version)
 
         # Transform rename_map
         lowered_map = {}
@@ -265,9 +436,14 @@ class SSALowerer:
             clean_name = versioned_name[1:] if has_address_prefix else versioned_name
 
             # Look up base variable
-            if clean_name in versioned_to_base:
-                base_var = versioned_to_base[clean_name]
-                lowered = base_var.lowered_name
+            if clean_name in versioned_to_info:
+                base_var, version_num = versioned_to_info[clean_name]
+
+                # Phase 4: Check if we have interference-aware naming
+                if hasattr(self, '_version_to_lowered') and (base_var.base_name, version_num) in self._version_to_lowered:
+                    lowered = self._version_to_lowered[(base_var.base_name, version_num)]
+                else:
+                    lowered = base_var.lowered_name
 
                 # Restore address prefix if needed
                 if has_address_prefix:
@@ -287,6 +463,9 @@ class SSALowerer:
         """
         Generate variable declarations for function scope.
 
+        Phase 4 enhancement: When interference analysis creates multiple groups
+        from a single base variable, we need to declare each group's name.
+
         Args:
             base_vars: Base variables with lowered names
 
@@ -297,6 +476,7 @@ class SSALowerer:
         versioned_struct_types = self._infer_struct_types_from_calls()
 
         declarations = []
+        declared_names: Set[str] = set()  # Track to avoid duplicates
 
         for base_var in base_vars:
             # CRITICAL FIX (07-08): Opcode-first priority to eliminate Pattern 2
@@ -335,7 +515,27 @@ class SSALowerer:
             elif any("float" in base_var.lowered_name.lower() for version in base_var.versions):
                 var_type = "float"
 
-            declarations.append((var_type, base_var.lowered_name))
+            # Phase 4: Handle multiple declarations when interference analysis
+            # created multiple groups
+            if hasattr(self, '_version_to_lowered'):
+                # Collect all unique lowered names for this base variable
+                lowered_names = set()
+                for version in base_var.versions:
+                    key = (base_var.base_name, version.version)
+                    if key in self._version_to_lowered:
+                        lowered_names.add(self._version_to_lowered[key])
+                    else:
+                        lowered_names.add(base_var.lowered_name)
+
+                for name in lowered_names:
+                    if name not in declared_names:
+                        declarations.append((var_type, name))
+                        declared_names.add(name)
+            else:
+                # Original behavior: single declaration per base variable
+                if base_var.lowered_name not in declared_names:
+                    declarations.append((var_type, base_var.lowered_name))
+                    declared_names.add(base_var.lowered_name)
 
         return declarations
 
