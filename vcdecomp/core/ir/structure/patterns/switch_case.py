@@ -1009,10 +1009,22 @@ def _detect_switch_patterns(
 
         cases = unique_cases
 
-        # If we found at least 3 cases, it's a switch
-        # (1-2 cases are just regular if/else statements, not switch)
+        # Determine if this should be a switch statement
+        # 3+ cases always becomes a switch
+        # 2 cases becomes a switch only if there's a default case OR case values are non-sequential
+        # (non-sequential values like 0,2 suggest intentional switch; sequential 0,1 is likely if-else)
         debug_print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)")
-        if len(cases) >= 3:
+
+        has_default = current_block is not None  # current_block becomes the default block
+        case_values_sorted = sorted([c.value for c in cases if c.value is not None])
+        non_sequential = len(case_values_sorted) >= 2 and any(
+            case_values_sorted[i+1] - case_values_sorted[i] > 1 for i in range(len(case_values_sorted)-1)
+        )
+
+        should_be_switch = len(cases) >= 3 or (len(cases) >= 2 and (has_default or non_sequential))
+        debug_print(f"DEBUG SWITCH: should_be_switch={should_be_switch} (cases={len(cases)}, has_default={has_default}, non_sequential={non_sequential})")
+
+        if should_be_switch:
             debug_print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'")
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
