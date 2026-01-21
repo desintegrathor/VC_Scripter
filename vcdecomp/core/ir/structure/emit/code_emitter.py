@@ -167,6 +167,12 @@ def _render_if_else_recursive(
     if header_lines and ("goto" in header_lines[-1] or "if (" in header_lines[-1]):
         header_lines = header_lines[:-1]
 
+    if condition_render.call_is_condition_only and condition_render.call_statement_text:
+        header_lines = [
+            line for line in header_lines
+            if line.strip() != condition_render.call_statement_text
+        ]
+
     # Remove condition statement if it duplicates the rendered condition
     if header_lines and condition_render.text:
         header_lines = [
