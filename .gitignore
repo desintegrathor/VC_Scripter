@@ -5,6 +5,8 @@
 !.gitignore
 !vcdecomp/
 !vcdecomp/**
+!decompiler_source_tests/
+!decompiler_source_tests/**
 !README.md
 !CLAUDE.md
 !requirements.txt
@@ -17,3 +19,4 @@ __pycache__/
 *.pyo
 .pytest_cache/
 *.egg-info/
+decompiler_source_tests/test2/nul
