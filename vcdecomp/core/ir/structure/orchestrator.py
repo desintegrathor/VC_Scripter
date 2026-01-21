@@ -375,19 +375,40 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     lines.append(f"{signature} {{")
 
-    # Use SSA lowering variable declarations
-    # These are already de-duplicated and properly typed
-    local_vars = []
+    # =========================================================================
+    # PHASE 5.5: TWO-PASS DCE - Collect candidate declarations (don't emit yet)
+    # =========================================================================
+    # Pass 1: Collect all candidate declarations
+    # Pass 2: Generate code body, then scan for actually-used variables
+    # Pass 3: Filter declarations to only those used in output
+    # =========================================================================
+
+    # PHASE 5: Build use-count map for SSA-level dead code elimination (first pass)
+    # This allows us to skip declarations for unused temporary variables at SSA level
+    from .analysis.variables import _build_use_count_map, _is_unused_temporary, _scan_used_variables_in_code
+    use_counts = _build_use_count_map(ssa_func, func_block_ids, rename_map)
+
+    # Collect candidate declarations as (var_type, var_name, formatted_decl) tuples
+    # Don't emit yet - we'll filter after generating body
+    candidate_declarations: List[tuple] = []  # (var_name, formatted_decl)
     lowered_var_names = set()
+
+    # Collect from SSA lowering variable declarations
     for var_type, var_name in lowering_result.variable_declarations:
+        # PHASE 5: Skip unused temporary variables at SSA level (first pass DCE)
+        if _is_unused_temporary(var_name, use_counts):
+            debug_print(f"DEBUG: PHASE 5 DCE (SSA-level) - Skipping unused temp from lowering: {var_name}")
+            continue
+
         # FIX: Handle array types correctly (e.g., "s_SC_MP_EnumPlayers[64]")
         # Array syntax should be after variable name: "s_SC_MP_EnumPlayers local_296[64]"
         if "[" in var_type:
             base_type = var_type[:var_type.index("[")]
             array_part = var_type[var_type.index("["):]
-            local_vars.append(f"{base_type} {var_name}{array_part}")
+            formatted_decl = f"{base_type} {var_name}{array_part}"
         else:
-            local_vars.append(f"{var_type} {var_name}")
+            formatted_decl = f"{var_type} {var_name}"
+        candidate_declarations.append((var_name, formatted_decl))
         lowered_var_names.add(var_name)
 
     # Also collect array declarations and struct types from old system
@@ -428,28 +449,26 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                                    "*" in var_decl)
                 if has_better_type:
                     # Remove the lowered declaration and add this better one
-                    lowered_decl = None
-                    for i, decl in enumerate(local_vars):
-                        # Extract variable name from existing declaration for precise matching
-                        decl_parts = decl.split()
-                        if len(decl_parts) >= 2:
-                            decl_var = decl_parts[-1].split('[')[0]  # Handle arrays
-                            if decl_var == var_name:
-                                lowered_decl = decl
-                                local_vars[i] = var_decl
-                                break
-                    if lowered_decl:
-                        continue
+                    for i, (existing_name, existing_decl) in enumerate(candidate_declarations):
+                        if existing_name == var_name:
+                            candidate_declarations[i] = (var_name, var_decl)
+                            break
+                    continue
                 else:
                     # Keep the lowered declaration, skip this one
                     continue
 
-        local_vars.append(var_decl)
+        candidate_declarations.append((var_name, var_decl))
 
-    if local_vars:
-        for var_decl in sorted(set(local_vars)):  # De-duplicate
-            lines.append(f"    {var_decl};")
-        lines.append("")  # Empty line after declarations
+    # DON'T emit declarations yet - generate body first for two-pass DCE
+    # (Declarations will be filtered and emitted after body generation)
+    # Record position after signature for later insertion of declarations
+    decl_insert_position = len(lines)
+
+    # =========================================================================
+    # PHASE 5.5: TWO-PASS DCE - Generate function body (into lines for now)
+    # Body will be extracted, declarations filtered, and recombined later
+    # =========================================================================
 
     # Linear output mode: output all blocks in address range
     func_blocks = []
@@ -1105,6 +1124,51 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     lines.append("}")
 
+    # =========================================================================
+    # PHASE 5.5: TWO-PASS DCE - Filter declarations based on actual usage
+    # =========================================================================
+    # Now that body is generated, scan for actually-used variables and filter
+    # candidate declarations to only those that appear in the output
+    # =========================================================================
+
+    # Extract body lines (everything after signature)
+    body_lines_for_scan = lines[decl_insert_position:]
+
+    # Scan for actually-used variable names
+    used_in_output = _scan_used_variables_in_code(body_lines_for_scan)
+
+    # Filter candidate declarations - only keep those actually used
+    filtered_declarations: List[str] = []
+    seen_vars = set()  # Track to avoid duplicates
+    for var_name, formatted_decl in candidate_declarations:
+        # Extract base name (handle arrays like "buf[32]")
+        base_name = var_name.split('[')[0]
+
+        # Skip if already seen (duplicate)
+        if base_name in seen_vars:
+            continue
+
+        # Non-temps are always kept if they were candidates
+        if not base_name.startswith('tmp'):
+            filtered_declarations.append(formatted_decl)
+            seen_vars.add(base_name)
+        # Temps only kept if they appear in output
+        elif base_name in used_in_output:
+            filtered_declarations.append(formatted_decl)
+            seen_vars.add(base_name)
+        else:
+            debug_print(f"DEBUG: PHASE 5.5 TWO-PASS DCE - Eliminating unused temp: {var_name}")
+
+    # Insert filtered declarations at the right position
+    if filtered_declarations:
+        decl_lines = []
+        for var_decl in sorted(set(filtered_declarations)):  # De-duplicate and sort
+            decl_lines.append(f"    {var_decl};")
+        decl_lines.append("")  # Empty line after declarations
+
+        # Insert declaration lines at decl_insert_position
+        lines = lines[:decl_insert_position] + decl_lines + lines[decl_insert_position:]
+
     # PRIORITY 2 FIX: Enhanced undefined variable detection and declaration with type inference
     # This catches edge cases where SSA lowering missed declarations (e.g., undefined temporaries, struct variables)
     import re
@@ -1340,8 +1404,13 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             undefined_vars.add(var_name)
 
     # 4. Infer types for undefined variables
+    # PHASE 5: Apply DCE filtering before adding declarations
     var_declarations_to_add: ListType[Tuple[str, str]] = []
     for var_name in sorted(undefined_vars):
+        # PHASE 5: Skip unused temporaries (dead code elimination)
+        if _is_unused_temporary(var_name, use_counts):
+            debug_print(f"DEBUG: PHASE 5 DCE - Skipping unused temp from undefined vars: {var_name}")
+            continue
         var_type = _infer_type_from_usage(var_name, lines)
         var_declarations_to_add.append((var_type, var_name))
 

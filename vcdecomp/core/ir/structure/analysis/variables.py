@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Optional, Set, Tuple
 import logging
 
 from ....disasm import opcodes
@@ -191,6 +191,126 @@ def _detect_multidim_arrays(
     return multidim_arrays
 
 
+def _is_unused_temporary(var_name: str, use_counts: Dict[str, int]) -> bool:
+    """
+    Check if variable is an unused temporary that should be eliminated.
+
+    Dead code elimination for temporary variables:
+    - Only consider temps for elimination (tmp, tmp1, tmp2, etc.)
+    - Check actual use count from SSA
+    - Return True if the variable has zero uses and should be eliminated
+
+    Args:
+        var_name: The display name of the variable (after renaming)
+        use_counts: Dictionary mapping SSA value names to their use counts
+
+    Returns:
+        True if this is an unused temporary that should not be declared
+    """
+    # Only consider temps for elimination
+    # Match: tmp, tmp1, tmp2, ... (basic temps)
+    # Don't eliminate: t123_ret (return value temps - these may be needed even with 0 uses)
+    if not var_name.startswith("tmp"):
+        return False
+
+    # Check actual use count
+    actual_uses = use_counts.get(var_name, 0)
+    return actual_uses == 0
+
+
+def _scan_used_variables_in_code(lines: List[str]) -> Set[str]:
+    """
+    Scan generated code lines for actually-used variable names.
+
+    This is the second pass of two-pass DCE - identifies which variables
+    actually appear in the generated output after expression inlining.
+
+    Args:
+        lines: Generated code lines (function body)
+
+    Returns:
+        Set of variable names that appear in the code
+    """
+    import re
+    used_vars: Set[str] = set()
+
+    # Regex to find identifiers (variable names)
+    # Matches: word boundaries around alphanumeric+underscore sequences
+    identifier_pattern = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b')
+
+    # Keywords and type names to exclude
+    keywords = {
+        'if', 'else', 'while', 'for', 'do', 'switch', 'case', 'default',
+        'break', 'continue', 'return', 'goto', 'sizeof',
+        'int', 'float', 'double', 'char', 'void', 'short', 'long',
+        'unsigned', 'signed', 'const', 'static', 'extern',
+        'struct', 'union', 'enum', 'typedef',
+        'TRUE', 'FALSE', 'NULL', 'BOOL', 'dword', 'byte', 'ushort'
+    }
+
+    for line in lines:
+        # Skip pure declaration lines (they don't count as "usage")
+        # Declaration: "    type varname;" with no assignment or function call
+        stripped = line.strip()
+        if stripped.endswith(';') and '=' not in stripped and '(' not in stripped:
+            # Check if this looks like a declaration: type followed by variable name
+            # Patterns: "int tmp;", "float x;", "s_SC_Type var;", "char buf[32];"
+            parts = stripped.rstrip(';').split()
+            if len(parts) >= 2:
+                # If first part is a type keyword or struct/c_ prefix, it's a declaration
+                first = parts[0]
+                if (first in {'int', 'float', 'double', 'char', 'void', 'short', 'long',
+                              'unsigned', 'signed', 'dword', 'BOOL', 'byte', 'ushort'} or
+                    first.startswith('s_') or first.startswith('c_')):
+                    continue
+
+        # Find all identifiers in the line
+        for match in identifier_pattern.finditer(line):
+            name = match.group(1)
+            if name not in keywords:
+                # Skip struct/type prefixes (s_SC_*, c_*)
+                if not name.startswith('s_SC_') and not name.startswith('c_'):
+                    used_vars.add(name)
+
+    return used_vars
+
+
+def _build_use_count_map(ssa_func: SSAFunction, func_block_ids: Set[int], rename_map: Optional[Dict[str, str]] = None) -> Dict[str, int]:
+    """
+    Build a map of use counts for all SSA values in the function.
+
+    Counts how many times each variable (by display name) is used as input
+    to instructions in the function. This is used for dead code elimination
+    to remove unused temporary variables.
+
+    Args:
+        ssa_func: SSA function data
+        func_block_ids: Block IDs belonging to this function
+        rename_map: Optional mapping from SSA names to display names
+
+    Returns:
+        Dictionary mapping display variable names to their use counts
+    """
+    use_counts: Dict[str, int] = {}
+
+    for block_id in func_block_ids:
+        for inst in ssa_func.instructions.get(block_id, []):
+            for inp in inst.inputs:
+                # Get the display name for this input
+                if rename_map and inp.name in rename_map:
+                    display_name = rename_map[inp.name]
+                else:
+                    display_name = inp.alias or inp.name
+
+                if display_name:
+                    # Strip & prefix for counting
+                    if display_name.startswith("&"):
+                        display_name = display_name[1:]
+                    use_counts[display_name] = use_counts.get(display_name, 0) + 1
+
+    return use_counts
+
+
 def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter, type_tracker=None) -> List[str]:
     """
     Collect local variable declarations for a function.
@@ -202,8 +322,17 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         type_tracker: Optional LocalVariableTypeTracker for unified type resolution
 
     Returns list of declaration strings like "int i", "float local_2", etc.
+
+    Phase 5: Dead code elimination for unused temporaries.
+    Temporary variables (tmp, tmp1, tmp2, etc.) that have zero uses in the
+    function are not declared, resulting in cleaner output.
     """
     from collections import defaultdict
+
+    # PHASE 5: Build use-count map for dead code elimination
+    # Get rename_map from formatter if available
+    rename_map = getattr(formatter, '_rename_map', None)
+    use_counts = _build_use_count_map(ssa_func, func_block_ids, rename_map)
 
     # Track variable names and their types
     var_types: Dict[str, str] = {}
@@ -416,6 +545,12 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # LOW confidence structs (<0.5) are ignored - fall through to default
         else:
             var_type = default_type
+
+        # PHASE 5: Dead code elimination for unused temporaries
+        # Skip declaration for unused tmp variables (tmp, tmp1, tmp2, etc.)
+        if _is_unused_temporary(display_name, use_counts):
+            debug_print(f"DEBUG variables.py: PHASE 5 DCE - Skipping unused temp: {display_name}")
+            return
 
         # Store variable type
         var_types[display_name] = var_type
@@ -864,6 +999,11 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                     debug_print(f"DEBUG variables.py: Undeclared var {var_name} gets field_tracker type: {var_type} (confidence={struct_info.confidence})")
                 # else: use int default (generic struct inference still disabled due to false positives)
 
+                # PHASE 5: Dead code elimination for unused temporaries
+                if _is_unused_temporary(var_name, use_counts):
+                    debug_print(f"DEBUG variables.py: PHASE 5 DCE - Skipping unused temp from addr-of: {var_name}")
+                    continue
+
                 # Add to var_types
                 var_types[var_name] = var_type
 
@@ -872,6 +1012,11 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Includes array-filling functions with confidence=0.7 and function_call with confidence=0.5
     for var_name, struct_info in inferred_struct_types.items():
         if struct_info.confidence >= 0.5:
+            # PHASE 5: Dead code elimination for unused temporaries
+            if _is_unused_temporary(var_name, use_counts):
+                debug_print(f"DEBUG variables.py: PHASE 5 DCE - Skipping unused temp from struct inference: {var_name}")
+                continue
+
             # Only add if not already declared
             if var_name not in var_types:
                 var_types[var_name] = struct_info.struct_type
@@ -973,6 +1118,12 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Finally, declare regular variables (skip all arrays including struct arrays)
     for var_name in sorted(var_types.keys()):
         if var_name not in local_arrays and var_name not in multidim_arrays and var_name not in struct_array_vars:
+            # PHASE 5: Final DCE check before declaration
+            # Skip unused temporaries that made it through earlier collection
+            if _is_unused_temporary(var_name, use_counts):
+                debug_print(f"DEBUG variables.py: PHASE 5 DCE (final) - Skipping unused temp: {var_name}")
+                continue
+
             # UNIFIED TYPE TRACKER: Priority 0 - Use type_tracker if available
             # This provides unified type resolution based on all gathered evidence
             if type_tracker:
