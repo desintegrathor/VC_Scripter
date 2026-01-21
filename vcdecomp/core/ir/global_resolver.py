@@ -39,6 +39,11 @@ class GlobalUsage:
     array_element_size: Optional[int] = None  # Velikost prvku (4, 16, atd.)
     is_array_element: bool = False  # Je součástí pole (ne samostatná proměnná)
     array_base_offset: Optional[int] = None  # Offset base pole pokud is_array_element=True
+    array_strides: Optional[List[int]] = None  # Stride constants for multi-dimensional arrays
+    array_dimensions: Optional[List[int]] = None  # Dimension sizes for multi-dimensional arrays
+
+    # SaveInfo metadata
+    saveinfo_size_dwords: Optional[int] = None  # Size in dwords from save_info (if available)
 
     # Type hints
     possible_types: Set[str] = field(default_factory=set)  # "int", "float", "ptr", atd.
@@ -110,6 +115,9 @@ class GlobalResolver:
         # Pattern 3: Detekuj array patterns
         self._detect_array_patterns()
 
+        # NEW Pattern 3b: Detect multi-dimensional array patterns
+        self._detect_multidim_array_patterns()
+
         # NEW Pattern 4: Map SC_sgi/SC_ggi calls to globals
         self._map_globals_to_sgi_constants()
 
@@ -128,6 +136,12 @@ class GlobalResolver:
 
         # Pojmenuj globály podle patterns (SGI names override auto-generated)
         self._assign_names()
+
+        # Finalize array dimension inference (requires SaveInfo size)
+        self._finalize_array_dimensions()
+
+        # Apply header/structure size hints for missing types
+        self._apply_struct_size_hints()
 
         return self.globals
 
@@ -266,6 +280,142 @@ class GlobalResolver:
         # NEW: Detect constant-offset arrays (e.g., gSideFrags[0], gSideFrags[1])
         # Pattern: Multiple accesses to consecutive offsets (offset, offset+4, offset+8)
         self._detect_constant_offset_arrays()
+
+    def _get_constant_value(self, value) -> Optional[int]:
+        """Extract constant integer value from an SSAValue if possible."""
+        if value is None:
+            return None
+
+        if hasattr(value, "constant_value") and value.constant_value is not None:
+            return value.constant_value
+
+        if value.alias and value.alias.isdigit():
+            return int(value.alias)
+
+        if value.alias and value.alias.startswith("data_"):
+            try:
+                offset_idx = int(value.alias[5:])
+                if self.scr and self.scr.data_segment:
+                    return self.scr.data_segment.get_dword(offset_idx * 4)
+            except (ValueError, AttributeError):
+                return None
+
+        return None
+
+    def _extract_stride_constants(self, value) -> List[int]:
+        """
+        Extract stride constants from a flattened index expression.
+
+        Pattern: ADD(MUL(idx, stride), rest) where rest may contain another ADD/MUL chain.
+        Returns stride constants in outer-to-inner order.
+        """
+        if not value or not value.producer_inst:
+            return []
+
+        inst = value.producer_inst
+        if inst.mnemonic != "ADD" or len(inst.inputs) < 2:
+            return []
+
+        left, right = inst.inputs[0], inst.inputs[1]
+        for candidate, remainder in ((left, right), (right, left)):
+            if candidate.producer_inst and candidate.producer_inst.mnemonic in {"MUL", "IMUL"}:
+                mul_inst = candidate.producer_inst
+                if len(mul_inst.inputs) < 2:
+                    continue
+                stride = self._get_constant_value(mul_inst.inputs[1])
+                if stride is None:
+                    stride = self._get_constant_value(mul_inst.inputs[0])
+                if stride is None:
+                    continue
+                return [stride] + self._extract_stride_constants(remainder)
+
+        return []
+
+    def _detect_multidim_array_patterns(self):
+        """
+        Detect multi-dimensional global array indexing patterns.
+
+        Pattern: ADD(GADR base, MUL(flat_index, element_size))
+        where flat_index is composed of nested ADD/MUL with stride constants.
+        """
+        for block_id, ssa_instrs in self.ssa_func.instructions.items():
+            for instr in ssa_instrs:
+                if instr.mnemonic != "ADD" or len(instr.inputs) < 2:
+                    continue
+
+                left, right = instr.inputs[0], instr.inputs[1]
+                if not left.producer_inst or left.producer_inst.mnemonic != "GADR":
+                    continue
+
+                gadr_inst = left.producer_inst
+                if not gadr_inst.instruction or not gadr_inst.instruction.instruction:
+                    continue
+
+                base_dword_offset = gadr_inst.instruction.instruction.arg1
+                base_byte_offset = base_dword_offset * 4
+
+                if not right.producer_inst or right.producer_inst.mnemonic not in {"MUL", "IMUL"}:
+                    continue
+
+                mul_inst = right.producer_inst
+                if len(mul_inst.inputs) < 2:
+                    continue
+
+                element_size = self._get_constant_value(mul_inst.inputs[1])
+                index_expr = mul_inst.inputs[0]
+                if element_size is None:
+                    element_size = self._get_constant_value(mul_inst.inputs[0])
+                    index_expr = mul_inst.inputs[1]
+
+                if not element_size:
+                    continue
+
+                stride_constants = self._extract_stride_constants(index_expr)
+                if not stride_constants:
+                    continue
+
+                if base_byte_offset not in self.globals:
+                    self.globals[base_byte_offset] = GlobalUsage(offset=base_byte_offset)
+
+                usage = self.globals[base_byte_offset]
+                usage.is_array_base = True
+                usage.array_element_size = element_size
+                usage.array_strides = stride_constants
+
+    def _finalize_array_dimensions(self) -> None:
+        """
+        Finalize multi-dimensional array sizes using stride constants and SaveInfo sizes.
+        """
+        for usage in self.globals.values():
+            if not usage.array_strides or not usage.array_element_size:
+                continue
+
+            all_strides = usage.array_strides + [usage.array_element_size]
+            dims = []
+            valid = True
+            for i, stride in enumerate(usage.array_strides):
+                denom = all_strides[i + 1]
+                if denom <= 0 or stride % denom != 0:
+                    valid = False
+                    break
+                dims.append(stride // denom)
+
+            if not valid:
+                continue
+
+            # Use SaveInfo size to compute outer dimension if available
+            if usage.saveinfo_size_dwords:
+                total_elements = (usage.saveinfo_size_dwords * 4) // usage.array_element_size
+                if total_elements:
+                    product = 1
+                    for dim in dims:
+                        product *= dim
+                    if product and total_elements % product == 0:
+                        outer_dim = total_elements // product
+                        dims = [outer_dim] + dims
+
+            if len(dims) >= 2:
+                usage.array_dimensions = dims
 
     def _detect_constant_offset_arrays(self):
         """
@@ -475,6 +625,9 @@ class GlobalResolver:
             GADR data[X] + (index * size) → passed to XCALL arg expecting struct*
         """
         from ..structures import FUNCTION_STRUCT_PARAMS
+        from ..headers.database import get_header_database
+
+        header_db = get_header_database()
 
         for block_id, ssa_instrs in self.ssa_func.instructions.items():
             for instr in ssa_instrs:
@@ -500,8 +653,19 @@ class GlobalResolver:
                 # Extract function name
                 func_name = xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
 
-                # Get struct parameter mapping for this function
-                param_map = FUNCTION_STRUCT_PARAMS.get(func_name)
+                # Get struct parameter mapping for this function (header DB + hardcoded)
+                param_map = {}
+                header_sig = header_db.get_function_signature(func_name) if header_db else None
+                if header_sig and header_sig.get("parameters"):
+                    for idx, param in enumerate(header_sig["parameters"]):
+                        if not param or len(param) < 1:
+                            continue
+                        param_type = param[0].strip()
+                        if param_type.endswith("*"):
+                            base_type = param_type.replace("*", "").strip()
+                            if base_type.startswith(("s_SC_", "s_", "c_")):
+                                param_map[idx] = base_type
+                param_map.update(FUNCTION_STRUCT_PARAMS.get(func_name, {}))
                 if not param_map:
                     continue
 
@@ -628,10 +792,8 @@ class GlobalResolver:
                         if not inferred_type:
                             continue
 
-                        # FIX 4: Skip void* types from GCP/GLD/GADR outputs
-                        # These instructions load ADDRESS of global, not the value itself
-                        # So the output SSA value is a pointer, but the global is NOT a pointer
-                        if inferred_type in ['void*', 'void *', 'ptr']:
+                        # FIX 4: Skip void* types only for GADR outputs (address of global)
+                        if instr.mnemonic == 'GADR' and inferred_type in ['void*', 'void *', 'ptr']:
                             continue
 
                         # Get confidence from type inference engine
@@ -738,10 +900,6 @@ class GlobalResolver:
                                         inferred_type = 'int'
 
                             if not inferred_type:
-                                continue
-
-                            # Skip void* types
-                            if inferred_type in ['void*', 'void *', 'ptr']:
                                 continue
 
                             # Get confidence
@@ -908,6 +1066,8 @@ class GlobalResolver:
                 if byte_offset not in self.globals:
                     self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
 
+                self.globals[byte_offset].saveinfo_size_dwords = size_dwords
+
                 logger.info(f"Global {byte_offset}: name from save_info: {var_name}")
 
         # Build reverse mapping: byte_offset → global_pointer_index
@@ -1004,6 +1164,47 @@ class GlobalResolver:
             name_counters[base_name] = count + 1
             usage.source = "synthetic"
             logger.debug(f"Global {offset}: assigned synthetic name '{usage.name}'")
+
+    def _apply_struct_size_hints(self) -> None:
+        """
+        Apply struct type hints based on element size and name heuristics.
+
+        Uses known struct sizes from headers/SDK to avoid emitting generic dword.
+        """
+        from ..structures import get_struct_by_size
+
+        name_hints = {
+            "recover": "s_SC_MP_Recover",
+            "rec": "s_SC_MP_Recover",
+            "sphere": "s_sphere",
+            "vec": "c_Vector3",
+            "vector": "c_Vector3",
+        }
+
+        for usage in self.globals.values():
+            if usage.inferred_type or not usage.array_element_size:
+                continue
+
+            candidates = get_struct_by_size(usage.array_element_size)
+            if not candidates:
+                continue
+
+            if len(candidates) == 1:
+                usage.inferred_type = candidates[0].name
+                usage.type_confidence = max(usage.type_confidence, 0.6)
+                continue
+
+            if usage.name:
+                name_lower = usage.name.lower()
+                for hint, struct_name in name_hints.items():
+                    if hint in name_lower:
+                        for candidate in candidates:
+                            if candidate.name == struct_name:
+                                usage.inferred_type = candidate.name
+                                usage.type_confidence = max(usage.type_confidence, 0.6)
+                                break
+                        if usage.inferred_type:
+                            break
 
 
 def resolve_globals(ssa_func: SSAFunction, symbol_db=None) -> Dict[int, str]:
