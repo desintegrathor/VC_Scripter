@@ -16,7 +16,11 @@ from ....disasm import opcodes
 from ...parenthesization import ExpressionContext, is_simple_expression
 from ...cfg import CFG
 from ..patterns.models import CompoundCondition
-from .value_trace import _trace_value_to_function_call, _find_xcall_with_lld_in_predecessors
+from .value_trace import (
+    _trace_value_to_function_call,
+    _find_xcall_with_lld_in_predecessors,
+    call_is_condition_only,
+)
 
 
 @dataclass(frozen=True)
@@ -24,6 +28,8 @@ class ConditionRender:
     text: str
     values: List[SSAValue]
     addresses: List[int]
+    call_is_condition_only: bool = False
+    call_statement_text: Optional[str] = None
 
 
 def _find_condition_jump(block, resolver: opcodes.OpcodeResolver):
@@ -166,9 +172,36 @@ def render_condition(
     if not cond_value:
         return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
 
+    values: List[SSAValue] = []
+    addresses: Set[int] = set()
+    visited: Set[int] = set()
+    _collect_condition_values(
+        cond_value,
+        values=values,
+        addresses=addresses,
+        visited=visited
+    )
+    addresses.add(jump_instr.address)
+
+    call_inst = _find_call_inst_for_condition(ssa_func, cond_value)
+    call_statement_text = None
+    call_only = False
+    if call_inst:
+        call_statement_text = formatter._format_call(call_inst).strip()
+        call_only = call_is_condition_only(ssa_func, call_inst, addresses)
+        if call_only:
+            addresses.add(call_inst.address)
+            for input_value in call_inst.inputs:
+                _collect_condition_values(
+                    input_value,
+                    values=values,
+                    addresses=addresses,
+                    visited=visited
+                )
+
     cond_expr = None
     call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
-    if call_expr:
+    if call_expr and call_only:
         cond_expr = call_expr
     else:
         if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
@@ -210,30 +243,12 @@ def render_condition(
         else:
             cond_expr = f"!({cond_expr})"
 
-    values: List[SSAValue] = []
-    addresses: Set[int] = set()
-    visited: Set[int] = set()
-    _collect_condition_values(
-        cond_value,
-        values=values,
-        addresses=addresses,
-        visited=visited
-    )
-    call_inst = _find_call_inst_for_condition(ssa_func, cond_value)
-    if call_inst:
-        addresses.add(call_inst.address)
-        for input_value in call_inst.inputs:
-            _collect_condition_values(
-                input_value,
-                values=values,
-                addresses=addresses,
-                visited=visited
-            )
-
     return ConditionRender(
         text=cond_expr,
         values=values,
-        addresses=sorted(addresses)
+        addresses=sorted(addresses),
+        call_is_condition_only=call_only,
+        call_statement_text=call_statement_text,
     )
 
 

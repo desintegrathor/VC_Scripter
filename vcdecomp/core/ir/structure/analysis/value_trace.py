@@ -261,6 +261,47 @@ def _extract_call_arguments(call_inst, ssa_func: SSAFunction) -> list:
     return args
 
 
+def call_is_condition_only(
+    ssa_func: SSAFunction,
+    call_inst,
+    condition_addresses: Set[int],
+) -> bool:
+    """
+    Check whether a CALL/XCALL return value is used exclusively in a jump condition.
+
+    This is used to safely inline calls into conditions without dropping a statement
+    whose return value is referenced elsewhere.
+    """
+    if not call_inst or not condition_addresses:
+        return False
+
+    return_values = list(call_inst.outputs or [])
+
+    if not return_values:
+        block_instructions = ssa_func.instructions.get(call_inst.block_id, [])
+        call_index = None
+        for idx, inst in enumerate(block_instructions):
+            if inst.address == call_inst.address:
+                call_index = idx
+                break
+        if call_index is not None:
+            for idx in range(call_index + 1, min(call_index + 4, len(block_instructions))):
+                next_inst = block_instructions[idx]
+                if next_inst.mnemonic == "LLD" and next_inst.outputs:
+                    return_values.extend(next_inst.outputs)
+                    break
+
+    if not return_values:
+        return False
+
+    for return_value in return_values:
+        for use_addr, _ in return_value.uses:
+            if use_addr not in condition_addresses:
+                return False
+
+    return True
+
+
 @dataclass
 class BoundInfo:
     """Information about loop bounds for array dimension inference."""
