@@ -26,6 +26,7 @@ Pattern Detection (advanced usage):
 
 Analysis Functions (advanced usage):
     - _extract_condition_from_block: Extract condition from a block
+    - render_condition: Render condition with SSA values and instruction addresses
     - _find_if_body_blocks: Find blocks belonging to if/else branches
     - _collect_local_variables: Collect all local variables in a function
 
@@ -71,6 +72,7 @@ from .patterns.loops import (
 # Analysis functions - for advanced usage
 from .analysis.condition import (
     _extract_condition_from_block,
+    render_condition,
 )
 
 from .analysis.flow import (
@@ -118,6 +120,7 @@ __all__ = [
 
     # Analysis functions (advanced usage)
     '_extract_condition_from_block',
+    'render_condition',
     '_find_if_body_blocks',
     '_collect_local_variables',
 

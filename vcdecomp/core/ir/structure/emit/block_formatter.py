@@ -13,10 +13,9 @@ from typing import Dict, List, Optional, Set, TYPE_CHECKING
 from ...ssa import SSAFunction
 from ...expr import format_block_expressions, ExpressionFormatter
 from ...cfg import CFG
-from ...parenthesization import ExpressionContext, is_simple_expression
 from ....disasm import opcodes
 from ..patterns.models import IfElsePattern
-from ..analysis.value_trace import _trace_value_to_function_call
+from ..analysis.condition import render_condition
 
 if TYPE_CHECKING:
     # Forward reference to avoid circular import with code_emitter
@@ -132,89 +131,15 @@ def _format_block_lines(
     if early_returns and block_id in early_returns:
         header_block, exit_block, continue_block, is_negated = early_returns[block_id]
 
-        # Extract condition from SSA
-        ssa_block = ssa_func.instructions.get(block_id, [])
-        block = cfg.blocks[block_id]
-        cond_text = None
-
-        if block.instructions:
-            last_instr = block.instructions[-1]
-
-            # FÁZE 1.6: Special check - if there's CALL/XCALL + LLD immediately before JZ,
-            # use the function call as the condition instead of the input value
-            func_call_cond = None
-            jz_index = None
-            for idx, inst in enumerate(ssa_block):
-                if inst.address == last_instr.address:
-                    jz_index = idx
-                    break
-
-            if jz_index is not None and jz_index >= 2:
-                # Check if pattern is: CALL/XCALL, LLD, (SSP), JZ
-                # LLD should be 1-2 instructions before JZ
-                import sys
-                # print(f"DEBUG early_return block {block_id}: jz_index={jz_index}, checking for CALL+LLD", file=sys.stderr)
-                for check_idx in range(jz_index - 1, max(0, jz_index - 3), -1):
-                    check_inst = ssa_block[check_idx]
-                    # print(f"  check_idx={check_idx}: {check_inst.mnemonic}@{check_inst.address}", file=sys.stderr)
-                    if check_inst.mnemonic == "LLD":
-                        # print(f"  Found LLD at {check_idx}", file=sys.stderr)
-                        # Found LLD, now check if there's CALL/XCALL before it
-                        for call_idx in range(check_idx - 1, max(0, check_idx - 3), -1):
-                            call_inst = ssa_block[call_idx]
-                            # print(f"    call_idx={call_idx}: {call_inst.mnemonic}@{call_inst.address}", file=sys.stderr)
-                            if call_inst.mnemonic in {"CALL", "XCALL"}:
-                                # Found CALL + LLD pattern! Use this as condition
-                                # print(f"  Found CALL/XCALL at {call_idx}! Formatting...", file=sys.stderr)
-                                # print(f"  CALL inputs: {[inp.name for inp in call_inst.inputs]}", file=sys.stderr)
-                                try:
-                                    call_expr = formatter._format_call(call_inst)
-                                    # print(f"  Formatted: {call_expr}", file=sys.stderr)
-                                    if call_expr.endswith(";"):
-                                        call_expr = call_expr[:-1].strip()
-                                    func_call_cond = call_expr
-                                    # print(f"  func_call_cond set to: {func_call_cond}", file=sys.stderr)
-                                except Exception as e:
-                                    # print(f"  Exception formatting: {e}", file=sys.stderr)
-                                    import traceback
-                                    traceback.print_exc(file=sys.stderr)
-                                break
-                        break
-
-            # Extract condition from SSA
-            for ssa_inst in ssa_block:
-                if ssa_inst.address == last_instr.address and ssa_inst.inputs:
-                    cond_value = ssa_inst.inputs[0]
-
-                    if func_call_cond:
-                        # Use function call as condition
-                        cond_expr = func_call_cond
-                    else:
-                        # FÁZE 1.6: Check if condition value comes from function call
-                        func_call = _trace_value_to_function_call(ssa_func, cond_value, formatter)
-                        if func_call:
-                            cond_expr = func_call
-                        else:
-                            # FIX 3: Pass IN_CONDITION context
-                            cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
-                            # Only use SSA name if rendered as pure number
-                            if cond_expr.lstrip('-').isdigit():
-                                alias = cond_value.alias or cond_value.name
-                                if alias and not alias.startswith("data_"):
-                                    cond_expr = alias
-
-                    # FIX 3: Smart negation - only add parens if needed
-                    if is_negated:
-                        if is_simple_expression(cond_expr):
-                            cond_text = f"!{cond_expr}"
-                        else:
-                            cond_text = f"!({cond_expr})"
-                    else:
-                        cond_text = cond_expr
-                    break
-
-        if cond_text is None:
-            cond_text = f"cond_{block_id}"
+        condition_render = render_condition(
+            ssa_func,
+            block_id,
+            formatter,
+            cfg,
+            resolver,
+            negate=is_negated
+        )
+        cond_text = condition_render.text or f"cond_{block_id}"
 
         lines = []
         # Render header statements (excluding the conditional jump)

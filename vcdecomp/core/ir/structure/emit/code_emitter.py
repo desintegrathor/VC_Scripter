@@ -12,11 +12,10 @@ from typing import Dict, List, Optional, Set, Any
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
 from ...cfg import CFG, NaturalLoop
-from ...parenthesization import ExpressionContext, is_simple_expression
 from ....disasm import opcodes
 from ..patterns.models import IfElsePattern, CompoundCondition
 from ..patterns.loops import _detect_for_loop
-from ..analysis.condition import _combine_conditions
+from ..analysis.condition import _combine_conditions, render_condition
 from ..utils.helpers import SHOW_BLOCK_COMMENTS, _is_control_flow_only
 from .block_formatter import _format_block_lines, _format_block_lines_filtered
 
@@ -147,64 +146,15 @@ def _render_if_else_recursive(
         return lines
 
     # Extract condition from SSA (simple if/else case)
-    cond_text = None
-    ssa_block = ssa_blocks.get(if_pattern.header_block, [])
-
-    # FÁZE 1.6: Check if there's CALL/XCALL + LLD immediately before JZ/JNZ
-    func_call_cond = None
-    if header_block.instructions:
-        last_instr = header_block.instructions[-1]
-        jz_index = None
-        for idx, inst in enumerate(ssa_block):
-            if inst.address == last_instr.address:
-                jz_index = idx
-                break
-
-        if jz_index is not None and jz_index >= 2:
-            # Check if pattern is: CALL/XCALL, LLD, (SSP), JZ/JNZ
-            for check_idx in range(jz_index - 1, max(0, jz_index - 3), -1):
-                check_inst = ssa_block[check_idx]
-                if check_inst.mnemonic == "LLD":
-                    # Found LLD, now check if there's CALL/XCALL before it
-                    for call_idx in range(check_idx - 1, max(0, check_idx - 3), -1):
-                        call_inst = ssa_block[call_idx]
-                        if call_inst.mnemonic in {"CALL", "XCALL"}:
-                            # Found CALL + LLD pattern! Use this as condition
-                            try:
-                                call_expr = formatter._format_call(call_inst)
-                                if call_expr.endswith(";"):
-                                    call_expr = call_expr[:-1].strip()
-                                func_call_cond = call_expr
-                            except Exception:
-                                pass
-                            break
-                    break
-
-    if header_block.instructions:
-        last_instr = header_block.instructions[-1]
-        mnemonic = resolver.get_mnemonic(last_instr.opcode)
-        for ssa_inst in ssa_block:
-            if ssa_inst.address == last_instr.address and ssa_inst.inputs:
-                cond_value = ssa_inst.inputs[0]
-
-                # FÁZE 1.6: Use function call if detected
-                if func_call_cond:
-                    cond_expr = func_call_cond
-                else:
-                    # FIX 3: Pass IN_CONDITION context
-                    cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
-                    # Only use SSA name if rendered as pure number
-                    if cond_expr.lstrip('-').isdigit():
-                        alias = cond_value.alias or cond_value.name
-                        if alias and not alias.startswith("data_"):
-                            cond_expr = alias
-                # FÁZE 3 FIX: NO negation needed - we already swapped true/false branches
-                # in _detect_if_else_pattern based on JZ vs JNZ semantics
-                # FIX 3: No hardcoded parens - expression already has them if needed
-                cond_text = cond_expr
-                break
-    if cond_text is None:
-        cond_text = f"cond_{if_pattern.header_block}"
+    condition_render = render_condition(
+        ssa_func,
+        if_pattern.header_block,
+        formatter,
+        cfg,
+        resolver,
+        negate=False
+    )
+    cond_text = condition_render.text or f"cond_{if_pattern.header_block}"
 
     # Render header block statements (excluding conditional jump)
     # Only add comment if block has actual statements
@@ -222,17 +172,12 @@ def _render_if_else_recursive(
     if header_lines and ("goto" in header_lines[-1] or "if (" in header_lines[-1]):
         header_lines = header_lines[:-1]
 
-    # FÁZE 1.6: If we detected a function call as condition, remove the call statement
-    # from header_lines to avoid duplication
-    if func_call_cond and header_lines:
-        # The last statement might be the function call - check and remove if so
-        for i in range(len(header_lines) - 1, -1, -1):
-            line = header_lines[i].strip()
-            # Check if line contains XCALL or CALL by looking for known patterns
-            if (line.startswith("SC_") or line.startswith("func_")) and line.endswith(";"):
-                # This is likely the function call statement
-                header_lines = header_lines[:i] + header_lines[i+1:]
-                break
+    # Remove condition statement if it duplicates the rendered condition
+    if header_lines and condition_render.text:
+        header_lines = [
+            line for line in header_lines
+            if line.strip().rstrip(";") != condition_render.text
+        ]
 
     lines.extend(header_lines)
 

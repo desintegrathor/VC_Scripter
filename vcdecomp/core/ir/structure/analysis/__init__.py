@@ -17,10 +17,12 @@ from .flow import (
 )
 
 from .condition import (
+    ConditionRender,
     _extract_condition_from_block,
     _extract_condition_expr,
     _combine_conditions,
     _collect_and_chain,
+    render_condition,
 )
 
 from .value_trace import (
@@ -45,10 +47,12 @@ __all__ = [
     "_find_common_true_target",
     "_find_case_body_blocks",
     # Condition analysis
+    "ConditionRender",
     "_extract_condition_from_block",
     "_extract_condition_expr",
     "_combine_conditions",
     "_collect_and_chain",
+    "render_condition",
     # Value tracing
     "_trace_value_to_function_call",
     "_trace_value_to_global",

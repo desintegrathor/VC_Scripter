@@ -36,6 +36,7 @@ from .patterns.if_else import _detect_if_else_pattern, _detect_early_return_patt
 from .patterns.switch_case import _detect_switch_patterns
 from .patterns.loops import _detect_for_loop
 from .analysis.variables import _collect_local_variables
+from .analysis.condition import render_condition
 from .emit.block_formatter import _format_block_lines
 from .emit.code_emitter import _render_blocks_with_loops
 
@@ -937,7 +938,6 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if block.instructions:
             last_instr = block.instructions[-1]
             opcode = last_instr.opcode
-            mnemonic = resolver.get_mnemonic(opcode)
 
             # Show control flow
             # NOTE: RET is now handled in expr.py, so we don't add extra return here
@@ -973,35 +973,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                                target_block in containing_loop.exits)
 
                 if resolver.is_conditional_jump(opcode):
-                    # Get condition from SSA
-                    cond_text = None
-                    ssa_block = ssa_blocks.get(block_id, [])
-                    for ssa_inst in ssa_block:
-                        if ssa_inst.address == last_instr.address and ssa_inst.inputs:
-                            cond_value = ssa_inst.inputs[0]
-                            # FIX 3: Pass IN_CONDITION context
-                            cond_expr = formatter.render_value(cond_value, context=ExpressionContext.IN_CONDITION)
-                            # Only use SSA name if rendered as pure number AND has meaningful alias
-                            # Skip data_ aliases as they should be resolved to actual values
-                            if cond_expr.lstrip('-').isdigit():
-                                alias = cond_value.alias or cond_value.name
-                                # Keep numeric value for data_ references (already resolved)
-                                # Use alias only for local_/param_ variables
-                                if alias and not alias.startswith("data_"):
-                                    cond_expr = alias
-                            # FIX 3: Smart negation
-                            if mnemonic == "JZ":
-                                if is_simple_expression(cond_expr):
-                                    cond_text = f"!{cond_expr}"
-                                else:
-                                    cond_text = f"!({cond_expr})"
-                            elif mnemonic == "JNZ":
-                                cond_text = cond_expr
-                            else:
-                                cond_text = cond_expr
-                            break
-                    if cond_text is None:
-                        cond_text = f"cond_{block_id}"
+                    condition_render = render_condition(
+                        ssa_func,
+                        block_id,
+                        formatter,
+                        cfg,
+                        resolver
+                    )
+                    cond_text = condition_render.text or f"cond_{block_id}"
 
                     # FIX 1B: Skip rendering if jumping to switch header
                     # FIX (Pattern 1 - 06-02): Skip goto to orphaned blocks (unreachable blocks with no predecessors)

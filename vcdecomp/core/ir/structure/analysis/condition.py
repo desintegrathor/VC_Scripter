@@ -7,14 +7,234 @@ conditional jump blocks and combining multiple conditions with logical operators
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import List, Optional, Set, Dict, Tuple
 
-from ...ssa import SSAFunction
+from ...ssa import SSAFunction, SSAValue
 from ...expr import ExpressionFormatter, COMPARISON_OPS
 from ....disasm import opcodes
-from ...parenthesization import ExpressionContext
+from ...parenthesization import ExpressionContext, is_simple_expression
 from ...cfg import CFG
 from ..patterns.models import CompoundCondition
+from .value_trace import _trace_value_to_function_call, _find_xcall_with_lld_in_predecessors
+
+
+@dataclass(frozen=True)
+class ConditionRender:
+    text: str
+    values: List[SSAValue]
+    addresses: List[int]
+
+
+def _find_condition_jump(block, resolver: opcodes.OpcodeResolver):
+    for instr in reversed(block.instructions):
+        if resolver.is_conditional_jump(instr.opcode):
+            return instr
+    return None
+
+
+def _find_ssa_condition_value(ssa_block, instr_address: int):
+    for ssa_inst in ssa_block:
+        if ssa_inst.address == instr_address and ssa_inst.inputs:
+            return ssa_inst.inputs[0]
+    return None
+
+
+def _find_call_inst_for_condition(
+    ssa_func: SSAFunction,
+    value,
+    max_depth: int = 8,
+    visited: Optional[Set[int]] = None
+):
+    if not value or max_depth <= 0:
+        return None
+    if visited is None:
+        visited = set()
+    if id(value) in visited:
+        return None
+    visited.add(id(value))
+
+    producer = value.producer_inst
+    if not producer:
+        return None
+
+    if producer.mnemonic in {"CALL", "XCALL"}:
+        return producer
+
+    if producer.mnemonic == "LLD":
+        block_instructions = ssa_func.instructions.get(producer.block_id, [])
+        lld_index = None
+        for idx, inst in enumerate(block_instructions):
+            if inst.address == producer.address:
+                lld_index = idx
+                break
+        if lld_index is not None:
+            for idx in range(lld_index - 1, max(0, lld_index - 5), -1):
+                prev_inst = block_instructions[idx]
+                if prev_inst.mnemonic in {"CALL", "XCALL"}:
+                    return prev_inst
+
+    if producer.mnemonic == "LCP":
+        stack_offset = None
+        if producer.instruction and producer.instruction.instruction:
+            stack_offset = producer.instruction.instruction.arg1
+        xcall_lld = _find_xcall_with_lld_in_predecessors(
+            block_id=producer.block_id,
+            stack_offset=stack_offset,
+            ssa_func=ssa_func,
+            max_depth=4,
+        )
+        if xcall_lld:
+            return xcall_lld[0]
+
+    if producer.mnemonic == "PHI":
+        for phi_input in producer.inputs:
+            call_inst = _find_call_inst_for_condition(
+                ssa_func, phi_input, max_depth - 1, visited
+            )
+            if call_inst:
+                return call_inst
+
+    for input_value in producer.inputs:
+        call_inst = _find_call_inst_for_condition(
+            ssa_func, input_value, max_depth - 1, visited
+        )
+        if call_inst:
+            return call_inst
+
+    return None
+
+
+def _collect_condition_values(
+    value,
+    max_depth: int = 8,
+    values: Optional[List[SSAValue]] = None,
+    addresses: Optional[Set[int]] = None,
+    visited: Optional[Set[int]] = None
+) -> Tuple[List[SSAValue], Set[int]]:
+    if values is None:
+        values = []
+    if addresses is None:
+        addresses = set()
+    if visited is None:
+        visited = set()
+    if not value or max_depth < 0 or id(value) in visited:
+        return values, addresses
+
+    visited.add(id(value))
+    values.append(value)
+
+    producer = value.producer_inst
+    if producer:
+        addresses.add(producer.address)
+        for input_value in producer.inputs:
+            _collect_condition_values(
+                input_value,
+                max_depth - 1,
+                values=values,
+                addresses=addresses,
+                visited=visited
+            )
+
+    return values, addresses
+
+
+def render_condition(
+    ssa_func: SSAFunction,
+    block_id: int,
+    formatter: ExpressionFormatter,
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver,
+    negate: Optional[bool] = None
+) -> ConditionRender:
+    """
+    Render a condition for a block's conditional jump.
+
+    Returns a ConditionRender containing the rendered text, SSA values used in the
+    condition, and instruction addresses that contribute to the condition.
+    """
+    block = cfg.blocks.get(block_id)
+    if not block or not block.instructions:
+        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+
+    jump_instr = _find_condition_jump(block, resolver)
+    if not jump_instr:
+        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+
+    ssa_block = ssa_func.instructions.get(block_id, [])
+    cond_value = _find_ssa_condition_value(ssa_block, jump_instr.address)
+    if not cond_value:
+        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+
+    cond_expr = None
+    call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
+    if call_expr:
+        cond_expr = call_expr
+    else:
+        if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
+            cond_expr = formatter._inline_expression(
+                cond_value,
+                context=ExpressionContext.IN_CONDITION
+            )
+        elif cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
+            for phi_input in cond_value.producer_inst.inputs:
+                if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
+                    cond_expr = formatter._inline_expression(
+                        phi_input,
+                        context=ExpressionContext.IN_CONDITION
+                    )
+                    break
+
+    if cond_expr is None:
+        cond_expr = formatter.render_value(
+            cond_value,
+            context=ExpressionContext.IN_CONDITION
+        )
+        if cond_expr.lstrip('-').isdigit():
+            alias = cond_value.alias or cond_value.name
+            if alias and not alias.startswith("data_"):
+                cond_expr = alias
+
+    if negate is None:
+        mnemonic = resolver.get_mnemonic(jump_instr.opcode)
+        if mnemonic == "JZ":
+            negate = True
+        elif mnemonic == "JNZ":
+            negate = False
+        else:
+            negate = False
+
+    if negate:
+        if is_simple_expression(cond_expr):
+            cond_expr = f"!{cond_expr}"
+        else:
+            cond_expr = f"!({cond_expr})"
+
+    values: List[SSAValue] = []
+    addresses: Set[int] = set()
+    visited: Set[int] = set()
+    _collect_condition_values(
+        cond_value,
+        values=values,
+        addresses=addresses,
+        visited=visited
+    )
+    call_inst = _find_call_inst_for_condition(ssa_func, cond_value)
+    if call_inst:
+        addresses.add(call_inst.address)
+        for input_value in call_inst.inputs:
+            _collect_condition_values(
+                input_value,
+                values=values,
+                addresses=addresses,
+                visited=visited
+            )
+
+    return ConditionRender(
+        text=cond_expr,
+        values=values,
+        addresses=sorted(addresses)
+    )
 
 
 def _extract_condition_from_block(
@@ -40,54 +260,15 @@ def _extract_condition_from_block(
     Returns:
         Rendered condition expression, or None if not found/not applicable
     """
-    block = cfg.blocks.get(block_id)
-    if not block or not block.instructions:
-        return None
-
-    # Find the last conditional jump in the block
-    for instr in reversed(block.instructions):
-        if resolver.is_conditional_jump(instr.opcode):
-            # Found conditional jump, now find corresponding SSA instruction
-            ssa_block = ssa_func.instructions.get(block_id, [])
-
-            for ssa_inst in ssa_block:
-                if ssa_inst.address == instr.address and ssa_inst.inputs:
-                    cond_value = ssa_inst.inputs[0]
-
-                    # If condition comes from comparison operation, inline it
-                    if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
-                        cond_expr = formatter._inline_expression(
-                            cond_value,
-                            context=ExpressionContext.IN_CONDITION
-                        )
-                        return cond_expr
-
-                    # If condition is PHI, check if any input is a comparison
-                    if cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
-                        for phi_input in cond_value.producer_inst.inputs:
-                            if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
-                                cond_expr = formatter._inline_expression(
-                                    phi_input,
-                                    context=ExpressionContext.IN_CONDITION
-                                )
-                                return cond_expr
-
-                    # Fallback: use render_value
-                    cond_expr = formatter.render_value(
-                        cond_value,
-                        context=ExpressionContext.IN_CONDITION
-                    )
-
-                    # If renders as just a number, use SSA name/alias instead
-                    if cond_expr.lstrip('-').isdigit():
-                        alias = cond_value.alias or cond_value.name
-                        if alias and not alias.startswith("data_"):
-                            cond_expr = alias
-
-                    return cond_expr
-            break
-
-    return None
+    render = render_condition(
+        ssa_func,
+        block_id,
+        formatter,
+        cfg,
+        resolver,
+        negate=False
+    )
+    return render.text if render.text else None
 
 
 def _extract_condition_expr(
