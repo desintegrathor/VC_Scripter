@@ -317,8 +317,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     func_loops = find_loops_in_function(cfg, func_block_ids, entry_block)
 
     # Resolve global variables for better naming in for-loop conditions
+    # Cache the result on the SSA function to avoid re-computing for every function
     from ..global_resolver import resolve_globals
-    global_map = resolve_globals(ssa_func)
+    if not hasattr(ssa_func, '_cached_global_map'):
+        ssa_func._cached_global_map = resolve_globals(ssa_func)
+    global_map = ssa_func._cached_global_map
 
     # Detect switch/case patterns
     switch_patterns = _detect_switch_patterns(ssa_func, func_block_ids, formatter, start_to_block)
@@ -537,6 +540,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if block_id not in block_to_if and not is_switch_header:
             if_pattern = _detect_if_else_pattern(cfg, block_id, start_to_block, resolver, visited_ifs, func_loops, ssa_func=ssa_func, formatter=formatter)
             if if_pattern:
+                # DEBUG: Check for compound patterns in func_0292 range
+                if 292 <= addr <= 354:
+                    debug_print(f"DEBUG COMPOUND: Block {block_id}@{addr} detected as if/else, compound={hasattr(if_pattern, 'compound') and if_pattern.compound is not None}")
                 # Register this pattern
                 block_to_if[if_pattern.header_block] = if_pattern
                 for body_block_id in if_pattern.true_body:
@@ -545,6 +551,13 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 for body_block_id in if_pattern.false_body:
                     if body_block_id not in block_to_if:
                         block_to_if[body_block_id] = if_pattern
+                # FIX (01-21): For compound patterns, also register involved blocks
+                # This prevents blocks in the condition chain (e.g., block 4 in "if (A && B)")
+                # from being processed as separate if/else patterns
+                if hasattr(if_pattern, 'compound') and if_pattern.compound:
+                    for involved_block in if_pattern.compound.involved_blocks:
+                        if involved_block not in block_to_if:
+                            block_to_if[involved_block] = if_pattern
 
         # Skip blocks that are part of an if/else pattern (except header)
         if block_id in block_to_if:
@@ -740,7 +753,27 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     lines.pop()  # Remove the meaningless goto
                 lines.append(f"{base_indent}block_{block_id}:")
 
-            # Get condition from SSA
+            # FIX (01-21): Check if this is a compound condition pattern
+            # If so, use _render_if_else_recursive which handles compound conditions properly
+            if hasattr(if_pattern, 'compound') and if_pattern.compound:
+                from .emit.code_emitter import _render_if_else_recursive
+                compound_lines = _render_if_else_recursive(
+                    if_pattern, base_indent, ssa_func, formatter,
+                    block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                    early_returns={}  # No early returns detected in main loop context
+                )
+                lines.extend(compound_lines)
+                # Mark involved blocks and bodies as emitted
+                emitted_ifs.add(block_id)
+                for involved_block in if_pattern.compound.involved_blocks:
+                    emitted_blocks.add(involved_block)
+                for body_block in if_pattern.true_body:
+                    emitted_blocks.add(body_block)
+                for body_block in if_pattern.false_body:
+                    emitted_blocks.add(body_block)
+                continue  # Skip the regular if/else rendering below
+
+            # Get condition from SSA (simple if/else case - no compound)
             cond_text = None
             ssa_block = ssa_blocks.get(block_id, [])
             block_obj = cfg.blocks[block_id]
@@ -758,18 +791,16 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                             if alias and not alias.startswith("data_"):
                                 cond_expr = alias
 
-                        # FIX 3: Smart negation - only add parens if needed
-                        if mnemonic == "JZ":
-                            # JZ means "jump if zero" = jump if false, so negate condition
-                            if is_simple_expression(cond_expr):
-                                cond_text = f"!{cond_expr}"
-                            else:
-                                cond_text = f"!({cond_expr})"
-                        elif mnemonic == "JNZ":
-                            # JNZ means "jump if not zero" = jump if true, use as-is
-                            cond_text = cond_expr
-                        else:
-                            cond_text = cond_expr
+                        # FIX 3: Condition semantics for JZ/JNZ
+                        # JZ: jump if zero, fallthrough if non-zero
+                        #   -> true_body is fallthrough (executes when condition is TRUE)
+                        #   -> So we render: if (condition) { true_body }
+                        # JNZ: jump if non-zero, fallthrough if zero
+                        #   -> true_body is jump target (executes when condition is TRUE)
+                        #   -> So we render: if (condition) { true_body }
+                        # In BOTH cases, true_body executes when condition is TRUE,
+                        # so no negation is needed!
+                        cond_text = cond_expr
                         break
             if cond_text is None:
                 cond_text = f"cond_{block_id}"
@@ -891,6 +922,13 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             ssa_func, block_id, base_indent, formatter,
             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver
         ))
+
+        # FIX (01-21): If block was rendered as if/else, skip separate jump handling
+        # The _format_block_lines call above adds the block to visited_ifs if it was
+        # rendered as an if/else pattern, so we should skip the goto/break/continue
+        # handling below to avoid duplicate output
+        if block_id in visited_ifs:
+            continue  # Skip to next block - this one was handled as if/else
 
         if block.instructions:
             last_instr = block.instructions[-1]

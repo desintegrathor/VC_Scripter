@@ -2,7 +2,7 @@
 Debug output control for the decompiler.
 
 This module provides a global debug output flag and utility function
-that can be controlled via the --style CLI flag.
+that can be controlled via the --debug/--verbose CLI flags.
 
 Note: This is a standalone module with no dependencies on other
 vcdecomp modules to avoid circular imports.
@@ -13,10 +13,10 @@ import sys
 # =============================================================================
 # Global debug output control
 # =============================================================================
-# Set by orchestrator based on --style flag:
-# - quiet: DEBUG_ENABLED = False
-# - normal/verbose: DEBUG_ENABLED = True
-DEBUG_ENABLED = True  # Default to enabled (current behavior)
+# Set by cmd_structure() based on --debug/--verbose flags:
+# - default (no flags): DEBUG_ENABLED = False (clean output)
+# - --debug or --verbose: DEBUG_ENABLED = True
+DEBUG_ENABLED = False  # Default to disabled (clean output by default)
 
 
 def set_debug_enabled(enabled: bool):

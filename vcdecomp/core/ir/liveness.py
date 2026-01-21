@@ -60,9 +60,19 @@ class LivenessAnalyzer:
         Returns:
             Dict mapping block_id -> LivenessInfo
         """
-        # Step 1: Compute USE and DEF sets for each block
+        # Step 0: Build set of function-local variables (variables DEFINED within this function)
+        # This prevents cross-function variable contamination when SSA is built globally
+        func_local_vars: Set[str] = set()
         for block_id in self.func_block_ids:
-            use_set, def_set = self._compute_use_def_sets(block_id)
+            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+            for inst in ssa_instrs:
+                for out in inst.outputs:
+                    if out.name:
+                        func_local_vars.add(out.name)
+
+        # Step 1: Compute USE and DEF sets for each block (filtered to function-local vars)
+        for block_id in self.func_block_ids:
+            use_set, def_set = self._compute_use_def_sets(block_id, func_local_vars)
             self.liveness[block_id] = LivenessInfo(
                 block_id=block_id,
                 use_set=use_set,
@@ -108,7 +118,7 @@ class LivenessAnalyzer:
 
         return self.liveness
 
-    def _compute_use_def_sets(self, block_id: int) -> Tuple[Set[str], Set[str]]:
+    def _compute_use_def_sets(self, block_id: int, func_local_vars: Optional[Set[str]] = None) -> Tuple[Set[str], Set[str]]:
         """
         Compute USE (upward exposed) and DEF sets for a block.
 
@@ -117,6 +127,7 @@ class LivenessAnalyzer:
 
         Args:
             block_id: Block ID to analyze
+            func_local_vars: Optional set of variable names to limit to (for function-scoped analysis)
 
         Returns:
             Tuple of (use_set, def_set)
@@ -130,12 +141,16 @@ class LivenessAnalyzer:
             # Process inputs (uses) - add to USE if not already in DEF
             for inp in inst.inputs:
                 if inp.name and inp.name not in def_set:
-                    use_set.add(inp.name)
+                    # Filter to function-local vars if specified
+                    if func_local_vars is None or inp.name in func_local_vars:
+                        use_set.add(inp.name)
 
             # Process outputs (definitions)
             for out in inst.outputs:
                 if out.name:
-                    def_set.add(out.name)
+                    # Filter to function-local vars if specified
+                    if func_local_vars is None or out.name in func_local_vars:
+                        def_set.add(out.name)
 
         return use_set, def_set
 
@@ -206,6 +221,10 @@ class InterferenceGraph:
     Variables that interfere cannot be merged into the same C variable.
     """
 
+    # Maximum number of edges to build before giving up (for performance)
+    # With 1000 variables, O(n²) = 500k edges which takes too long
+    MAX_EDGES = 50000
+
     def __init__(self, liveness: Dict[int, LivenessInfo], ssa_func: SSAFunction):
         """
         Initialize interference graph from liveness information.
@@ -217,6 +236,7 @@ class InterferenceGraph:
         self.nodes: Set[str] = set()
         self.edges: Set[InterferenceEdge] = set()
         self._adjacency: Dict[str, Set[str]] = defaultdict(set)
+        self._truncated = False  # True if we hit the edge limit
         self._build_from_liveness(liveness, ssa_func)
 
     def _build_from_liveness(self, liveness: Dict[int, LivenessInfo], ssa_func: SSAFunction) -> None:
@@ -229,6 +249,9 @@ class InterferenceGraph:
         2. Each instruction point within the block
         """
         for block_id, info in liveness.items():
+            if self._truncated:
+                break  # Stop processing if we hit the edge limit
+
             # At block entry, all LIVE_IN values interfere with each other
             self._add_clique(info.live_in)
 
@@ -237,6 +260,9 @@ class InterferenceGraph:
             live = info.live_in.copy()
 
             for inst in ssa_instrs:
+                if self._truncated:
+                    break  # Stop processing if we hit the edge limit
+
                 # At this point, all live values interfere with new definitions
                 # (the new definition is live starting here)
                 for out in inst.outputs:
@@ -247,7 +273,8 @@ class InterferenceGraph:
                         input_names = {inp.name for inp in inst.inputs if inp.name}
                         for live_var in live:
                             if live_var not in input_names:
-                                self._add_edge(out.name, live_var)
+                                if not self._add_edge(out.name, live_var):
+                                    break  # Hit edge limit
 
                 # Update liveness: remove definitions, add uses
                 for out in inst.outputs:
@@ -261,25 +288,39 @@ class InterferenceGraph:
                         live.add(inp.name)
 
             # At block exit, all LIVE_OUT values interfere
-            self._add_clique(info.live_out)
+            if not self._truncated:
+                self._add_clique(info.live_out)
 
     def _add_clique(self, values: Set[str]) -> None:
         """Add interference edges between all pairs in a set."""
+        if self._truncated:
+            return  # Don't add more edges if we hit the limit
         value_list = list(values)
         for i, v1 in enumerate(value_list):
             self.nodes.add(v1)
             for v2 in value_list[i+1:]:
-                self._add_edge(v1, v2)
+                if not self._add_edge(v1, v2):
+                    return  # Hit edge limit
 
-    def _add_edge(self, v1: str, v2: str) -> None:
-        """Add an interference edge between two variables."""
+    def _add_edge(self, v1: str, v2: str) -> bool:
+        """Add an interference edge between two variables.
+
+        Returns:
+            True if edge was added (or already existed), False if limit reached.
+        """
         if v1 == v2:
-            return
+            return True
+        if self._truncated:
+            return False
         edge = InterferenceEdge(v1, v2)
         if edge not in self.edges:
+            if len(self.edges) >= self.MAX_EDGES:
+                self._truncated = True
+                return False
             self.edges.add(edge)
             self._adjacency[v1].add(v2)
             self._adjacency[v2].add(v1)
+        return True
 
     def interferes(self, v1: str, v2: str) -> bool:
         """

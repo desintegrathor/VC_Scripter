@@ -239,7 +239,6 @@ def _format_block_lines(
         block_id in block_to_if and block_id == block_to_if[block_id].header_block and
         block_id not in visited_ifs and cfg and start_to_block and resolver):
         # Lazy import to avoid circular dependency
-        # _render_if_else_recursive will be defined in code_emitter.py (subtask 5.2)
         from .code_emitter import _render_if_else_recursive
         return _render_if_else_recursive(
             block_to_if[block_id], indent, ssa_func, formatter,

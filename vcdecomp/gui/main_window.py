@@ -22,7 +22,7 @@ except ImportError:
 
 from ..core.loader import SCRFile
 from ..core.disasm import Disassembler
-from ..core.ir.ssa import build_ssa, build_ssa_all_blocks
+from ..core.ir.ssa import build_ssa, build_ssa_all_blocks, build_ssa_incremental
 from ..core.ir.expr import format_block_expressions
 from ..core.ir.structure import format_structured_function_named
 from .views import ValidationPanel
@@ -446,17 +446,24 @@ class MainWindow(QMainWindow):
         # Disassembly view
         self.disasm_view.set_disassembly(self.disasm.to_string())
 
-        # Decompilation view - use build_ssa_all_blocks
+        # Decompilation view - use build_ssa_incremental for better quality
+        # (build_ssa_all_blocks has issues with cross-function PHI dependencies)
         try:
-            ssa_all = build_ssa_all_blocks(self.scr)
-            func_bounds = self.disasm.get_function_boundaries()
+            ssa_func, heritage_metadata = build_ssa_incremental(self.scr, return_metadata=True)
+            # Use v2 boundary detection for more accurate function splitting
+            # (v1 sometimes combines multiple functions into one mega-function)
+            func_bounds = self.disasm.get_function_boundaries_v2()
 
             decomp_lines = [f"// Structured decompilation of {Path(filename).name}"]
             decomp_lines.append(f"// Functions: {len(func_bounds)}")
             decomp_lines.append("")
 
             for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-                text = format_structured_function_named(ssa_all, func_name, func_start, func_end)
+                text = format_structured_function_named(
+                    ssa_func, func_name, func_start, func_end,
+                    function_bounds=func_bounds,
+                    heritage_metadata=heritage_metadata
+                )
                 decomp_lines.append(text)
                 decomp_lines.append("")
 

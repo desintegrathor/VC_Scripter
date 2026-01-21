@@ -10,14 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Decompiler
 ```bash
-# Decompile a script (clean output, no DEBUG - recommended for recompilation)
-python -m vcdecomp structure --style quiet script.scr > output.c
+# Decompile a script (default: clean output with best quality SSA)
+python -m vcdecomp structure script.scr > output.c
 
-# Decompile with DEBUG output (default - for development/debugging)
-python -m vcdecomp structure script.scr > output.c 2>debug.log
+# Decompile with DEBUG output (for development/debugging)
+python -m vcdecomp structure --debug script.scr > output.c 2>debug.log
 
-# Decompile with verbose DEBUG (same as normal, extensible for future)
-python -m vcdecomp structure --style verbose script.scr > output.c 2>debug.log
+# Decompile with legacy SSA (faster but lower quality)
+python -m vcdecomp structure --legacy-ssa script.scr > output.c
 
 # Show script info
 python -m vcdecomp info script.scr
@@ -197,30 +197,31 @@ When modifying control flow reconstruction:
 3. Ensure for-loop patterns (init, condition, increment) are detected
 4. Check early return patterns don't break if/else chains
 
-## Output Verbosity (--style flag)
+## Output Verbosity
 
-The `structure` command supports a `--style` flag to control DEBUG output:
+The `structure` command produces **clean output by default** with the best quality SSA analysis.
 
-| Style | Description | Use Case |
-|-------|-------------|----------|
-| `--style quiet` | No DEBUG output | **Recommended for recompilation** |
-| `--style normal` | DEBUG to stderr (default) | Development, debugging decompiler |
-| `--style verbose` | Full DEBUG (same as normal) | Future: extended diagnostics |
+| Flag | Description | Use Case |
+|------|-------------|----------|
+| (none) | Clean output, best SSA | **Default - recommended for recompilation** |
+| `--debug` / `-d` | Enable DEBUG to stderr | Debugging decompiler issues |
+| `--verbose` / `-v` | Same as --debug | Future: extended diagnostics |
+| `--legacy-ssa` | Use old SSA algorithm | Faster, but lower quality output |
 
 ### Quick Examples
 ```bash
-# Clean output for recompilation (RECOMMENDED)
-py -3 -m vcdecomp structure --style quiet script.scr > output.c
+# Default: clean output with best quality (RECOMMENDED)
+py -3 -m vcdecomp structure script.scr > output.c
 
-# Debug output to separate file
-py -3 -m vcdecomp structure script.scr > output.c 2>debug.log
+# Debug output for development
+py -3 -m vcdecomp structure --debug script.scr > output.c 2>debug.log
 
-# See DEBUG inline (mixed with code)
-py -3 -m vcdecomp structure script.scr 2>&1 | less
+# Legacy mode (faster but lower quality)
+py -3 -m vcdecomp structure --legacy-ssa script.scr > output.c
 ```
 
 ### Understanding Debug Output
-DEBUG lines (written to stderr) show internal analysis:
+When `--debug` is enabled, DEBUG lines (written to stderr) show internal analysis:
 - `DEBUG: Entry point = 9054` - Entry point identification
 - `DEBUG FieldTracker: ...` - Struct field detection
 - `DEBUG PNT: SUCCESS ...` - Pointer-to-field pattern recognition
@@ -229,30 +230,18 @@ DEBUG lines (written to stderr) show internal analysis:
 
 ### Batch Processing
 ```bash
-# Batch decompile all .scr files cleanly
+# Batch decompile all .scr files (default is already clean)
 for f in *.scr; do
-    py -3 -m vcdecomp structure --style quiet "$f" > "${f%.scr}.c"
+    py -3 -m vcdecomp structure "$f" > "${f%.scr}.c"
 done
 ```
 
 ```powershell
 # PowerShell batch
 Get-ChildItem *.scr | ForEach-Object {
-    py -3 -m vcdecomp structure --style quiet $_.Name > "$($_.BaseName).c"
+    py -3 -m vcdecomp structure $_.Name > "$($_.BaseName).c"
 }
 ```
-
-### Legacy: Manual DEBUG Filtering
-Before `--style quiet` was added, DEBUG lines had to be filtered manually:
-```bash
-# Method 1: grep filter (Linux/Mac/Git Bash)
-py -3 -m vcdecomp structure script.scr 2>&1 | grep -v "^DEBUG" > output.c
-
-# Method 2: Python filter
-py -3 -m vcdecomp structure script.scr 2>&1 | python -c "import sys; sys.stdout.writelines(line for line in sys.stdin if not line.startswith('DEBUG'))" > output.c
-```
-
-**Recommendation:** Always use `--style quiet` for clean output intended for recompilation or code analysis.
 
 ## Common Development Tasks
 

@@ -307,9 +307,8 @@ def _detect_if_else_pattern(
         )
         if compound:
             # Convert CompoundCondition to IfElsePattern for compatibility
-            # Mark all involved blocks as visited to prevent re-processing
-            for involved_block in compound.involved_blocks:
-                visited_ifs.add(involved_block)
+            # NOTE: Don't add to visited_ifs here - let the rendering code do that
+            # Adding here would prevent _format_block_lines from calling _render_if_else_recursive
 
             # Create IfElsePattern representing the compound condition
             # We'll use a special marker to indicate this is compound

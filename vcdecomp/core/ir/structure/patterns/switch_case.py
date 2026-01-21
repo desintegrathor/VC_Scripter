@@ -219,6 +219,172 @@ def _case_has_break(
     return True
 
 
+def _find_param_field_in_predecessors(
+    ssa_func: SSAFunction,
+    current_block_id: int,
+    var_value,
+    formatter: ExpressionFormatter
+) -> Optional[str]:
+    """
+    Search predecessor blocks for parameter field access pattern.
+
+    Pattern: When switch var is loaded via LCP in current block,
+    look in predecessor blocks for:
+        LADR [sp-N]   ; Load param address (negative offset = parameter)
+        DADR offset   ; Add field offset
+        DCP           ; Dereference
+
+    This handles the common Vietcong compiler pattern where:
+        Block N:   LADR [sp-4] → DADR 0 → DCP → JMP Block N+1
+        Block N+1: LCP [sp+418] → EQU → JZ
+
+    The DCP result is stored on stack, then LCP reloads it. We need to
+    trace through this pattern to find the actual parameter field access.
+
+    Args:
+        ssa_func: SSA function containing the blocks
+        current_block_id: Block where the switch comparison is happening
+        var_value: The SSA value being tested (typically from LCP)
+        formatter: Expression formatter
+
+    Returns:
+        Parameter field access string (e.g., "info->message") if found, None otherwise
+    """
+    cfg = ssa_func.cfg
+    if not cfg:
+        return None
+
+    ssa_blocks = ssa_func.instructions
+
+    # Get predecessors using BFS traversal (up to 10 levels)
+    # This is needed because the LADR→DADR→DCP pattern might be many blocks away
+    # from the switch comparison block, especially in large functions like ScriptMain
+    preds = set()
+    to_visit = []
+    if current_block_id in cfg.blocks:
+        block = cfg.blocks[current_block_id]
+        for pred in block.predecessors:
+            to_visit.append((pred, 1))
+
+    max_depth = 10  # Extend search depth for large functions
+    while to_visit:
+        pred_id, depth = to_visit.pop(0)
+        if pred_id in preds:
+            continue
+        preds.add(pred_id)
+        if depth < max_depth and pred_id in cfg.blocks:
+            for pred in cfg.blocks[pred_id].predecessors:
+                if pred not in preds:
+                    to_visit.append((pred, depth + 1))
+
+    _switch_debug(f"  Searching {len(preds)} predecessor blocks for LADR→DADR→DCP pattern")
+
+    # Search each predecessor for the pattern
+    for pred_id in preds:
+        if pred_id not in ssa_blocks:
+            continue
+
+        instrs = ssa_blocks[pred_id]
+
+        # Look for DCP preceded by DADR preceded by LADR
+        for i, instr in enumerate(instrs):
+            if instr.mnemonic != 'DCP':
+                continue
+
+            # Check if this DCP has inputs from DADR
+            if not instr.inputs or len(instr.inputs) == 0:
+                continue
+
+            # Get the pointer input to DCP
+            ptr_value = instr.inputs[0]
+            if not ptr_value.producer_inst:
+                continue
+
+            dadr_inst = ptr_value.producer_inst
+
+            # Check if pointer came from DADR
+            if dadr_inst.mnemonic != 'DADR':
+                continue
+
+            # Get field offset from DADR instruction
+            field_offset = None
+            if dadr_inst.instruction and dadr_inst.instruction.instruction:
+                field_offset = dadr_inst.instruction.instruction.arg1
+
+            # Get the base address input to DADR
+            if not dadr_inst.inputs or len(dadr_inst.inputs) == 0:
+                continue
+
+            base_value = dadr_inst.inputs[0]
+            if not base_value.producer_inst:
+                continue
+
+            ladr_inst = base_value.producer_inst
+
+            # Check if base came from LADR
+            if ladr_inst.mnemonic != 'LADR':
+                continue
+
+            # Get stack offset from LADR instruction
+            stack_offset = None
+            if ladr_inst.instruction and ladr_inst.instruction.instruction:
+                stack_offset = ladr_inst.instruction.instruction.arg1
+
+            # Handle signed conversion: offsets > 0x7FFFFFFF are negative in two's complement
+            signed_offset = stack_offset
+            if stack_offset is not None and stack_offset > 0x7FFFFFFF:
+                signed_offset = stack_offset - 0x100000000  # Convert to signed
+
+            _switch_debug(f"    Found LADR→DADR→DCP: LADR [sp{signed_offset:+d}], DADR {field_offset}, DCP in block {pred_id}")
+
+            # Check if LADR loads a parameter address (negative stack offset)
+            if signed_offset is not None and signed_offset < 0:
+                # This is a parameter! Map field offset to field name.
+                # s_SC_NET_info struct layout:
+                #   0: message (dword)
+                #   4: param1 (dword)
+                #   8: param2 (dword)
+                #  12: param3 (dword)
+                #  16: elapsed_time (float)
+                #  20: fval1 / next_exe_time (float)
+                # s_SC_L_info has similar layout
+
+                field_map = {
+                    0: "message",
+                    4: "param1",
+                    8: "param2",
+                    12: "param3",
+                    16: "elapsed_time",
+                    20: "fval1",  # or next_exe_time for s_SC_L_info
+                }
+
+                field_name = field_map.get(field_offset)
+                if field_name:
+                    # Default parameter name
+                    param_name = "info"
+
+                    # Try to get better parameter name from function signature
+                    if hasattr(formatter, '_func_signature') and formatter._func_signature:
+                        func_sig = formatter._func_signature
+                        if func_sig.param_types:
+                            for param_type in func_sig.param_types:
+                                if 's_SC_NET_info' in param_type or 's_SC_L_info' in param_type:
+                                    parts = param_type.split()
+                                    if parts:
+                                        param_name = parts[-1].lstrip('*')
+                                    break
+
+                    result = f"{param_name}->{field_name}"
+                    _switch_debug(f"    SUCCESS: Found parameter field access: {result}")
+                    return result
+                else:
+                    _switch_debug(f"    Field offset {field_offset} not in field_map, trying generic")
+                    # Return generic field access for unknown fields
+                    return f"info->field_{field_offset}"
+
+    return None
+
+
 def _find_switch_variable_from_nearby_gcp(
     ssa_func: SSAFunction,
     current_block_id: int,
@@ -238,18 +404,40 @@ def _find_switch_variable_from_nearby_gcp(
 
     We look for GCP instructions in SSA blocks (which preserve correct mnemonics)
     to find the first global variable load - this is likely the switch variable.
+
+    IMPORTANT: This is a LAST RESORT heuristic. Prefer using:
+    1. _trace_value_to_parameter_field() for parameter field access
+    2. _find_param_field_in_predecessors() for cross-block parameter field patterns
+
+    To avoid picking wrong variables, we now limit search to predecessor blocks only.
     """
     import sys
+
+    cfg = ssa_func.cfg
+
+    # CRITICAL FIX: Only search in predecessor blocks, not entire function!
+    # This prevents picking up unrelated global variables from other parts of the function.
+    search_blocks = set()
+    search_blocks.add(current_block_id)
+
+    if cfg and current_block_id in cfg.blocks:
+        block = cfg.blocks[current_block_id]
+        search_blocks.update(block.predecessors)
+        # Also search predecessors of predecessors (2 levels)
+        for pred_id in list(search_blocks):
+            if pred_id in cfg.blocks:
+                search_blocks.update(cfg.blocks[pred_id].predecessors)
+
+    _switch_debug(f"  GCP heuristic: searching {len(search_blocks)} predecessor blocks (was: entire function)")
 
     # Search through SSA instructions (which have correct mnemonics)
     ssa_blocks = ssa_func.instructions  # Dict[block_id, List[SSAInstruction]]
 
-    # Find the FIRST (earliest) GCP/GLD instruction in the entire function
-    # that loads a global variable - this is likely the switch variable
+    # Find GCP/GLD instructions in predecessor blocks only
     gcp_candidates = []
 
-    # Collect all GCP/GLD from all SSA blocks in function
-    for block_id in func_block_ids:
+    # Collect all GCP/GLD from predecessor blocks
+    for block_id in search_blocks:
         if block_id not in ssa_blocks:
             continue
 
@@ -266,13 +454,15 @@ def _find_switch_variable_from_nearby_gcp(
                         if global_name:
                             # Record this as candidate with instruction address
                             gcp_candidates.append((ssa_instr.address, global_name, dword_offset))
+                            _switch_debug(f"    GCP candidate: {global_name} at addr {ssa_instr.address} in block {block_id}")
 
-    # If we found any GCP, use the FIRST one (earliest in function)
+    # If we found any GCP, use the FIRST one (earliest in predecessor blocks)
     if gcp_candidates:
         # Sort by instruction address (earliest first)
         gcp_candidates.sort(key=lambda x: x[0])
-        # Return the first global variable name
-        return gcp_candidates[0][1]
+        result = gcp_candidates[0][1]
+        _switch_debug(f"  GCP heuristic result: {result}")
+        return result
 
     return None
 
@@ -633,10 +823,21 @@ def _detect_switch_patterns(
                         _switch_debug(f"  -> Found function call result: {var_name}")
 
                 # CRITICAL FIX for Switch Variable Tracking:
-                # If normal tracing failed, use heuristic to find switch variable
-                # from nearby GCP instructions. This is needed because compiler generates
-                # code where global is loaded once at function entry but not properly
-                # propagated through CFG to switch comparison blocks.
+                # Try parameter field pattern in predecessor blocks FIRST.
+                # This handles the common Vietcong pattern:
+                #   Block N:   LADR [sp-4] → DADR 0 → DCP → JMP Block N+1
+                #   Block N+1: LCP [sp+418] → EQU → JZ (switch comparison)
+                # Normal tracing fails because LCP loads from a different stack slot than DCP writes.
+                if not var_name:
+                    var_name = _find_param_field_in_predecessors(
+                        ssa_func, current_block, var_value, formatter
+                    )
+                    if var_name:
+                        _switch_debug(f"  -> Found via predecessor param field search: {var_name}")
+
+                # FALLBACK: If predecessor search failed, try GCP heuristic.
+                # This is needed for global variable switches where the global is loaded
+                # in a predecessor block but not tracked through SSA.
                 if not var_name:
                     # Look for GCP in SSA blocks - works for all iterations, not just first
                     # IMPORTANT: Pass SSA function, not CFG, to get correct mnemonics

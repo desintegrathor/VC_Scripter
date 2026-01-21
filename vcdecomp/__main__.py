@@ -11,6 +11,7 @@ Použití:
 """
 
 import argparse
+import json
 import sys
 import io
 from pathlib import Path
@@ -248,16 +249,22 @@ Příklady:
     p_structure = subparsers.add_parser('structure', help='Strukturovaná dekompilace všech funkcí')
     p_structure.add_argument('file', help='Cesta k SCR souboru')
     p_structure.add_argument(
-        '--style',
-        choices=['quiet', 'normal', 'verbose'],
-        default='normal',
-        help='Output verbosity: quiet (no debug), normal (default), verbose (full debug)'
-    )
-    p_structure.add_argument(
-        '--incremental',
+        '--debug', '-d',
         action='store_true',
         default=False,
-        help='Use multi-pass heritage SSA for improved quality (experimental)'
+        help='Enable DEBUG output to stderr (for development/debugging)'
+    )
+    p_structure.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        default=False,
+        help='Enable verbose DEBUG output (same as --debug, for future expansion)'
+    )
+    p_structure.add_argument(
+        '--legacy-ssa',
+        action='store_true',
+        default=False,
+        help='Use legacy single-pass SSA construction (faster but lower quality)'
     )
     _add_variant_option(p_structure)
 
@@ -296,6 +303,17 @@ Příklady:
     p_gui = subparsers.add_parser('gui', help='Spustí GUI aplikaci')
     p_gui.add_argument('file', nargs='?', help='Cesta k SCR souboru (volitelné)')
 
+    # xfn-aggregate
+    p_xfn = subparsers.add_parser('xfn-aggregate', help='Aggregate XFN function signatures from .scr files')
+    p_xfn.add_argument('directory', help='Directory containing .scr files to scan')
+    p_xfn.add_argument('-f', '--format', choices=['summary', 'sdk', 'json'],
+                      default='summary', help='Output format (default: summary)')
+    p_xfn.add_argument('-o', '--output', help='Output file path (required for sdk/json formats)')
+    p_xfn.add_argument('--no-recursive', action='store_true', help='Do not scan subdirectories')
+    p_xfn.add_argument('--merge-sdk', action='store_true',
+                      help='Merge with existing SDK functions.json')
+    p_xfn.add_argument('--sdk-path', help='Path to SDK functions.json (default: vcdecomp/sdk/data/functions.json)')
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -329,6 +347,8 @@ Příklady:
             cmd_validate_batch(args)
         elif args.command == 'gui':
             cmd_gui(args)
+        elif args.command == 'xfn-aggregate':
+            cmd_xfn_aggregate(args)
     except FileNotFoundError as e:
         print(f"Error: File not found: {e}", file=sys.stderr)
         sys.exit(1)
@@ -450,9 +470,9 @@ def cmd_structure(args):
     from .core.ir.global_resolver import GlobalResolver
     from .core.ir.debug_output import set_debug_enabled
 
-    # FÁZE 2 (--style): Set global debug output state early, before any processing
-    style = getattr(args, 'style', 'normal')
-    set_debug_enabled(style != 'quiet')
+    # Debug output: OFF by default, enable with --debug or --verbose
+    debug_mode = getattr(args, 'debug', False) or getattr(args, 'verbose', False)
+    set_debug_enabled(debug_mode)
 
     scr = SCRFile.load(args.file, variant=args.variant)
     disasm = Disassembler(scr)
@@ -460,21 +480,22 @@ def cmd_structure(args):
     # Use RET-based function detection to prevent unreachable code
     func_bounds = disasm.get_function_boundaries_v2()
 
-    # Build SSA - use incremental heritage-based SSA if requested
-    incremental = getattr(args, 'incremental', False)
+    # Build SSA - use incremental (best quality) by default, --legacy-ssa for old algorithm
+    use_legacy_ssa = getattr(args, 'legacy_ssa', False)
     heritage_metadata = None
-    if incremental:
-        # Use multi-pass heritage SSA for improved quality
-        # Request heritage metadata for improved code generation
+    if not use_legacy_ssa:
+        # Default: Use multi-pass heritage SSA for improved quality
         ssa_func, heritage_metadata = build_ssa_incremental(scr, return_metadata=True)
-        if style != 'quiet':
+        if debug_mode:
             print(f"// Using incremental heritage SSA construction", file=sys.stderr)
             print(f"// Heritage: {len(heritage_metadata.get('variables', {}))} variables, "
                   f"{sum(len(v) for v in heritage_metadata.get('phi_blocks', {}).values())} PHI nodes",
                   file=sys.stderr)
     else:
-        # Traditional SSA construction
+        # Legacy: Traditional SSA construction (faster but lower quality)
         ssa_func = build_ssa_all_blocks(scr)
+        if debug_mode:
+            print(f"// Using legacy single-pass SSA construction", file=sys.stderr)
 
     print(f"// Structured decompilation of {args.file}")
     print(f"// Functions: {len(func_bounds)}")
@@ -590,9 +611,10 @@ def cmd_structure(args):
         print()
 
     # Zpracuj funkce v pořadí podle adresy
-    # FÁZE 4: Pass function_bounds for CALL instruction resolution
-    # FÁZE 2 (--style): Pass style parameter for debug output control (style already set above)
-    # Heritage: Pass heritage_metadata for improved variable names when using --incremental
+    # Pass function_bounds for CALL instruction resolution
+    # Pass style for debug output control: 'quiet' (default) or 'normal'/'verbose' with --debug
+    # Heritage: Pass heritage_metadata for improved variable names (default with incremental SSA)
+    style = 'normal' if debug_mode else 'quiet'
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
         text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds, style=style, heritage_metadata=heritage_metadata)
         print(text)
@@ -1055,6 +1077,111 @@ def cmd_validate_batch(args):
             sys.exit(1)  # Some failures
         else:
             sys.exit(0)  # All passed or partial
+
+
+def cmd_xfn_aggregate(args):
+    """Aggregate XFN function signatures from .scr files"""
+    from .xfn import XFNAggregator, AggregationResult
+    from .xfn.aggregator import merge_with_sdk
+
+    directory = Path(args.directory).resolve()
+    if not directory.exists():
+        print(f"Error: Directory not found: {directory}", file=sys.stderr)
+        sys.exit(1)
+
+    # Validate output is provided for formats that need it
+    if args.format in ('sdk', 'json') and not args.output:
+        print(f"Error: --output is required for {args.format} format", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"XFN Function Aggregation")
+    print(f"=" * 50)
+    print(f"Directory: {directory}")
+    print(f"Recursive: {not args.no_recursive}")
+    print()
+
+    # Progress callback
+    last_progress = [0]  # Use list to allow mutation in nested function
+
+    def progress_callback(current, total, filename):
+        progress_pct = (current * 100) // total
+        if progress_pct >= last_progress[0] + 5:  # Update every 5%
+            last_progress[0] = progress_pct
+            bar = "=" * (progress_pct // 2) + ">" + " " * (50 - progress_pct // 2)
+            print(f"\r[{bar}] {progress_pct}% ({current}/{total})", end="", flush=True)
+
+    # Run aggregation
+    aggregator = XFNAggregator(verbose=False)
+
+    print("Scanning...")
+    result = aggregator.scan_directory(
+        str(directory),
+        recursive=not args.no_recursive,
+        progress_callback=progress_callback
+    )
+    print()  # Newline after progress bar
+    print()
+
+    # Handle output based on format
+    if args.format == 'summary':
+        print(result.summary())
+
+    elif args.format == 'sdk':
+        # Export SDK-compatible format
+        output_path = Path(args.output)
+
+        if args.merge_sdk:
+            # Merge with existing SDK
+            sdk_path = args.sdk_path
+            if not sdk_path:
+                sdk_path = Path(__file__).parent / "sdk" / "data" / "functions.json"
+
+            if not Path(sdk_path).exists():
+                print(f"Error: SDK file not found: {sdk_path}", file=sys.stderr)
+                sys.exit(1)
+
+            # Load existing SDK to count differences
+            with open(sdk_path, 'r', encoding='utf-8') as f:
+                existing_sdk = json.load(f)
+
+            merged = merge_with_sdk(result, str(sdk_path), str(output_path))
+
+            new_count = len(merged) - len(existing_sdk)
+            print(f"Merged with existing SDK:")
+            print(f"  Existing functions: {len(existing_sdk)}")
+            print(f"  New functions:      {new_count}")
+            print(f"  Total functions:    {len(merged)}")
+        else:
+            # Export standalone SDK format
+            sdk_data = result.to_sdk_format()
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(sdk_data, f, indent=2)
+            print(f"Functions exported: {len(sdk_data)}")
+
+        print(f"Output saved to: {output_path}")
+
+    elif args.format == 'json':
+        # Export full JSON with usage statistics
+        output_path = Path(args.output)
+        json_data = result.to_json(include_usage=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(json_data, f, indent=2)
+
+        print(f"Full report saved to: {output_path}")
+        print(f"  Functions: {json_data['metadata']['function_count']}")
+        print(f"  Structs:   {json_data['metadata']['struct_count']}")
+
+    # Print any errors
+    if result.scripts_failed > 0:
+        print()
+        print(f"Warning: {result.scripts_failed} scripts failed to parse")
+        if len(result.errors) <= 5:
+            for filepath, error in result.errors:
+                print(f"  - {Path(filepath).name}: {error}")
+        else:
+            for filepath, error in result.errors[:3]:
+                print(f"  - {Path(filepath).name}: {error}")
+            print(f"  ... and {len(result.errors) - 3} more errors")
 
 
 if __name__ == '__main__':

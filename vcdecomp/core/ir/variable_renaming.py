@@ -128,6 +128,52 @@ class VariableRenamer:
         if heritage_metadata and "variables" in heritage_metadata:
             self._heritage_vars = heritage_metadata["variables"]
 
+        # Pre-built indices for O(1) lookups (built in _build_indices)
+        self._mnemonic_index: Dict[str, List] = {}
+        self._value_uses: Dict[str, List[Tuple]] = {}
+        self._var_instructions: Dict[str, List] = {}
+        self._addr_index: Dict[int, Any] = {}
+
+    def _build_indices(self):
+        """
+        Build O(1) lookup indices for all analysis methods.
+
+        This replaces O(n²) patterns where we iterate over all blocks for each variable.
+        Instead, we build indices ONCE in O(n) time, then use O(1) lookups during analysis.
+
+        Indices built:
+        - _mnemonic_index: mnemonic → list of SSAInstructions (for finding all PNT, XCALL, INC, etc.)
+        - _value_uses: SSA value name → list of (instruction, input_index) tuples
+        - _var_instructions: variable name → list of instructions that use/define it
+        - _addr_index: address → SSAInstruction (for O(1) lookup by address)
+        """
+        self._mnemonic_index = defaultdict(list)
+        self._value_uses = defaultdict(list)
+        self._var_instructions = defaultdict(list)
+        self._addr_index = {}
+
+        for block_id in self.func_block_ids:
+            for inst in self.ssa_func.instructions.get(block_id, []):
+                # Index by mnemonic
+                self._mnemonic_index[inst.mnemonic].append(inst)
+
+                # Index by address
+                self._addr_index[inst.address] = inst
+
+                # Index by input value name and variable name
+                for i, inp in enumerate(inst.inputs):
+                    if inp.name:
+                        self._value_uses[inp.name].append((inst, i))
+                    var_name = self._extract_local_name(inp)
+                    if var_name:
+                        self._var_instructions[var_name].append(inst)
+
+                # Also index outputs for completeness
+                for output in inst.outputs:
+                    var_name = self._extract_local_name(output)
+                    if var_name:
+                        self._var_instructions[var_name].append(inst)
+
     def analyze_and_rename(self) -> Dict[str, str]:
         """
         Hlavní entry point.
@@ -135,6 +181,10 @@ class VariableRenamer:
         Returns:
             Dict mapující původní alias (local_2) → nový název (sideA, i, tmp)
         """
+        # Krok 0: Build indices ONCE for O(1) lookups in analysis methods
+        # This replaces O(n²) patterns with O(n) build + O(1) lookups
+        self._build_indices()
+
         # Krok 1: Detekuj verze proměnných
         self._detect_variable_versions()
 
@@ -165,6 +215,9 @@ class VariableRenamer:
         # Procházej bloky v topologickém pořadí
         for block_id in sorted(self.func_block_ids):
             ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+
+            # Build address-to-instruction index for O(1) lookup of next instruction
+            addr_to_inst = {inst.address: inst for inst in ssa_instrs}
 
             for inst in ssa_instrs:
                 addr = inst.address
@@ -205,12 +258,8 @@ class VariableRenamer:
                         is_address_for_write = False
 
                         if inst.mnemonic == 'LADR':
-                            # Find next instruction
-                            next_inst = None
-                            for future_inst in ssa_instrs:
-                                if future_inst.address == addr + 1:
-                                    next_inst = future_inst
-                                    break
+                            # Find next instruction using index for O(1) lookup
+                            next_inst = addr_to_inst.get(addr + 1)
 
                             if next_inst:
                                 mnem = str(next_inst.mnemonic).strip()
@@ -553,6 +602,9 @@ class VariableRenamer:
         - Použita jen 1-2x → temp
         - První dvě verze v blízké vzdálenosti → pravděpodobně sideA/sideB pattern
         - FIX #5 Phase 2: Passed to function expecting struct → struct_value
+
+        NOTE: Performance is now O(n) thanks to pre-built indices in _build_indices().
+        The old O(n²) workaround that skipped analysis for large functions has been removed.
         """
         # First pass: Detect struct types from function calls
         self._detect_struct_types()
@@ -564,6 +616,7 @@ class VariableRenamer:
 
             for ver in versions:
                 # Check semantic type from usage patterns (even for single-version vars!)
+                # Now efficient for all function sizes thanks to pre-built indices
                 ver.semantic_type = self._guess_semantic_type(var_name, ver)
 
     def _is_used_in_field_access(self, ssa_value_name: str) -> bool:
@@ -574,23 +627,24 @@ class VariableRenamer:
         If a variable is used for field access (e.g., ai_props.watchfulness), it should keep
         its semantic name to maintain code readability.
 
+        Uses pre-built _mnemonic_index for O(1) lookup of PNT instructions instead of
+        iterating over all blocks.
+
         Args:
             ssa_value_name: SSA value name to check (e.g., "t456_0")
 
         Returns:
             True if this value is used as base pointer in PNT operations
         """
-        for block_id in self.func_block_ids:
-            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
-            for inst in ssa_instrs:
-                if inst.mnemonic == "PNT":
-                    # PNT (pointer + offset) indicates struct field access
-                    # Check if this value is the base pointer (first input)
-                    if inst.inputs and len(inst.inputs) > 0:
-                        base_input = inst.inputs[0]
-                        # Check both name and alias
-                        if base_input.name == ssa_value_name or base_input.alias == ssa_value_name:
-                            return True
+        # Use mnemonic index to get only PNT instructions - O(1) lookup
+        for inst in self._mnemonic_index.get('PNT', []):
+            # PNT (pointer + offset) indicates struct field access
+            # Check if this value is the base pointer (first input)
+            if inst.inputs and len(inst.inputs) > 0:
+                base_input = inst.inputs[0]
+                # Check both name and alias
+                if base_input.name == ssa_value_name or base_input.alias == ssa_value_name:
+                    return True
         return False
 
     def _is_asp_allocated_counter(self, var_name: str, ver: VariableVersion) -> bool:
@@ -606,6 +660,8 @@ class VariableRenamer:
         This pattern is common when the compiler allocates a loop counter
         using ASP instruction instead of using pre-existing local variables.
 
+        Uses pre-built indices for O(1) lookups instead of iterating over all blocks.
+
         Args:
             var_name: Variable name to check
             ver: Variable version
@@ -613,32 +669,34 @@ class VariableRenamer:
         Returns:
             True if this appears to be an ASP-allocated loop counter
         """
-        # Look for ASP instruction near first_def
         asp_found = False
         inc_dec_found = False
         comparison_found = False
 
-        for block_id in self.func_block_ids:
-            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
-            for inst in ssa_instrs:
-                # Check for ASP near first_def (within 10 instructions before)
-                if inst.mnemonic == 'ASP':
-                    if ver.first_def - 10 <= inst.address <= ver.first_def:
-                        asp_found = True
+        # Check ASP instructions near first_def using mnemonic index
+        for inst in self._mnemonic_index.get('ASP', []):
+            if ver.first_def - 10 <= inst.address <= ver.first_def:
+                asp_found = True
+                break
 
-                # Check for INC/DEC of this variable
-                if inst.mnemonic in {'INC', 'DEC'}:
-                    for output in inst.outputs:
-                        extracted = self._extract_local_name(output)
-                        if extracted == var_name:
-                            inc_dec_found = True
+        # Check INC/DEC of this variable using mnemonic index
+        for mnemonic in ('INC', 'DEC'):
+            for inst in self._mnemonic_index.get(mnemonic, []):
+                for output in inst.outputs:
+                    if self._extract_local_name(output) == var_name:
+                        inc_dec_found = True
+                        break
+                if inc_dec_found:
+                    break
+            if inc_dec_found:
+                break
 
-                # Check for comparison operations
-                if inst.mnemonic in {'ULE', 'UGE', 'ULT', 'UGT', 'ILE', 'IGE', 'ILT', 'IGT', 'EQU', 'NEQ'}:
-                    for inp in inst.inputs:
-                        extracted = self._extract_local_name(inp)
-                        if extracted == var_name:
-                            comparison_found = True
+        # Check comparison operations using var_instructions index
+        comparison_mnemonics = {'ULE', 'UGE', 'ULT', 'UGT', 'ILE', 'IGE', 'ILT', 'IGT', 'EQU', 'NEQ'}
+        for inst in self._var_instructions.get(var_name, []):
+            if inst.mnemonic in comparison_mnemonics:
+                comparison_found = True
+                break
 
         # ASP + (INC/DEC) + comparison = likely loop counter
         return asp_found and inc_dec_found and comparison_found
@@ -653,6 +711,8 @@ class VariableRenamer:
         - side_value: Přiřazeno z .side nebo .field2 struktury
         - temp: Použito jen 1-2x
         - general: Default
+
+        Uses pre-built indices for O(1) lookups instead of O(n²) iteration.
         """
         # FIX #5 Phase 2: Check if struct type was detected
         if ver.struct_type:
@@ -672,29 +732,21 @@ class VariableRenamer:
         if self._is_asp_allocated_counter(var_name, ver):
             return "loop_counter"
 
-        # Prozkoumej instrukce mezi first_def a last_use
+        # Collect uses of this variable using pre-built index - O(uses) instead of O(blocks × instructions)
         uses = []
         mnemonics_used = []
 
-        # FIX #5 Phase 2: Handle PHI nodes with negative addresses
-        # PHI nodes have negative addresses, so we can't use simple range check
-        # Instead, collect ALL uses of this variable within the function
-        for block_id in self.func_block_ids:
-            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
-            for inst in ssa_instrs:
-                # Skip PHI nodes for mnemonic analysis (they don't represent real operations)
-                if inst.mnemonic == 'PHI':
-                    continue
+        for inst in self._var_instructions.get(var_name, []):
+            # Skip PHI nodes for mnemonic analysis (they don't represent real operations)
+            if inst.mnemonic == 'PHI':
+                continue
 
-                # Check if this instruction uses the variable
-                for inp in inst.inputs:
-                    if self._extract_local_name(inp) == var_name:
-                        # For versioned variables, check if this is the right version
-                        # by checking if address is in reasonable range
-                        # (after first_def, allowing for negative last_use from PHI)
-                        if inst.address >= ver.first_def or (ver.last_use < 0 and inst.address >= 0):
-                            uses.append(inst)
-                            mnemonics_used.append(inst.mnemonic)
+            # For versioned variables, check if this is the right version
+            # by checking if address is in reasonable range
+            # (after first_def, allowing for negative last_use from PHI)
+            if inst.address >= ver.first_def or (ver.last_use < 0 and inst.address >= 0):
+                uses.append(inst)
+                mnemonics_used.append(inst.mnemonic)
 
         # Pattern 1: Loop counter detection
         # Check for INC/DEC instructions
@@ -725,77 +777,71 @@ class VariableRenamer:
 
         # Pattern 2: Side value detection (player_info.field2 → side)
         # MUST check BEFORE temp check! Many side values are used sparingly.
-        # For ASGN-based assignments, check the VALUE being assigned (inputs[0])
-        # For other assignments, check instructions near first_def
-        import sys
-        for block_id in self.func_block_ids:
-            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
-            for ssa_inst in ssa_instrs:
-                # If this is the ASGN that created this version, check instructions nearby
-                # to detect if value comes from struct field access
-                if ssa_inst.mnemonic == 'ASGN' and ssa_inst.address == ver.first_def:
-                    # Check instructions before ASGN for DCP/DLD loading from .side field
-                    # Pattern: LADR &player_info → PNT +8 → DCP → LADR &local_10 → ASGN
-                    for ssa_inst2 in ssa_instrs:
-                        # Check instructions within 5 addresses before ASGN
-                        if ssa_inst.address - 5 <= ssa_inst2.address < ssa_inst.address:
-                            # Look for struct access in ALL nearby instructions
-                            for val in ssa_inst2.outputs + ssa_inst2.inputs:
-                                if hasattr(val, 'alias') and val.alias:
-                                    # FIX P0.4.2: Remove hardcoded variable names, use only field patterns
-                                    if any(pattern in val.alias for pattern in ['.side', '.field2', '.field_2']):
-                                        return "side_value"
-
-                # Check instructions AT or NEAR first_def (within 3 instructions)
-                if abs(ssa_inst.address - ver.first_def) <= 3:
-                    # Pattern 1: DCP/DLD instruction that produces the value
-                    if ssa_inst.mnemonic in {'DCP', 'DLD', 'ILD', 'CLD', 'SLD'}:
-                        # FIX P0.4.2: Check previous instruction to distinguish:
-                        # - PNT (struct.field) → TRUE side value
-                        # - DADR (pointer->field) → FALSE POSITIVE, skip
-                        prev_inst = None
-                        for prev_candidate in ssa_instrs:
-                            if prev_candidate.address == ssa_inst.address - 1:
-                                prev_inst = prev_candidate
-                                break
-
-                        # Only detect as side_value if preceded by PNT (struct field access)
-                        if prev_inst and prev_inst.mnemonic == 'PNT':
-                            # FIX P0.4.2: PNT + offset pattern = struct field access
-                            # Check if PNT has offset argument typical for .side/.field2 (offset 8)
-                            # Pattern: LADR &player_info → PNT +8 → DCP → ASGN
-                            pnt_offset = None
-                            if prev_inst.instruction and hasattr(prev_inst.instruction, 'instruction'):
-                                pnt_offset = prev_inst.instruction.instruction.arg1
-                            # Common field offsets: 8 (.side, .field2), 0 (first field), 4, 12, etc.
-                            # For now, accept offset 8 as strong indicator of side/field2
-                            if pnt_offset == 8:
+        # Use addr_index for O(1) lookup of instructions near first_def
+        first_def_inst = self._addr_index.get(ver.first_def)
+        if first_def_inst and first_def_inst.mnemonic == 'ASGN':
+            # Check instructions before ASGN for DCP/DLD loading from .side field
+            # Pattern: LADR &player_info → PNT +8 → DCP → LADR &local_10 → ASGN
+            for offset in range(1, 6):  # Check 5 addresses before ASGN
+                nearby_inst = self._addr_index.get(ver.first_def - offset)
+                if nearby_inst:
+                    # Look for struct access in ALL nearby instructions
+                    for val in nearby_inst.outputs + nearby_inst.inputs:
+                        if hasattr(val, 'alias') and val.alias:
+                            # FIX P0.4.2: Remove hardcoded variable names, use only field patterns
+                            if any(pattern in val.alias for pattern in ['.side', '.field2', '.field_2']):
                                 return "side_value"
-                        elif prev_inst and prev_inst.mnemonic == 'DADR':
-                            # This is pointer->field access (FALSE POSITIVE - skip)
-                            pass
-                        else:
-                            # No clear previous instruction or other pattern - check carefully
-                            for val in ssa_inst.outputs + ssa_inst.inputs:
-                                if hasattr(val, 'alias') and val.alias:
-                                    alias = val.alias
-                                    # Be MORE SPECIFIC - only exact field patterns with dots
-                                    if any(pattern in alias for pattern in ['.side', '.field2', '.field_2']):
-                                        return "side_value"
 
-                    # Pattern 2: Check if instruction has inputs from struct field
-                    for output in ssa_inst.outputs:
-                        extracted_name = self._extract_local_name(output)
-                        if extracted_name == var_name or (extracted_name and extracted_name.replace('&', '') == var_name):
-                            # This instruction produces our variable
-                            # Check its inputs for side-related aliases
-                            if ssa_inst.inputs:
-                                for inp in ssa_inst.inputs:
-                                    if hasattr(inp, 'alias') and inp.alias:
-                                        # FIX P0.4.2: Remove generic 'side' substring check
-                                        # Use only specific field patterns with dots
-                                        if '.side' in inp.alias or '.field2' in inp.alias or '.field_2' in inp.alias:
-                                            return "side_value"
+        # Check instructions AT or NEAR first_def (within 3 instructions)
+        for offset in range(-3, 4):
+            inst_at_offset = self._addr_index.get(ver.first_def + offset)
+            if not inst_at_offset:
+                continue
+
+            # Pattern 1: DCP/DLD instruction that produces the value
+            if inst_at_offset.mnemonic in {'DCP', 'DLD', 'ILD', 'CLD', 'SLD'}:
+                # FIX P0.4.2: Check previous instruction to distinguish:
+                # - PNT (struct.field) → TRUE side value
+                # - DADR (pointer->field) → FALSE POSITIVE, skip
+                prev_inst = self._addr_index.get(inst_at_offset.address - 1)
+
+                # Only detect as side_value if preceded by PNT (struct field access)
+                if prev_inst and prev_inst.mnemonic == 'PNT':
+                    # FIX P0.4.2: PNT + offset pattern = struct field access
+                    # Check if PNT has offset argument typical for .side/.field2 (offset 8)
+                    # Pattern: LADR &player_info → PNT +8 → DCP → ASGN
+                    pnt_offset = None
+                    if prev_inst.instruction and hasattr(prev_inst.instruction, 'instruction'):
+                        pnt_offset = prev_inst.instruction.instruction.arg1
+                    # Common field offsets: 8 (.side, .field2), 0 (first field), 4, 12, etc.
+                    # For now, accept offset 8 as strong indicator of side/field2
+                    if pnt_offset == 8:
+                        return "side_value"
+                elif prev_inst and prev_inst.mnemonic == 'DADR':
+                    # This is pointer->field access (FALSE POSITIVE - skip)
+                    pass
+                else:
+                    # No clear previous instruction or other pattern - check carefully
+                    for val in inst_at_offset.outputs + inst_at_offset.inputs:
+                        if hasattr(val, 'alias') and val.alias:
+                            alias = val.alias
+                            # Be MORE SPECIFIC - only exact field patterns with dots
+                            if any(pattern in alias for pattern in ['.side', '.field2', '.field_2']):
+                                return "side_value"
+
+            # Pattern 2: Check if instruction has inputs from struct field
+            for output in inst_at_offset.outputs:
+                extracted_name = self._extract_local_name(output)
+                if extracted_name == var_name or (extracted_name and extracted_name.replace('&', '') == var_name):
+                    # This instruction produces our variable
+                    # Check its inputs for side-related aliases
+                    if inst_at_offset.inputs:
+                        for inp in inst_at_offset.inputs:
+                            if hasattr(inp, 'alias') and inp.alias:
+                                # FIX P0.4.2: Remove generic 'side' substring check
+                                # Use only specific field patterns with dots
+                                if '.side' in inp.alias or '.field2' in inp.alias or '.field_2' in inp.alias:
+                                    return "side_value"
 
         # Pattern 3: Temp variable (used sparingly)
         if len(uses) <= 2:

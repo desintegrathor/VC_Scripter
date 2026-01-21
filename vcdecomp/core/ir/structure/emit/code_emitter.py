@@ -121,9 +121,11 @@ def _render_if_else_recursive(
         # Emit header code before the if statement
         lines.extend(header_code_lines)
 
-        # Mark all involved blocks (condition testing blocks) as emitted first
+        # Mark all involved blocks (condition testing blocks) as emitted and visited
+        # This prevents them from being re-processed as separate if/else patterns
         for involved_block in compound.involved_blocks:
             emitted_blocks.add(involved_block)
+            visited_ifs.add(involved_block)
 
         # Render the if statement with compound condition
         lines.append(f"{indent}if ({cond_text}) {{")

@@ -771,8 +771,11 @@ class ExpressionFormatter:
         """
         try:
             from .global_resolver import resolve_globals_with_types
-            # Get full GlobalUsage info (including types), pass symbol_db if available
-            global_type_info_bytes = resolve_globals_with_types(self._ssa_func, symbol_db=self.symbol_db)
+            # Cache the global resolution on the SSA function to avoid re-computing for every function
+            # This is expensive and the results are the same for all functions in the same file
+            if not hasattr(self._ssa_func, '_cached_global_type_info_bytes'):
+                self._ssa_func._cached_global_type_info_bytes = resolve_globals_with_types(self._ssa_func, symbol_db=self.symbol_db)
+            global_type_info_bytes = self._ssa_func._cached_global_type_info_bytes
 
             # Convert byte offsets to DWORD offsets for easier usage
             # GlobalResolver uses byte offsets (4, 1288, etc.), but stack_lifter generates
@@ -1140,6 +1143,34 @@ class ExpressionFormatter:
         context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
         parent_operator: Optional[str] = None
     ) -> str:
+        # CYCLE DETECTION: Prevent infinite recursion on circular PHI references
+        # PHI A → PHI B → PHI A would cause unbounded recursion without this check
+        # Uses the same _visiting set as _inline_expression for consistency
+        if value and value.name:
+            if value.name in self._visiting:
+                # Cycle detected - return the variable name or alias to break the loop
+                if value.alias:
+                    return value.alias
+                return value.name
+            self._visiting.add(value.name)
+        else:
+            # No value or no name - can't track, proceed without cycle detection
+            pass
+
+        try:
+            return self._render_value_impl(value, expected_type_str, context, parent_operator)
+        finally:
+            # Always remove from visiting set when done
+            if value and value.name and value.name in self._visiting:
+                self._visiting.discard(value.name)
+
+    def _render_value_impl(
+        self,
+        value: SSAValue,
+        expected_type_str: str = None,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
+        parent_operator: Optional[str] = None
+    ) -> str:
         # PRIORITY 0: Inline XCALL/CALL return values for nested function calls
         # This enables patterns like: SC_AnsiToUni(SC_P_GetName(x), y)
         # MUST come before rename_map check, otherwise t2998_ret gets renamed to tmp109
@@ -1168,7 +1199,10 @@ class ExpressionFormatter:
         # that should preserve the original variable name for proper struct type detection
         # FIX (01-20): Also skip rename_map for ADD values that are array indexing patterns
         # Pattern: ADD(GADR, MUL(...)) should be inlined as &array[index], not renamed to tmpN
+        # FIX (01-21): Skip rename_map for GCP values that load constants from data segment
+        # These should resolve to their actual constant values, not renamed tmpN variables
         is_ladr = value.producer_inst and value.producer_inst.mnemonic == "LADR"
+        is_gcp_constant = value.producer_inst and value.producer_inst.mnemonic == "GCP" and value.alias and value.alias.startswith("data_")
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1177,7 +1211,7 @@ class ExpressionFormatter:
             if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
                 if right.producer_inst and right.producer_inst.mnemonic == "MUL":
                     is_array_indexing = True
-        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing:
+        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing and not is_gcp_constant:
             return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
