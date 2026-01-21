@@ -1171,6 +1171,11 @@ class ExpressionFormatter:
         context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
         parent_operator: Optional[str] = None
     ) -> str:
+        # PRIORITY -1: Inline comparison operations when used in conditions
+        # This ensures "if (tmp)" becomes "if (x > y)" instead of variable name
+        if context == ExpressionContext.IN_CONDITION and value.producer_inst and value.producer_inst.mnemonic in COMPARISON_OPS:
+            return self._inline_expression(value, context, parent_operator)
+
         # PRIORITY 0: Inline XCALL/CALL return values for nested function calls
         # This enables patterns like: SC_AnsiToUni(SC_P_GetName(x), y)
         # MUST come before rename_map check, otherwise t2998_ret gets renamed to tmp109

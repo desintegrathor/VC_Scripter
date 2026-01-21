@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional, Set, Dict, Tuple
 
 from ...ssa import SSAFunction
-from ...expr import ExpressionFormatter
+from ...expr import ExpressionFormatter, COMPARISON_OPS
 from ....disasm import opcodes
 from ...parenthesization import ExpressionContext
 from ...cfg import CFG
@@ -53,6 +53,26 @@ def _extract_condition_from_block(
             for ssa_inst in ssa_block:
                 if ssa_inst.address == instr.address and ssa_inst.inputs:
                     cond_value = ssa_inst.inputs[0]
+
+                    # If condition comes from comparison operation, inline it
+                    if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
+                        cond_expr = formatter._inline_expression(
+                            cond_value,
+                            context=ExpressionContext.IN_CONDITION
+                        )
+                        return cond_expr
+
+                    # If condition is PHI, check if any input is a comparison
+                    if cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
+                        for phi_input in cond_value.producer_inst.inputs:
+                            if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
+                                cond_expr = formatter._inline_expression(
+                                    phi_input,
+                                    context=ExpressionContext.IN_CONDITION
+                                )
+                                return cond_expr
+
+                    # Fallback: use render_value
                     cond_expr = formatter.render_value(
                         cond_value,
                         context=ExpressionContext.IN_CONDITION
@@ -98,6 +118,26 @@ def _extract_condition_expr(
     for ssa_inst in ssa_block:
         if ssa_inst.address == instr_address and ssa_inst.inputs:
             cond_value = ssa_inst.inputs[0]
+
+            # If condition comes from comparison operation, inline it
+            if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
+                cond_expr = formatter._inline_expression(
+                    cond_value,
+                    context=ExpressionContext.IN_CONDITION
+                )
+                return cond_expr
+
+            # If condition is PHI, check if any input is a comparison
+            if cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
+                for phi_input in cond_value.producer_inst.inputs:
+                    if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
+                        cond_expr = formatter._inline_expression(
+                            phi_input,
+                            context=ExpressionContext.IN_CONDITION
+                        )
+                        return cond_expr
+
+            # Fallback: use render_value
             cond_expr = formatter.render_value(
                 cond_value,
                 context=ExpressionContext.IN_CONDITION
