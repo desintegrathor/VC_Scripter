@@ -15,6 +15,7 @@ import json
 import sys
 import io
 from pathlib import Path
+from typing import Optional
 
 from .core.disasm import Disassembler
 from .core.ir.cfg import build_cfg
@@ -523,6 +524,35 @@ def cmd_structure(args):
             size_dwords = item['val2']
             saveinfo_sizes[byte_offset] = size_dwords
 
+    from .core.headers.database import get_header_database
+    from .core.structures import get_struct_by_name
+    header_db = get_header_database()
+
+    def _format_dim_value(dim: int) -> str:
+        if header_db:
+            names = header_db.get_constant_names_by_value(dim)
+            if names:
+                max_names = [name for name in names if name.endswith("_MAX")]
+                return max_names[0] if max_names else names[0]
+        return str(dim)
+
+    def _infer_element_size(var_type: str) -> Optional[int]:
+        if var_type.endswith("*"):
+            return 4
+        struct_def = get_struct_by_name(var_type)
+        if struct_def:
+            return struct_def.size
+        type_sizes = {
+            "char": 1,
+            "short": 2,
+            "int": 4,
+            "float": 4,
+            "double": 8,
+            "dword": 4,
+            "BOOL": 4,
+        }
+        return type_sizes.get(var_type, None)
+
     # Generate global variable declarations
     if globals_usage:
         print("// Global variables")
@@ -565,42 +595,28 @@ def cmd_structure(args):
             size_dwords = saveinfo_sizes.get(offset, 1)
             is_array = size_dwords > 1
 
-            # FIX #7.1: Strip pointer suffix for array element types
-            # Type inference returns "float *" for GADR instructions (address-of operations)
-            # But for arrays, we want "float arr[64]" not "float * arr[64]"
             element_type = var_type
-            if is_array and element_type.endswith(" *"):
-                element_type = element_type[:-2]  # Remove " *" suffix
-            elif is_array and element_type.endswith("*"):
-                element_type = element_type[:-1]  # Remove "*" suffix
+            element_size = usage.array_element_size or _infer_element_size(element_type)
+
+            # Preserve pointer element types for pointer arrays
+            if is_array and element_type.endswith("*") and element_size and element_size != 4:
+                element_type = element_type.replace(" *", "").rstrip("*").strip()
+                element_size = _infer_element_size(element_type)
 
             # Format declaration
             if is_array:
-                # Array declaration: type name[size];
-                # Calculate element count based on element size
-                if "Timer" in var_name:
-                    # Float timer arrays - 1 float per element
-                    if element_type == "float" or "float" in element_type:
-                        array_size = size_dwords  # Each float is 1 dword
-                    else:
-                        array_size = size_dwords
-                elif var_name == "gRec":
-                    # s_SC_MP_Recover struct array
-                    # Each struct is 64 bytes = 16 dwords
-                    # SaveInfo shows 256 dwords total -> 256/4 = 64 elements (each element is 4 dwords? Wrong!)
-                    # Actually: SaveInfo is unreliable for struct size, use hardcoded REC_MAX = 64
-                    array_size = 64  # REC_MAX from original source
-                elif "SideFrags" in var_name:
-                    # Integer arrays - 1 int per element
-                    if element_type in ["int", "dword"]:
-                        array_size = size_dwords  # Each int/dword is 1 dword
-                    else:
-                        array_size = size_dwords
+                if usage.array_dimensions:
+                    dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in usage.array_dimensions)
+                    print(f"{element_type} {var_name}{dim_text};")
                 else:
-                    # Generic array - assume 1 element = 1 dword
+                    # Array declaration: type name[size];
                     array_size = size_dwords
+                    if element_size and element_size > 0:
+                        total_bytes = size_dwords * 4
+                        if total_bytes % element_size == 0:
+                            array_size = total_bytes // element_size
 
-                print(f"{element_type} {var_name}[{array_size}];")
+                    print(f"{element_type} {var_name}[{array_size}];")
             elif usage.is_array_base and usage.array_element_size:
                 # Fallback: use dynamic array detection (for scripts without SaveInfo)
                 array_size = 64  # Default estimate
