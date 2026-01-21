@@ -102,17 +102,12 @@ def _render_if_else_recursive(
             from ...expr import format_block_expressions
             header_exprs = format_block_expressions(ssa_func, header_block_id, formatter=formatter)
 
-            # Filter out comparison/jump expressions that are part of the compound condition
-            # These typically include EQU, JZ/JNZ instructions
-            # We want to keep XCALL, ASGN, and other "real" code
             for expr in header_exprs:
                 expr_text = expr.text.strip()
                 # Skip if it's a goto or empty
                 if expr_text.startswith("goto ") or not expr_text:
                     continue
-                # Skip if it's a simple comparison assignment (part of condition chain)
-                # Pattern: "tmp = value == constant;"
-                if " == " in expr_text and expr_text.endswith(";") and expr_text.count("=") == 2:
+                if expr.address in compound.condition_addrs:
                     continue
                 # Keep everything else (function calls, assignments, etc.)
                 header_code_lines.append(f"{indent}{expr_text}")

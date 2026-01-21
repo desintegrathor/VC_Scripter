@@ -18,7 +18,7 @@ from ...expr import ExpressionFormatter
 
 from .models import IfElsePattern, CompoundCondition
 from ..analysis.flow import _find_common_successor, _find_if_body_blocks
-from ..analysis.condition import _extract_condition_from_block, _collect_and_chain
+from ..analysis.condition import _collect_and_chain, render_condition
 
 
 def _detect_early_return_pattern(
@@ -143,12 +143,19 @@ def _detect_short_circuit_pattern(
 
     # Step 2: Extract conditions from each block in the AND chain
     and_conditions = []
+    and_condition_addrs: Set[int] = set()
     for block_id in and_blocks:
-        cond = _extract_condition_from_block(
-            block_id, ssa_func, formatter, cfg, resolver
+        condition_render = render_condition(
+            ssa_func,
+            block_id,
+            formatter,
+            cfg,
+            resolver,
+            negate=False
         )
-        if cond:
-            and_conditions.append(cond)
+        if condition_render.text:
+            and_conditions.append(condition_render.text)
+            and_condition_addrs.update(condition_render.addresses)
 
     if not and_conditions:
         return None
@@ -164,7 +171,8 @@ def _detect_short_circuit_pattern(
             conditions=and_conditions,
             true_target=true_target if true_target is not None else -1,
             false_target=false_target if false_target is not None else -1,
-            involved_blocks=set(and_blocks)
+            involved_blocks=set(and_blocks),
+            condition_addrs=set(and_condition_addrs)
         )
 
         # Calculate bodies for this AND compound
@@ -183,6 +191,7 @@ def _detect_short_circuit_pattern(
             true_target=true_target if true_target is not None else -1,
             false_target=false_target if false_target is not None else -1,
             involved_blocks=set(and_blocks),
+            condition_addrs=set(and_condition_addrs),
             true_body=true_body,
             false_body=false_body,
             merge_point=merge_point
@@ -190,6 +199,7 @@ def _detect_short_circuit_pattern(
     else:
         # Single condition - might still be part of OR
         and_compound = and_conditions[0]  # Just the string
+        and_condition_addrs = set(and_condition_addrs)
 
     # Step 4: Check if false_target leads to another OR branch
     if false_target is None or true_target is None:
@@ -212,18 +222,22 @@ def _detect_short_circuit_pattern(
         # Build OR compound
         or_conditions = []
         or_involved_blocks = set()
+        or_condition_addrs: Set[int] = set()
 
         # Add first AND branch
         if isinstance(and_compound, CompoundCondition):
             or_conditions.append(and_compound)
             or_involved_blocks.update(and_compound.involved_blocks)
+            or_condition_addrs.update(and_compound.condition_addrs)
         else:
             or_conditions.append(and_compound)
             or_involved_blocks.update(and_blocks)
+            or_condition_addrs.update(and_condition_addrs)
 
         # Add second AND branch (or more if recursively nested)
         or_conditions.append(next_branch)
         or_involved_blocks.update(next_branch.involved_blocks)
+        or_condition_addrs.update(next_branch.condition_addrs)
 
         # Create temporary OR compound to calculate bodies
         temp_or_compound = CompoundCondition(
@@ -231,7 +245,8 @@ def _detect_short_circuit_pattern(
             conditions=or_conditions,
             true_target=true_target,
             false_target=next_branch.false_target,  # Use last branch's false target
-            involved_blocks=or_involved_blocks
+            involved_blocks=or_involved_blocks,
+            condition_addrs=or_condition_addrs
         )
 
         # Calculate bodies for OR compound
@@ -250,6 +265,7 @@ def _detect_short_circuit_pattern(
             true_target=true_target,
             false_target=next_branch.false_target,  # Use last branch's false target
             involved_blocks=or_involved_blocks,
+            condition_addrs=or_condition_addrs,
             true_body=true_body,
             false_body=false_body,
             merge_point=merge_point
