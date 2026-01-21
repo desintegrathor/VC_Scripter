@@ -83,6 +83,7 @@ class CompoundCondition:
     true_target: int                       # Block to execute if TRUE
     false_target: int                      # Block to execute if FALSE
     involved_blocks: Set[int] = None      # All blocks involved in this compound condition
+    condition_addrs: Set[int] = None      # Addresses of SSA instructions forming the condition
 
     # Body tracking (added for proper nested if/else detection)
     true_body: Set[int] = None            # All blocks in TRUE branch body
@@ -92,6 +93,8 @@ class CompoundCondition:
     def __post_init__(self):
         if self.involved_blocks is None:
             self.involved_blocks = set()
+        if self.condition_addrs is None:
+            self.condition_addrs = set()
 
 
 @dataclass
