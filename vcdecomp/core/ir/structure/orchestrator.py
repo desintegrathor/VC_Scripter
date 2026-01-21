@@ -500,6 +500,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     emitted_ifs: Set[int] = set()       # Track which if/else patterns we've rendered
     emitted_blocks: Set[int] = set()    # Track all blocks we've rendered
     goto_targets: Set[int] = set()      # Track blocks referenced by goto statements (Pattern 1 fix)
+    skipped_orphan_blocks: Set[int] = set()  # FIX (01-21): Track orphaned blocks to filter gotos
 
     for idx, (addr, block_id, block) in enumerate(func_blocks):
         # Skip blocks that have already been rendered (unless they're goto targets - Pattern 1 fix)
@@ -517,6 +518,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     f"Skipping orphaned block {block_id} at address {addr} "
                     f"in function {func_name} - no predecessors (unreachable code)"
                 )
+                # FIX (01-21): Track this orphaned block so we can filter gotos to it
+                skipped_orphan_blocks.add(block_id)
                 continue
 
         # Skip blocks that are part of a switch pattern (except header)
@@ -599,7 +602,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             switch_line = f"{base_indent}switch ({switch.test_var}) {{"
             lines.append(switch_line)
             debug_print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'")
-            for case in switch.cases:
+            # FIX (01-21): Sort cases by value to ensure consistent ordering
+            for case in sorted(switch.cases, key=lambda c: c.value):
                 lines.append(f"{base_indent}case {case.value}:")
                 # Render all blocks in case body (sorted by address) with loop support
                 case_body_sorted = sorted(case.body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
@@ -1004,8 +1008,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     # Check if target block exists and is reachable
 
                     is_orphaned_target = False
+                    # FIX (01-21): First check the skipped_orphan_blocks set
+                    if target_block in skipped_orphan_blocks:
+                        is_orphaned_target = True
                     # Check if target_block is valid (>= 0) and exists in CFG
-                    if target_block < 0 or target_block not in cfg.blocks:
+                    elif target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
                     elif target_block not in func_block_ids:
@@ -1034,8 +1041,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     # Check if target block exists and is reachable
 
                     is_orphaned_target = False
+                    # FIX (01-21): First check the skipped_orphan_blocks set
+                    if target_block in skipped_orphan_blocks:
+                        is_orphaned_target = True
                     # Check if target_block is valid (>= 0) and exists in CFG
-                    if target_block < 0 or target_block not in cfg.blocks:
+                    elif target_block < 0 or target_block not in cfg.blocks:
                         # Target block doesn't exist - skip goto
                         is_orphaned_target = True
                     elif target_block not in func_block_ids:
@@ -1110,10 +1120,18 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 last_line_has_return = True
             break
 
+    # FIX (01-21): Check if ANY return statement exists in the function body
+    # This prevents synthesizing returns when the function already has proper return paths
+    any_return_exists = any(
+        'return ' in line or line.strip() == 'return;'
+        for line in lines[decl_insert_position:]  # Only check body, not signature/declarations
+        if line.strip() and not line.strip().startswith('//')
+    )
+
     # Add return statement if needed and not already present
     # FIX (06-05): Pattern 3 - Synthesize return values for non-void functions
     # Functions with non-void return type ending with bare "return;" crash SCMP.exe
-    if needs_return and not last_line_has_return:
+    if needs_return and not last_line_has_return and not any_return_exists:
         if return_value:
             lines.append(f"    return {return_value};")
         else:

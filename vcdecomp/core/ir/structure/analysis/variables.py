@@ -1017,21 +1017,31 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 debug_print(f"DEBUG variables.py: PHASE 5 DCE - Skipping unused temp from struct inference: {var_name}")
                 continue
 
-            # Only add if not already declared
-            if var_name not in var_types:
-                var_types[var_name] = struct_info.struct_type
-                debug_print(f"DEBUG variables.py: Added {struct_info.source} var {var_name} -> {struct_info.struct_type} (confidence={struct_info.confidence})")
-
-            # Also check if this variable has a semantic name and apply struct type there too
+            # FIX (01-21): When a variable has a semantic name, use ONLY the semantic name
+            # This prevents duplicate declarations like both "local_1" and "atg_settings"
+            # being declared as s_SC_MP_SRV_AtgSettings
+            semantic_name = None
             if hasattr(formatter, '_semantic_names'):
                 semantic_name = formatter._semantic_names.get(var_name)
-                if semantic_name and semantic_name not in var_types:
+
+            if semantic_name:
+                # Use semantic name instead of original local_X name
+                if semantic_name not in var_types:
                     var_types[semantic_name] = struct_info.struct_type
-                    debug_print(f"DEBUG variables.py: Added semantic name {semantic_name} (from {var_name}) -> {struct_info.struct_type}")
-                elif semantic_name and semantic_name in var_types and var_types[semantic_name] == 'int':
+                    debug_print(f"DEBUG variables.py: Added semantic name {semantic_name} (from {var_name}) -> {struct_info.struct_type} (confidence={struct_info.confidence})")
+                elif var_types[semantic_name] == 'int':
                     # Override int default with struct type
                     var_types[semantic_name] = struct_info.struct_type
                     debug_print(f"DEBUG variables.py: Updated semantic name {semantic_name} from int -> {struct_info.struct_type}")
+                # Remove the original local_X from var_types if it exists (prevent duplicate)
+                if var_name in var_types:
+                    del var_types[var_name]
+                    debug_print(f"DEBUG variables.py: Removed original {var_name} (using semantic name {semantic_name} instead)")
+            else:
+                # No semantic name - use original variable name
+                if var_name not in var_types:
+                    var_types[var_name] = struct_info.struct_type
+                    debug_print(f"DEBUG variables.py: Added {struct_info.source} var {var_name} -> {struct_info.struct_type} (confidence={struct_info.confidence})")
 
     # FIX (01-20): Apply XCALL return types to variables
     # This allows proper type inference for things like ushort* from SC_Wtxt

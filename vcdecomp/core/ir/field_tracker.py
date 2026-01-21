@@ -263,6 +263,39 @@ class FieldAccessTracker:
                         if base_var not in self.var_struct_types:
                             self.var_struct_types[base_var] = struct_type
                             self.var_struct_types[f"&{base_var}"] = struct_type
+
+                            # FIX (01-21): Also assign semantic name for struct variables
+                            # This ensures field accesses use the semantic name (atg_settings.field)
+                            # instead of the original name (local_1.field)
+                            STRUCT_TO_NAME = {
+                                "s_SC_P_Create": "pinfo",
+                                "s_SC_P_getinfo": "player_info",
+                                "s_SC_P_AI_props": "ai_props",
+                                "s_SC_OBJ_info": "obj_info",
+                                "s_SC_L_info": "level_info",
+                                "c_Vector3": "vec",
+                                "s_sphere": "sphere",
+                                "s_SC_MP_hud": "hudinfo",
+                                "s_SC_MP_Recover": "recover",
+                                "s_SC_MP_EnumPlayers": "enum_pl",
+                                "s_SC_MP_SRV_settings": "srv_settings",
+                                "s_SC_MP_SRV_AtgSettings": "atg_settings",
+                                "s_SC_HUD_MP_icon": "icon",
+                            }
+                            semantic_base = STRUCT_TO_NAME.get(struct_type)
+                            if semantic_base:
+                                # Generate unique name if needed (check for existing usage)
+                                if semantic_base in self.semantic_names.values():
+                                    # Name collision - add counter
+                                    counter = 2
+                                    while f"{semantic_base}{counter}" in self.semantic_names.values():
+                                        counter += 1
+                                    semantic_name = f"{semantic_base}{counter}"
+                                else:
+                                    semantic_name = semantic_base
+                                self.semantic_names[base_var] = semantic_name
+                                debug_print(f"DEBUG FieldTracker: Assigned semantic name {semantic_name} to {base_var}")
+
                             # DEBUG: Show which block this detection is from
                             block = self.ssa.cfg.blocks.get(block_id)
                             block_start = block.start if block else "?"
