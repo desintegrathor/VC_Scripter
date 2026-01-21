@@ -50,6 +50,24 @@ def _is_likely_float(val: int) -> bool:
     if 0 < val < 10:
         return False
 
+    # Known IEEE 754 float bit patterns (common game constants)
+    # These are recognized immediately without further heuristics
+    KNOWN_FLOAT_PATTERNS = {
+        0x3F800000,  # 1.0f
+        0x3F000000,  # 0.5f
+        0x40000000,  # 2.0f
+        0x40400000,  # 3.0f
+        0x40A00000,  # 5.0f
+        0x41200000,  # 10.0f
+        0x41F00000,  # 30.0f
+        0x42700000,  # 60.0f
+        0x42C80000,  # 100.0f
+        0xBF800000,  # -1.0f
+        0xC1200000,  # -10.0f
+    }
+    if (val & 0xFFFFFFFF) in KNOWN_FLOAT_PATTERNS:
+        return True
+
     # Vyloučíme hodnoty které vypadají jako adresy (zarovnané na 4)
     if val > 0x10000 and val % 4 == 0 and val < 0x3F000000:
         return False
@@ -207,6 +225,34 @@ UNARY_PREFIX = {
 }
 
 CAST_OPS = {"ITOF", "FTOI", "ITOD", "DTOI", "DTOF", "FTOD", "SCI", "SSI", "UCI", "USI"}
+
+# Float operation mnemonics that require float operand rendering
+FLOAT_OPS = {
+    "FADD", "FSUB", "FMUL", "FDIV",
+    "FLES", "FLEQ", "FGRE", "FGEQ", "FEQU", "FNEQ",
+    "FNEG",
+}
+
+# Double operation mnemonics that require double operand rendering
+DOUBLE_OPS = {
+    "DADD", "DSUB", "DMUL", "DDIV",
+    "DLES", "DLEQ", "DGRE", "DGEQ", "DEQU", "DNEQ",
+    "DNEG",
+}
+
+
+def _get_operand_type_from_mnemonic(mnemonic: str) -> Optional[str]:
+    """
+    Get expected operand type based on instruction mnemonic.
+
+    Float and double operations should render their operands as float/double
+    literals rather than raw integers.
+    """
+    if mnemonic in FLOAT_OPS:
+        return "float"
+    if mnemonic in DOUBLE_OPS:
+        return "double"
+    return None
 
 
 def _is_printable_ascii(s: str) -> bool:
@@ -2447,15 +2493,18 @@ class ExpressionFormatter:
             # Get operator for left/right children
             current_op = INFIX_OPS[inst.mnemonic]
 
+            # Determine expected operand type from mnemonic (float/double ops need typed operands)
+            operand_type = _get_operand_type_from_mnemonic(inst.mnemonic)
+
             # Render left operand with context
             left_inst = inst.inputs[0].producer_inst
             left_op = INFIX_OPS.get(left_inst.mnemonic) if left_inst else None
-            left_operand = self._render_value(inst.inputs[0], parent_operator=current_op)
+            left_operand = self._render_value(inst.inputs[0], expected_type_str=operand_type, parent_operator=current_op)
 
             # Render right operand with context
             right_inst = inst.inputs[1].producer_inst
             right_op = INFIX_OPS.get(right_inst.mnemonic) if right_inst else None
-            right_operand = self._render_value(inst.inputs[1], parent_operator=current_op)
+            right_operand = self._render_value(inst.inputs[1], expected_type_str=operand_type, parent_operator=current_op)
 
             # If left operand is address-like (&param_X or &local_X) and this might be broken PHI
             if (inst.inputs[0].alias and inst.inputs[0].alias.startswith("&") and
@@ -2545,8 +2594,10 @@ class ExpressionFormatter:
             # Use first 2 inputs as left and right operands
             # (inputs 2-3 are high dwords, handled internally by stack)
             current_op = INFIX_OPS.get(inst.mnemonic, inst.mnemonic)
-            left_operand = self._render_value(inst.inputs[0], parent_operator=current_op)
-            right_operand = self._render_value(inst.inputs[1], parent_operator=current_op)
+            # Double operations need double operand type for proper literal rendering
+            operand_type = _get_operand_type_from_mnemonic(inst.mnemonic)
+            left_operand = self._render_value(inst.inputs[0], expected_type_str=operand_type, parent_operator=current_op)
+            right_operand = self._render_value(inst.inputs[1], expected_type_str=operand_type, parent_operator=current_op)
 
             # Apply smart parenthesization
             left_inst = inst.inputs[0].producer_inst
