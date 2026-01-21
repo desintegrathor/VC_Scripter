@@ -8,7 +8,7 @@ by tracking the evaluation stack.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple, Callable
+from typing import Dict, List, Optional, Sequence, Set, Tuple, Callable
 import logging
 
 from ..loader.scr_loader import Instruction, SCRFile
@@ -661,3 +661,196 @@ def lift_function(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = Non
     for block_id in order:
         lifted[block_id] = lift_basic_block(block_id, cfg, resolver, phi_name_fn, scr)
     return cfg, lifted
+
+
+def lift_function_heritage(
+    scr: SCRFile,
+    resolver: Optional[opcodes.OpcodeResolver] = None,
+    space_filter: Optional[Set[str]] = None
+) -> Tuple[CFG, Dict[int, List[LiftedInstruction]]]:
+    """
+    Lift function with optional filtering by address space.
+
+    This variant of lift_function supports heritage-based SSA construction
+    by allowing filtering of which address spaces to process. This enables
+    incremental lifting where parameters are processed first, then stack
+    variables, then globals.
+
+    Args:
+        scr: SCR file to lift
+        resolver: Opcode resolver (optional)
+        space_filter: Optional set of address spaces to include.
+                      Valid values: "stack", "param", "global"
+                      If None, all spaces are included.
+
+    Returns:
+        Tuple of (CFG, lifted instructions by block)
+    """
+    resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
+    cfg = build_cfg(scr, resolver)
+    lifted: Dict[int, List[LiftedInstruction]] = {}
+    phi_counter = 0
+
+    def phi_name_fn(block_id: int, depth: int) -> str:
+        nonlocal phi_counter
+        name = f"phi_{block_id}_{depth}_{phi_counter}"
+        phi_counter += 1
+        return name
+
+    # Process ALL blocks in the CFG
+    order = sorted(cfg.blocks.keys())
+    for block_id in order:
+        block_lifted = lift_basic_block(block_id, cfg, resolver, phi_name_fn, scr)
+
+        # Apply space filter if provided
+        if space_filter is not None:
+            filtered = []
+            for inst in block_lifted:
+                mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
+                include = _should_include_instruction(mnemonic, inst.instruction, space_filter)
+                if include:
+                    filtered.append(inst)
+            lifted[block_id] = filtered
+        else:
+            lifted[block_id] = block_lifted
+
+    return cfg, lifted
+
+
+def _should_include_instruction(
+    mnemonic: str,
+    instruction: Instruction,
+    space_filter: Set[str]
+) -> bool:
+    """
+    Determine if an instruction should be included based on space filter.
+
+    Args:
+        mnemonic: Instruction mnemonic
+        instruction: The instruction
+        space_filter: Set of address spaces to include
+
+    Returns:
+        True if instruction operates on an included address space
+    """
+    # Stack operations (local variables)
+    stack_ops = {"LCP", "LLD", "LADR"}
+    if mnemonic in stack_ops:
+        offset = _to_signed(instruction.arg1)
+        if offset >= 0:  # Local stack variable
+            return "stack" in space_filter
+        elif offset < -2:  # Parameter
+            return "param" in space_filter
+        else:  # Return slot
+            return "stack" in space_filter
+
+    # Global operations
+    global_ops = {"GCP", "GLD", "GADR"}
+    if mnemonic in global_ops:
+        return "global" in space_filter
+
+    # All other instructions are always included
+    return True
+
+
+def collect_variable_definitions(
+    lifted: Dict[int, List[LiftedInstruction]],
+    resolver: opcodes.OpcodeResolver
+) -> Dict[str, Set[int]]:
+    """
+    Collect definition sites for each variable.
+
+    This information is used for PHI node placement in SSA construction.
+    A variable is defined when:
+    - LLD stores to a stack slot
+    - GLD stores to a global
+    - PHI at block entry merges values
+
+    Args:
+        lifted: Lifted instructions by block ID
+        resolver: Opcode resolver
+
+    Returns:
+        Dictionary mapping variable names to sets of block IDs where defined
+    """
+    var_defs: Dict[str, Set[int]] = {}
+
+    for block_id, insts in lifted.items():
+        for inst in insts:
+            mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
+
+            # LLD stores to stack variable
+            if mnemonic == "LLD":
+                offset = _to_signed(inst.instruction.arg1)
+                if offset >= 0:
+                    var_name = f"local_{offset}"
+                elif offset < -2:
+                    var_name = f"param_{abs(offset) - 3}"
+                else:
+                    continue  # Return slot
+
+                if var_name not in var_defs:
+                    var_defs[var_name] = set()
+                var_defs[var_name].add(block_id)
+
+            # GLD stores to global variable
+            elif mnemonic == "GLD":
+                offset = inst.instruction.arg1
+                var_name = f"data_{offset}"
+
+                if var_name not in var_defs:
+                    var_defs[var_name] = set()
+                var_defs[var_name].add(block_id)
+
+    return var_defs
+
+
+def collect_variable_uses(
+    lifted: Dict[int, List[LiftedInstruction]],
+    resolver: opcodes.OpcodeResolver
+) -> Dict[str, Set[int]]:
+    """
+    Collect use sites for each variable.
+
+    A variable is used when:
+    - LCP loads from a stack slot
+    - GCP loads from a global
+    - LADR/GADR takes address of variable
+
+    Args:
+        lifted: Lifted instructions by block ID
+        resolver: Opcode resolver
+
+    Returns:
+        Dictionary mapping variable names to sets of block IDs where used
+    """
+    var_uses: Dict[str, Set[int]] = {}
+
+    for block_id, insts in lifted.items():
+        for inst in insts:
+            mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
+
+            # LCP/LADR loads/references stack variable
+            if mnemonic in {"LCP", "LADR"}:
+                offset = _to_signed(inst.instruction.arg1)
+                if offset >= 0:
+                    var_name = f"local_{offset}"
+                elif offset < -2:
+                    var_name = f"param_{abs(offset) - 3}"
+                else:
+                    continue
+
+                if var_name not in var_uses:
+                    var_uses[var_name] = set()
+                var_uses[var_name].add(block_id)
+
+            # GCP/GADR loads/references global variable
+            elif mnemonic in {"GCP", "GADR"}:
+                offset = inst.instruction.arg1
+                var_name = f"data_{offset}"
+
+                if var_name not in var_uses:
+                    var_uses[var_name] = set()
+                var_uses[var_name].add(block_id)
+
+    return var_uses

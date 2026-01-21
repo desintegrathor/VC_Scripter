@@ -194,7 +194,7 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     return "\n".join(lines)
 
 
-def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal") -> str:
+def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal", heritage_metadata: Optional[Dict] = None) -> str:
     """
     Format structured output for a specific function with custom name and entry point.
 
@@ -205,6 +205,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         end_addr: End address of the function (optional, for linear output mode)
         function_bounds: Optional dict {func_name: (start_addr, end_addr)} for CALL resolution (FÁZE 4)
         style: Output verbosity - 'quiet' (no DEBUG), 'normal' (default), 'verbose' (full DEBUG)
+        heritage_metadata: Optional heritage SSA metadata from HeritageOrchestrator.get_heritage_metadata()
+                          Contains variable info and PHI placements for improved code generation.
 
     Uses per-function ExpressionFormatter with function boundaries for 100% reliable
     structure field detection. This ensures local_0 in different functions correctly
@@ -258,7 +260,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     except Exception as e:
         logger.debug(f"Quick type inference for PHI resolution failed: {e}")
 
-    renamer = VariableRenamer(ssa_func, func_block_ids, type_engine=quick_type_engine)
+    renamer = VariableRenamer(ssa_func, func_block_ids, type_engine=quick_type_engine, heritage_metadata=heritage_metadata)
     rename_map = renamer.analyze_and_rename()
 
     # PHASE 4: Compute liveness analysis for smart variable merging
@@ -293,7 +295,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # FÁZE 3.3: Pass parameter info for correct aliasing
     # FÁZE 4: Pass function_bounds for CALL resolution
     # FIX 2: Pass rename_map for variable collision resolution
-    formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds, rename_map=rename_map)
+    # Heritage: Pass heritage_metadata for improved variable names
+    formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds, rename_map=rename_map, heritage_metadata=heritage_metadata)
     ssa_blocks = ssa_func.instructions
 
     # UNIFIED TYPE TRACKER: Create tracker for coordinating declarations with usage

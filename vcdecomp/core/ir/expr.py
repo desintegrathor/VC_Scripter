@@ -248,7 +248,7 @@ class FormattedExpression:
 
 
 class ExpressionFormatter:
-    def __init__(self, ssa: SSAFunction, func_start: int = None, func_end: int = None, func_name: str = None, symbol_db=None, func_signature=None, function_bounds=None, rename_map: Dict[str, str] = None):
+    def __init__(self, ssa: SSAFunction, func_start: int = None, func_end: int = None, func_name: str = None, symbol_db=None, func_signature=None, function_bounds=None, rename_map: Dict[str, str] = None, heritage_metadata: Optional[Dict] = None):
         """
         Initialize expression formatter.
 
@@ -261,6 +261,7 @@ class ExpressionFormatter:
             func_signature: Optional FunctionSignature for parameter name mapping (FÁZE 3.3)
             function_bounds: Optional dict {func_name: (start_addr, end_addr)} for CALL resolution (FÁZE 4)
             rename_map: Optional dict mapping SSA value names → final names (FIX 2 - Variable Collision Resolution)
+            heritage_metadata: Optional heritage SSA metadata for improved variable resolution
 
         When func_start and func_end are provided, structure type detection
         is limited to blocks within that range. This ensures 100% reliable
@@ -350,6 +351,11 @@ class ExpressionFormatter:
         # This is set by the orchestrator after SSA pattern analysis
         self._type_tracker = None
 
+        # Heritage SSA metadata for improved variable resolution
+        # Contains variable info and PHI placements from multi-pass heritage analysis
+        self._heritage_metadata = heritage_metadata or {}
+        self._heritage_vars = heritage_metadata.get("variables", {}) if heritage_metadata else {}
+
         # Initialize DataResolver for type-aware data segment reading
         # FIXED (Phase 1): Create DataResolver even if _global_type_info is empty
         # The DataResolver can still use heuristic float detection for constants
@@ -414,6 +420,40 @@ class ExpressionFormatter:
 
         # Fallback to generic notation
         return f"field_{offset}"
+
+    def _get_heritage_type(self, var_name: str) -> Optional[str]:
+        """
+        Get type information from heritage metadata for a variable.
+
+        Heritage SSA provides type information discovered through multi-pass
+        analysis that may be more accurate than single-pass inference.
+
+        Args:
+            var_name: Variable name (e.g., "local_8", "param_0")
+
+        Returns:
+            Type name string if heritage has type info, None otherwise.
+        """
+        if not self._heritage_vars or var_name not in self._heritage_vars:
+            return None
+
+        heritage_info = self._heritage_vars[var_name]
+        heritage_type = heritage_info.get("type", "UNKNOWN")
+
+        if heritage_type == "UNKNOWN":
+            return None
+
+        # Map heritage type names to C type names
+        type_map = {
+            "INT": "int",
+            "FLOAT": "float",
+            "DOUBLE": "double",
+            "POINTER": "void*",
+            "CHAR": "char",
+            "SHORT": "short",
+        }
+
+        return type_map.get(heritage_type, None)
 
     def set_type_tracker(self, tracker):
         """

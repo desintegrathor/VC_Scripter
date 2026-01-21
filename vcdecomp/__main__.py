@@ -253,6 +253,12 @@ Příklady:
         default='normal',
         help='Output verbosity: quiet (no debug), normal (default), verbose (full debug)'
     )
+    p_structure.add_argument(
+        '--incremental',
+        action='store_true',
+        default=False,
+        help='Use multi-pass heritage SSA for improved quality (experimental)'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -439,7 +445,7 @@ def cmd_structure(args):
     """Strukturovaný výstup - dekompilace všech funkcí"""
     from .core.loader import SCRFile
     from .core.ir.structure import format_structured_function_named
-    from .core.ir.ssa import build_ssa_all_blocks
+    from .core.ir.ssa import build_ssa_all_blocks, build_ssa_incremental
     from .core.headers.detector import generate_include_block
     from .core.ir.global_resolver import GlobalResolver
     from .core.ir.debug_output import set_debug_enabled
@@ -454,8 +460,21 @@ def cmd_structure(args):
     # Use RET-based function detection to prevent unreachable code
     func_bounds = disasm.get_function_boundaries_v2()
 
-    # Vždy zpracuj všechny funkce (--all je nyní výchozí)
-    ssa_func = build_ssa_all_blocks(scr)
+    # Build SSA - use incremental heritage-based SSA if requested
+    incremental = getattr(args, 'incremental', False)
+    heritage_metadata = None
+    if incremental:
+        # Use multi-pass heritage SSA for improved quality
+        # Request heritage metadata for improved code generation
+        ssa_func, heritage_metadata = build_ssa_incremental(scr, return_metadata=True)
+        if style != 'quiet':
+            print(f"// Using incremental heritage SSA construction", file=sys.stderr)
+            print(f"// Heritage: {len(heritage_metadata.get('variables', {}))} variables, "
+                  f"{sum(len(v) for v in heritage_metadata.get('phi_blocks', {}).values())} PHI nodes",
+                  file=sys.stderr)
+    else:
+        # Traditional SSA construction
+        ssa_func = build_ssa_all_blocks(scr)
 
     print(f"// Structured decompilation of {args.file}")
     print(f"// Functions: {len(func_bounds)}")
@@ -573,8 +592,9 @@ def cmd_structure(args):
     # Zpracuj funkce v pořadí podle adresy
     # FÁZE 4: Pass function_bounds for CALL instruction resolution
     # FÁZE 2 (--style): Pass style parameter for debug output control (style already set above)
+    # Heritage: Pass heritage_metadata for improved variable names when using --incremental
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-        text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds, style=style)
+        text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds, style=style, heritage_metadata=heritage_metadata)
         print(text)
         print()
 

@@ -1,16 +1,34 @@
 """
 SSA graph construction on top of lifted stack values.
+
+This module provides two modes of SSA construction:
+
+1. Traditional SSA (build_ssa):
+   - Full reconstruction on every call
+   - Implicit PHI placement based on stack state divergence
+   - Simple t{address}_{index} versioning
+
+2. Heritage-based Incremental SSA (build_ssa_incremental):
+   - Ghidra-style multi-pass construction
+   - Explicit PHI placement using dominance frontiers
+   - Better variable splitting and type inference
+   - Improved dead code elimination
+
+For best results, use build_ssa_incremental for complex scripts.
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from ..loader.scr_loader import SCRFile
 from ..disasm import opcodes
-from .cfg import CFG
+from .cfg import CFG, _compute_dominance_frontiers
 from .stack_lifter import lift_function, LiftedInstruction, StackValue
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -258,3 +276,53 @@ def _propagate_types(resolver: opcodes.OpcodeResolver, instructions: Dict[int, L
                         if val.value_type == opcodes.ResultType.UNKNOWN:
                             val.value_type = operand_type
                             changed = True
+
+
+def build_ssa_incremental(scr: SCRFile, max_passes: int = 5, return_metadata: bool = False):
+    """
+    Build SSA using multi-pass heritage for improved quality.
+
+    This function uses Ghidra-style heritage SSA construction which:
+    1. Processes variables incrementally across multiple passes
+    2. Uses dominance frontiers for precise PHI placement
+    3. Discovers variable reuse (same slot, different semantics)
+    4. Improves type inference through multiple refinement passes
+    5. Performs dead code elimination after each pass
+
+    This produces higher-quality SSA compared to the traditional build_ssa
+    function, especially for complex scripts with many variables.
+
+    Args:
+        scr: The SCR file to decompile
+        max_passes: Maximum number of heritage passes (default 5)
+        return_metadata: If True, return (SSAFunction, heritage_metadata) tuple
+
+    Returns:
+        SSAFunction with incrementally constructed SSA form
+        If return_metadata=True: Tuple[SSAFunction, Dict] with heritage metadata
+    """
+    from .heritage import HeritageOrchestrator
+
+    resolver = getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
+    cfg, _ = lift_function(scr, resolver)
+
+    # Ensure dominance frontiers are computed
+    if not cfg.dominance_frontiers:
+        _compute_dominance_frontiers(cfg)
+
+    logger.debug(f"Building incremental SSA with max_passes={max_passes}")
+
+    orchestrator = HeritageOrchestrator(scr, cfg, max_passes)
+    ssa_func = orchestrator.build_incremental_ssa()
+
+    stats = orchestrator.get_heritage_stats()
+    logger.debug(
+        f"Heritage SSA complete: {stats['passes']} passes, "
+        f"{stats['total_variables']} variables, {stats['phi_nodes']} PHI nodes"
+    )
+
+    if return_metadata:
+        heritage_metadata = orchestrator.get_heritage_metadata()
+        return ssa_func, heritage_metadata
+
+    return ssa_func

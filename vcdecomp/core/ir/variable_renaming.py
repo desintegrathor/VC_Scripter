@@ -6,7 +6,7 @@ a rozdělí ji na více pojmenovaných proměnných (sideA, sideB, i, j, tmp, ..
 """
 
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from collections import defaultdict
 import re
@@ -103,10 +103,11 @@ class VariableRenamer:
     4. Vygeneruj nové jméno podle typu
     """
 
-    def __init__(self, ssa_func: SSAFunction, func_block_ids: Set[int], type_engine=None):
+    def __init__(self, ssa_func: SSAFunction, func_block_ids: Set[int], type_engine=None, heritage_metadata: Optional[Dict] = None):
         self.ssa_func = ssa_func
         self.func_block_ids = func_block_ids
         self.type_engine = type_engine  # Optional TypeInferenceEngine for PHI resolution
+        self.heritage_metadata = heritage_metadata  # Optional heritage SSA metadata for improved naming
 
         # Trackování verzí
         self.variable_versions: Dict[str, List[VariableVersion]] = defaultdict(list)
@@ -121,6 +122,11 @@ class VariableRenamer:
             'side_value': 0,    # sideA, sideB
             'temp': 0,          # tmp, tmp1, tmp2
         }
+
+        # Heritage variable info (extracted from heritage_metadata)
+        self._heritage_vars: Dict[str, Dict] = {}
+        if heritage_metadata and "variables" in heritage_metadata:
+            self._heritage_vars = heritage_metadata["variables"]
 
     def analyze_and_rename(self) -> Dict[str, str]:
         """
@@ -803,11 +809,95 @@ class VariableRenamer:
             # Always use semantic type to generate names
             # Even single-version variables can be side_value, loop_counter, etc.
             for ver in versions:
+                # Heritage SSA: Check if heritage metadata provides a preferred name
+                heritage_name = self._get_heritage_name(var_name, ver)
+                if heritage_name:
+                    ver.assigned_name = heritage_name
                 # Generate name based on semantic type, or keep original for "general" type
-                if ver.semantic_type == "general" and len(versions) == 1:
+                elif ver.semantic_type == "general" and len(versions) == 1:
                     ver.assigned_name = var_name
                 else:
                     ver.assigned_name = self._generate_name(ver)
+
+    def _get_heritage_name(self, var_name: str, ver: VariableVersion) -> Optional[str]:
+        """
+        Get variable name from heritage metadata if available.
+
+        Heritage SSA provides better variable discovery through multi-pass analysis.
+        This method checks if a heritage-discovered name should be used instead of
+        the generic naming scheme.
+
+        Args:
+            var_name: Original variable name (e.g., "local_8")
+            ver: VariableVersion with semantic type info
+
+        Returns:
+            Heritage-derived name if available and appropriate, None otherwise.
+        """
+        if not self._heritage_vars:
+            return None
+
+        # Check if heritage has info for this variable
+        if var_name not in self._heritage_vars:
+            return None
+
+        heritage_info = self._heritage_vars[var_name]
+        heritage_type = heritage_info.get("type", "UNKNOWN")
+        heritage_space = heritage_info.get("space", "STACK")
+
+        # For parameters, heritage provides better tracking
+        if heritage_space == "PARAM":
+            # Use param_N naming which is clearer
+            return f"param_{abs(heritage_info.get('offset', 0)) - 3}"
+
+        # If heritage detected specific type, use that to generate better name
+        if heritage_type != "UNKNOWN":
+            # Generate type-based names for stack variables
+            if heritage_space == "STACK":
+                if heritage_type == "FLOAT":
+                    return self._generate_heritage_float_name()
+                elif heritage_type == "POINTER":
+                    return self._generate_heritage_pointer_name()
+                # INT and other types: let semantic analysis decide
+                # by returning None
+
+        return None
+
+    def _generate_heritage_float_name(self) -> str:
+        """
+        Generate a name for a heritage-detected float variable.
+
+        Returns names like: f, f1, f2, time, dist, etc.
+        """
+        # Use a counter for float variables if not already initialized
+        if not hasattr(self, '_heritage_float_counter'):
+            self._heritage_float_counter = 0
+
+        idx = self._heritage_float_counter
+        self._heritage_float_counter += 1
+
+        float_names = ['f', 'f1', 'f2', 'f3']
+        if idx < len(float_names):
+            return float_names[idx]
+        return f"f{idx}"
+
+    def _generate_heritage_pointer_name(self) -> str:
+        """
+        Generate a name for a heritage-detected pointer variable.
+
+        Returns names like: ptr, ptr1, obj, etc.
+        """
+        # Use a counter for pointer variables if not already initialized
+        if not hasattr(self, '_heritage_ptr_counter'):
+            self._heritage_ptr_counter = 0
+
+        idx = self._heritage_ptr_counter
+        self._heritage_ptr_counter += 1
+
+        ptr_names = ['ptr', 'ptr1', 'ptr2', 'obj']
+        if idx < len(ptr_names):
+            return ptr_names[idx]
+        return f"ptr{idx}"
 
     def _generate_name(self, ver: VariableVersion) -> str:
         """Vygeneruj pojmenování pro verzi."""

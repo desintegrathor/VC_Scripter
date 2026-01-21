@@ -32,6 +32,7 @@ class CFG:
     idom: Dict[int, int] = field(default_factory=dict)
     dom_tree: Dict[int, List[int]] = field(default_factory=dict)
     dom_order: List[int] = field(default_factory=list)
+    dominance_frontiers: Dict[int, Set[int]] = field(default_factory=dict)
 
     def get_block(self, block_id: int) -> BasicBlock:
         return self.blocks[block_id]
@@ -246,6 +247,99 @@ def _compute_dominators(cfg: CFG) -> None:
     cfg.idom = idom
     cfg.dom_tree = dom_tree
     cfg.dom_order = dom_order
+
+    # Compute dominance frontiers after dominators are available
+    _compute_dominance_frontiers(cfg)
+
+
+def _compute_dominance_frontiers(cfg: CFG) -> None:
+    """
+    Compute dominance frontiers using standard algorithm.
+
+    DF(n) = {y : ∃ pred p of y where n dom p but n !sdom y}
+
+    A block y is in the dominance frontier of block n if:
+    1. n dominates some predecessor p of y, AND
+    2. n does NOT strictly dominate y (n != y's immediate dominator chain)
+
+    This is used for SSA PHI node placement: a PHI is needed at each
+    dominance frontier of any block that contains a definition.
+    """
+    # Initialize empty frontiers for all blocks
+    for block_id in cfg.blocks:
+        cfg.dominance_frontiers[block_id] = set()
+
+    # For each join point (block with 2+ predecessors), walk up
+    # each predecessor's dominator chain until we reach the immediate
+    # dominator of the join point. Each block on this path has the
+    # join point in its dominance frontier.
+    for block_id, block in cfg.blocks.items():
+        if len(block.predecessors) < 2:
+            # Not a join point - no DF contribution from this block
+            continue
+
+        block_idom = cfg.idom.get(block_id)
+
+        for pred in block.predecessors:
+            if pred not in cfg.blocks:
+                continue
+
+            runner = pred
+            # Walk up dominator tree from pred until we reach block's idom
+            # (or the entry block which dominates itself)
+            visited = set()  # Prevent infinite loops in malformed CFGs
+            while runner != block_idom and runner not in visited:
+                visited.add(runner)
+                cfg.dominance_frontiers[runner].add(block_id)
+
+                # Move to immediate dominator
+                next_runner = cfg.idom.get(runner)
+                if next_runner is None or next_runner == runner:
+                    break
+                runner = next_runner
+
+
+def get_iterated_dominance_frontier(cfg: CFG, def_blocks: Set[int]) -> Set[int]:
+    """
+    Compute the iterated dominance frontier (DF+) for PHI node placement.
+
+    The iterated dominance frontier is the closure of the dominance frontier
+    operation. If a PHI is placed at block B, then B becomes a new definition
+    site, potentially requiring more PHIs at B's dominance frontier.
+
+    This is the standard algorithm for determining where PHI nodes are needed
+    in SSA construction.
+
+    Args:
+        cfg: Control flow graph with dominance frontiers computed
+        def_blocks: Set of blocks containing definitions of a variable
+
+    Returns:
+        Set of blocks where PHI nodes should be placed for this variable
+    """
+    if not cfg.dominance_frontiers:
+        # Frontiers not computed yet - compute them now
+        _compute_dominance_frontiers(cfg)
+
+    result: Set[int] = set()
+    worklist = set(def_blocks)
+    processed: Set[int] = set()
+
+    while worklist:
+        block = worklist.pop()
+        if block in processed:
+            continue
+        processed.add(block)
+
+        # Add all blocks in this block's dominance frontier
+        for frontier_block in cfg.dominance_frontiers.get(block, set()):
+            if frontier_block not in result:
+                result.add(frontier_block)
+                # This frontier block is now a PHI location, which is also
+                # a definition - add it to worklist for further iteration
+                worklist.add(frontier_block)
+
+    return result
 
 
 def dominates(cfg: CFG, dominator: int, node: int) -> bool:
