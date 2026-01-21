@@ -529,11 +529,99 @@ class HeritageOrchestrator:
         if not self.ssa_func:
             return
 
-        # Type propagation
+        # Backward type propagation (infer from usage)
+        self._propagate_backward_types()
+
+        # Forward type propagation
         _propagate_types(self.resolver, self.ssa_func.instructions)
 
         # Dead code elimination
         self._eliminate_dead_code()
+
+    def _propagate_backward_types(self) -> None:
+        """
+        Backward type propagation: infer variable types from how they're used.
+
+        For each VariableInfo with UNKNOWN type, examine all instructions that
+        use that variable and infer type from operation requirements:
+        - IADD, ISUB, IMUL, etc. → INT
+        - FADD, FSUB, FMUL, etc. → FLOAT
+        - DADR, PNT → POINTER
+
+        This scans ALL blocks because use_blocks may not be fully populated
+        for parameters and some stack variables.
+        """
+        # Map mnemonic prefixes/names to required operand types
+        int_ops = {
+            'IADD', 'ISUB', 'IMUL', 'IDIV', 'IMOD', 'INEG', 'INC', 'DEC',
+            'IGT', 'IGE', 'ILT', 'ILE', 'UGT', 'UGE', 'ULT', 'ULE',
+            'ISHL', 'ISHR', 'IAND', 'IOR', 'IXOR', 'INOT',
+            'ITOF', 'ITOD', 'ITOS', 'ITOC',  # INT as input
+        }
+        float_ops = {
+            'FADD', 'FSUB', 'FMUL', 'FDIV', 'FNEG',
+            'FGT', 'FGE', 'FLT', 'FLE',
+            'FTOI', 'FTOD',  # FLOAT as input
+        }
+        double_ops = {
+            'DADD', 'DSUB', 'DMUL', 'DDIV', 'DNEG',
+            'DGT', 'DGE', 'DLT', 'DLE',
+            'DTOI', 'DTOF',  # DOUBLE as input
+        }
+        pointer_ops = {'DADR', 'PNT', 'ASGN'}  # ASGN first operand is pointer
+
+        # Build a map of variable name -> inferred type by scanning all blocks
+        # This handles cases where use_blocks is incomplete
+        var_inferred_type: Dict[str, opcodes.ResultType] = {}
+
+        for block_id, lifted_insts in self._lifted.items():
+            for inst in lifted_insts:
+                mnemonic = self.resolver.get_mnemonic(inst.instruction.opcode)
+
+                # Check each input for variable aliases
+                for inp in inst.inputs:
+                    if not inp.alias:
+                        continue
+
+                    # The alias may be the variable name directly
+                    var_name = inp.alias
+
+                    # Skip if we already inferred a type for this variable
+                    if var_name in var_inferred_type:
+                        continue
+
+                    # Skip if not a tracked variable
+                    if var_name not in self._variables:
+                        continue
+
+                    # Skip if variable already has a type
+                    if self._variables[var_name].value_type != opcodes.ResultType.UNKNOWN:
+                        continue
+
+                    # Infer type from operation
+                    inferred_type = None
+                    if mnemonic in int_ops:
+                        inferred_type = opcodes.ResultType.INT
+                    elif mnemonic in float_ops:
+                        inferred_type = opcodes.ResultType.FLOAT
+                    elif mnemonic in double_ops:
+                        inferred_type = opcodes.ResultType.DOUBLE
+                    elif mnemonic in pointer_ops:
+                        inferred_type = opcodes.ResultType.POINTER
+
+                    if inferred_type:
+                        var_inferred_type[var_name] = inferred_type
+                        logger.debug(
+                            f"Backward propagation: {var_name} → {inferred_type.name} "
+                            f"(from {mnemonic} in block {block_id})"
+                        )
+
+        # Apply inferred types
+        for var_name, inferred_type in var_inferred_type.items():
+            self._variables[var_name].value_type = inferred_type
+
+        if var_inferred_type:
+            logger.debug(f"Backward propagation resolved {len(var_inferred_type)} variable types")
 
     def _eliminate_dead_code(self) -> None:
         """
