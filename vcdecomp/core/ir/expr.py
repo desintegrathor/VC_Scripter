@@ -1207,6 +1207,12 @@ class ExpressionFormatter:
 
         return None
 
+    def _is_constant_array_notation(self, array_notation: str) -> bool:
+        """Check if array notation uses a constant index (e.g., arr[0])."""
+        if not array_notation:
+            return False
+        return bool(re.match(r"^.+\[\s*-?\d+\s*\]", array_notation))
+
     def _render_value(
         self,
         value: SSAValue,
@@ -1266,6 +1272,11 @@ class ExpressionFormatter:
         field_expr = self._field_tracker.get_field_expression(value)
         if field_expr:
             return field_expr  # Return field expression (e.g., "info->master_nod", "ai_props.watchfulness_zerodist")
+
+        # Preserve constant array loads before rename_map (e.g., dist[1] = dist[0])
+        array_load = self._find_array_load_in_chain(value)
+        if array_load and self._is_constant_array_notation(array_load):
+            return array_load
 
         # PRIORITY 2: Check rename_map for variable collision resolution
         # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
@@ -2002,7 +2013,7 @@ class ExpressionFormatter:
                         base_name = var_name
                 else:
                     base_name = var_name
-            elif left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR", "LADR"}:
+            elif left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR", "LADR", "LCP"}:
                 base_name = self._render_value(left)
                 if base_name.startswith("&"):
                     base_name = base_name[1:]
@@ -2078,8 +2089,17 @@ class ExpressionFormatter:
             elif right.alias or (right.producer_inst and right.producer_inst.mnemonic in {"LCP", "GCP"}):
                 # Simple offset - could be array[constant]
                 index_rendered = self._render_value(right, context=ExpressionContext.IN_ARRAY_INDEX)
+                if right.alias and right.alias.startswith("data_") and self.data_segment:
+                    try:
+                        offset = int(right.alias[5:])
+                        raw_val = self.data_segment.get_dword(offset * 4)
+                        if raw_val > 0x7FFFFFFF:
+                            raw_val = raw_val - 0x100000000
+                        index_rendered = str(raw_val)
+                    except (ValueError, AttributeError):
+                        pass
 
-                # Check if base is a known array from global_resolver
+                # Check if base is a known array from global_resolver or local tracker
                 is_base_array = False
                 base_element_size = 4  # default
 
@@ -2101,6 +2121,18 @@ class ExpressionFormatter:
                     if global_info.is_array_base:
                         is_base_array = True
                         base_element_size = global_info.array_element_size or 4
+
+                # Local array support (constant offsets)
+                if not is_base_array and is_local_var and self._type_tracker:
+                    info = self._type_tracker.get_usage_info(base_name)
+                    if info and info.is_array:
+                        is_base_array = True
+                        if info.array_element_sizes:
+                            base_element_size = min(info.array_element_sizes)
+
+                # Pointer parameters (e.g., list[0]) should allow constant indexing
+                if not is_base_array and left.producer_inst and left.producer_inst.mnemonic == "LCP":
+                    is_base_array = True
 
                 # If it's a number and base is an array, divide by element_size to get index
                 if is_base_array:
@@ -2139,15 +2171,18 @@ class ExpressionFormatter:
             if base_var:
                 # Check if this is a struct array (element size > 4)
                 tracked_type = None
+                skip_field_tracker = False
 
                 # PRIORITY 1: Check type_tracker (unified tracker)
                 if self._type_tracker:
                     info = self._type_tracker.get_usage_info(base_var)
-                    if info and info.struct_type:
+                    if info and info.struct_type and info.confidence >= 0.7:
                         tracked_type = info.struct_type
+                    if info and info.is_array and info.confidence < 0.7:
+                        skip_field_tracker = True
 
                 # PRIORITY 2: Check field_tracker
-                if not tracked_type and hasattr(self, '_field_tracker') and self._field_tracker:
+                if not tracked_type and not skip_field_tracker and hasattr(self, '_field_tracker') and self._field_tracker:
                     tracked_type = self._field_tracker.get_struct_type(base_var)
 
                 if tracked_type:
@@ -2414,6 +2449,9 @@ class ExpressionFormatter:
                 return False
             if len(value.producer_inst.inputs) != 2:
                 return False
+            array_notation = self._detect_array_indexing(value)
+            if array_notation and "[" in array_notation:
+                return True
             left = value.producer_inst.inputs[0]
             right = value.producer_inst.inputs[1]
             # Check if left is base address (GADR/DADR/LADR)
