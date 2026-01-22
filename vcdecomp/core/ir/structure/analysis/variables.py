@@ -841,6 +841,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # Track variables that receive return values from external functions
     # This allows proper type inference for things like ushort* from SC_Wtxt
     return_type_vars: Dict[str, str] = {}  # var_name -> return_type
+    param_type_vars: Dict[str, str] = {}  # var_name -> inferred param type
 
     # NOTE: SSA XCALL instructions don't have outputs populated, so we can't infer
     # types from XCALL outputs directly. Instead, we scan formatted expressions
@@ -946,6 +947,24 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                                     if arg not in return_type_vars:
                                         return_type_vars[arg] = 'void*'
                                         logger.debug(f"Inferred {arg} type from {func_name} param {idx} ({param_type}): void* (pointer arg)")
+                            elif param_type:
+                                normalized = param_type.lower()
+                                mapped_type = None
+                                if "dword" in normalized:
+                                    mapped_type = "dword"
+                                elif "int" in normalized:
+                                    mapped_type = "int"
+                                if mapped_type:
+                                    if arg.startswith('&'):
+                                        continue
+                                    if not re.match(r'^[A-Za-z_]\w*$', arg):
+                                        continue
+                                    if arg.isupper() or arg.isdigit():
+                                        continue
+                                    loop_counter_names = {"i", "j", "k", "idx", "n", "m"}
+                                    semantic_names = set(formatter._semantic_names.values()) if hasattr(formatter, '_semantic_names') else set()
+                                    if arg in loop_counter_names or arg in semantic_names or arg.startswith("local_"):
+                                        param_type_vars[arg] = mapped_type
 
         # FIX (01-20): Detect dereferenced variables that need pointer types
         # Pattern: *var_name = value  or  value = *var_name
@@ -1053,6 +1072,16 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         if current_type in ('int', 'dword'):
             var_types[var_name] = return_type
             logger.debug(f"Variable {var_name} type changed {current_type} -> {return_type} (from function return)")
+
+    for var_name, inferred_type in param_type_vars.items():
+        current_type = var_types.get(var_name, 'int')
+        if current_type.startswith("s_SC_") or current_type.startswith("c_") or current_type.endswith("*"):
+            continue
+        if current_type not in ('int', 'dword', 'float', 'double'):
+            continue
+        if current_type != inferred_type:
+            var_types[var_name] = inferred_type
+            logger.debug(f"Variable {var_name} type changed {current_type} -> {inferred_type} (from param usage)")
 
     # FIX (01-20): Detect struct-typed variables used with array subscripting
     # Pattern: local_5[tmp] = value when local_5 is typed as a struct

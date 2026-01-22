@@ -7,14 +7,122 @@ identifying initialization, condition, and increment components.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from ...cfg import CFG, NaturalLoop
 from ....disasm import opcodes
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
+from ..analysis.condition import render_condition
+from .if_else import _detect_early_return_pattern
 
 from .models import ForLoopInfo
+
+
+def _condition_mentions_loop_var(
+    condition_text: str,
+    init_var: str,
+    values: Optional[List] = None
+) -> bool:
+    if init_var and init_var in condition_text:
+        return True
+    if values:
+        for value in values:
+            value_name = value.alias or value.name
+            if value_name and value_name.startswith("&"):
+                value_name = value_name[1:]
+            if value_name == init_var:
+                return True
+    return False
+
+
+def _invert_condition_text(condition_text: str) -> str:
+    stripped = condition_text.strip()
+    if stripped.startswith("!"):
+        if stripped.startswith("!(") and stripped.endswith(")"):
+            return stripped[2:-1].strip()
+        return stripped[1:].strip()
+    import re
+    match = re.match(r'^\(?\s*(.+?)\s*(<=|>=|<|>|==|!=)\s*(.+?)\s*\)?$', stripped)
+    if match:
+        left, op, right = match.groups()
+        inverse = {
+            "<": ">=",
+            "<=": ">",
+            ">": "<=",
+            ">=": "<",
+            "==": "!=",
+            "!=": "==",
+        }.get(op, op)
+        return f"{left.strip()} {inverse} {right.strip()}"
+    return f"!({condition_text})"
+
+
+def _find_guard_condition(
+    loop: NaturalLoop,
+    cfg: CFG,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    init_var: str
+) -> Optional[Tuple[str, int]]:
+    sorted_body = sorted(loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+    for block_id in sorted_body:
+        if block_id == loop.header:
+            continue
+        block = cfg.blocks.get(block_id)
+        if block and block.instructions:
+            last_instr = block.instructions[-1]
+            if resolver.is_conditional_jump(last_instr.opcode):
+                target_block = start_to_block.get(last_instr.arg1)
+                if target_block is not None and target_block not in loop.body:
+                    condition_render = render_condition(
+                        ssa_func,
+                        block_id,
+                        formatter,
+                        cfg,
+                        resolver,
+                        negate=None
+                    )
+                    break_condition = condition_render.text or ""
+                    if break_condition:
+                        continue_condition = _invert_condition_text(break_condition)
+                        if _condition_mentions_loop_var(continue_condition, init_var, condition_render.values):
+                            return continue_condition, block_id
+        early_ret = _detect_early_return_pattern(cfg, block_id, start_to_block, resolver)
+        if not early_ret:
+            continue
+        guard_block_id, exit_block_id, continue_block_id, is_negated = early_ret
+        if continue_block_id not in loop.body:
+            continue
+        if exit_block_id in loop.body:
+            continue
+        exit_block = cfg.blocks.get(exit_block_id)
+        if not exit_block or not exit_block.instructions:
+            continue
+        exit_instr = exit_block.instructions[-1]
+        if resolver.get_mnemonic(exit_instr.opcode) != "JMP":
+            continue
+        exit_target_block = start_to_block.get(exit_instr.arg1)
+        if exit_target_block is not None and exit_target_block in loop.body:
+            continue
+
+        condition_render = render_condition(
+            ssa_func,
+            block_id,
+            formatter,
+            cfg,
+            resolver,
+            negate=not is_negated
+        )
+        condition_text = condition_render.text or ""
+        if not condition_text:
+            continue
+        if not _condition_mentions_loop_var(condition_text, init_var, condition_render.values):
+            continue
+        return condition_text, guard_block_id
+    return None
 
 
 def _detect_for_loop(
@@ -90,140 +198,131 @@ def _detect_for_loop(
         return None
 
     # Step 2: Extract condition from header's conditional jump
-    last_instr = header_block.instructions[-1]
-    if not resolver.is_conditional_jump(last_instr.opcode):
-        return None
-
-    # Get condition from SSA
     condition_text = None
-    header_ssa_block = ssa_func.instructions.get(loop.header, [])
+    guard_block: Optional[int] = None
+    last_instr = header_block.instructions[-1]
+    if resolver.is_conditional_jump(last_instr.opcode):
+        target_block = start_to_block.get(last_instr.arg1)
+        if target_block is not None and target_block not in loop.body:
+            condition_render = render_condition(
+                ssa_func,
+                loop.header,
+                formatter,
+                cfg,
+                resolver,
+                negate=None
+            )
+            break_condition = condition_render.text or ""
+            if break_condition:
+                inverted_condition = _invert_condition_text(break_condition)
+                if _condition_mentions_loop_var(inverted_condition, init_var, condition_render.values):
+                    condition_text = inverted_condition
+                    guard_block = loop.header
 
-    # Find the comparison instruction (the one that produces the condition value)
-    for ssa_inst in header_ssa_block:
-        if ssa_inst.address == last_instr.address and ssa_inst.inputs:
-            cond_value = ssa_inst.inputs[0]
+        if condition_text is None:
+            header_ssa_block = ssa_func.instructions.get(loop.header, [])
 
-            # Find the instruction that produced this value
-            for compare_inst in header_ssa_block:
-                if compare_inst.outputs and any(out.name == cond_value.name for out in compare_inst.outputs):
-                    # This is the comparison instruction - manually render it
-                    if compare_inst.inputs and len(compare_inst.inputs) >= 2:
-                        left = formatter.render_value(compare_inst.inputs[0])
-                        right_val = compare_inst.inputs[1]
+            # Find the comparison instruction (the one that produces the condition value)
+            for ssa_inst in header_ssa_block:
+                if ssa_inst.address == last_instr.address and ssa_inst.inputs:
+                    cond_value = ssa_inst.inputs[0]
 
-                        # FIX: If right operand is a data segment reference, resolve to global name or constant
-                        right_alias = right_val.alias or right_val.name
-                        if right_alias and right_alias.startswith("data_"):
-                            # This is a data segment reference
-                            offset = int(right_alias[5:])  # Extract offset from "data_123"
-                            if global_map and offset in global_map:
-                                # Known global variable name
-                                right = global_map[offset]
-                            else:
-                                # FÁZE 2.1: Try to resolve as constant from data segment
-                                scr = getattr(ssa_func, 'scr', None)
-                                if scr and hasattr(scr, 'data_segment'):
-                                    try:
-                                        # Read 4-byte integer from data segment
-                                        import struct
-                                        data_seg = scr.data_segment
-                                        # CRITICAL FIX: offset is in DWORD units, not bytes!
-                                        # data_383 means 383rd DWORD (4-byte word)
-                                        byte_offset = offset * 4
-                                        if byte_offset < len(data_seg.raw_data):
-                                            bytes_data = data_seg.raw_data[byte_offset:byte_offset+4]
-                                            if len(bytes_data) == 4:
-                                                const_value = struct.unpack('<I', bytes_data)[0]
-                                                # Use constant value if it looks reasonable for loop bound
-                                                if 0 <= const_value < 10000:
-                                                    right = str(const_value)
+                    # Find the instruction that produced this value
+                    for compare_inst in header_ssa_block:
+                        if compare_inst.outputs and any(out.name == cond_value.name for out in compare_inst.outputs):
+                            # This is the comparison instruction - manually render it
+                            if compare_inst.inputs and len(compare_inst.inputs) >= 2:
+                                left = formatter.render_value(compare_inst.inputs[0])
+                                right_val = compare_inst.inputs[1]
+
+                                # FIX: If right operand is a data segment reference, resolve to global name or constant
+                                right_alias = right_val.alias or right_val.name
+                                if right_alias and right_alias.startswith("data_"):
+                                    # This is a data segment reference
+                                    offset = int(right_alias[5:])  # Extract offset from "data_123"
+                                    if global_map and offset in global_map:
+                                        # Known global variable name
+                                        right = global_map[offset]
+                                    else:
+                                        # FÁZE 2.1: Try to resolve as constant from data segment
+                                        scr = getattr(ssa_func, 'scr', None)
+                                        if scr and hasattr(scr, 'data_segment'):
+                                            try:
+                                                # Read 4-byte integer from data segment
+                                                import struct
+                                                data_seg = scr.data_segment
+                                                # CRITICAL FIX: offset is in DWORD units, not bytes!
+                                                # data_383 means 383rd DWORD (4-byte word)
+                                                byte_offset = offset * 4
+                                                if byte_offset < len(data_seg.raw_data):
+                                                    bytes_data = data_seg.raw_data[byte_offset:byte_offset+4]
+                                                    if len(bytes_data) == 4:
+                                                        const_value = struct.unpack('<I', bytes_data)[0]
+                                                        # Use constant value if it looks reasonable for loop bound
+                                                        if 0 <= const_value < 10000:
+                                                            right = str(const_value)
+                                                        else:
+                                                            right = right_alias
+                                                    else:
+                                                        right = right_alias
                                                 else:
                                                     right = right_alias
-                                            else:
+                                            except:
+                                                # Fallback to data_X if resolution fails
                                                 right = right_alias
                                         else:
+                                            # Fallback to data_X if no data segment available
                                             right = right_alias
-                                    except:
-                                        # Fallback to data_X if resolution fails
-                                        right = right_alias
                                 else:
-                                    # Fallback to data_X if no data segment available
-                                    right = right_alias
-                        else:
-                            right = formatter.render_value(right_val)
+                                    right = formatter.render_value(right_val)
 
-                        # Map mnemonic to operator
-                        op_map = {
-                            "ULES": "<=", "UGTS": ">", "UGES": ">=", "ULSS": "<",
-                            "IEQS": "==", "INES": "!=",
-                            "CESS": "<", "CGTS": ">", "CGES": ">=", "CLES": "<=",
-                            "CEQS": "==", "CNES": "!=",
-                            "SESS": "<", "SGTS": ">", "SGES": ">=", "SLES": "<=",
-                            "SEQS": "==", "SNES": "!=",
-                            "IESS": "<", "IGTS": ">", "IGES": ">=", "ILES": "<=",
-                        }
-                        op = op_map.get(compare_inst.mnemonic, "?")
+                                # Map mnemonic to operator
+                                op_map = {
+                                    "ULES": "<=", "UGTS": ">", "UGES": ">=", "ULSS": "<",
+                                    "IEQS": "==", "INES": "!=",
+                                    "CESS": "<", "CGTS": ">", "CGES": ">=", "CLES": "<=",
+                                    "CEQS": "==", "CNES": "!=",
+                                    "SESS": "<", "SGTS": ">", "SGES": ">=", "SLES": "<=",
+                                    "SEQS": "==", "SNES": "!=",
+                                    "IESS": "<", "IGTS": ">", "IGES": ">=", "ILES": "<=",
+                                }
+                                op = op_map.get(compare_inst.mnemonic, "?")
 
-                        # P0.2 FIX: Analyze jump direction to correct loop conditions
-                        # Problem: Compiler generates <= for < in some cases (off-by-one bug)
-                        # Solution: Check if jump exits loop (forward) or continues (backward)
-                        jump_instr = ssa_inst  # The JZ/JNZ instruction
-                        jump_target = last_instr.arg1  # Target address of jump
+                                # Heuristic for for-loops:
+                                # If operator is <= and it looks like a standard loop bound check,
+                                # convert to < (the original source likely used <)
+                                if op in ["<=", ">="]:
+                                    # Check if this is a standard loop pattern (counter vs constant/variable)
+                                    # Pattern: local_X <= N where local_X starts at 0
+                                    if init_value in ["0", "0x0", "0x00000000"]:
+                                        # Loop starts at 0, likely should be < not <=
+                                        if op == "<=":
+                                            op = "<"
+                                            # Note: We're making an educated guess that the original
+                                            # source used < and the compiler generated <=
+                                            # This is a common pattern in VC Script compiler
+                                        elif op == ">=":
+                                            op = ">"
 
-                        # Determine if jump exits loop or continues loop
-                        # If jump goes FORWARD (to higher address) → likely exit condition
-                        # If jump goes BACKWARD (to lower address) → likely loop continuation
-                        is_forward_jump = jump_target > last_instr.address
+                                cond_expr = f"({left} {op} {right})"
 
-                        # For-loops typically have pattern: JZ forward (exit when condition false)
-                        # So if bytecode has ULES (<=) and JZ forward, we need to normalize:
-                        # - ULES + JZ forward = exit when (i <= limit) is FALSE = continue when (i > limit)
-                        # - But wait, that's inverted! Let's check the jump mnemonic
-
-                        # Actually, the condition in bytecode represents when to EXIT the loop
-                        # For standard for-loops: continue while (i < N), exit when NOT (i < N)
-                        # Compiler generates: compare i vs N, JZ exit_label (jump if i >= N)
-                        # So bytecode comparison is "i >= N" (exit condition)
-                        # We want to display: "i < N" (continue condition)
-
-                        # Heuristic for for-loops:
-                        # If operator is <= and it looks like a standard loop bound check,
-                        # convert to < (the original source likely used <)
-                        if op in ["<=", ">="]:
-                            # Check if this is a standard loop pattern (counter vs constant/variable)
-                            # Pattern: local_X <= N where local_X starts at 0
-                            if init_value in ["0", "0x0", "0x00000000"]:
-                                # Loop starts at 0, likely should be < not <=
-                                if op == "<=":
-                                    op = "<"
-                                    # Note: We're making an educated guess that the original
-                                    # source used < and the compiler generated <=
-                                    # This is a common pattern in VC Script compiler
-                                elif op == ">=":
-                                    op = ">"
-
-                        cond_expr = f"({left} {op} {right})"
-
-                        # Check if condition involves our loop variable (check both name and any aliases)
-                        # For example, local_2 might be rendered as "i" due to aliasing
-                        involves_loop_var = init_var in cond_expr
-                        # Also check if any of the inputs have the init_var as their base
-                        if not involves_loop_var:
-                            for inp in compare_inst.inputs:
-                                inp_name = inp.alias or inp.name
-                                # Strip & prefix if present
-                                if inp_name and inp_name.startswith("&"):
-                                    inp_name = inp_name[1:]
-                                if inp_name == init_var:
-                                    involves_loop_var = True
-                                    break
-                        if involves_loop_var:
-                            condition_text = cond_expr
+                                # Check if condition involves our loop variable (check both name and any aliases)
+                                # For example, local_2 might be rendered as "i" due to aliasing
+                                involves_loop_var = init_var in cond_expr
+                                # Also check if any of the inputs have the init_var as their base
+                                if not involves_loop_var:
+                                    for inp in compare_inst.inputs:
+                                        inp_name = inp.alias or inp.name
+                                        # Strip & prefix if present
+                                        if inp_name and inp_name.startswith("&"):
+                                            inp_name = inp_name[1:]
+                                        if inp_name == init_var:
+                                            involves_loop_var = True
+                                            break
+                                if involves_loop_var:
+                                    condition_text = cond_expr
+                            break
                     break
-            break
-
-    if not condition_text:
-        return None
 
     # Step 3: Find increment at end of loop body
     # Look in blocks that jump back to header (back edges)
@@ -277,12 +376,27 @@ def _detect_for_loop(
     if not increment_text:
         return None
 
+    guard_info = _find_guard_condition(
+        loop,
+        cfg,
+        ssa_func,
+        formatter,
+        resolver,
+        start_to_block,
+        init_var
+    )
+    if guard_info:
+        condition_text, guard_block = guard_info
+
+    if not condition_text:
+        return None
+
     # Successfully detected for-loop pattern
     # Extract the actual variable name from condition if it's different from init_var
     # Condition is like "(i <= gData28)" - extract the left operand
     import re
     display_var = init_var
-    match = re.match(r'\((\w+)\s*[<>=!]+', condition_text)
+    match = re.match(r'!?\(?(\w+)\s*[<>=!]+', condition_text)
     if match:
         cond_var = match.group(1)
         if cond_var != init_var:
@@ -290,11 +404,13 @@ def _detect_for_loop(
             display_var = cond_var
             # Also update increment to use display_var
             increment_text = increment_text.replace(init_var, display_var)
+            condition_text = condition_text.replace(init_var, display_var)
 
     return ForLoopInfo(
         var=display_var,
         init=init_value,
         condition=condition_text,
         increment=increment_text,
-        init_var=init_var
+        init_var=init_var,
+        guard_block=guard_block
     )
