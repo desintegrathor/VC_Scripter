@@ -96,6 +96,7 @@ dword g_FPV_NeFlag = 0;
 
 BOOL SRV_CheckEndRule(float time){
 	// function that checks end rule, running on server only
+	// regression: ensure OR conditions and += arithmetic are preserved
 
 	switch(gEndRule){
 		case SC_MP_ENDRULE_TIME:
