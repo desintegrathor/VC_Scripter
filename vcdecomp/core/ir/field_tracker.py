@@ -18,7 +18,7 @@ from typing import Dict, Optional, Set
 
 from ..disasm import opcodes
 from .ssa import SSAFunction, SSAValue, SSAInstruction
-from ..structures import get_field_at_offset, get_struct_by_name
+from ..structures import get_verified_field_name
 from .debug_output import debug_print
 
 
@@ -126,16 +126,18 @@ class FieldAccessTracker:
         if not field_access:
             return None
 
-        # Get semantic name for base variable (param_0 → info)
         # Strip & prefix if present (PNT uses &local_X but we want local_X)
         base_var = field_access.base_var.lstrip("&")
-        base_name = self.semantic_names.get(base_var, base_var)
 
         # Get field name
         field_name = field_access.field_name
         if not field_name:
             # Fallback: show offset
             field_name = f"field_{field_access.field_offset}"
+            base_name = base_var
+        else:
+            # Get semantic name for base variable (param_0 → info)
+            base_name = self.semantic_names.get(base_var, base_var)
 
         # Choose operator: -> for pointers, . for values
         operator = "->" if field_access.is_pointer else "."
@@ -464,7 +466,7 @@ class FieldAccessTracker:
         offset = pnt_inst.instruction.instruction.arg1
 
         # Lookup field at this offset
-        field_name = get_field_at_offset(struct_type, offset)
+        field_name = get_verified_field_name(struct_type, offset)
 
         debug_print(f"DEBUG PNT: SUCCESS - base={base_var}, struct={struct_type}, offset={offset}, field={field_name}")
 
@@ -529,7 +531,7 @@ class FieldAccessTracker:
             return None
 
         # Lookup field at this offset
-        field_name = get_field_at_offset(struct_type, offset)
+        field_name = get_verified_field_name(struct_type, offset)
 
         # CRITICAL FIX: Determine if base is a pointer or structure
         # Pattern: LADR(&local_X) + DADR(offset) + DCP

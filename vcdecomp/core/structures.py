@@ -8,7 +8,11 @@ Used for field access detection and structure layout analysis.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
+
+from .headers.database import get_header_database
+from ..sdk import SDKDatabase
 
 
 @dataclass
@@ -416,8 +420,6 @@ def _load_sdk_structures() -> Dict[str, StructDef]:
         Dictionary of structure name -> StructDef
     """
     try:
-        from ..sdk import SDKDatabase
-
         sdk_db = SDKDatabase()
         sdk_structs = {}
 
@@ -479,9 +481,6 @@ def get_field_at_offset(struct_name: str, offset: int) -> Optional[str]:
 
     Tries HeaderDatabase first (dynamic parsing), falls back to hardcoded structures.
     """
-    # PRIORITY 1: Try HeaderDatabase (parsed from sc_global.h/sc_def.h)
-    from .headers.database import get_header_database
-
     try:
         db = get_header_database()
         field_name = db.lookup_field_name(struct_name, offset)
@@ -496,6 +495,47 @@ def get_field_at_offset(struct_name: str, offset: int) -> Optional[str]:
     struct = get_struct_by_name(struct_name)
     if struct:
         return struct.get_field_name_at_offset(offset)
+
+    return None
+
+
+@lru_cache(maxsize=1)
+def _get_sdk_database():
+    try:
+        return SDKDatabase()
+    except Exception:
+        return None
+
+
+def get_verified_field_name(struct_name: str, offset: int) -> Optional[str]:
+    """
+    Return a field name only if it can be verified from SDK or headers.
+
+    If the mapping is missing or ambiguous between sources, return None.
+    """
+    candidates = []
+
+    sdk_db = _get_sdk_database()
+    if sdk_db:
+        sdk_struct = sdk_db.get_structure(struct_name)
+        if sdk_struct:
+            for field in sdk_struct.fields:
+                if field.offset == offset:
+                    candidates.append(field.name)
+                    break
+
+    db = get_header_database()
+    header_fields = db.get_struct_fields(struct_name)
+    field_info = header_fields.get(offset)
+    if field_info:
+        candidates.append(field_info.name)
+
+    if not candidates:
+        return None
+
+    unique_names = {name for name in candidates}
+    if len(unique_names) == 1:
+        return unique_names.pop()
 
     return None
 
