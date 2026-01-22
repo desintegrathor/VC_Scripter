@@ -517,11 +517,12 @@ class VariableRenamer:
                 continue
 
             param_type = param_types[param_idx]
+            normalized_param_type = param_type.replace(" ", "")
 
             # Check if parameter is a struct pointer (starts with * and contains s_)
-            if param_type.startswith('*') and 's_' in param_type:
+            if normalized_param_type.startswith('*') and 's_' in normalized_param_type:
                 # Extract struct name: "*s_SC_MP_SRV_settings" → "s_SC_MP_SRV_settings"
-                struct_type = param_type[1:]  # Remove * prefix
+                struct_type = normalized_param_type[1:]  # Remove * prefix
 
                 # FIX #5 Phase 2: Map this specific SSA value to the struct type
                 # Store it in value_to_version with struct type info
