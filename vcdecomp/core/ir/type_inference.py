@@ -21,6 +21,12 @@ from ..disasm import opcodes
 logger = logging.getLogger(__name__)
 
 
+class TypePriority(Enum):
+    HARD = "hard"
+    SOFT = "soft"
+    NEUTRAL = "neutral"
+
+
 class TypeSource(Enum):
     """Source of type evidence."""
     INSTRUCTION = "instruction"
@@ -29,6 +35,20 @@ class TypeSource(Enum):
     CONSTANT_VALUE = "constant_value"
     ASSIGNMENT = "assignment"
     SSA_INITIAL = "ssa_initial"  # From stack_lifter opcode inference
+
+    @property
+    def priority(self) -> TypePriority:
+        return TYPE_SOURCE_PRIORITY[self]
+
+
+TYPE_SOURCE_PRIORITY = {
+    TypeSource.INSTRUCTION: TypePriority.HARD,
+    TypeSource.FUNCTION_CALL: TypePriority.HARD,
+    TypeSource.STRUCT_ACCESS: TypePriority.HARD,
+    TypeSource.CONSTANT_VALUE: TypePriority.SOFT,
+    TypeSource.ASSIGNMENT: TypePriority.SOFT,
+    TypeSource.SSA_INITIAL: TypePriority.NEUTRAL,
+}
 
 
 @dataclass
@@ -65,6 +85,13 @@ class TypeInfo:
         """Add new evidence."""
         self.evidence.append(ev)
 
+    def has_hard_evidence(self, min_confidence: float = 0.95) -> bool:
+        """Check if variable has strong evidence from hard sources."""
+        return any(
+            ev.confidence >= min_confidence and ev.source.priority == TypePriority.HARD
+            for ev in self.evidence
+        )
+
     def resolve_type(self) -> str:
         """
         Resolve final type from evidence using weighted voting.
@@ -75,15 +102,22 @@ class TypeInfo:
         if not self.evidence:
             return "int"  # Default fallback
 
+        evidence_pool = self.evidence
+        if self.has_hard_evidence():
+            evidence_pool = [
+                ev for ev in self.evidence
+                if ev.source.priority != TypePriority.SOFT
+            ]
+
         # Group evidence by type
         type_scores: Dict[str, float] = {}
-        for ev in self.evidence:
+        for ev in evidence_pool:
             if ev.inferred_type not in type_scores:
                 type_scores[ev.inferred_type] = 0.0
             type_scores[ev.inferred_type] += ev.confidence
 
         if 'float' in type_scores and 'int' in type_scores:
-            max_float = max(ev.confidence for ev in self.evidence if ev.inferred_type == 'float')
+            max_float = max(ev.confidence for ev in evidence_pool if ev.inferred_type == 'float')
             if max_float >= 0.90:
                 self.final_type = 'float'
                 return self.final_type
@@ -999,6 +1033,12 @@ class TypeInferenceEngine:
 
         return True
 
+    def _should_accept_evidence(self, dest_info: TypeInfo, source: TypeSource) -> bool:
+        """Check if new evidence is allowed based on existing hard types."""
+        if dest_info.has_hard_evidence() and source.priority == TypePriority.SOFT:
+            return False
+        return True
+
     def _propagate_type_forward(self, source: SSAValue, dest: SSAValue,
                                 base_confidence: float) -> bool:
         """
@@ -1040,6 +1080,8 @@ class TypeInferenceEngine:
 
         # Check if destination already has better evidence
         dest_info = self._get_or_create_type_info(dest.name)
+        if not self._should_accept_evidence(dest_info, TypeSource.ASSIGNMENT):
+            return False
         for existing_ev in dest_info.evidence:
             if existing_ev.inferred_type == source_type:
                 if existing_ev.confidence >= propagated_confidence:
@@ -1243,6 +1285,8 @@ class TypeInferenceEngine:
                     if self._is_global_value(output) and merged_confidence < 0.95:
                         continue
                     output_info = self._get_or_create_type_info(output.name)
+                    if not self._should_accept_evidence(output_info, TypeSource.INSTRUCTION):
+                        continue
 
                     # Check if we already have this
                     has_evidence = False
