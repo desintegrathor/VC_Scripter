@@ -1343,11 +1343,18 @@ class GlobalResolver:
                 }
                 element_size = type_sizes.get(element_type, 4)
 
+            if element_type in {"int", "float", "dword", "BOOL"}:
+                element_size = 4
+
             element_count = 1
             if usage.saveinfo_size_dwords:
                 total_bytes = usage.saveinfo_size_dwords * 4
                 if element_size and element_size > 0 and total_bytes % element_size == 0:
                     element_count = total_bytes // element_size
+            elif usage.array_dimensions:
+                element_count = 1
+                for dim in usage.array_dimensions:
+                    element_count *= dim
             elif usage.is_array_base:
                 continue
 
@@ -1365,6 +1372,28 @@ class GlobalResolver:
                 element_size=element_size,
                 element_count=element_count,
             )
+
+            if not initializer and element_count > 1 and element_size:
+                total_bytes = element_size * element_count
+                if byte_offset + total_bytes <= len(data_segment.raw_data):
+                    block = data_segment.raw_data[byte_offset:byte_offset + total_bytes]
+                    if block and all(b == 0 for b in block):
+                        candidate_offset = byte_offset + total_bytes
+                        candidate_usage = self.globals.get(candidate_offset)
+                        if not candidate_usage or (
+                            not candidate_usage.name
+                            and not candidate_usage.saveinfo_size_dwords
+                            and candidate_usage.write_count == 0
+                        ):
+                            initializer = build_initializer(
+                                data_segment,
+                                data_resolver,
+                                byte_offset=candidate_offset,
+                                element_type=element_type,
+                                element_size=element_size,
+                                element_count=element_count,
+                            )
+
             if initializer:
                 usage.initializer = initializer
 
