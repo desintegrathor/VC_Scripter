@@ -45,6 +45,92 @@ def _switch_debug(msg: str):
         debug_print(f"[SWITCH] {msg}")
 
 
+def _resolve_conditional_targets(
+    block: "BasicBlock",
+    start_to_block: Dict[int, int],
+    resolver: opcodes.OpcodeResolver
+) -> tuple[Optional[int], Optional[int]]:
+    """
+    Resolve conditional jump targets using disassembler addresses.
+
+    Returns (jump_target_block_id, fallthrough_block_id).
+    """
+    if not block or not block.instructions:
+        return (None, None)
+
+    last_instr = block.instructions[-1]
+    if not resolver.is_conditional_jump(last_instr.opcode):
+        return (None, None)
+
+    jump_target = start_to_block.get(last_instr.arg1)
+    fallthrough_addr = last_instr.address + 1
+    fallthrough = start_to_block.get(fallthrough_addr)
+    if fallthrough is None:
+        for succ in block.successors:
+            if succ != jump_target:
+                fallthrough = succ
+                break
+
+    return (jump_target, fallthrough)
+
+
+def _validate_switch_integrity(
+    cases: List[CaseInfo],
+    case_sources: Dict[tuple[int, int], int],
+    cfg: CFG,
+    start_to_block: Dict[int, int],
+    resolver: opcodes.OpcodeResolver
+) -> bool:
+    """
+    Validate that switch cases align with CFG conditional branches.
+
+    Ensures each comparison block maps to exactly one case and that the
+    case block matches the disassembler jump target semantics.
+    """
+    if not cases:
+        return False
+
+    comparison_blocks = set(case_sources.values())
+    if len(comparison_blocks) != len(cases):
+        _switch_debug(
+            f"Integrity check failed: {len(cases)} cases but {len(comparison_blocks)} comparison blocks"
+        )
+        return False
+
+    for case in cases:
+        key = (case.value, case.block_id)
+        compare_block_id = case_sources.get(key)
+        if compare_block_id is None:
+            _switch_debug(f"Integrity check failed: missing source for case {key}")
+            return False
+
+        compare_block = cfg.blocks.get(compare_block_id)
+        if not compare_block or not compare_block.instructions:
+            _switch_debug(f"Integrity check failed: missing comparison block {compare_block_id}")
+            return False
+
+        last_instr = compare_block.instructions[-1]
+        if not resolver.is_conditional_jump(last_instr.opcode):
+            _switch_debug(f"Integrity check failed: non-conditional block {compare_block_id}")
+            return False
+
+        jump_target, fallthrough = _resolve_conditional_targets(compare_block, start_to_block, resolver)
+        if jump_target is None or fallthrough is None:
+            _switch_debug(f"Integrity check failed: unresolved targets for block {compare_block_id}")
+            return False
+
+        mnemonic = resolver.get_mnemonic(last_instr.opcode)
+        expected_case = jump_target if mnemonic == "JNZ" else fallthrough
+        if expected_case != case.block_id:
+            _switch_debug(
+                f"Integrity check failed: case {case.value} block {case.block_id} "
+                f"does not match expected {expected_case} from block {compare_block_id}"
+            )
+            return False
+
+    return True
+
+
 def _find_mod_in_predecessors(block_id: int, ssa_func: SSAFunction, max_depth: int = 2, visited: Optional[Set[int]] = None) -> Optional[any]:
     """
     Search for a MOD instruction in the current block or predecessor blocks.
@@ -602,6 +688,7 @@ def _detect_switch_patterns(
         # PHASE 3 FIX: Collect ALL potential cases first, then filter
         # Structure: List[(var_name, var_priority, ssa_value, case_info)]
         all_potential_cases: List[tuple] = []
+        case_sources: Dict[tuple[int, int], int] = {}
 
         # Chain tracking state for debug
         chain_debug = {
@@ -917,20 +1004,14 @@ def _detect_switch_patterns(
                         # JNZ means jump if not zero (condition true), so arg1 IS the case
                         mnemonic = resolver.get_mnemonic(opcode)
                         debug_print(f"DEBUG SWITCH: mnemonic={mnemonic}, opcode={opcode}")
+
+                        jump_target, fallthrough = _resolve_conditional_targets(
+                            curr_block_obj, start_to_block, resolver
+                        )
                         if mnemonic == "JNZ":
-                            case_block = last_instr.arg1
+                            case_block_id = jump_target
                         else:  # JZ
-                            # Fall-through is the case body
-                            case_block = last_instr.address + 1
-
-                        debug_print(f"DEBUG SWITCH: case_block address={case_block}")
-
-                        # Convert address to block ID
-                        case_block_id = None
-                        for bid, b in cfg.blocks.items():
-                            if b.start == case_block:
-                                case_block_id = bid
-                                break
+                            case_block_id = fallthrough
 
                         debug_print(f"DEBUG SWITCH: case_block_id={case_block_id}")
                         if case_block_id is not None:
@@ -938,6 +1019,7 @@ def _detect_switch_patterns(
                             # Don't filter yet - we'll do that after BFS completes
                             case_info = CaseInfo(value=case_val, block_id=case_block_id)
                             all_potential_cases.append((var_name, var_priority, var_value, case_info, current_block))
+                            case_sources[(case_val, case_block_id)] = current_block
 
                             # TEMPORARY: Also add to old structure for compatibility
                             cases.append(case_info)
@@ -952,7 +1034,7 @@ def _detect_switch_patterns(
                                     to_visit.append((succ, depth + 1))
                                     _switch_debug(f"Added successor {succ} to BFS queue")
                         else:
-                            _switch_debug(f"Case block ID not found for address {case_block}")
+                            _switch_debug(f"Case block ID not resolved for comparison block {current_block}")
 
             # If no EQU found, still explore successors (might be a gap in the chain)
             if not found_equ:
@@ -1008,6 +1090,11 @@ def _detect_switch_patterns(
                 _switch_debug(f"Removing duplicate case value={case.value}, block={case.block_id}")
 
         cases = unique_cases
+        filtered_case_sources = {
+            (case.value, case.block_id): case_sources[(case.value, case.block_id)]
+            for case in cases
+            if (case.value, case.block_id) in case_sources
+        }
 
         # Determine if this should be a switch statement
         # 3+ cases always becomes a switch
@@ -1025,6 +1112,12 @@ def _detect_switch_patterns(
         debug_print(f"DEBUG SWITCH: should_be_switch={should_be_switch} (cases={len(cases)}, has_default={has_default}, non_sequential={non_sequential})")
 
         if should_be_switch:
+            if not _validate_switch_integrity(cases, filtered_case_sources, cfg, start_to_block, resolver):
+                _switch_debug(
+                    f"Switch integrity check failed for block {block_id}; "
+                    "falling back to raw control flow"
+                )
+                continue
             debug_print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'")
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
