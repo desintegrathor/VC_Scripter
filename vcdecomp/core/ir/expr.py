@@ -17,7 +17,7 @@ from typing import List, Dict, Optional, Set, Tuple
 from ..disasm import opcodes
 from ..constants import get_constant_name, get_player_constant, FUNCTION_CONSTANT_CONTEXT
 from ..structures import (
-    get_struct_by_name, get_struct_by_size, get_field_at_offset,
+    get_struct_by_name, get_struct_by_size, get_verified_field_name,
     infer_struct_from_function, STRUCTURES_BY_SIZE
 )
 from .ssa import SSAFunction, SSAInstruction, SSAValue
@@ -466,7 +466,7 @@ class ExpressionFormatter:
             return f"field_{offset}"
 
         # Try to resolve field name from struct definition
-        field_name = get_field_at_offset(struct_type, offset)
+        field_name = get_verified_field_name(struct_type, offset)
         if field_name:
             return field_name
 
@@ -919,7 +919,7 @@ class ExpressionFormatter:
         struct_name = self._var_struct_types.get(base_var)
         if not struct_name:
             return None
-        return get_field_at_offset(struct_name, offset)
+        return get_verified_field_name(struct_name, offset)
 
     def _get_semantic_name(self, var_name: str) -> str:
         """
@@ -946,6 +946,18 @@ class ExpressionFormatter:
             return f"&{semantic_name}" if is_address else semantic_name
 
         return var_name
+
+    def _get_field_base_name(self, base_name: str, field_name: str) -> str:
+        """Return a display name for field access, avoiding renames for generic fields."""
+        if field_name.startswith("field_"):
+            is_address = base_name.startswith("&")
+            clean_name = base_name[1:] if is_address else base_name
+            for ssa_name, semantic_name in self._semantic_names.items():
+                if semantic_name == clean_name:
+                    clean_name = ssa_name
+                    break
+            return f"&{clean_name}" if is_address else clean_name
+        return self._get_semantic_name(base_name)
 
     def _get_struct_field_for_local(self, alias: str) -> Optional[str]:
         """
@@ -983,11 +995,11 @@ class ExpressionFormatter:
             if start_idx < idx <= end_idx:
                 # Calculate byte offset from base
                 offset = (idx - start_idx) * 4
-                field_name = get_field_at_offset(struct_name, offset)
+                field_name = self._resolve_field_name(base_var, offset)
                 if field_name:
                     # Use semantic name if available, otherwise fallback to base_var
-                    semantic_base = self._semantic_names.get(base_var, base_var)
-                    result = f"{semantic_base}.{field_name}"
+                    display_name = self._get_field_base_name(base_var, field_name)
+                    result = f"{display_name}.{field_name}"
                     return f"&{result}" if is_address else result
 
         return None
@@ -1927,7 +1939,7 @@ class ExpressionFormatter:
                             if 0 <= total_offset < 256:
                                 field_name = self._resolve_field_name(base_name, total_offset)
                                 # FIX (01-21): Use semantic name for struct field accesses
-                                display_name = self._get_semantic_name(base_name)
+                                display_name = self._get_field_base_name(base_name, field_name)
                                 result = f"{display_name}.{field_name}"
                                 return result
                         except (ValueError, AttributeError):
@@ -1978,11 +1990,11 @@ class ExpressionFormatter:
                                     # Check if offset matches a known struct field
                                     struct_def = get_struct_by_name(tracked_type)
                                     if struct_def and struct_def.size > offset:
-                                        field_name = get_field_at_offset(tracked_type, offset)
+                                        field_name = get_verified_field_name(tracked_type, offset)
                                         if field_name:
                                             # Return as array[0].field for struct arrays
                                             # FIX (01-21): Use semantic name for struct field accesses
-                                            display_name = self._get_semantic_name(base_name)
+                                            display_name = self._get_field_base_name(base_name, field_name)
                                             result = f"{display_name}[0].{field_name}"
                                             if self._type_tracker:
                                                 self._type_tracker.record_array_usage(base_name, result)
@@ -2012,7 +2024,7 @@ class ExpressionFormatter:
                                 if struct_type:
                                     field_name = self._resolve_field_name(base_name, offset)
                                     # FIX (01-21): Use semantic name for struct field accesses
-                                    display_name = self._get_semantic_name(base_name)
+                                    display_name = self._get_field_base_name(base_name, field_name)
                                     result = f"{display_name}.{field_name}"
                                     # Notify type_tracker of field usage
                                     if self._type_tracker:
@@ -2278,7 +2290,7 @@ class ExpressionFormatter:
 
                 if tracked_type:
                     # Get first field of the struct
-                    first_field = get_field_at_offset(tracked_type, 0)
+                    first_field = get_verified_field_name(tracked_type, 0)
                     if first_field:
                         result = f"{array_notation}.{first_field}"
                         # Notify type tracker of field usage
@@ -2298,8 +2310,8 @@ class ExpressionFormatter:
                                 size_val = self._get_constant_int(mul_right)
                                 if size_val and size_val > 4:
                                     structs = get_struct_by_size(size_val)
-                                    if structs:
-                                        first_field = structs[0].get_field_name_at_offset(0)
+                                    if len(structs) == 1:
+                                        first_field = get_verified_field_name(structs[0].name, 0)
                                         if first_field:
                                             result = f"{array_notation}.{first_field}"
                                             # Notify type tracker of field usage
@@ -2329,7 +2341,7 @@ class ExpressionFormatter:
                         # Use . operator and return address of field
                         field_name = self._resolve_field_name(base_name, field_offset)
                         # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_semantic_name(base_name)
+                        display_name = self._get_field_base_name(base_name, field_name)
                         return f"&{display_name}.{field_name}"
 
         # FIX: Handle PNT instruction (pointer arithmetic) for field access
@@ -2355,13 +2367,13 @@ class ExpressionFormatter:
                         if field_name.startswith("field_"):
                             # Try c_Vector3 (common 12-byte struct with x, y, z)
                             if field_offset in (0, 4, 8):
-                                from ..structures import get_field_at_offset as struct_field_lookup
+                                from ..structures import get_verified_field_name as struct_field_lookup
                                 vec3_field = struct_field_lookup("c_Vector3", field_offset)
                                 if vec3_field:
                                     field_name = vec3_field  # x, y, or z
 
                         # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_semantic_name(base_name)
+                        display_name = self._get_field_base_name(base_name, field_name)
                         return f"{display_name}.{field_name}"
 
         rendered = self._render_value(value)
@@ -2409,7 +2421,7 @@ class ExpressionFormatter:
                     tracked_type = self._var_struct_types.get(var_name)
 
                 if tracked_type:
-                    first_field = get_field_at_offset(tracked_type, 0)
+                    first_field = get_verified_field_name(tracked_type, 0)
                     if first_field:
                         result = f"{var_name}.{first_field}"
                         if self._type_tracker:
@@ -2753,7 +2765,7 @@ class ExpressionFormatter:
                         new_offset = base_offset + offset_add
                         field_name = self._resolve_field_name(base_var, new_offset)
                         # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_semantic_name(base_var)
+                        display_name = self._get_field_base_name(base_var, field_name)
                         expr = f"&{display_name}.{field_name}"
                         self._visiting.remove(cache_key)
                         self._inline_cache[cache_key] = expr
@@ -2966,7 +2978,7 @@ class ExpressionFormatter:
                                 if 0 <= total_offset < 256:
                                     field_name = self._resolve_field_name(base_name, total_offset)
                                     # FIX (01-21): Use semantic name for struct field accesses
-                                    display_name = self._get_semantic_name(base_name)
+                                    display_name = self._get_field_base_name(base_name, field_name)
                                     expr = f"&{display_name}.{field_name}"
                                     self._visiting.remove(cache_key)
                                     self._inline_cache[cache_key] = expr
@@ -2983,7 +2995,7 @@ class ExpressionFormatter:
                     # Simple structure field access (offset is byte offset)
                     field_name = self._resolve_field_name(base_name, offset_num)
                     # FIX (01-21): Use semantic name for struct field accesses
-                    display_name = self._get_semantic_name(base_name)
+                    display_name = self._get_field_base_name(base_name, field_name)
                     expr = f"&{display_name}.{field_name}"
                     self._visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
@@ -3006,7 +3018,7 @@ class ExpressionFormatter:
             if field_name:
                 # Render as struct field address: &base_var.field
                 # FIX (01-21): Use semantic name for struct field accesses
-                display_name = self._get_semantic_name(base_var)
+                display_name = self._get_field_base_name(base_var, field_name)
                 expr = f"&{display_name}.{field_name}"
             elif offset_num == 0:
                 expr = base
