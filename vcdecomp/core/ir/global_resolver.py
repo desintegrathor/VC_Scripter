@@ -76,7 +76,7 @@ class GlobalResolver:
     - Struct reconstruction support
     """
 
-    def __init__(self, ssa_func: SSAFunction, aggressive_typing: bool = True, infer_structs: bool = True, symbol_db=None):
+    def __init__(self, ssa_func: SSAFunction, aggressive_typing: bool = False, infer_structs: bool = True, symbol_db=None):
         self.ssa_func = ssa_func
         self.scr = ssa_func.scr
         self.globals: Dict[int, GlobalUsage] = {}  # offset -> usage
@@ -129,9 +129,7 @@ class GlobalResolver:
         self._map_globals_to_sgi_constants()
 
         # NEW Pattern 5: Infer types from instruction usage
-        # FIX 4: Enable type inference for globals
-        if self.aggressive_typing:
-            self._infer_global_types()
+        # Disabled by default: global typing is limited to header/SDK signatures.
 
         # NEW Pattern 6: Infer struct definitions from access patterns
         # NOTE: Temporarily disabled until struct_inference module is implemented
@@ -141,10 +139,7 @@ class GlobalResolver:
         # NEW Pattern 7: Infer struct types from XCALL arguments
         self._analyze_xcall_struct_args()
 
-        # NEW Pattern 7b: Heuristics for BOOL usage in conditions
-        self._apply_condition_type_hints()
-
-        # NEW Pattern 8: Heuristics for BOOL and Vector3 globals from calls
+        # NEW Pattern 8: Header/SDK signature-based type hints from calls
         self._apply_call_type_hints()
 
         # NEW Pattern 9: Validate array element sizes against inferred types
@@ -155,9 +150,6 @@ class GlobalResolver:
 
         # Finalize array dimension inference (requires SaveInfo size)
         self._finalize_array_dimensions()
-
-        # Apply header/structure size hints for missing types
-        self._apply_struct_size_hints()
 
         # Populate initializers from data segment (after types are inferred)
         self._apply_data_segment_initializers()
@@ -646,7 +638,6 @@ class GlobalResolver:
         Pattern detected:
             GADR data[X] + (index * size) → passed to XCALL arg expecting struct*
         """
-        from ..structures import FUNCTION_STRUCT_PARAMS
         from ..headers.database import get_header_database
 
         header_db = get_header_database()
@@ -675,7 +666,7 @@ class GlobalResolver:
                 # Extract function name
                 func_name = xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
 
-                # Get struct parameter mapping for this function (header DB + hardcoded)
+                # Get struct parameter mapping for this function from headers/SDK signatures
                 param_map = {}
                 header_sig = header_db.get_function_signature(func_name) if header_db else None
                 if header_sig and header_sig.get("parameters"):
@@ -687,7 +678,6 @@ class GlobalResolver:
                             base_type = param_type.replace("*", "").strip()
                             if base_type.startswith(("s_SC_", "s_", "c_")):
                                 param_map[idx] = base_type
-                param_map.update(FUNCTION_STRUCT_PARAMS.get(func_name, {}))
                 if not param_map:
                     continue
 
@@ -743,9 +733,8 @@ class GlobalResolver:
                     usage = self.globals[byte_offset]
 
                     # Set the array element type based on function parameter expectation
-                    if expected_type and not usage.inferred_type:
-                        usage.inferred_type = expected_type
-                        usage.type_confidence = 0.9  # High confidence from function signature
+                    if expected_type:
+                        self._apply_header_type_hint(usage, expected_type, 0.9)
                         usage.is_array_base = True
                         if element_size:
                             usage.array_element_size = element_size
@@ -844,9 +833,8 @@ class GlobalResolver:
                             logger.debug(f"Global {byte_offset}: type={inferred_type} (confidence={usage.type_confidence:.2f})")
 
                         # FIX 4.3: Propagate type from array element to array base
-                        # If this is an array element and we inferred its type,
-                        # propagate the type to the base array
-                        if usage.is_array_element and usage.array_base_offset is not None:
+                        # Only propagate when the type is confirmed from headers/SDK.
+                        if usage.is_array_element and usage.array_base_offset is not None and usage.header_type:
                             base_usage = self.globals.get(usage.array_base_offset)
                             if base_usage and not base_usage.inferred_type:
                                 # Propagate type with slightly lower confidence
@@ -1239,12 +1227,6 @@ class GlobalResolver:
         """
         Apply heuristics for BOOL and c_Vector3 globals based on function call usage.
         """
-        vector3_param_hints = {
-            "SC_P_GetPos": {1},
-            "SC_IsNear2D": {0, 1},
-            "SC_2VectorsDist": {0, 1},
-        }
-
         for block_id, instructions in self.ssa_func.instructions.items():
             for inst in instructions:
                 if inst.mnemonic != "XCALL":
@@ -1264,6 +1246,8 @@ class GlobalResolver:
                 if func_sig:
                     params = func_sig.get("parameters") or []
                     return_type = func_sig.get("return_type")
+                else:
+                    continue
 
                 for idx, value in enumerate(inst.inputs):
                     if not value:
@@ -1272,9 +1256,6 @@ class GlobalResolver:
                     param_type = None
                     if idx < len(params):
                         param_type = params[idx][0]
-
-                    if func_name in vector3_param_hints and idx in vector3_param_hints[func_name]:
-                        param_type = "c_Vector3"
 
                     if param_type not in {
                         "BOOL",
@@ -1292,9 +1273,10 @@ class GlobalResolver:
                         continue
 
                     if param_type == "BOOL":
+                        self._apply_header_type_hint(global_usage, "BOOL", 0.9)
                         self._apply_bool_usage(global_usage, is_array_access, element_size)
                     else:
-                        self._update_usage_type(global_usage, "c_Vector3", 0.85)
+                        self._apply_header_type_hint(global_usage, "c_Vector3", 0.85)
                         global_usage.is_struct_base = True
                         if is_array_access:
                             global_usage.is_array_base = True
@@ -1304,7 +1286,12 @@ class GlobalResolver:
                     for out_val in inst.outputs or []:
                         global_usage, is_array_access, element_size = self._get_global_usage_from_value(out_val)
                         if global_usage:
+                            self._apply_header_type_hint(global_usage, "BOOL", 0.9)
                             self._apply_bool_usage(global_usage, is_array_access, element_size)
+
+    def _apply_header_type_hint(self, usage: GlobalUsage, inferred_type: str, confidence: float) -> None:
+        usage.header_type = inferred_type
+        self._update_usage_type(usage, inferred_type, confidence)
 
     def _update_usage_type(self, usage: GlobalUsage, inferred_type: str, confidence: float) -> None:
         if not usage.inferred_type or confidence >= usage.type_confidence:
@@ -1462,7 +1449,7 @@ class GlobalResolver:
 
         data_segment = self.scr.data_segment
         from .data_resolver import DataResolver
-        from ...parsing.data_segment_initializers import build_initializer, looks_like_vector3
+        from ...parsing.data_segment_initializers import build_initializer
         from ..structures import get_struct_by_name
 
         type_info_dwords = {offset // 4: usage for offset, usage in self.globals.items()}
@@ -1509,12 +1496,6 @@ class GlobalResolver:
                     element_count *= dim
             elif usage.is_array_base:
                 continue
-
-            if element_count in {1, 3} and element_type in {"float", "dword", "int"} and looks_like_vector3(data_segment, byte_offset):
-                self._update_usage_type(usage, "c_Vector3", 0.75)
-                element_type = "c_Vector3"
-                element_size = 12
-                element_count = 1
 
             initializer = build_initializer(
                 data_segment,
