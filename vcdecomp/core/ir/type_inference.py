@@ -4,8 +4,6 @@ Type Inference Engine for Vietcong Script Decompiler.
 Aggressively infers variable types from:
 1. Instruction patterns (FADD → float, IADD → int)
 2. Function call arguments (match against known signatures)
-3. Struct field accesses (field type → variable type)
-4. Constant values (range-based inference)
 """
 
 from __future__ import annotations
@@ -104,7 +102,7 @@ class TypeInferenceEngine:
     Supports aggressive mode which overrides existing type hints.
     """
 
-    def __init__(self, ssa_func: SSAFunction, aggressive: bool = True, field_tracker=None):
+    def __init__(self, ssa_func: SSAFunction, aggressive: bool = False, field_tracker=None):
         """
         Initialize type inference engine.
 
@@ -194,14 +192,9 @@ class TypeInferenceEngine:
         Returns:
             Dictionary mapping variable names to inferred types
         """
-        # Run pattern-based analysis passes
+        # Run opcode-based analysis passes
         self._infer_from_instructions()
         self._infer_from_function_calls()
-        self._infer_from_struct_accesses()
-        self._infer_from_constants()
-
-        # Run role-based inference before propagation
-        self._infer_from_usage_roles()
 
         # Run context-aware data-flow propagation
         self._propagate_through_dataflow()
@@ -284,7 +277,11 @@ class TypeInferenceEngine:
                         refined_type = type_to_enum.get(inferred_type_str, opcodes.ResultType.UNKNOWN)
 
                         # Update if different and refined is more specific
-                        if refined_type != initial_type and refined_type != opcodes.ResultType.UNKNOWN:
+                        if (
+                            refined_type != initial_type
+                            and refined_type != opcodes.ResultType.UNKNOWN
+                            and self._has_explicit_opcode_evidence(value.name, inferred_type_str)
+                        ):
                             # Get confidence for logging
                             info = self.type_info.get(value.name)
                             confidence = info.evidence[-1].confidence if info and info.evidence else 0.0
@@ -295,6 +292,23 @@ class TypeInferenceEngine:
                                 f"(confidence {confidence:.2f})"
                             )
                             value.value_type = refined_type
+
+    def _has_explicit_opcode_evidence(self, var_name: str, inferred_type: str) -> bool:
+        """Check if a variable's type is backed by explicit opcode evidence."""
+        info = self.type_info.get(var_name)
+        if not info:
+            return False
+
+        return any(
+            ev.source == TypeSource.INSTRUCTION and ev.inferred_type == inferred_type
+            for ev in info.evidence
+        )
+
+    def _is_global_value(self, value: SSAValue) -> bool:
+        """Return True if SSA value represents a global/data segment reference."""
+        if not value or not value.alias:
+            return False
+        return value.alias.startswith("data_") or value.alias.startswith("&data_")
 
     def _get_or_create_type_info(self, var_name: str) -> TypeInfo:
         """Get or create TypeInfo for a variable."""
@@ -954,6 +968,9 @@ class TypeInferenceEngine:
         if propagated_confidence < self.propagation_min_confidence:
             return False
 
+        if self._is_global_value(dest) and propagated_confidence < 0.95:
+            return False
+
         # Check if destination already has this or better evidence
         dest_info = self._get_or_create_type_info(dest.name)
         for existing_ev in dest_info.evidence:
@@ -1011,6 +1028,9 @@ class TypeInferenceEngine:
         # Apply confidence decay
         propagated_confidence = max_source_confidence * (1.0 - self.propagation_decay)
         propagated_confidence = min(propagated_confidence, base_confidence)
+
+        if self._is_global_value(dest) and propagated_confidence < 0.95:
+            return False
 
         # Check if destination already has better evidence
         dest_info = self._get_or_create_type_info(dest.name)
@@ -1214,6 +1234,8 @@ class TypeInferenceEngine:
                 # Apply to PHI output
                 output = inst.outputs[0]
                 if output and output.name:
+                    if self._is_global_value(output) and merged_confidence < 0.95:
+                        continue
                     output_info = self._get_or_create_type_info(output.name)
 
                     # Check if we already have this
