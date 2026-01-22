@@ -79,12 +79,19 @@ class TypeInfo:
     evidence: List[TypeEvidence] = field(default_factory=list)
     """All collected evidence"""
 
+    candidate_scores: Dict[str, float] = field(default_factory=dict)
+    """Accumulated scores per candidate type"""
+
     final_type: Optional[str] = None
     """Resolved final type"""
 
     def add_evidence(self, ev: TypeEvidence):
         """Add new evidence."""
         self.evidence.append(ev)
+        self.candidate_scores[ev.inferred_type] = (
+            self.candidate_scores.get(ev.inferred_type, 0.0) + ev.confidence
+        )
+        self.final_type = None
 
     def has_hard_evidence(self, min_confidence: float = 0.95) -> bool:
         """Check if variable has strong evidence from hard sources."""
@@ -93,6 +100,37 @@ class TypeInfo:
             for ev in self.evidence
         )
 
+    def prune_candidates(
+        self,
+        scores: Optional[Dict[str, float]] = None,
+        min_ratio: float = 0.1,
+        min_score: float = 0.05,
+    ) -> Dict[str, float]:
+        """
+        Remove candidates with very low scores.
+
+        Args:
+            scores: Optional score map to prune. If None, prune self.candidate_scores.
+            min_ratio: Minimum ratio of the top score required to keep a candidate.
+            min_score: Minimum absolute score required to keep a candidate.
+
+        Returns:
+            Pruned score map.
+        """
+        target_scores = scores if scores is not None else self.candidate_scores
+        if not target_scores:
+            return {} if scores is not None else self.candidate_scores
+
+        max_score = max(target_scores.values())
+        threshold = max(min_score, max_score * min_ratio)
+        pruned = {name: score for name, score in target_scores.items() if score >= threshold}
+
+        if scores is None:
+            self.candidate_scores = pruned
+            return self.candidate_scores
+
+        return pruned
+
     def resolve_type(self) -> str:
         """
         Resolve final type from evidence using weighted voting.
@@ -100,8 +138,17 @@ class TypeInfo:
         Returns:
             Best inferred type based on confidence scores
         """
-        if not self.evidence:
+        if not self.evidence and not self.candidate_scores:
             return "int"  # Default fallback
+
+        def score_evidence(evidence: List[TypeEvidence]) -> Dict[str, float]:
+            scores: Dict[str, float] = {}
+            for ev in evidence:
+                scores[ev.inferred_type] = scores.get(ev.inferred_type, 0.0) + ev.confidence
+            return scores
+
+        if not self.candidate_scores and self.evidence:
+            self.candidate_scores = score_evidence(self.evidence)
 
         evidence_pool = self.evidence
         if self.has_hard_evidence():
@@ -110,22 +157,42 @@ class TypeInfo:
                 if ev.source.priority != TypePriority.SOFT
             ]
 
-        # Group evidence by type
-        type_scores: Dict[str, float] = {}
-        for ev in evidence_pool:
-            if ev.inferred_type not in type_scores:
-                type_scores[ev.inferred_type] = 0.0
-            type_scores[ev.inferred_type] += ev.confidence
+        type_scores = score_evidence(evidence_pool)
+        if not type_scores:
+            type_scores = dict(self.candidate_scores)
 
-        if 'float' in type_scores and 'int' in type_scores:
-            max_float = max(ev.confidence for ev in evidence_pool if ev.inferred_type == 'float')
-            if max_float >= 0.90:
-                self.final_type = 'float'
-                return self.final_type
+        type_scores = self.prune_candidates(scores=type_scores)
 
-        # Return type with highest total confidence
-        best_type = max(type_scores.items(), key=lambda x: x[1])
-        self.final_type = best_type[0]
+        hard_confidence_by_type: Dict[str, float] = {}
+        for ev in self.evidence:
+            if ev.source.priority == TypePriority.HARD:
+                hard_confidence_by_type[ev.inferred_type] = max(
+                    hard_confidence_by_type.get(ev.inferred_type, 0.0),
+                    ev.confidence,
+                )
+
+        hard_ban_rules = {
+            "float": {"int", "char", "short"},
+            "double": {"int", "char", "short", "float"},
+            "int": {"float", "double"},
+            "short": {"float", "double"},
+            "char": {"float", "double"},
+        }
+
+        for hard_type, confidence in hard_confidence_by_type.items():
+            if confidence < 0.90:
+                continue
+            for banned in hard_ban_rules.get(hard_type, set()):
+                type_scores.pop(banned, None)
+
+        if not type_scores:
+            type_scores = dict(self.candidate_scores)
+
+        def score_key(type_name: str):
+            return (type_scores[type_name], hard_confidence_by_type.get(type_name, 0.0))
+
+        best_type = max(type_scores.keys(), key=score_key)
+        self.final_type = best_type
         return self.final_type
 
 
