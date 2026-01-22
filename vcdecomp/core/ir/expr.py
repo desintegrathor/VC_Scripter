@@ -2530,6 +2530,32 @@ class ExpressionFormatter:
         if re.match(dec_pattern, source) or re.match(dec_pattern_no_paren, source):
             return f"{target}--;"
 
+        # Expression simplification: x = x <op> y → x <op>= y
+        simplified_source = source.strip()
+        if simplified_source.startswith("(") and simplified_source.endswith(")"):
+            simplified_source = simplified_source[1:-1].strip()
+
+        compound_ops = {
+            "+": "+=",
+            "-": "-=",
+            "*": "*=",
+            "/": "/=",
+        }
+        for op_symbol, compound in compound_ops.items():
+            left_pattern = rf"^{re.escape(target)}\s*\\{op_symbol}\s*(.+)$"
+            match = re.match(left_pattern, simplified_source)
+            if match:
+                rhs = match.group(1).strip()
+                if rhs:
+                    return f"{target} {compound} {rhs};"
+            if op_symbol in {"+", "*"}:
+                right_pattern = rf"^(.+)\s*\\{op_symbol}\s*{re.escape(target)}$"
+                match = re.match(right_pattern, simplified_source)
+                if match:
+                    rhs = match.group(1).strip()
+                    if rhs:
+                        return f"{target} {compound} {rhs};"
+
         return f"{target} = {source};"
 
     def _inline_expression(
@@ -3300,7 +3326,9 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
         # Dead code elimination: Skip if output is never used
         if inst.outputs:
             has_used_output = any(len(val.uses) > 0 for val in inst.outputs)
-            if not has_used_output:
+            if (not has_used_output and
+                    inst.mnemonic not in formatter._store_ops and
+                    inst.mnemonic not in {"CALL", "XCALL"}):
                 # Output is never used - skip this instruction (dead code)
                 continue
 

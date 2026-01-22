@@ -446,16 +446,29 @@ def _collect_and_chain(
         return ([], None, None)
 
     last_instr = block.instructions[-1]
-    mnemonic = resolver.get_mnemonic(last_instr.opcode)
+    conditional_instr = None
+    explicit_true_target = None
 
-    # Block must end with conditional jump (JZ/JNZ) to be part of AND chain
-    if not resolver.is_conditional_jump(last_instr.opcode):
+    # Block must contain a conditional jump (JZ/JNZ) to be part of a chain.
+    if resolver.is_conditional_jump(last_instr.opcode):
+        conditional_instr = last_instr
+    elif len(block.instructions) >= 2:
+        second_last = block.instructions[-2]
+        if (resolver.is_conditional_jump(second_last.opcode) and
+                resolver.get_mnemonic(last_instr.opcode) == "JMP"):
+            conditional_instr = second_last
+            explicit_true_target = start_to_block.get(last_instr.arg1)
+
+    if conditional_instr is None:
         return ([], None, None)
 
     # This is the first block in potential AND chain
     chain_blocks = [start_block_id]
-    false_target_addr = last_instr.arg1  # Where to go if condition fails
+    false_target_addr = conditional_instr.arg1  # Where to go if condition fails
     false_target = start_to_block.get(false_target_addr)
+
+    if explicit_true_target is not None:
+        return (chain_blocks, explicit_true_target, false_target)
 
     # Follow fallthrough path to find more conditions or TRUE target
     fallthrough_addr = last_instr.address + 1
