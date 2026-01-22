@@ -667,6 +667,12 @@ class ExpressionFormatter:
         # Assign semantic names to parameters
         self._assign_parameter_names()
 
+    def _should_use_semantic_name(self, var_name: str) -> bool:
+        """Check if semantic renaming is allowed for this variable."""
+        if not self._type_tracker:
+            return True
+        return self._type_tracker.should_use_semantic_name(var_name)
+
     def _detect_loop_counters(self) -> None:
         """
         Detect loop counter variables based on usage patterns.
@@ -935,6 +941,8 @@ class ExpressionFormatter:
         # Check if there's a semantic name for this variable
         semantic_name = self._semantic_names.get(base_name)
         if semantic_name:
+            if not self._should_use_semantic_name(base_name):
+                return f"&{base_name}" if is_address else base_name
             return f"&{semantic_name}" if is_address else semantic_name
 
         return var_name
@@ -1470,6 +1478,8 @@ class ExpressionFormatter:
             if var_to_check.startswith("local_") or var_to_check.startswith("param_"):
                 semantic_name = self._semantic_names.get(var_to_check)
                 if semantic_name:
+                    if not self._should_use_semantic_name(var_to_check):
+                        return f"&{var_to_check}" if is_address_of else var_to_check
                     # FÁZE 1.2: Check uniqueness - prevent i==i collision
                     if semantic_name not in self._used_semantic_names:
                         self._used_semantic_names.add(semantic_name)
