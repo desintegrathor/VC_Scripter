@@ -2266,6 +2266,10 @@ class ExpressionFormatter:
                         ssa_name = ssa_n
                         break
 
+                # If heritage indicates this is a float, keep it as a scalar
+                if self._get_heritage_type(ssa_name) == "float":
+                    return var_name
+
                 # PRIORITY 1: Check type_tracker (unified tracker) with SSA name
                 if self._type_tracker:
                     info = self._type_tracker.get_usage_info(ssa_name)
@@ -2371,8 +2375,27 @@ class ExpressionFormatter:
                 if call_expr_override:
                     break
 
+        # Determine if we should preserve numeric defaults for float-like assignments
+        preserve_numeric_defaults = False
+        if inst.outputs and len(inst.outputs) == 1:
+            dest_value = inst.outputs[0]
+            if dest_value and dest_value.name:
+                heritage_type = self._get_heritage_type(dest_value.name)
+                if heritage_type == "float":
+                    preserve_numeric_defaults = True
+        elif len(inst.inputs) >= 2:
+            # Pointer assignment: ASGN(value, address) -> inspect destination base var type
+            dest_name = self._extract_var_from_pointer(inst.inputs[1])
+            if dest_name:
+                heritage_type = self._get_heritage_type(dest_name)
+                if heritage_type == "float":
+                    preserve_numeric_defaults = True
+
         # Render both values first to analyze them
-        rendered0 = call_expr_override if call_expr_override else self._render_value(inst.inputs[0])
+        rendered0 = call_expr_override if call_expr_override else self._render_value(
+            inst.inputs[0],
+            expected_type_str="float" if preserve_numeric_defaults else None
+        )
         rendered1 = self._render_value(inst.inputs[1])
 
         # Determine which operand is the target (lvalue) and which is the source (rvalue)

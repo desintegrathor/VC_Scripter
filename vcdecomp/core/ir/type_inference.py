@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
+from collections import defaultdict
 from enum import Enum
 import logging
 
@@ -83,6 +84,12 @@ class TypeInfo:
                 type_scores[ev.inferred_type] = 0.0
             type_scores[ev.inferred_type] += ev.confidence
 
+        if 'float' in type_scores and 'int' in type_scores:
+            max_float = max(ev.confidence for ev in self.evidence if ev.inferred_type == 'float')
+            if max_float >= 0.90:
+                self.final_type = 'float'
+                return self.final_type
+
         # Return type with highest total confidence
         best_type = max(type_scores.items(), key=lambda x: x[1])
         self.final_type = best_type[0]
@@ -113,6 +120,10 @@ class TypeInferenceEngine:
 
         # SSA value name → TypeInfo
         self.type_info: Dict[str, TypeInfo] = {}
+        self._alias_map: Dict[str, List[SSAValue]] = defaultdict(list)
+        for value in ssa_func.values.values():
+            if value.alias:
+                self._alias_map[value.alias].append(value)
 
         # Context-aware propagation settings
         self.propagation_depth_limit = 10  # Max propagation hops
@@ -546,38 +557,43 @@ class TypeInferenceEngine:
     def _infer_from_function_calls(self):
         """Infer types from function call arguments."""
         for block_id, instructions in self.ssa.instructions.items():
-            for inst in instructions:
+            for idx, inst in enumerate(instructions):
                 if inst.mnemonic == 'XCALL':
-                    self._analyze_function_call(inst)
+                    return_type = self._analyze_function_call(inst)
+                    if return_type and return_type not in {'void'}:
+                        self._infer_xcall_return_type(instructions, idx, return_type)
 
-    def _analyze_function_call(self, inst: SSAInstruction):
+    def _analyze_function_call(self, inst: SSAInstruction) -> Optional[str]:
         """Analyze function call for type evidence."""
         if not inst.instruction or not inst.instruction.instruction:
-            return
+            return None
 
         xfn_index = inst.instruction.instruction.arg1
         if not self.ssa.scr.xfn_table:
-            return
+            return None
 
         # Get XFN entry
         xfn_entries = getattr(self.ssa.scr.xfn_table, 'entries', [])
         if xfn_index >= len(xfn_entries):
-            return
+            return None
 
         xfn_entry = xfn_entries[xfn_index]
         if not xfn_entry.name:
-            return
+            return None
 
         # Extract function name
         func_name = xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
 
         # Lookup signature in header database
         func_sig = self.header_db.get_function_signature(func_name)
-        if not func_sig or not func_sig.get('parameters'):
-            return
+        if not func_sig:
+            return None
+
+        return_type = func_sig.get('return_type')
 
         # Match arguments to parameter types
-        param_types = [param[0] for param in func_sig['parameters']]
+        params = func_sig.get('parameters') or []
+        param_types = [param[0] for param in params]
 
         # Inputs to XCALL are the arguments (in reverse order usually)
         for i, value in enumerate(inst.inputs):
@@ -590,6 +606,43 @@ class TypeInferenceEngine:
                     inferred_type=param_type,
                     reason=f'Passed to {func_name} parameter {i} ({param_type})'
                 ))
+
+        if return_type and return_type not in {'void'} and inst.outputs:
+            for out_val in inst.outputs:
+                if out_val and out_val.name:
+                    info = self._get_or_create_type_info(out_val.name)
+                    info.add_evidence(TypeEvidence(
+                        confidence=0.98,
+                        source=TypeSource.FUNCTION_CALL,
+                        inferred_type=return_type,
+                        reason=f'{func_name} returns {return_type}'
+                    ))
+
+        return return_type
+
+    def _infer_xcall_return_type(
+        self,
+        instructions: List[SSAInstruction],
+        xcall_index: int,
+        return_type: str
+    ) -> None:
+        """Infer return types from XCALL + LLD patterns."""
+        search_limit = min(len(instructions), xcall_index + 4)
+        for next_idx in range(xcall_index + 1, search_limit):
+            next_inst = instructions[next_idx]
+            if next_inst.mnemonic == "LLD" and next_inst.outputs:
+                for out_val in next_inst.outputs:
+                    if out_val and out_val.name:
+                        info = self._get_or_create_type_info(out_val.name)
+                        info.add_evidence(TypeEvidence(
+                            confidence=0.96,
+                            source=TypeSource.FUNCTION_CALL,
+                            inferred_type=return_type,
+                            reason='XCALL return value (LLD after XCALL)'
+                        ))
+                break
+            if next_inst.mnemonic in {"CALL", "XCALL", "JMP", "JZ", "JNZ", "RET"}:
+                break
 
     def _infer_from_struct_accesses(self):
         """
@@ -813,6 +866,19 @@ class TypeInferenceEngine:
                         # Also try struct type propagation
                         if self._propagate_struct_type(source, dest):
                             changes = True
+                elif inst.mnemonic == 'ASGN' and len(inst.inputs) >= 2:
+                    source = inst.inputs[0]
+                    target = inst.inputs[1]
+                    target_alias = target.alias or ""
+                    if source.name and target_alias.startswith("&"):
+                        target_name = target_alias[1:]
+                        source_type = self.get_type_for_variable(source.name)
+                        if not source_type and source.value_type != opcodes.ResultType.UNKNOWN:
+                            source_type = self._result_type_to_string(source.value_type)
+                        if source_type:
+                            for target_val in self._alias_map.get(target_name, []):
+                                if self._apply_type_constraint(target_val, source_type, 'ASGN'):
+                                    changes = True
 
                 # Identity operations: a = b + 0, a = b * 1
                 elif self._check_identity_op(inst):
@@ -1399,7 +1465,7 @@ class TypeInferenceEngine:
         # Fallback: generic name
         return f"param_{param_index}"
 
-    def infer_return_type(self) -> str:
+    def infer_return_type(self, block_ids: Optional[Set[int]] = None) -> str:
         """
         Infer return type from return statements.
 
@@ -1414,17 +1480,26 @@ class TypeInferenceEngine:
         has_value_return = False
 
         # Scan all blocks for RET instructions
-        for block_id, instructions in self.ssa.instructions.items():
-            for inst in instructions:
+        blocks = block_ids if block_ids is not None else self.ssa.instructions.keys()
+        for block_id in blocks:
+            instructions = self.ssa.instructions.get(block_id, [])
+            for idx, inst in enumerate(instructions):
                 if inst.mnemonic == 'RET':
-                    # Check RET arg1 to see if it returns a value
-                    if inst.instruction and inst.instruction.instruction:
-                        ret_count = inst.instruction.instruction.arg1
-                        if ret_count > 0:
-                            has_value_return = True
-                            # Try to get the returned value if inputs are tracked
-                            if inst.inputs:
-                                return_values.append(inst.inputs[0])
+                    # Look for LLD [sp-3] storing return value before RET
+                    for prev_idx in range(idx - 1, max(-1, idx - 6), -1):
+                        if prev_idx < 0:
+                            break
+                        prev_inst = instructions[prev_idx]
+                        if prev_inst.mnemonic == 'LLD' and prev_inst.instruction and prev_inst.instruction.instruction:
+                            offset = prev_inst.instruction.instruction.arg1
+                            if offset >= 0x80000000:
+                                offset = offset - 0x100000000
+                            if offset == -3 and prev_inst.inputs:
+                                has_value_return = True
+                                return_values.append(prev_inst.inputs[0])
+                                break
+                        if prev_inst.mnemonic in {'JMP', 'JZ', 'JNZ', 'CALL', 'XCALL'}:
+                            break
 
         # If ANY RET returns a value, function returns int (not void)
         if not has_value_return:
