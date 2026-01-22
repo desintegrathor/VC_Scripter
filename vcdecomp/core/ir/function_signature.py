@@ -7,10 +7,11 @@ Analyzes LCP/ASP/RET patterns to determine:
 - Calling convention
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass
 
 from .ssa import SSAFunction
+from .constant_propagation import ConstantPropagator
 
 
 @dataclass
@@ -38,6 +39,82 @@ class FunctionSignature:
                 params = ", ".join([f"int param_{i}" for i in range(self.param_count)])
 
         return f"{self.return_type} {func_name}({params})"
+
+
+@dataclass
+class CallSiteAnalysis:
+    """Information about call-site argument usage for a function."""
+    arg_counts: Set[int]
+    args_all_constants: List[bool]
+
+
+def _get_debug_param_name(ssa_func: SSAFunction, param_index: int) -> str:
+    """
+    Get parameter name from save_info debug symbols if available.
+
+    Falls back to param_N if no debug info.
+    """
+    scr = ssa_func.scr
+    if hasattr(scr, 'save_info') and scr.save_info and hasattr(scr.save_info, 'parameters'):
+        params = scr.save_info.parameters
+        if params and param_index < len(params):
+            param = params[param_index]
+            if hasattr(param, 'name') and param.name:
+                return param.name
+    return f"param_{param_index}"
+
+
+def _is_constant_argument(constant_propagator: ConstantPropagator, value) -> bool:
+    if getattr(value, "constant_value", None) is not None:
+        return True
+    return constant_propagator.get_constant(value) is not None
+
+
+def _analyze_call_sites(
+    ssa_func: SSAFunction,
+    func_start: int
+) -> Optional[CallSiteAnalysis]:
+    """Analyze call sites to infer argument counts and constant-only arguments."""
+    arg_counts: Set[int] = set()
+    call_count = 0
+    max_args = 0
+    seen_counts: Dict[int, int] = {}
+    all_constant_flags: Dict[int, bool] = {}
+
+    constant_propagator = ConstantPropagator(ssa_func)
+    constant_propagator.analyze()
+
+    for block_instrs in ssa_func.instructions.values():
+        for inst in block_instrs:
+            if inst.mnemonic != "CALL":
+                continue
+            if not inst.instruction or not inst.instruction.instruction:
+                continue
+            if inst.instruction.instruction.arg1 != func_start:
+                continue
+
+            args = inst.inputs or []
+            call_count += 1
+            arg_counts.add(len(args))
+            max_args = max(max_args, len(args))
+
+            for idx in range(len(args)):
+                seen_counts[idx] = seen_counts.get(idx, 0) + 1
+                if idx not in all_constant_flags:
+                    all_constant_flags[idx] = True
+                if not _is_constant_argument(constant_propagator, args[idx]):
+                    all_constant_flags[idx] = False
+
+    if not arg_counts:
+        return None
+
+    args_all_constants: List[bool] = []
+    for idx in range(max_args):
+        seen = seen_counts.get(idx, 0)
+        is_constant = all_constant_flags.get(idx, True)
+        args_all_constants.append(seen == call_count and is_constant)
+
+    return CallSiteAnalysis(arg_counts=arg_counts, args_all_constants=args_all_constants)
 
 
 def detect_function_signature(
@@ -174,6 +251,31 @@ def detect_function_signature(
                 sig.param_types.append(f"float param_{param_index}")
             else:
                 sig.param_types.append(f"int param_{param_index}")
+
+    # Apply call-site analysis to refine parameter count
+    call_site_analysis = _analyze_call_sites(ssa_func, func_start)
+    if call_site_analysis and len(call_site_analysis.arg_counts) == 1:
+        call_arg_count = next(iter(call_site_analysis.arg_counts))
+        if call_arg_count == 0:
+            sig.param_count = 0
+            sig.param_types = []
+        else:
+            if sig.param_count < call_arg_count:
+                sig.param_count = call_arg_count
+            while len(sig.param_types) < sig.param_count:
+                param_index = len(sig.param_types)
+                param_name = _get_debug_param_name(ssa_func, param_index)
+                sig.param_types.append(f"int {param_name}")
+        if call_site_analysis.args_all_constants:
+            for idx, is_constant in enumerate(call_site_analysis.args_all_constants):
+                if not is_constant or idx >= sig.param_count:
+                    continue
+                debug_name = _get_debug_param_name(ssa_func, idx)
+                if debug_name != f"param_{idx}":
+                    existing = sig.param_types[idx] if idx < len(sig.param_types) else "int"
+                    parts = existing.split()
+                    type_name = " ".join(parts[:-1]) if len(parts) >= 2 else existing
+                    sig.param_types[idx] = f"{type_name} {debug_name}".strip()
 
     # Determine return type from RET instructions
     # If ANY RET returns a value, function returns int
