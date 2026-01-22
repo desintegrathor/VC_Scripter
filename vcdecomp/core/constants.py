@@ -315,6 +315,21 @@ def load_constants_from_headers() -> None:
             except (ValueError, TypeError):
                 pass
 
+        # Load all GVAR_ constants (documented global indices)
+        gvar_constants = db.get_constants_by_prefix('GVAR')
+        for name, data in gvar_constants.items():
+            try:
+                value_str = data.get('value', '')
+                if value_str.startswith('0x'):
+                    value = int(value_str, 16)
+                else:
+                    value = int(value_str)
+
+                if value not in SGI_CONSTANTS:
+                    SGI_CONSTANTS[value] = name
+            except (ValueError, TypeError):
+                pass
+
         # Load additional SCM_ constants from headers
         scm_constants = db.get_constants_by_prefix('SCM')
         for name, data in scm_constants.items():
@@ -372,9 +387,8 @@ def get_constant_name(prefix: str, value: int) -> Optional[str]:
     table = tables.get(prefix.upper())
     if table:
         name = table.get(value)
-        # COMPILATION FIX: Skip GVAR_* constants (not defined in headers)
-        # GVAR_* are documentation-only names, use numeric literals instead
-        if name and name.startswith("GVAR_"):
+        # If GVAR_* is used outside SGI/SGF contexts, fall back to literal
+        if name and name.startswith("GVAR_") and prefix.upper() not in ("SGI", "SGF"):
             return None
         return name
     return None
