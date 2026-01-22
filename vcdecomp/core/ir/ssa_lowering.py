@@ -357,10 +357,12 @@ class SSALowerer:
 
             # Pattern 2: side2, side3 → side
             if len(name) > 1 and name[-1].isdigit():
-                # Strip all trailing digits
-                base = name.rstrip('0123456789')
-                if base:
-                    candidate_names.add(base)
+                # Avoid stripping indices for local_/param_ base names
+                if not name.startswith(("local_", "param_")):
+                    # Strip all trailing digits
+                    base = name.rstrip('0123456789')
+                    if base:
+                        candidate_names.add(base)
 
             # Pattern 3: local_8_v1 → local_8
             if '_v' in name:
@@ -480,19 +482,16 @@ class SSALowerer:
 
         for base_var in base_vars:
             # CRITICAL FIX (07-08): Opcode-first priority to eliminate Pattern 2
-            # Check if any version has opcode-derived type (IADD→int, FADD→float)
+            # Check if any SSA value with this base alias has opcode-derived type
             # These concrete types ALWAYS override struct inference
             opcode_type = None
-            for version in base_var.versions:
-                # Check if this SSA value has a non-UNKNOWN type
-                if hasattr(version, 'ssa_value') and version.ssa_value:
-                    from ..disasm import opcodes
-                    if version.ssa_value.value_type != opcodes.ResultType.UNKNOWN:
-                        # Import helper from variables.py
-                        from .structure.analysis.variables import result_type_to_c_type
-                        opcode_type = result_type_to_c_type(version.ssa_value.value_type)
-                        if opcode_type:
-                            break
+            from ..disasm import opcodes
+            from .structure.analysis.variables import result_type_to_c_type
+            for value in self.ssa_func.values.values():
+                if value.alias == base_var.base_name and value.value_type != opcodes.ResultType.UNKNOWN:
+                    opcode_type = result_type_to_c_type(value.value_type)
+                    if opcode_type:
+                        break
 
             # Infer type from semantic type and usage
             var_type = "int"  # Default

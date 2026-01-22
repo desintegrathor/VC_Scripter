@@ -49,7 +49,19 @@ def _detect_early_return_pattern(
         return None
 
     last_instr = block.instructions[-1]
-    if not resolver.is_conditional_jump(last_instr.opcode):
+    conditional_instr = None
+    has_explicit_jump = False
+
+    if resolver.is_conditional_jump(last_instr.opcode):
+        conditional_instr = last_instr
+    elif len(block.instructions) >= 2:
+        second_last = block.instructions[-2]
+        if (resolver.is_conditional_jump(second_last.opcode) and
+                resolver.get_mnemonic(last_instr.opcode) == "JMP"):
+            conditional_instr = second_last
+            has_explicit_jump = True
+
+    if conditional_instr is None:
         return None
 
     # Get true (jump target) and false (fallthrough) branches
@@ -351,7 +363,19 @@ def _detect_if_else_pattern(
         return None
 
     last_instr = block.instructions[-1]
-    if not resolver.is_conditional_jump(last_instr.opcode):
+    conditional_instr = None
+    has_explicit_jump = False
+
+    if resolver.is_conditional_jump(last_instr.opcode):
+        conditional_instr = last_instr
+    elif len(block.instructions) >= 2:
+        second_last = block.instructions[-2]
+        if (resolver.is_conditional_jump(second_last.opcode) and
+                resolver.get_mnemonic(last_instr.opcode) == "JMP"):
+            conditional_instr = second_last
+            has_explicit_jump = True
+
+    if conditional_instr is None:
         return None
 
     # FÁZE 2C: Allow 1 or 2 successors (1 = if-without-else, 2 = if/else)
@@ -365,22 +389,36 @@ def _detect_if_else_pattern(
     # JNZ (Jump if Not Zero) = jump when condition is TRUE (not zero)
     #   -> arg1 is TRUE branch, fallthrough is FALSE branch
 
-    mnemonic = resolver.get_mnemonic(last_instr.opcode)
-    jump_addr = last_instr.arg1
-    fallthrough_addr = last_instr.address + 1
+    mnemonic = resolver.get_mnemonic(conditional_instr.opcode)
+    jump_addr = conditional_instr.arg1
+    fallthrough_addr = conditional_instr.address + 1
 
-    if mnemonic == "JZ":
-        # JZ: jump target is FALSE branch, fallthrough is TRUE branch
-        true_addr = fallthrough_addr
-        false_addr = jump_addr
-    elif mnemonic == "JNZ":
-        # JNZ: jump target is TRUE branch, fallthrough is FALSE branch
-        true_addr = jump_addr
-        false_addr = fallthrough_addr
+    if has_explicit_jump:
+        jmp_target = last_instr.arg1
+        if mnemonic == "JZ":
+            # JZ: jump target is FALSE branch, JMP is TRUE branch
+            true_addr = jmp_target
+            false_addr = jump_addr
+        elif mnemonic == "JNZ":
+            # JNZ: jump target is TRUE branch, JMP is FALSE branch
+            true_addr = jump_addr
+            false_addr = jmp_target
+        else:
+            true_addr = jmp_target
+            false_addr = jump_addr
     else:
-        # Other conditional jumps - assume JZ behavior (most common)
-        true_addr = fallthrough_addr
-        false_addr = jump_addr
+        if mnemonic == "JZ":
+            # JZ: jump target is FALSE branch, fallthrough is TRUE branch
+            true_addr = fallthrough_addr
+            false_addr = jump_addr
+        elif mnemonic == "JNZ":
+            # JNZ: jump target is TRUE branch, fallthrough is FALSE branch
+            true_addr = jump_addr
+            false_addr = fallthrough_addr
+        else:
+            # Other conditional jumps - assume JZ behavior (most common)
+            true_addr = fallthrough_addr
+            false_addr = jump_addr
 
     true_block = start_to_block.get(true_addr)
     if true_block is None:

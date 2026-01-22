@@ -257,7 +257,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     quick_type_engine = None
     try:
         quick_type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
-        quick_type_engine.infer_types()  # Just infer types, don't update SSA values yet
+        quick_type_engine.integrate_with_ssa_values()
     except Exception as e:
         logger.debug(f"Quick type inference for PHI resolution failed: {e}")
 
@@ -379,6 +379,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         scr_header_enter_size=scr.header.enter_size,
         type_engine=None  # Disable type inference for signatures - use bytecode detection
     )
+    if type_engine:
+        inferred_return_type = type_engine.infer_return_type(set(func_block_ids))
+        if inferred_return_type and signature:
+            parts = signature.split(" ", 1)
+            if len(parts) == 2:
+                signature = f"{inferred_return_type} {parts[1]}"
 
     lines.append(f"{signature} {{")
 
@@ -562,6 +568,32 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     for involved_block in if_pattern.compound.involved_blocks:
                         if involved_block not in block_to_if:
                             block_to_if[involved_block] = if_pattern
+
+                # Detect nested if/else patterns inside this if/else body
+                nested_blocks = set(if_pattern.true_body) | set(if_pattern.false_body)
+                for body_block_id in nested_blocks:
+                    if (body_block_id in block_to_if and
+                            block_to_if[body_block_id].header_block == body_block_id):
+                        continue
+                    temp_visited = set(visited_ifs)
+                    nested_pattern = _detect_if_else_pattern(
+                        cfg,
+                        body_block_id,
+                        start_to_block,
+                        resolver,
+                        temp_visited,
+                        func_loops,
+                        ssa_func=ssa_func,
+                        formatter=formatter
+                    )
+                    if nested_pattern:
+                        block_to_if[nested_pattern.header_block] = nested_pattern
+                        for nested_body_id in nested_pattern.true_body:
+                            if nested_body_id not in block_to_if:
+                                block_to_if[nested_body_id] = nested_pattern
+                        for nested_body_id in nested_pattern.false_body:
+                            if nested_body_id not in block_to_if:
+                                block_to_if[nested_body_id] = nested_pattern
 
         # Skip blocks that are part of an if/else pattern (except header)
         if block_id in block_to_if:
