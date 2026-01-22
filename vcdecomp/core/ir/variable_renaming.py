@@ -321,6 +321,7 @@ class VariableRenamer:
                 if inst.mnemonic == 'ASGN' and len(inst.inputs) >= 2:
                     # Second input is the address (from LADR/DADR)
                     addr_value = inst.inputs[1]
+                    value_input = inst.inputs[0]
 
                     var_name = self._extract_local_name(addr_value)
 
@@ -355,6 +356,14 @@ class VariableRenamer:
                         # This allows rendering "*&local_10" → "local_10" with renaming
                         original_alias = addr_value.alias or ""
                         self.value_to_version[addr_value.name] = (var_name, version, original_alias)
+
+                        # Map XCALL/CALL return temporaries to the assigned local version.
+                        # This keeps call results (t*_ret) aligned with the local variable
+                        # in conditions and subsequent uses (e.g., pl = SC_P_GetBySideGroupMember(...)).
+                        if value_input and value_input.name:
+                            if value_input.producer_inst and value_input.producer_inst.mnemonic in {"XCALL", "CALL"}:
+                                original_value_alias = value_input.alias or ""
+                                self.value_to_version[value_input.name] = (var_name, version, original_value_alias)
 
                         # Update last_assignment
                         last_assignment[var_name] = addr

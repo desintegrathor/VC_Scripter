@@ -349,17 +349,32 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # BUGFIX: Only import struct types for variables that are actually used in the current function
     import sys
 
-    # First, collect all variable names used in the current function's blocks
+    # First, collect all local variable names used in the current function's blocks
     vars_used_in_func = set()
+
+    def _extract_local_candidate(value) -> Optional[str]:
+        """Return normalized local variable name from alias/name, or None."""
+        if not value:
+            return None
+        candidate = value.alias or value.name
+        if not candidate:
+            return None
+        if candidate.startswith("&"):
+            candidate = candidate[1:]
+        if candidate.startswith("local_"):
+            return candidate
+        return None
     for block_id in func_block_ids:
         ssa_instrs = ssa_func.instructions.get(block_id, [])
         for inst in ssa_instrs:
             for output in inst.outputs:
-                if output.alias:
-                    vars_used_in_func.add(output.alias.lstrip('&'))
+                local_name = _extract_local_candidate(output)
+                if local_name:
+                    vars_used_in_func.add(local_name)
             for inp in inst.inputs:
-                if inp.alias:
-                    vars_used_in_func.add(inp.alias.lstrip('&'))
+                local_name = _extract_local_candidate(inp)
+                if local_name:
+                    vars_used_in_func.add(local_name)
 
     if hasattr(formatter, '_var_struct_types'):
         debug_print(f"DEBUG variables.py: formatter._var_struct_types has {len(formatter._var_struct_types)} entries")
