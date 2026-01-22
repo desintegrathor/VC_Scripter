@@ -642,7 +642,7 @@ def cmd_structure(args):
             func_end,
             function_bounds=func_bounds,
             style=style,
-            heritage_metadata=heritage_metadata
+            heritage_metadata=heritage_metadata,
         )
         print(text)
         print()

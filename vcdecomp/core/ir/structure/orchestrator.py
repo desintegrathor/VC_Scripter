@@ -177,7 +177,6 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
 
     Args:
         ssa_func: SSA function data
-
     Returns:
         Formatted C-like code as a string
     """
@@ -203,7 +202,11 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     renamer = VariableRenamer(ssa_func, all_block_ids, type_engine=quick_type_engine)
     rename_map = renamer.analyze_and_rename()
 
-    formatter = ExpressionFormatter(ssa_func, symbol_db=symbol_db, rename_map=rename_map)
+    formatter = ExpressionFormatter(
+        ssa_func,
+        symbol_db=symbol_db,
+        rename_map=rename_map,
+    )
     ssa_blocks = ssa_func.instructions
 
     def process(block_id: int, indent: str = "    ") -> None:
@@ -286,7 +289,15 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     return "\n".join(lines)
 
 
-def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal", heritage_metadata: Optional[Dict] = None) -> str:
+def format_structured_function_named(
+    ssa_func: SSAFunction,
+    func_name: str,
+    entry_addr: int,
+    end_addr: int = None,
+    function_bounds=None,
+    style: str = "normal",
+    heritage_metadata: Optional[Dict] = None,
+) -> str:
     """
     Format structured output for a specific function with custom name and entry point.
 
@@ -388,7 +399,17 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # FÁZE 4: Pass function_bounds for CALL resolution
     # FIX 2: Pass rename_map for variable collision resolution
     # Heritage: Pass heritage_metadata for improved variable names
-    formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds, rename_map=rename_map, heritage_metadata=heritage_metadata)
+    formatter = ExpressionFormatter(
+        ssa_func,
+        func_start=entry_addr,
+        func_end=end_addr,
+        func_name=func_name,
+        symbol_db=symbol_db,
+        func_signature=func_sig,
+        function_bounds=function_bounds,
+        rename_map=rename_map,
+        heritage_metadata=heritage_metadata,
+    )
     ssa_blocks = ssa_func.instructions
 
     # UNIFIED TYPE TRACKER: Create tracker for coordinating declarations with usage

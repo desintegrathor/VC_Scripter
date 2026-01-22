@@ -17,8 +17,7 @@ from typing import List, Dict, Optional, Set, Tuple
 from ..disasm import opcodes
 from ..constants import get_constant_name, get_player_constant, FUNCTION_CONSTANT_CONTEXT
 from ..structures import (
-    get_struct_by_name, get_struct_by_size, get_verified_field_name,
-    infer_struct_from_function, STRUCTURES_BY_SIZE
+    get_struct_by_name, get_struct_by_size, get_verified_field_name
 )
 from .ssa import SSAFunction, SSAInstruction, SSAValue
 from .global_resolver import resolve_globals
@@ -295,7 +294,18 @@ class FormattedExpression:
 
 
 class ExpressionFormatter:
-    def __init__(self, ssa: SSAFunction, func_start: int = None, func_end: int = None, func_name: str = None, symbol_db=None, func_signature=None, function_bounds=None, rename_map: Dict[str, str] = None, heritage_metadata: Optional[Dict] = None):
+    def __init__(
+        self,
+        ssa: SSAFunction,
+        func_start: int = None,
+        func_end: int = None,
+        func_name: str = None,
+        symbol_db=None,
+        func_signature=None,
+        function_bounds=None,
+        rename_map: Dict[str, str] = None,
+        heritage_metadata: Optional[Dict] = None,
+    ):
         """
         Initialize expression formatter.
 
@@ -351,15 +361,6 @@ class ExpressionFormatter:
                     self._param_names[offset] = param_name
         # Track variable -> structure type mapping
         self._var_struct_types: Dict[str, str] = {}
-        # Track structure ranges: base_var -> (start_index, end_index, struct_name)
-        # If local_0 is a 156-byte struct, local_1-local_38 are its fields
-        self._struct_ranges: Dict[str, tuple] = {}  # (start_idx, end_idx, struct_name)
-        # Track semantic variable names (local_X -> semantic_name)
-        self._semantic_names: Dict[str, str] = {}
-        # FÁZE 1.2: Track semantic names already used (prevents i==i collision)
-        self._used_semantic_names: Set[str] = set()
-        # Counter for disambiguation (e.g., vec, vec2, vec3)
-        self._name_counters: Dict[str, int] = {}
         # Global variable names (data offset -> name)
         self._global_names: Dict[int, str] = {}
         # Global variable type information (data offset -> GlobalUsage with types)
@@ -367,10 +368,7 @@ class ExpressionFormatter:
         # WORKAROUND: Track recent array loads for fixing PHI aliasing issues
         # Maps instruction address -> array notation (e.g., "data_322[index]")
         self._recent_array_loads: Dict[int, str] = {}
-        # Analyze function calls to infer structure types
-        self._analyze_struct_types()
-        # Assign semantic names to struct base variables
-        self._assign_semantic_names()
+        # Heuristic struct inference and semantic naming are disabled.
         # Resolve global variable names and types
         self._resolve_global_names()
         # Initialize constant propagation
@@ -432,33 +430,20 @@ class ExpressionFormatter:
         Returns:
             Field name if resolved (e.g., "side"), otherwise generic "field_N"
         """
-        # Reverse lookup: semantic name -> SSA name
-        # _semantic_names maps: SSA_name -> semantic_name
-        # We need to find SSA_name from semantic_name
-        ssa_name = base_var
-        for ssa_n, sem_n in self._semantic_names.items():
-            if sem_n == base_var:
-                ssa_name = ssa_n
-                break
-
         # Check if we know the struct type for this variable
         struct_type = None
 
         # PRIORITY 1: Check type_tracker (unified tracker)
         if self._type_tracker:
-            info = self._type_tracker.get_usage_info(ssa_name)
+            info = self._type_tracker.get_usage_info(base_var)
             if info and info.struct_type:
                 struct_type = info.struct_type
 
         # PRIORITY 2: Check field_tracker with SSA name
         if not struct_type and self._field_tracker:
-            struct_type = self._field_tracker.var_struct_types.get(ssa_name)
+            struct_type = self._field_tracker.var_struct_types.get(base_var)
 
         # PRIORITY 3: Check _var_struct_types with SSA name
-        if not struct_type:
-            struct_type = self._var_struct_types.get(ssa_name)
-
-        # PRIORITY 4: Check with original name (fallback)
         if not struct_type:
             struct_type = self._var_struct_types.get(base_var)
 
@@ -520,308 +505,6 @@ class ExpressionFormatter:
         """
         self._type_tracker = tracker
 
-    def _analyze_struct_types(self) -> None:
-        """
-        Analyze XCALL instructions to infer structure types for local variables.
-
-        When we see patterns like:
-          SC_P_Create(&local_0)  -> local_0 is s_SC_P_Create
-          SC_P_Ai_GetProps(x, &local_1) -> local_1 is s_SC_P_AI_props
-          SC_ZeroMem(&local_0, 156) -> local_0 might be s_SC_P_Create (156 bytes)
-
-        When func_start and func_end are set, only analyzes blocks within that range.
-        This ensures per-function structure detection for 100% reliability.
-        """
-        scr = getattr(self.ssa, "scr", None)
-        if not scr:
-            return
-
-        cfg = self.ssa.cfg
-
-        # Iterate over blocks, filtering by function range if specified
-        for block_id, instructions in self.ssa.instructions.items():
-            # If function boundaries are specified, filter blocks
-            if self._func_start is not None:
-                block = cfg.blocks.get(block_id) if cfg else None
-                if block:
-                    block_addr = block.start
-                    # Skip blocks outside function range
-                    if block_addr < self._func_start:
-                        continue
-                    if self._func_end is not None and block_addr > self._func_end:
-                        continue
-            for inst in instructions:
-                if inst.mnemonic != "XCALL":
-                    continue
-
-                # Get function name from XFN index (same as _format_call)
-                if not inst.instruction or not inst.instruction.instruction:
-                    continue
-
-                xfn_idx = inst.instruction.instruction.arg1
-                xfn_entry = scr.get_xfn(xfn_idx)
-                if not xfn_entry:
-                    continue
-
-                # Extract function name from signature
-                full_name = xfn_entry.name
-                paren_idx = full_name.find("(")
-                func_name = full_name[:paren_idx] if paren_idx > 0 else full_name
-
-                # Check for SC_ZeroMem(ptr, size) - infer from size
-                if func_name == "SC_ZeroMem" and len(inst.inputs) >= 2:
-                    ptr_val = inst.inputs[0]
-                    size_val = inst.inputs[1]
-                    size = None
-
-                    # Get size from GCP-loaded value (data segment alias like data_X)
-                    if size_val.alias and size_val.alias.startswith("data_"):
-                        try:
-                            offset = int(size_val.alias[5:])
-                            byte_offset = offset * 4
-                            if self.data_segment:
-                                size = self.data_segment.get_dword(byte_offset)
-                        except (ValueError, AttributeError):
-                            pass
-
-                    if size is not None:
-                        # Get variable name from pointer
-                        var_name = self._extract_var_from_pointer(ptr_val)
-                        if var_name and size in STRUCTURES_BY_SIZE:
-                            struct_names = STRUCTURES_BY_SIZE[size]
-                            chosen_struct = None
-                            if len(struct_names) == 1:
-                                chosen_struct = struct_names[0]
-                            elif "s_SC_P_Create" in struct_names:
-                                # Prefer s_SC_P_Create for 156 bytes
-                                chosen_struct = "s_SC_P_Create"
-                            elif "s_SC_P_AI_props" in struct_names:
-                                chosen_struct = "s_SC_P_AI_props"
-                            if chosen_struct:
-                                self._var_struct_types[var_name] = chosen_struct
-                                self._register_struct_range(var_name, chosen_struct)
-                    continue
-
-                # Check for known functions with struct parameters
-                struct_type = infer_struct_from_function(func_name, 0)
-                if struct_type and len(inst.inputs) >= 1:
-                    var_name = self._extract_var_from_pointer(inst.inputs[0])
-                    if var_name:
-                        self._update_struct_type(var_name, struct_type)
-
-                # Check second parameter
-                struct_type = infer_struct_from_function(func_name, 1)
-                if struct_type and len(inst.inputs) >= 2:
-                    var_name = self._extract_var_from_pointer(inst.inputs[1])
-                    if var_name:
-                        self._update_struct_type(var_name, struct_type)
-
-    def _assign_semantic_names(self) -> None:
-        """
-        Assign semantic names to variables detected as structures.
-
-        Mapping:
-            s_SC_P_Create -> pinfo, pinfo2, ...
-            s_SC_P_getinfo -> player_info, player_info2, ...
-            s_SC_OBJ_info -> obj_info, obj_info2, ...
-            c_Vector3 -> vec, vec2, vec3, ...
-            s_SC_MP_hud -> hudinfo, hudinfo2, ...
-
-        This makes code more readable:
-            local_0.side -> pinfo.side
-            local_5.x -> vec.x
-        """
-        # Struct type -> preferred semantic name
-        STRUCT_TO_NAME = {
-            "s_SC_P_Create": "pinfo",
-            "s_SC_P_getinfo": "player_info",
-            "s_SC_P_AI_props": "ai_props",
-            "s_SC_OBJ_info": "obj_info",
-            "s_SC_L_info": "level_info",
-            "c_Vector3": "vec",
-            "s_sphere": "sphere",
-            "s_SC_MP_hud": "hudinfo",
-            "s_SC_MP_Recover": "recover",
-            "s_SC_MP_EnumPlayers": "enum_pl",
-            "s_SC_MP_SRV_settings": "srv_settings",
-            "s_SC_MP_SRV_AtgSettings": "atg_settings",
-            "s_SC_HUD_MP_icon": "icon",
-        }
-
-        for var_name, struct_name in self._var_struct_types.items():
-            if struct_name in STRUCT_TO_NAME:
-                base_name = STRUCT_TO_NAME[struct_name]
-
-                # Generate unique name with counter if needed
-                count = self._name_counters.get(base_name, 0)
-                if count == 0:
-                    semantic_name = base_name
-                else:
-                    semantic_name = f"{base_name}{count + 1}"
-
-                self._name_counters[base_name] = count + 1
-                self._semantic_names[var_name] = semantic_name
-
-        # Detect loop counters and assign i, j, k names
-        self._detect_loop_counters()
-        # Assign semantic names to parameters
-        self._assign_parameter_names()
-
-    def _should_use_semantic_name(self, var_name: str) -> bool:
-        """Check if semantic renaming is allowed for this variable."""
-        if not self._type_tracker:
-            return True
-        return self._type_tracker.should_use_semantic_name(var_name)
-
-    def _detect_loop_counters(self) -> None:
-        """
-        Detect loop counter variables based on usage patterns.
-
-        A loop counter typically:
-        1. Is initialized to 0 or small constant
-        2. Is compared with a constant/variable (LES, LEQ, GRE, GEQ)
-        3. Is incremented (ADD 1 or INC)
-        4. May be used as array index (MUL 4, MUL 16, etc.)
-
-        Assigns names: i, j, k, idx, n (in order of nesting/usage)
-        """
-        loop_counter_names = ["i", "j", "k", "idx", "n", "m"]
-        counter_index = 0
-
-        # Track which variables are candidates for loop counters
-        candidates: Dict[str, int] = {}  # var_name -> score
-
-        for block_id, instructions in self.ssa.instructions.items():
-            for inst in instructions:
-                # Pattern 1: Assignment of 0 or small constant
-                # ASGN has 2 inputs: (value, address)
-                if inst.mnemonic == "ASGN" and len(inst.inputs) == 2:
-                    source = inst.inputs[0]  # Value being assigned
-                    target = inst.inputs[1]  # Address/target
-                    # Check if source is a small constant (0-10)
-                    if source.alias and source.alias.startswith("data_"):
-                        try:
-                            offset = int(source.alias[5:])
-                            if self.data_segment:
-                                value = self.data_segment.get_dword(offset * 4)
-                                if 0 <= value <= 10:
-                                    # Target is initialized to small value
-                                    if target.alias and (target.alias.startswith("local_") or target.alias.startswith("param_")):
-                                        candidates[target.alias] = candidates.get(target.alias, 0) + 1
-                        except (ValueError, AttributeError):
-                            pass
-
-                # Pattern 2: Comparison operators
-                if inst.mnemonic in ("LES", "LEQ", "GRE", "GEQ", "ULES", "ULEQ"):
-                    for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
-                            candidates[inp.alias] = candidates.get(inp.alias, 0) + 2
-
-                # Pattern 3: Increment operations
-                if inst.mnemonic in ("INC", "ADD"):
-                    # Check for ADD with 1
-                    if inst.mnemonic == "ADD" and len(inst.inputs) == 2:
-                        # Check if one operand is constant 1
-                        for inp in inst.inputs:
-                            if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
-                                other_inp = inst.inputs[1] if inst.inputs[0] == inp else inst.inputs[0]
-                                # Check if other input is 1
-                                if other_inp.alias and other_inp.alias.startswith("data_"):
-                                    try:
-                                        offset = int(other_inp.alias[5:])
-                                        if self.data_segment:
-                                            value = self.data_segment.get_dword(offset * 4)
-                                            if value == 1:
-                                                candidates[inp.alias] = candidates.get(inp.alias, 0) + 3
-                                    except (ValueError, AttributeError):
-                                        pass
-                    elif inst.mnemonic == "INC":
-                        for inp in inst.inputs:
-                            if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
-                                candidates[inp.alias] = candidates.get(inp.alias, 0) + 3
-
-                # Pattern 4: Used in multiplication (array indexing)
-                if inst.mnemonic in ("MUL", "CMUL"):
-                    for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
-                            candidates[inp.alias] = candidates.get(inp.alias, 0) + 1
-
-        # Sort candidates by score (highest first)
-        sorted_candidates = sorted(candidates.items(), key=lambda x: x[1], reverse=True)
-
-        # Assign names to top candidates
-        for var_name, score in sorted_candidates:
-            if score >= 3 and counter_index < len(loop_counter_names):  # Threshold of 3
-                # Skip if already has a semantic name (struct field)
-                if var_name not in self._semantic_names:
-                    counter_name = loop_counter_names[counter_index]
-                    self._semantic_names[var_name] = counter_name
-                    counter_index += 1
-
-        # Propagate loop counter names to variables used in array indexing
-        # Pattern: Find ALL locals/params used in MUL operations (array indexing)
-        # If one has a semantic name, all should have the same name
-        index_vars: set[str] = set()
-        semantic_index_vars: Dict[str, str] = {}  # var -> semantic_name
-
-        for block_id, instructions in self.ssa.instructions.items():
-            for inst in instructions:
-                # Find MUL operations (used for array indexing: index * element_size)
-                if inst.mnemonic == "MUL" and len(inst.inputs) == 2:
-                    for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
-                            index_vars.add(inp.alias)
-                            if inp.alias in self._semantic_names:
-                                semantic_index_vars[inp.alias] = self._semantic_names[inp.alias]
-
-        # Propagate: if any index variable has a semantic name, give it to all index variables
-        if semantic_index_vars:
-            # Use the first semantic name found
-            semantic_name = next(iter(semantic_index_vars.values()))
-            for var in index_vars:
-                if var not in self._semantic_names:
-                    self._semantic_names[var] = semantic_name
-
-        # Additional propagation: Find param_ variables used in arithmetic with loop-counter-like patterns
-        # Pattern: param_X appears in FSUB/SUB with loaded values (DCP results) - likely a loop counter too
-        for block_id, instructions in self.ssa.instructions.items():
-            for inst in instructions:
-                if inst.mnemonic in ("SUB", "FSUB", "ADD", "FADD") and len(inst.inputs) == 2:
-                    for inp in inst.inputs:
-                        if inp.alias and inp.alias.startswith("param_"):
-                            # This param is used in arithmetic - if we have a loop counter, assign same name
-                            if semantic_index_vars:
-                                semantic_name = next(iter(semantic_index_vars.values()))
-                                if inp.alias not in self._semantic_names:
-                                    self._semantic_names[inp.alias] = semantic_name
-                                    break
-
-    def _assign_parameter_names(self) -> None:
-        """
-        Assign semantic names to function parameters based on usage.
-
-        For parameters detected as struct pointers, use appropriate names.
-        Special handling for common patterns:
-        - ScriptMain param -> "info" (s_SC_NET_info*)
-        - Object script param -> "obj_info" (s_SC_OBJ_info*)
-        """
-        # Check param variables in var_struct_types
-        for var_name, struct_name in list(self._var_struct_types.items()):
-            if not var_name.startswith("param_"):
-                continue
-
-            # Map parameter struct types to semantic names
-            PARAM_STRUCT_TO_NAME = {
-                "s_SC_NET_info": "info",
-                "s_SC_OBJ_info": "obj_info",
-                "s_SC_L_info": "level_info",
-                "s_SC_P_getinfo": "plinfo",
-            }
-
-            if struct_name in PARAM_STRUCT_TO_NAME:
-                semantic_name = PARAM_STRUCT_TO_NAME[struct_name]
-                self._semantic_names[var_name] = semantic_name
-
     def _resolve_global_names(self) -> None:
         """
         Použije global_resolver k detekci a pojmenování globálních proměnných.
@@ -866,54 +549,6 @@ class ExpressionFormatter:
                         return out.alias[1:]
         return None
 
-    def _update_struct_type(self, var_name: str, struct_name: str) -> None:
-        """
-        Update structure type for a variable, preferring larger structures.
-
-        When the same variable is used for different structures in different
-        functions (compiler reuses stack space), prefer the larger structure
-        as it provides more complete field information.
-        """
-        new_struct = get_struct_by_name(struct_name)
-        if not new_struct:
-            return
-
-        existing = self._var_struct_types.get(var_name)
-        if existing:
-            existing_struct = get_struct_by_name(existing)
-            if existing_struct and existing_struct.size >= new_struct.size:
-                return  # Keep existing larger structure
-
-        self._var_struct_types[var_name] = struct_name
-        self._register_struct_range(var_name, struct_name)
-
-    def _register_struct_range(self, var_name: str, struct_name: str) -> None:
-        """
-        Register a structure range for field access detection.
-
-        When local_0 is detected as a 156-byte struct (s_SC_P_Create),
-        local_1 through local_38 are its fields (156 / 4 - 1 = 38 slots).
-        """
-        if not var_name.startswith("local_"):
-            return  # Only track local variables
-
-        struct_def = get_struct_by_name(struct_name)
-        if not struct_def:
-            return
-
-        try:
-            base_idx = int(var_name.split("_")[1])
-        except (ValueError, IndexError):
-            return
-
-        # Calculate how many local slots this structure occupies
-        slot_count = struct_def.size // 4
-        if slot_count <= 1:
-            return  # No fields to map
-
-        end_idx = base_idx + slot_count - 1
-        self._struct_ranges[var_name] = (base_idx, end_idx, struct_name)
-
     def _get_struct_field(self, base_var: str, offset: int) -> Optional[str]:
         """Get structure field name for variable at offset."""
         struct_name = self._var_struct_types.get(base_var)
@@ -921,88 +556,6 @@ class ExpressionFormatter:
             return None
         return get_verified_field_name(struct_name, offset)
 
-    def _get_semantic_name(self, var_name: str) -> str:
-        """
-        FIX (01-21): Get the semantic name for a variable, if one exists.
-
-        This ensures struct field accesses use semantic names like atg_settings.field
-        instead of local_1.field when the variable has been given a semantic name.
-
-        Args:
-            var_name: Variable name (e.g., "local_1", "&local_1")
-
-        Returns:
-            Semantic name if available (e.g., "atg_settings"), otherwise the original name
-        """
-        # Handle address-of prefix
-        is_address = var_name.startswith("&")
-        base_name = var_name[1:] if is_address else var_name
-
-        # Check if there's a semantic name for this variable
-        semantic_name = self._semantic_names.get(base_name)
-        if semantic_name:
-            if not self._should_use_semantic_name(base_name):
-                return f"&{base_name}" if is_address else base_name
-            return f"&{semantic_name}" if is_address else semantic_name
-
-        return var_name
-
-    def _get_field_base_name(self, base_name: str, field_name: str) -> str:
-        """Return a display name for field access, avoiding renames for generic fields."""
-        if field_name.startswith("field_"):
-            is_address = base_name.startswith("&")
-            clean_name = base_name[1:] if is_address else base_name
-            for ssa_name, semantic_name in self._semantic_names.items():
-                if semantic_name == clean_name:
-                    clean_name = ssa_name
-                    break
-            return f"&{clean_name}" if is_address else clean_name
-        return self._get_semantic_name(base_name)
-
-    def _get_struct_field_for_local(self, alias: str) -> Optional[str]:
-        """
-        Check if local_X is a field of a detected structure and return formatted name.
-
-        If local_0 is s_SC_P_Create (156 bytes), then:
-        - local_1 (offset 4) -> local_0.side
-        - local_2 (offset 8) -> local_0.group
-        etc.
-
-        Also handles address aliases like &local_1 -> &local_0.side
-        """
-        # Handle both local_X and &local_X
-        is_address = alias.startswith("&")
-        local_alias = alias[1:] if is_address else alias
-
-        if not local_alias.startswith("local_"):
-            return None
-
-        try:
-            idx = int(local_alias.split("_")[1])
-        except (ValueError, IndexError):
-            return None
-
-        # Check if this index falls within any structure range
-        for base_var, (start_idx, end_idx, struct_name) in self._struct_ranges.items():
-            # Check if this is the base variable itself (local_0 -> use semantic name)
-            if idx == start_idx:
-                # Return semantic name for base variable if available
-                semantic_name = self._semantic_names.get(base_var, None)
-                if semantic_name:
-                    return f"&{semantic_name}" if is_address else semantic_name
-                continue
-            # Check if within range (field of struct)
-            if start_idx < idx <= end_idx:
-                # Calculate byte offset from base
-                offset = (idx - start_idx) * 4
-                field_name = self._resolve_field_name(base_var, offset)
-                if field_name:
-                    # Use semantic name if available, otherwise fallback to base_var
-                    display_name = self._get_field_base_name(base_var, field_name)
-                    result = f"{display_name}.{field_name}"
-                    return f"&{result}" if is_address else result
-
-        return None
 
     def _value_name(self, value: SSAValue) -> str:
         return value.alias or value.name
@@ -1188,17 +741,6 @@ class ExpressionFormatter:
                     const_name = self._constant_resolver.resolve_from_struct_field(
                         int_value, struct_type, field_name
                     )
-                    if const_name:
-                        return const_name
-
-        # Strategy 3: Infer from variable name in the value's alias
-        if value.alias and (value.alias.startswith('local_') or value.alias.startswith('param_')):
-            # Check if this variable has a semantic name
-            semantic_name = self._semantic_names.get(value.alias)
-            if semantic_name:
-                context = self._constant_resolver.infer_context_from_variable_name(semantic_name)
-                if context:
-                    const_name = self._constant_resolver.resolve_constant(int_value, context)
                     if const_name:
                         return const_name
 
@@ -1475,31 +1017,7 @@ class ExpressionFormatter:
             except ValueError:
                 pass
 
-            # PRIORITY 3: Check if local_X is a field of a detected structure
-            struct_field = self._get_struct_field_for_local(value.alias)
-            if struct_field:
-                return struct_field
-
-            # PRIORITY 4: Check for semantic name (loop counter, struct base, etc.)
-            # Handle both local_X and &local_X
-            var_to_check = value.alias
-            is_address_of = False
-            if var_to_check.startswith("&"):
-                var_to_check = var_to_check[1:]
-                is_address_of = True
-
-            if var_to_check.startswith("local_") or var_to_check.startswith("param_"):
-                semantic_name = self._semantic_names.get(var_to_check)
-                if semantic_name:
-                    if not self._should_use_semantic_name(var_to_check):
-                        return f"&{var_to_check}" if is_address_of else var_to_check
-                    # FÁZE 1.2: Check uniqueness - prevent i==i collision
-                    if semantic_name not in self._used_semantic_names:
-                        self._used_semantic_names.add(semantic_name)
-                        return f"&{semantic_name}" if is_address_of else semantic_name
-                    # Name collision - fallback to var_to_check
-
-            # PRIORITY 5: Load literal from data segment (LAST RESORT)
+            # PRIORITY 3: Load literal from data segment (LAST RESORT)
             # Only used if no global name was found
             literal = self._load_literal(value.alias, value.value_type, expected_type_str=expected_type_str, context=context)
             if literal is not None:
@@ -1939,9 +1457,7 @@ class ExpressionFormatter:
                             # Reasonable field offset range
                             if 0 <= total_offset < 256:
                                 field_name = self._resolve_field_name(base_name, total_offset)
-                                # FIX (01-21): Use semantic name for struct field accesses
-                                display_name = self._get_field_base_name(base_name, field_name)
-                                result = f"{display_name}.{field_name}"
+                                result = f"{base_name}.{field_name}"
                                 return result
                         except (ValueError, AttributeError):
                             pass
@@ -1994,9 +1510,7 @@ class ExpressionFormatter:
                                         field_name = get_verified_field_name(tracked_type, offset)
                                         if field_name:
                                             # Return as array[0].field for struct arrays
-                                            # FIX (01-21): Use semantic name for struct field accesses
-                                            display_name = self._get_field_base_name(base_name, field_name)
-                                            result = f"{display_name}[0].{field_name}"
+                                            result = f"{base_name}[0].{field_name}"
                                             if self._type_tracker:
                                                 self._type_tracker.record_array_usage(base_name, result)
                                                 self._type_tracker.record_field_usage(base_name, result)
@@ -2024,9 +1538,7 @@ class ExpressionFormatter:
 
                                 if struct_type:
                                     field_name = self._resolve_field_name(base_name, offset)
-                                    # FIX (01-21): Use semantic name for struct field accesses
-                                    display_name = self._get_field_base_name(base_name, field_name)
-                                    result = f"{display_name}.{field_name}"
+                                    result = f"{base_name}.{field_name}"
                                     # Notify type_tracker of field usage
                                     if self._type_tracker:
                                         self._type_tracker.record_field_usage(base_name, result)
@@ -2341,9 +1853,7 @@ class ExpressionFormatter:
                         # If we took its address with LADR, it's definitely a structure
                         # Use . operator and return address of field
                         field_name = self._resolve_field_name(base_name, field_offset)
-                        # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_field_base_name(base_name, field_name)
-                        return f"&{display_name}.{field_name}"
+                        return f"&{base_name}.{field_name}"
 
         # FIX: Handle PNT instruction (pointer arithmetic) for field access
         # Pattern: PNT(base_addr, offset) → struct field access
@@ -2373,9 +1883,7 @@ class ExpressionFormatter:
                                 if vec3_field:
                                     field_name = vec3_field  # x, y, or z
 
-                        # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_field_base_name(base_name, field_name)
-                        return f"{display_name}.{field_name}"
+                        return f"{base_name}.{field_name}"
 
         rendered = self._render_value(value)
 
@@ -2389,14 +1897,7 @@ class ExpressionFormatter:
                 # Check if this is a known struct type
                 tracked_type = None
 
-                # Reverse lookup: semantic name -> SSA name
-                # _semantic_names maps: SSA_name -> semantic_name
-                # We need to find SSA_name from semantic_name
                 ssa_name = var_name
-                for ssa_n, sem_n in self._semantic_names.items():
-                    if sem_n == var_name:
-                        ssa_name = ssa_n
-                        break
 
                 # If heritage indicates this is a float, keep it as a scalar
                 if self._get_heritage_type(ssa_name) == "float":
@@ -2773,9 +2274,7 @@ class ExpressionFormatter:
                         # Calculate new field offset (byte offset, not dword index)
                         new_offset = base_offset + offset_add
                         field_name = self._resolve_field_name(base_var, new_offset)
-                        # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_field_base_name(base_var, field_name)
-                        expr = f"&{display_name}.{field_name}"
+                        expr = f"&{base_var}.{field_name}"
                         self._visiting.remove(cache_key)
                         self._inline_cache[cache_key] = expr
                         return expr
@@ -2986,9 +2485,7 @@ class ExpressionFormatter:
                                 # Reasonable field offset range
                                 if 0 <= total_offset < 256:
                                     field_name = self._resolve_field_name(base_name, total_offset)
-                                    # FIX (01-21): Use semantic name for struct field accesses
-                                    display_name = self._get_field_base_name(base_name, field_name)
-                                    expr = f"&{display_name}.{field_name}"
+                                    expr = f"&{base_name}.{field_name}"
                                     self._visiting.remove(cache_key)
                                     self._inline_cache[cache_key] = expr
                                     return expr
@@ -3003,9 +2500,7 @@ class ExpressionFormatter:
                     base_name = base_name[1:]
                     # Simple structure field access (offset is byte offset)
                     field_name = self._resolve_field_name(base_name, offset_num)
-                    # FIX (01-21): Use semantic name for struct field accesses
-                    display_name = self._get_field_base_name(base_name, field_name)
-                    expr = f"&{display_name}.{field_name}"
+                    expr = f"&{base_name}.{field_name}"
                     self._visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
@@ -3026,9 +2521,7 @@ class ExpressionFormatter:
 
             if field_name:
                 # Render as struct field address: &base_var.field
-                # FIX (01-21): Use semantic name for struct field accesses
-                display_name = self._get_field_base_name(base_var, field_name)
-                expr = f"&{display_name}.{field_name}"
+                expr = f"&{base_var}.{field_name}"
             elif offset_num == 0:
                 expr = base
             else:
@@ -3086,18 +2579,6 @@ class ExpressionFormatter:
                 pass
 
         if value.alias and value.alias.startswith("local_"):
-            # Check if this is a field of a structure
-            struct_field = self._get_struct_field_for_local(value.alias)
-            if struct_field:
-                return struct_field
-            # Check for semantic name (loop counter, etc.)
-            semantic_name = self._semantic_names.get(value.alias)
-            if semantic_name:
-                # FÁZE 1.2: Check uniqueness - prevent i==i collision
-                if semantic_name not in self._used_semantic_names:
-                    self._used_semantic_names.add(semantic_name)
-                    return semantic_name  # Use semantic name instead of local_X
-                # Name collision - fallback to local_X
             # Regular local variable
             if name not in self._declared:
                 self._declared.add(name)
@@ -3420,7 +2901,11 @@ SIDE_EFFECT_OPS = {"DCP"}   # Data copy - used for passing struct arguments
 CONTROL_FLOW_OPS = {"JMP", "JZ", "JNZ"}  # Jumps only (not CALL)
 
 
-def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: ExpressionFormatter = None) -> List[FormattedExpression]:
+def format_block_expressions(
+    ssa_func: SSAFunction,
+    block_id: int,
+    formatter: ExpressionFormatter = None,
+) -> List[FormattedExpression]:
     """
     Format expressions for a block.
 
