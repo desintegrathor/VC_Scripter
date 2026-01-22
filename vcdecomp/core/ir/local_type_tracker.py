@@ -194,6 +194,9 @@ class LocalVariableTypeTracker:
         # Cache data segment for constant lookups
         self.data_segment = getattr(ssa_func.scr, 'data_segment', None) if ssa_func.scr else None
 
+        # Track constant-offset accesses for array heuristics
+        self._constant_offset_arrays: Dict[str, Set[int]] = {}
+
     def _get_or_create_info(self, var_name: str) -> VariableUsageInfo:
         """Get existing usage info or create new entry."""
         # Canonicalize name (strip & prefix, apply rename map)
@@ -258,11 +261,19 @@ class LocalVariableTypeTracker:
 
                 # Check if right is small constant (struct field offset)
                 offset = self._extract_constant(right)
-                if offset is not None and 0 < offset < 256:
-                    # Could be struct field - check if we have struct type info
+                if offset is not None and 0 <= offset < 256:
                     info = self._get_or_create_info(base_var)
-                    existing_struct = info.struct_type
-                    info.update_struct_evidence(existing_struct, offset, source="ssa_pattern")
+                    if offset > 0:
+                        # Could be struct field - check if we have struct type info
+                        existing_struct = info.struct_type
+                        info.update_struct_evidence(existing_struct, offset, source="ssa_pattern")
+
+                    # Heuristic: multiple constant offsets imply array access
+                    if offset % 4 == 0:
+                        offsets = self._constant_offset_arrays.setdefault(base_var, set())
+                        offsets.add(offset)
+                        if len(offsets) >= 2 and (not info.struct_type or info.confidence < 0.6):
+                            info.update_array_evidence(4, offset // 4, source="ssa_pattern")
 
         # Pattern 2: PNT instruction with offset
         if inst.mnemonic == "PNT" and len(inst.inputs) >= 1:
