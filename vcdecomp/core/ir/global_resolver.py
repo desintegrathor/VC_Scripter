@@ -62,6 +62,9 @@ class GlobalUsage:
     inferred_struct: Optional[object] = None  # InferredStruct instance (from struct_inference)
     struct_typedef: Optional[str] = None  # Generated typedef
 
+    # NEW: Data segment initializer (string representation)
+    initializer: Optional[str] = None
+
 
 class GlobalResolver:
     """
@@ -92,6 +95,10 @@ class GlobalResolver:
 
         # SGI index → data offset mapping (built during analysis)
         self.sgi_to_offset: Dict[int, int] = {}
+
+        # Header database for function signature heuristics
+        from ..headers.database import get_header_database
+        self.header_db = get_header_database()
 
     def analyze(self) -> Dict[int, GlobalUsage]:
         """
@@ -134,6 +141,9 @@ class GlobalResolver:
         # NEW Pattern 7: Infer struct types from XCALL arguments
         self._analyze_xcall_struct_args()
 
+        # NEW Pattern 8: Heuristics for BOOL and Vector3 globals from calls
+        self._apply_call_type_hints()
+
         # Pojmenuj globály podle patterns (SGI names override auto-generated)
         self._assign_names()
 
@@ -142,6 +152,12 @@ class GlobalResolver:
 
         # Apply header/structure size hints for missing types
         self._apply_struct_size_hints()
+
+        # Populate initializers from data segment (after types are inferred)
+        self._apply_data_segment_initializers()
+
+        # Propagate global types back to SSA values for reads/writes
+        self._propagate_global_types_to_ssa()
 
         return self.globals
 
@@ -1212,6 +1228,211 @@ class GlobalResolver:
                                 break
                         if usage.inferred_type:
                             break
+
+    def _apply_call_type_hints(self) -> None:
+        """
+        Apply heuristics for BOOL and c_Vector3 globals based on function call usage.
+        """
+        if not self.header_db:
+            return
+
+        for block_id, instructions in self.ssa_func.instructions.items():
+            for inst in instructions:
+                if inst.mnemonic != "XCALL":
+                    continue
+                if not inst.instruction or not inst.instruction.instruction:
+                    continue
+
+                xfn_index = inst.instruction.instruction.arg1
+                xfn_entry = self.ssa_func.scr.get_xfn(xfn_index) if self.ssa_func.scr else None
+                if not xfn_entry or not xfn_entry.name:
+                    continue
+
+                func_name = xfn_entry.name.split("(")[0]
+                func_sig = self.header_db.get_function_signature(func_name)
+                if not func_sig:
+                    continue
+
+                params = func_sig.get("parameters") or []
+                for idx, value in enumerate(inst.inputs):
+                    if idx >= len(params) or not value:
+                        continue
+                    param_type = params[idx][0]
+                    if param_type not in {"BOOL", "c_Vector3", "c_Vector3 *", "c_Vector3*", "c_vector3", "c_vector3 *", "c_vector3*"}:
+                        continue
+
+                    global_usage = self._get_global_usage_from_value(value)
+                    if not global_usage:
+                        continue
+
+                    if param_type == "BOOL":
+                        self._update_usage_type(global_usage, "BOOL", 0.9)
+                    else:
+                        self._update_usage_type(global_usage, "c_Vector3", 0.85)
+                        global_usage.is_struct_base = True
+                        global_usage.array_element_size = global_usage.array_element_size or 12
+
+                return_type = func_sig.get("return_type")
+                if return_type != "BOOL":
+                    continue
+
+                for out_val in inst.outputs or []:
+                    global_usage = self._get_global_usage_from_value(out_val)
+                    if global_usage:
+                        self._update_usage_type(global_usage, "BOOL", 0.9)
+
+    def _update_usage_type(self, usage: GlobalUsage, inferred_type: str, confidence: float) -> None:
+        if not usage.inferred_type or confidence >= usage.type_confidence:
+            usage.inferred_type = inferred_type
+            usage.type_confidence = max(usage.type_confidence, confidence)
+
+    def _get_global_usage_from_value(self, value) -> Optional[GlobalUsage]:
+        if not value or not value.alias:
+            return None
+
+        alias = value.alias
+        if alias.startswith("&"):
+            alias = alias[1:]
+        if not alias.startswith("data_"):
+            return None
+
+        try:
+            dword_offset = int(alias[5:])
+        except ValueError:
+            return None
+
+        byte_offset = dword_offset * 4
+        return self.globals.get(byte_offset)
+
+    def _apply_data_segment_initializers(self) -> None:
+        if not self.scr or not self.scr.data_segment:
+            return
+
+        data_segment = self.scr.data_segment
+        from .data_resolver import DataResolver
+        from ...parsing.data_segment_initializers import build_initializer, looks_like_vector3
+        from ..structures import get_struct_by_name
+
+        type_info_dwords = {offset // 4: usage for offset, usage in self.globals.items()}
+        data_resolver = DataResolver(data_segment, type_info_dwords, confidence_threshold=0.70)
+
+        for byte_offset, usage in self.globals.items():
+            if usage.initializer:
+                continue
+            if byte_offset >= len(data_segment.raw_data):
+                continue
+
+            element_type = usage.inferred_type or "dword"
+            element_size = usage.array_element_size
+
+            struct_def = get_struct_by_name(element_type)
+            if struct_def and not element_size:
+                element_size = struct_def.size
+
+            if element_type in {"c_Vector3", "c_vector3"}:
+                element_size = element_size or 12
+            elif element_size is None:
+                type_sizes = {
+                    "char": 1,
+                    "short": 2,
+                    "int": 4,
+                    "float": 4,
+                    "double": 8,
+                    "dword": 4,
+                    "BOOL": 4,
+                }
+                element_size = type_sizes.get(element_type, 4)
+
+            element_count = 1
+            if usage.saveinfo_size_dwords:
+                total_bytes = usage.saveinfo_size_dwords * 4
+                if element_size and element_size > 0 and total_bytes % element_size == 0:
+                    element_count = total_bytes // element_size
+            elif usage.is_array_base:
+                continue
+
+            if element_count == 1 and element_type in {"float", "dword"} and looks_like_vector3(data_segment, byte_offset):
+                self._update_usage_type(usage, "c_Vector3", 0.75)
+                element_type = "c_Vector3"
+                element_size = 12
+                element_count = 1
+
+            initializer = build_initializer(
+                data_segment,
+                data_resolver,
+                byte_offset=byte_offset,
+                element_type=element_type,
+                element_size=element_size,
+                element_count=element_count,
+            )
+            if initializer:
+                usage.initializer = initializer
+
+    def _propagate_global_types_to_ssa(self) -> None:
+        """
+        Propagate inferred global types back into SSA values for read/write operations.
+        """
+        if not self.type_inference:
+            return
+
+        from .type_inference import TypeEvidence, TypeSource
+
+        for block_id, ssa_instrs in self.ssa_func.instructions.items():
+            for instr in ssa_instrs:
+                if instr.mnemonic in {"GCP", "GLD", "GADR"}:
+                    if not instr.instruction or not instr.instruction.instruction:
+                        continue
+                    dword_offset = instr.instruction.instruction.arg1
+                    byte_offset = dword_offset * 4
+                    usage = self.globals.get(byte_offset)
+                    if not usage or not usage.inferred_type:
+                        continue
+
+                    if not instr.outputs:
+                        continue
+
+                    inferred_type = usage.inferred_type
+                    if instr.mnemonic == "GADR" and not inferred_type.endswith("*"):
+                        inferred_type = f"{inferred_type} *"
+
+                    for out_val in instr.outputs:
+                        if not out_val or not out_val.name:
+                            continue
+                        info = self.type_inference._get_or_create_type_info(out_val.name)
+                        info.add_evidence(TypeEvidence(
+                            confidence=max(usage.type_confidence, 0.8),
+                            source=TypeSource.ASSIGNMENT,
+                            inferred_type=inferred_type,
+                            reason=f"Loaded from global {usage.name or byte_offset}"
+                        ))
+
+                if instr.mnemonic == "ASGN" and len(instr.inputs) >= 2:
+                    target_value = instr.inputs[1]
+                    source_value = instr.inputs[0]
+                    if not target_value or not source_value:
+                        continue
+                    if not target_value.producer_inst or target_value.producer_inst.mnemonic != "GADR":
+                        continue
+                    gadr_inst = target_value.producer_inst
+                    if not gadr_inst.instruction or not gadr_inst.instruction.instruction:
+                        continue
+                    dword_offset = gadr_inst.instruction.instruction.arg1
+                    byte_offset = dword_offset * 4
+                    usage = self.globals.get(byte_offset)
+                    if not usage or not usage.inferred_type:
+                        continue
+
+                    if source_value.name:
+                        info = self.type_inference._get_or_create_type_info(source_value.name)
+                        info.add_evidence(TypeEvidence(
+                            confidence=max(usage.type_confidence, 0.8),
+                            source=TypeSource.ASSIGNMENT,
+                            inferred_type=usage.inferred_type,
+                            reason=f"Stored to global {usage.name or byte_offset}"
+                        ))
+
+        inferred_types = self.type_inference._resolve_all_types()
+        self.type_inference._update_ssa_value_types(inferred_types)
 
 
 def resolve_globals(ssa_func: SSAFunction, symbol_db=None) -> Dict[int, str]:

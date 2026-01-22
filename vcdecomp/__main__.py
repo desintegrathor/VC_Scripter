@@ -605,9 +605,10 @@ def cmd_structure(args):
 
             # Format declaration
             if is_array:
+                initializer = f" = {usage.initializer}" if usage.initializer else ""
                 if usage.array_dimensions:
                     dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in usage.array_dimensions)
-                    print(f"{element_type} {var_name}{dim_text};")
+                    print(f"{element_type} {var_name}{dim_text}{initializer};")
                 else:
                     # Array declaration: type name[size];
                     array_size = size_dwords
@@ -616,14 +617,16 @@ def cmd_structure(args):
                         if total_bytes % element_size == 0:
                             array_size = total_bytes // element_size
 
-                    print(f"{element_type} {var_name}[{array_size}];")
+                    print(f"{element_type} {var_name}[{array_size}]{initializer};")
             elif usage.is_array_base and usage.array_element_size:
                 # Fallback: use dynamic array detection (for scripts without SaveInfo)
                 array_size = 64  # Default estimate
-                print(f"{var_type} {var_name}[{array_size}];")
+                initializer = f" = {usage.initializer}" if usage.initializer else ""
+                print(f"{var_type} {var_name}[{array_size}]{initializer};")
             else:
                 # Simple variable: type name;
-                print(f"{var_type} {var_name};")
+                initializer = f" = {usage.initializer}" if usage.initializer else ""
+                print(f"{var_type} {var_name}{initializer};")
         print()
 
     # Zpracuj funkce v pořadí podle adresy
