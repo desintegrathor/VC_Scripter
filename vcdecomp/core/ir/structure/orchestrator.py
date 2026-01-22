@@ -133,6 +133,40 @@ def _render_switch_case_value(
     return str(case_value)
 
 
+def _find_return_line_from_cfg_path(
+    cfg,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    start_blocks: Set[int],
+    resolver: opcodes.OpcodeResolver,
+    indent: str
+) -> Optional[str]:
+    visited: Set[int] = set()
+    queue = list(start_blocks)
+
+    while queue:
+        block_id = queue.pop(0)
+        if block_id in visited:
+            continue
+        visited.add(block_id)
+
+        block = cfg.blocks.get(block_id)
+        if not block:
+            continue
+
+        if block.instructions and resolver.is_return(block.instructions[-1].opcode):
+            return_lines = _format_block_lines(ssa_func, block_id, indent, formatter)
+            for line in return_lines:
+                if line.strip().startswith("return"):
+                    return line
+
+        for succ in block.successors:
+            if succ is not None and succ not in visited:
+                queue.append(succ)
+
+    return None
+
+
 def format_structured_function(ssa_func: SSAFunction) -> str:
     """
     Format SSA function as structured C-like code (legacy version).
@@ -805,10 +839,29 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     emitted_blocks,
                     global_map
                 )
+                default_has_return = any(
+                    line.strip().startswith("return") for line in default_lines
+                )
+                fallback_return_line = None
+                if not default_has_return:
+                    fallback_return_line = _find_return_line_from_cfg_path(
+                        cfg,
+                        ssa_func,
+                        formatter,
+                        switch.default_body_blocks,
+                        resolver,
+                        base_indent + "    "
+                    )
+                    if fallback_return_line:
+                        default_lines.append(fallback_return_line)
+                        default_has_return = True
                 lines.extend(default_lines)
                 # FIX: Ensure default case has at least a break statement if body is empty
                 # An empty default: case is a C syntax error
-                if not default_lines or all(line.strip() == "" for line in default_lines):
+                if (
+                    (not default_lines or all(line.strip() == "" for line in default_lines))
+                    and not default_has_return
+                ):
                     lines.append(f"{base_indent}    break;")
             lines.append(f"{base_indent}}}")
             emitted_switches.add(block_id)
