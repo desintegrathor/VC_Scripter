@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Set, Dict
 import logging
+import re
 import sys
 
 from ...ssa import SSAFunction
@@ -300,6 +301,93 @@ def call_is_condition_only(
                 return False
 
     return True
+
+
+def _is_simple_identifier(name: Optional[str]) -> bool:
+    if not name:
+        return False
+    return re.match(r"^[A-Za-z_]\w*$", name) is not None
+
+
+def _looks_like_address(value) -> bool:
+    if value.alias and value.alias.startswith("&"):
+        return True
+    if value.producer_inst and value.producer_inst.mnemonic in {"LADR", "GADR", "DADR", "PNT"}:
+        return True
+    return False
+
+
+def _get_assignment_source_target(asgn_inst) -> tuple:
+    if not asgn_inst or len(asgn_inst.inputs) < 2:
+        return (None, None)
+    left, right = asgn_inst.inputs[0], asgn_inst.inputs[1]
+    left_addr = _looks_like_address(left)
+    right_addr = _looks_like_address(right)
+
+    if right_addr and not left_addr:
+        return (left, right)
+    if left_addr and not right_addr:
+        return (right, left)
+    return (left, right)
+
+
+def _build_condition_value_map(
+    ssa_func: SSAFunction,
+    block_id: int,
+    jump_address: int,
+    condition_values,
+    formatter: ExpressionFormatter
+) -> Dict[str, str]:
+    """
+    Build SSA rename mapping for condition values based on the last assignment.
+
+    This helps map the SSA value used in a condition back to the variable
+    assigned immediately before the conditional jump.
+    """
+    ssa_block = ssa_func.instructions.get(block_id, [])
+    if not ssa_block:
+        return {}
+
+    jump_index = len(ssa_block)
+    for idx, inst in enumerate(ssa_block):
+        if inst.address == jump_address:
+            jump_index = idx
+            break
+
+    last_asgn = None
+    for idx in range(jump_index - 1, -1, -1):
+        inst = ssa_block[idx]
+        if inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
+            last_asgn = inst
+            break
+
+    if not last_asgn:
+        return {}
+
+    source_value, target_value = _get_assignment_source_target(last_asgn)
+    if not source_value or not target_value:
+        return {}
+
+    if hasattr(formatter, "_format_pointer_target"):
+        target_name = formatter._format_pointer_target(target_value)
+    else:
+        target_name = formatter.render_value(target_value)
+
+    if target_name.startswith("&"):
+        target_name = target_name[1:]
+
+    if not _is_simple_identifier(target_name):
+        return {}
+
+    for cond_value in condition_values or []:
+        if not cond_value:
+            continue
+        if _check_ssa_value_equivalence(cond_value, source_value, ssa_func):
+            return {source_value.name: target_name}
+        if hasattr(cond_value, "name") and cond_value.name == source_value.name:
+            return {source_value.name: target_name}
+
+    return {}
 
 
 @dataclass

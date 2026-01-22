@@ -20,6 +20,7 @@ from .value_trace import (
     _trace_value_to_function_call,
     _find_xcall_with_lld_in_predecessors,
     call_is_condition_only,
+    _build_condition_value_map,
 )
 
 
@@ -186,47 +187,66 @@ def render_condition(
     call_inst = _find_call_inst_for_condition(ssa_func, cond_value)
     call_statement_text = None
     call_only = False
-    if call_inst:
-        call_statement_text = formatter._format_call(call_inst).strip()
-        call_only = call_is_condition_only(ssa_func, call_inst, addresses)
-        if call_only:
-            addresses.add(call_inst.address)
-            for input_value in call_inst.inputs:
-                _collect_condition_values(
-                    input_value,
-                    values=values,
-                    addresses=addresses,
-                    visited=visited
-                )
+    rename_map_backup = None
+    condition_value_map = _build_condition_value_map(
+        ssa_func,
+        block_id,
+        jump_instr.address,
+        values,
+        formatter,
+    )
+    if condition_value_map and hasattr(formatter, "_rename_map"):
+        rename_map_backup = formatter._rename_map
+        merged_map = dict(formatter._rename_map)
+        for key, value in condition_value_map.items():
+            merged_map.setdefault(key, value)
+        formatter._rename_map = merged_map
 
-    cond_expr = None
-    call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
-    if call_expr and call_only:
-        cond_expr = call_expr
-    else:
-        if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
-            cond_expr = formatter._inline_expression(
+    try:
+        if call_inst:
+            call_statement_text = formatter._format_call(call_inst).strip()
+            call_only = call_is_condition_only(ssa_func, call_inst, addresses)
+            if call_only:
+                addresses.add(call_inst.address)
+                for input_value in call_inst.inputs:
+                    _collect_condition_values(
+                        input_value,
+                        values=values,
+                        addresses=addresses,
+                        visited=visited
+                    )
+
+        cond_expr = None
+        call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
+        if call_expr and call_only:
+            cond_expr = call_expr
+        else:
+            if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
+                cond_expr = formatter._inline_expression(
+                    cond_value,
+                    context=ExpressionContext.IN_CONDITION
+                )
+            elif cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
+                for phi_input in cond_value.producer_inst.inputs:
+                    if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
+                        cond_expr = formatter._inline_expression(
+                            phi_input,
+                            context=ExpressionContext.IN_CONDITION
+                        )
+                        break
+
+        if cond_expr is None:
+            cond_expr = formatter.render_value(
                 cond_value,
                 context=ExpressionContext.IN_CONDITION
             )
-        elif cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
-            for phi_input in cond_value.producer_inst.inputs:
-                if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
-                    cond_expr = formatter._inline_expression(
-                        phi_input,
-                        context=ExpressionContext.IN_CONDITION
-                    )
-                    break
-
-    if cond_expr is None:
-        cond_expr = formatter.render_value(
-            cond_value,
-            context=ExpressionContext.IN_CONDITION
-        )
-        if cond_expr.lstrip('-').isdigit():
-            alias = cond_value.alias or cond_value.name
-            if alias and not alias.startswith("data_"):
-                cond_expr = alias
+            if cond_expr.lstrip('-').isdigit():
+                alias = cond_value.alias or cond_value.name
+                if alias and not alias.startswith("data_"):
+                    cond_expr = alias
+    finally:
+        if rename_map_backup is not None:
+            formatter._rename_map = rename_map_backup
 
     if negate is None:
         mnemonic = resolver.get_mnemonic(jump_instr.opcode)
