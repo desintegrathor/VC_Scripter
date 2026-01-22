@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Set
 from collections import defaultdict
 from enum import Enum
 import logging
+import re
 
 from .ssa import SSAFunction, SSAValue, SSAInstruction
 from ..headers.database import HeaderDatabase, get_header_database
@@ -772,12 +773,34 @@ class TypeInferenceEngine:
         if alias.replace('-', '').replace('.', '').isdigit():
             # Float constant (has decimal point)
             if '.' in alias or 'e' in alias.lower():
+                confidence = 0.70
+                reason_parts = [f'Constant value {alias} has decimal point']
+                decimal_match = re.match(r'^-?\d+\.(\d+)$', alias)
+                decimal_places = None
+                if decimal_match:
+                    decimal_places = len(decimal_match.group(1))
+                    if re.match(r'^-?\d+\.\d{1,2}$', alias):
+                        confidence = 0.83
+                        reason_parts = [f'Constant value {alias} has 1-2 decimal places']
+                    elif decimal_places >= 3:
+                        confidence = 0.60
+                        reason_parts = [f'Constant value {alias} has many decimal places']
+
+                if decimal_places is not None and decimal_places <= 1:
+                    try:
+                        float_value = float(alias)
+                    except ValueError:
+                        float_value = None
+                    if float_value is not None and float_value <= 512.0:
+                        confidence = min(confidence + 0.05, 0.95)
+                        reason_parts.append('Value <= 512.0 with <=1 decimal place')
+
                 info = self._get_or_create_type_info(value.name)
                 info.add_evidence(TypeEvidence(
-                    confidence=0.70,
+                    confidence=confidence,
                     source=TypeSource.CONSTANT_VALUE,
                     inferred_type='float',
-                    reason=f'Constant value {alias} has decimal point'
+                    reason='; '.join(reason_parts)
                 ))
             # Integer constant
             else:
