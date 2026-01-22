@@ -192,12 +192,18 @@ class TypeInferenceEngine:
         Returns:
             Dictionary mapping variable names to inferred types
         """
-        # Run opcode-based analysis passes
+        # Run hard-evidence analysis passes
         self._infer_from_instructions()
         self._infer_from_function_calls()
+        if self.field_tracker is not None:
+            self._infer_from_struct_accesses()
 
         # Run context-aware data-flow propagation
         self._propagate_through_dataflow()
+
+        # Run soft/heuristic passes after propagation
+        self._infer_from_constants()
+        self._infer_from_usage_roles()
 
         # Resolve final types
         return self._resolve_all_types()
