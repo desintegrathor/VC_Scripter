@@ -196,6 +196,11 @@ Příklady:
     python -m vcdecomp gui level.scr
 """
     )
+    parser.add_argument(
+        '--ignore-mp',
+        action='store_true',
+        help='Ignore multiplayer-only functions (SC_MP_*); SP-only mode'
+    )
 
     subparsers = parser.add_subparsers(dest='command', help='Dostupné příkazy')
 
@@ -322,6 +327,8 @@ Příklady:
         sys.exit(1)
 
     try:
+        from .core.headers.database import get_header_database
+        get_header_database(ignore_mp=args.ignore_mp)
         if args.command == 'info':
             cmd_info(args)
         elif args.command == 'disasm':

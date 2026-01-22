@@ -30,12 +30,13 @@ class HeaderDatabase:
     2. Header files (parsed from C headers)
     """
 
-    def __init__(self, use_sdk: bool = True):
+    def __init__(self, use_sdk: bool = True, ignore_mp: bool = False):
         """
         Initialize header database.
 
         Args:
             use_sdk: If True, load and use SDK database (default: True)
+            ignore_mp: If True, ignore multiplayer-only functions (SC_MP_* prefix)
         """
         self.functions: Dict = {}
         self.constants: Dict = {}
@@ -45,6 +46,7 @@ class HeaderDatabase:
 
         # SDK integration
         self.use_sdk = use_sdk
+        self.ignore_mp = ignore_mp
         self.sdk_db = None
 
         if use_sdk:
@@ -123,6 +125,9 @@ class HeaderDatabase:
             Dict with 'return_type', 'parameters' (list of [type, name] tuples),
             and optionally 'is_variadic' flag
         """
+        if self.ignore_mp and name.startswith("SC_MP_"):
+            return None
+
         # PRIORITY 1: SDK database (most accurate)
         if self.sdk_db:
             sdk_sig = self.sdk_db.get_function_signature(name)
@@ -366,13 +371,31 @@ class HeaderDatabase:
 
 # Global instance
 _db_instance: Optional[HeaderDatabase] = None
+_db_config: Dict[str, bool] = {
+    "use_sdk": True,
+    "ignore_mp": False,
+}
 
 
-def get_header_database() -> HeaderDatabase:
+def get_header_database(
+    use_sdk: Optional[bool] = None,
+    ignore_mp: Optional[bool] = None
+) -> HeaderDatabase:
     """Get singleton header database instance."""
-    global _db_instance
-    if _db_instance is None:
-        _db_instance = HeaderDatabase()
+    global _db_instance, _db_config
+    if use_sdk is None:
+        use_sdk = _db_config["use_sdk"]
+    if ignore_mp is None:
+        ignore_mp = _db_config["ignore_mp"]
+
+    requested_config = {
+        "use_sdk": use_sdk,
+        "ignore_mp": ignore_mp,
+    }
+
+    if _db_instance is None or requested_config != _db_config:
+        _db_config = requested_config
+        _db_instance = HeaderDatabase(use_sdk=use_sdk, ignore_mp=ignore_mp)
         # Try to load data
         json_dir = Path(__file__).parent / 'data'
         if json_dir.exists():
