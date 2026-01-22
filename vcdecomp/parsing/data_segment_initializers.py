@@ -51,6 +51,11 @@ def build_initializer(
     element_size = element_size or 4
 
     is_vector3 = element_type in VECTOR3_TYPES
+    if element_count == 1 and not is_vector3 and element_type in {"float", "dword", "int"}:
+        if looks_like_vector3(data_segment, byte_offset):
+            element_type = "c_Vector3"
+            is_vector3 = True
+            element_size = 12
     if is_vector3 and element_size != 12:
         element_size = 12
 
