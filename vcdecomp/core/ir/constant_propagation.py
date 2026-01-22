@@ -75,6 +75,7 @@ class ConstantPropagator:
         self._build_literal_map()
         self._scan_data_segment()
         self._track_gcp_loads()
+        self._track_lcp_loads()
         self._track_immediate_values()
         self._propagate_through_phi()
 
@@ -204,7 +205,34 @@ class ConstantPropagator:
                 )
 
                 # Store for this SSA value
-                self.constants[inst.outputs[0].name] = const_val
+                self._register_constant(inst.outputs[0], const_val)
+
+    def _track_lcp_loads(self):
+        """
+        Track LCP (stack/parameter) loads that resolve to constants.
+
+        LCP values can become constants when:
+        - The loaded stack slot is a merged PHI of constant values
+        - The alias itself is a numeric literal
+        """
+        for block_id, instructions in self.ssa.instructions.items():
+            for inst in instructions:
+                if inst.mnemonic != "LCP":
+                    continue
+
+                if not inst.outputs:
+                    continue
+
+                value = inst.outputs[0]
+                if value.name in self.constants:
+                    continue
+
+                const_val = self._resolve_constant_from_alias(value)
+                if const_val is None:
+                    const_val = self._resolve_constant_from_phi_sources(value)
+
+                if const_val is not None:
+                    self._register_constant(value, const_val)
 
     def _track_immediate_values(self):
         """
@@ -219,7 +247,12 @@ class ConstantPropagator:
         """
         # This could be extended, but most constants come from GCP
         # For now, we focus on GCP as that's the main pattern
-        pass
+        for value in self.ssa.values.values():
+            if value.name in self.constants:
+                continue
+            const_val = self._resolve_constant_from_alias(value)
+            if const_val is not None:
+                self._register_constant(value, const_val)
 
     def _propagate_through_phi(self):
         """
@@ -266,10 +299,74 @@ class ConstantPropagator:
                     first_const = input_constants[0]
                     if all(c.value == first_const.value for c in input_constants):
                         # All inputs are same constant → propagate to output
-                        self.constants[inst.outputs[0].name] = ConstantValue(
+                        const_val = ConstantValue(
                             value=first_const.value,
                             source="phi_propagation",
                             symbol_name=first_const.symbol_name,
                             value_type=inst.outputs[0].value_type,
                         )
+                        self._register_constant(inst.outputs[0], const_val)
                         changed = True
+
+    def _register_constant(self, value: SSAValue, const_val: ConstantValue) -> None:
+        """Register a constant for an SSA value and annotate the value."""
+        self.constants[value.name] = const_val
+        setattr(value, "constant_value", const_val.value)
+        if const_val.symbol_name:
+            setattr(value, "constant_symbol", const_val.symbol_name)
+
+    def _resolve_constant_from_alias(self, value: SSAValue) -> Optional[ConstantValue]:
+        """Resolve a constant from a numeric alias on the SSA value."""
+        if not value.alias:
+            return None
+
+        parsed = self._parse_numeric_literal(value.alias)
+        if parsed is None:
+            return None
+
+        symbol = self.literal_map.get(parsed)
+        return ConstantValue(
+            value=parsed,
+            source="literal",
+            symbol_name=symbol,
+            value_type=value.value_type,
+        )
+
+    def _resolve_constant_from_phi_sources(self, value: SSAValue) -> Optional[ConstantValue]:
+        """Resolve constant value from PHI sources if all sources are same constant."""
+        if not value.phi_sources:
+            return None
+
+        constants: List[ConstantValue] = []
+        for _, src_name in value.phi_sources:
+            src_val = self.ssa.values.get(src_name)
+            if not src_val:
+                return None
+            const_val = self.constants.get(src_val.name)
+            if const_val is None:
+                return None
+            constants.append(const_val)
+
+        if not constants:
+            return None
+
+        first = constants[0]
+        if all(c.value == first.value for c in constants):
+            return ConstantValue(
+                value=first.value,
+                source="phi_propagation",
+                symbol_name=first.symbol_name,
+                value_type=value.value_type,
+            )
+        return None
+
+    def _parse_numeric_literal(self, text: str) -> Optional[int]:
+        """Parse numeric literal text into an int if possible."""
+        try:
+            if text.startswith(("0x", "0X")):
+                return int(text, 16)
+            if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
+                return int(text)
+        except (ValueError, TypeError):
+            return None
+        return None

@@ -22,7 +22,7 @@ from ..structures import (
 )
 from .ssa import SSAFunction, SSAInstruction, SSAValue
 from .global_resolver import resolve_globals
-from .constant_propagation import ConstantPropagator
+from .constant_propagation import ConstantPropagator, ConstantValue
 from .field_tracker import FieldAccessTracker
 from ..headers.database import get_header_database
 from .parenthesization import (
@@ -1278,6 +1278,38 @@ class ExpressionFormatter:
         if array_load and self._is_constant_array_notation(array_load):
             return array_load
 
+        # PRIORITY 1.5: Preserve global names for data segment references
+        if value.alias:
+            if value.alias.startswith("data_"):
+                try:
+                    offset = int(value.alias[5:])
+                    global_name = self._global_names.get(offset)
+                    if global_name:
+                        return global_name
+                except ValueError:
+                    pass
+            elif value.alias.startswith("&data_"):
+                try:
+                    offset = int(value.alias[6:])
+                    global_name = self._global_names.get(offset)
+                    if global_name:
+                        return f"&{global_name}"
+                except ValueError:
+                    pass
+
+        # PRIORITY 1.6: Render literals/constants directly to avoid tmp renaming
+        literal_constant = self._get_literal_constant_text(
+            value,
+            expected_type_str=expected_type_str,
+            context=context,
+        )
+        if literal_constant is not None:
+            return literal_constant
+
+        constant_value = self._constant_propagator.get_constant(value)
+        if constant_value is not None:
+            return self._format_constant_value(constant_value, expected_type_str, context)
+
         # PRIORITY 2: Check rename_map for variable collision resolution
         # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
         # This allows sideA and sideB to have different names even though both have alias="local_2"
@@ -1373,27 +1405,6 @@ class ExpressionFormatter:
             if value.producer_inst and self._can_render_constant_expression(value):
                 return self._inline_expression(value, context, parent_operator)
 
-            # PRIORITY 1: Check for global variable name FIRST (before literals)
-            # Global variable names from SaveInfo/headers take precedence over data segment values
-            # This ensures we show "gEndRule" instead of "0" even though gEndRule's initial value is 0
-            if value.alias.startswith("data_"):
-                try:
-                    offset = int(value.alias[5:])
-                    global_name = self._global_names.get(offset)
-                    if global_name:
-                        return global_name
-                    # FALLTHROUGH: No global name found, check data segment value below
-                except ValueError:
-                    pass
-            elif value.alias.startswith("&data_"):
-                try:
-                    offset = int(value.alias[6:])
-                    global_name = self._global_names.get(offset)
-                    if global_name:
-                        return f"&{global_name}"
-                except ValueError:
-                    pass
-
             # PRIORITY 2: Check if alias is a numeric literal that might be a float
             try:
                 val = int(value.alias)
@@ -1484,6 +1495,40 @@ class ExpressionFormatter:
         if value.value_type == opcodes.ResultType.POINTER:
             return True
         return False
+
+    def _format_constant_value(
+        self,
+        const_val: ConstantValue,
+        expected_type_str: str = None,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION,
+    ) -> str:
+        """Format a tracked constant into a C literal or symbol name."""
+        if const_val.symbol_name:
+            return const_val.symbol_name
+
+        value = const_val.value
+        if isinstance(value, float):
+            return str(value)
+
+        int_value = int(value)
+        if int_value > 0x7FFFFFFF:
+            int_value -= 0x100000000
+
+        if expected_type_str:
+            if '*' in expected_type_str and int_value == 0:
+                return "0"
+            if 'float' in expected_type_str.lower() and '*' not in expected_type_str:
+                return _format_float(int_value)
+            if 'double' in expected_type_str.lower() and '*' not in expected_type_str:
+                return _format_float(int_value)
+
+        if context in (ExpressionContext.IN_ARRAY_INDEX,):
+            return str(int_value)
+
+        if const_val.value_type == opcodes.ResultType.FLOAT:
+            return _format_float(int_value)
+
+        return str(int_value)
 
     def _check_string_literal(self, value: SSAValue) -> Optional[str]:
         """
