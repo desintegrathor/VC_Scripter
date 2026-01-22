@@ -635,7 +635,15 @@ def cmd_structure(args):
     # Heritage: Pass heritage_metadata for improved variable names (default with incremental SSA)
     style = 'normal' if debug_mode else 'quiet'
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-        text = format_structured_function_named(ssa_func, func_name, func_start, func_end, function_bounds=func_bounds, style=style, heritage_metadata=heritage_metadata)
+        text = format_structured_function_named(
+            ssa_func,
+            func_name,
+            func_start,
+            func_end,
+            function_bounds=func_bounds,
+            style=style,
+            heritage_metadata=heritage_metadata
+        )
         print(text)
         print()
 

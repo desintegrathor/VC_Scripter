@@ -66,14 +66,22 @@ class VariableUsageInfo:
     evidence_sources: List[str] = field(default_factory=list)
     """Sources of evidence: 'field_tracker', 'ssa_pattern', 'runtime', 'xcall'"""
 
+    evidence_counts: Dict[str, int] = field(default_factory=dict)
+    """Counts of evidence hits per source (e.g., ssa_pattern occurrences)."""
+
+    def _record_evidence(self, source: str):
+        """Track evidence counts and sources."""
+        self.evidence_counts[source] = self.evidence_counts.get(source, 0) + 1
+        if source not in self.evidence_sources:
+            self.evidence_sources.append(source)
+
     def update_array_evidence(self, element_size: int, index: Optional[int] = None, source: str = "unknown"):
         """Record evidence of array usage."""
         self.is_array = True
         self.array_element_sizes.add(element_size)
         if index is not None and (self.max_array_index is None or index > self.max_array_index):
             self.max_array_index = index
-        if source not in self.evidence_sources:
-            self.evidence_sources.append(source)
+        self._record_evidence(source)
         self._recalculate_confidence()
 
     def update_struct_evidence(self, struct_type: Optional[str], offset: int, source: str = "unknown"):
@@ -91,8 +99,7 @@ class VariableUsageInfo:
                 field_end = struct_def.size
         if field_end > self.min_struct_size:
             self.min_struct_size = field_end
-        if source not in self.evidence_sources:
-            self.evidence_sources.append(source)
+        self._record_evidence(source)
         self._recalculate_confidence()
 
     def mark_struct_array(self, element_size: int, struct_type: Optional[str], source: str = "unknown"):
@@ -102,14 +109,21 @@ class VariableUsageInfo:
         self.array_element_sizes.add(element_size)
         if struct_type:
             self.struct_type = struct_type
-        if source not in self.evidence_sources:
-            self.evidence_sources.append(source)
+        self._record_evidence(source)
         self._recalculate_confidence()
 
     def _recalculate_confidence(self):
         """Update confidence based on evidence strength."""
-        # Base confidence from number of evidence sources
-        base = 0.3 if len(self.evidence_sources) >= 1 else 0.0
+        base = 0.0
+
+        ssa_hits = self.evidence_counts.get("ssa_pattern", 0)
+        runtime_hits = self.evidence_counts.get("runtime", 0)
+
+        if ssa_hits:
+            base = max(base, 0.35 + min(ssa_hits - 1, 2) * 0.1)
+
+        if runtime_hits:
+            base = max(base, 0.5 + min(runtime_hits, 3) * 0.05)
 
         # Boost for field_tracker (high-confidence source)
         if "field_tracker" in self.evidence_sources:
@@ -167,7 +181,8 @@ class LocalVariableTypeTracker:
         func_start: int,
         func_end: int,
         field_tracker=None,
-        rename_map: Dict[str, str] = None
+        rename_map: Dict[str, str] = None,
+        confidence_threshold: float = 0.7
     ):
         """
         Initialize tracker for a specific function.
@@ -184,6 +199,7 @@ class LocalVariableTypeTracker:
         self.func_end = func_end
         self.field_tracker = field_tracker
         self.rename_map = rename_map or {}
+        self.confidence_threshold = confidence_threshold
 
         # Main storage: variable name → usage info
         self._usage_info: Dict[str, VariableUsageInfo] = {}
@@ -196,6 +212,17 @@ class LocalVariableTypeTracker:
 
         # Track constant-offset accesses for array heuristics
         self._constant_offset_arrays: Dict[str, Set[int]] = {}
+
+    def _meets_confidence(self, info: VariableUsageInfo) -> bool:
+        """Check if variable meets confidence threshold."""
+        return info.confidence >= self.confidence_threshold
+
+    def _is_single_arithmetic_inference(self, info: VariableUsageInfo) -> bool:
+        """Check for one-off arithmetic pattern inference without SDK/header support."""
+        return (
+            info.evidence_counts.get("ssa_pattern", 0) == 1
+            and len(info.evidence_sources) == 1
+        )
 
     def _get_or_create_info(self, var_name: str) -> VariableUsageInfo:
         """Get existing usage info or create new entry."""
@@ -497,6 +524,9 @@ class LocalVariableTypeTracker:
             # Plain struct
             return info.struct_type
 
+        if not self._meets_confidence(info) or self._is_single_arithmetic_inference(info):
+            return "int"
+
         # Priority 1: Struct array (both array + struct patterns)
         if info.is_struct_array:
             struct_type = info.struct_type or "dword"
@@ -547,6 +577,8 @@ class LocalVariableTypeTracker:
         info = self._usage_info.get(var_name)
         if not info:
             return False
+        if not self._meets_confidence(info) or self._is_single_arithmetic_inference(info):
+            return False
         return info.is_array or info.is_struct_array
 
     def should_emit_field_notation(self, var_name: str) -> bool:
@@ -559,7 +591,16 @@ class LocalVariableTypeTracker:
         info = self._usage_info.get(var_name)
         if not info:
             return False
+        if not self._meets_confidence(info) or self._is_single_arithmetic_inference(info):
+            return False
         return info.is_struct and info.struct_type is not None
+
+    def should_use_semantic_name(self, var_name: str) -> bool:
+        """Check if semantic renaming should be applied for this variable."""
+        info = self._usage_info.get(var_name)
+        if not info:
+            return True
+        return self._meets_confidence(info)
 
     def get_tracked_variables(self) -> List[str]:
         """Get list of all tracked variable names."""
