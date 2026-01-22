@@ -159,9 +159,12 @@ class MockExpressionFormatter:
         self.expressions = expressions or {}
         self.render_values = render_values or {}
         self._struct_ranges = {}
+        self._rename_map = {}
 
     def render_value(self, value, context=None):
         """Mock render_value"""
+        if hasattr(value, 'name') and value.name in self._rename_map:
+            return self._rename_map[value.name]
         if hasattr(value, 'name') and value.name in self.render_values:
             return self.render_values[value.name]
         if hasattr(value, 'alias') and value.alias:
@@ -173,6 +176,12 @@ class MockExpressionFormatter:
     def _format_call(self, inst):
         """Mock _format_call"""
         return f"SC_Function();"
+
+    def _format_pointer_target(self, value):
+        rendered = self.render_value(value)
+        if rendered.startswith("&"):
+            return rendered[1:]
+        return rendered
 
 
 class MockDataSegment:
@@ -471,6 +480,55 @@ class TestRenderIfElseRecursive(unittest.TestCase):
         # Should have if but no else
         self.assertTrue(any("if (condition)" in line for line in result))
         self.assertFalse(any("} else {" in line for line in result))
+
+    def test_condition_uses_last_assignment_name(self):
+        """Test mapping to use assigned variable in if (pl) condition."""
+        blocks = {
+            1: MockBasicBlock(1, 0x100, [2, 3], [
+                MockInstruction(0x110, 0x02)  # JZ
+            ]),
+            2: MockBasicBlock(2, 0x120, [3]),
+            3: MockBasicBlock(3, 0x130, [])
+        }
+        cfg = MockCFG(blocks)
+
+        if_pattern = IfElsePattern(
+            header_block=1,
+            true_block=2,
+            false_block=3,
+            merge_block=3,
+            true_body={2},
+            false_body=set()
+        )
+
+        cond_value = MockSSAValue("t_call")
+        target_addr = MockSSAValue("t_addr", alias="&pl")
+        asgn_inst = MockSSAInstruction("ASGN", address=0x100, inputs=[cond_value, target_addr])
+        jz_inst = MockSSAInstruction("JZ", address=0x110, inputs=[cond_value])
+        ssa_func = MockSSAFunction({1: [asgn_inst, jz_inst], 2: []})
+
+        formatter = MockExpressionFormatter(
+            expressions={
+                1: [MockExpression("pl = SC_P_GetBySideGroupMember(side, group, member);")],
+                2: [
+                    MockExpression("SC_P_IsReady(pl);"),
+                    MockExpression("SC_P_SetActive(pl);")
+                ]
+            }
+        )
+
+        resolver = MockOpcodeResolver()
+        result = _render_if_else_recursive(
+            if_pattern, "", ssa_func, formatter,
+            {1: if_pattern}, set(), set(),
+            cfg, {}, resolver
+        )
+
+        result_text = "\n".join(result)
+        self.assertIn("if (pl)", result_text)
+        self.assertIn("SC_P_IsReady(pl);", result_text)
+        self.assertIn("SC_P_SetActive(pl);", result_text)
+        self.assertNotIn("if (t_call)", result_text)
 
     def test_compound_condition(self):
         """Test compound condition rendering"""
