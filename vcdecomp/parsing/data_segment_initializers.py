@@ -54,6 +54,9 @@ def build_initializer(
     if is_vector3 and element_size != 12:
         element_size = 12
 
+    if element_type in {"int", "float", "dword", "BOOL"}:
+        element_size = 4
+
     total_bytes = element_size * element_count
     if byte_offset + total_bytes > len(data_segment.raw_data):
         return None
