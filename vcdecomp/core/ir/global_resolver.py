@@ -147,6 +147,9 @@ class GlobalResolver:
         # NEW Pattern 8: Heuristics for BOOL and Vector3 globals from calls
         self._apply_call_type_hints()
 
+        # NEW Pattern 9: Validate array element sizes against inferred types
+        self._validate_array_element_sizes()
+
         # Pojmenuj globály podle patterns (SGI names override auto-generated)
         self._assign_names()
 
@@ -1370,6 +1373,59 @@ class GlobalResolver:
                 return self.globals.get(byte_offset), True, element_size
 
         return None, False, None
+
+    def _get_type_size(self, type_name: Optional[str]) -> Optional[int]:
+        if not type_name:
+            return None
+
+        base_type = type_name.replace("*", "").strip()
+        if base_type in {"c_Vector3", "c_vector3"}:
+            return 12
+
+        from ..structures import get_struct_by_name
+
+        struct_def = get_struct_by_name(base_type)
+        if struct_def:
+            return struct_def.size
+
+        type_sizes = {
+            "char": 1,
+            "short": 2,
+            "int": 4,
+            "float": 4,
+            "double": 8,
+            "dword": 4,
+            "BOOL": 4,
+        }
+        return type_sizes.get(base_type)
+
+    def _validate_array_element_sizes(self) -> None:
+        """
+        Ensure array base globals have an element size consistent with inferred types.
+        """
+        for usage in self.globals.values():
+            if not usage.is_array_base:
+                continue
+
+            expected_size = self._get_type_size(usage.inferred_type or usage.header_type)
+            if not expected_size:
+                continue
+
+            if usage.array_element_size is None:
+                usage.array_element_size = expected_size
+                continue
+
+            if usage.array_element_size == expected_size:
+                continue
+
+            if usage.saveinfo_size_dwords:
+                total_bytes = usage.saveinfo_size_dwords * 4
+                if total_bytes % expected_size == 0:
+                    usage.array_element_size = expected_size
+                    continue
+
+            if expected_size and (usage.array_element_size <= 4 or usage.array_element_size > expected_size):
+                usage.array_element_size = expected_size
 
     def _apply_condition_type_hints(self) -> None:
         """
