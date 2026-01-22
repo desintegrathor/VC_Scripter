@@ -36,7 +36,8 @@ def _format_block_lines_filtered(
     start_to_block: Optional[Dict[int, int]] = None,
     resolver: Optional[opcodes.OpcodeResolver] = None,
     # FÁZE 1.3: Early return/break pattern detection
-    early_returns: Optional[Dict[int, tuple]] = None
+    early_returns: Optional[Dict[int, tuple]] = None,
+    skip_early_return_blocks: Optional[Set[int]] = None
 ) -> List[str]:
     """
     Format block expressions but skip the last assignment to a specific variable.
@@ -98,7 +99,8 @@ def _format_block_lines(
     start_to_block: Optional[Dict[int, int]] = None,
     resolver: Optional[opcodes.OpcodeResolver] = None,
     # FÁZE 1.3: Early return/break pattern detection
-    early_returns: Optional[Dict[int, tuple]] = None
+    early_returns: Optional[Dict[int, tuple]] = None,
+    skip_early_return_blocks: Optional[Set[int]] = None
 ) -> List[str]:
     """
     Format expressions for a block, with optional recursive structure detection.
@@ -129,6 +131,9 @@ def _format_block_lines(
 
     # FÁZE 1.3: Check if this block is an early return/break pattern
     if early_returns and block_id in early_returns:
+        if skip_early_return_blocks and block_id in skip_early_return_blocks:
+            expressions = format_block_expressions(ssa_func, block_id, formatter=formatter)
+            return [f"{indent}{expr.text}" for expr in expressions]
         header_block, exit_block, continue_block, is_negated = early_returns[block_id]
 
         condition_render = render_condition(

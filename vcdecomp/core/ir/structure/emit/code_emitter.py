@@ -273,6 +273,7 @@ def _render_blocks_with_loops(
 
     # Track which blocks have for-loops as successors and what variable to skip
     skip_last_assignment: Dict[int, str] = {}  # block_id -> variable_name to skip
+    guard_blocks: Set[int] = set()
 
     # Pre-scan to identify blocks that need initialization skipped
     for body_block_id in block_ids:
@@ -289,6 +290,8 @@ def _render_blocks_with_loops(
                             if pred_id not in loop.body and pred_id in block_ids:
                                 # This predecessor should skip assignment to loop variable
                                 skip_last_assignment[pred_id] = for_info.init_var
+                    if for_info.guard_block is not None:
+                        guard_blocks.add(for_info.guard_block)
                 break
 
     for body_block_id in block_ids:
@@ -323,6 +326,8 @@ def _render_blocks_with_loops(
             for_info = _detect_for_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; {for_info.condition}; {for_info.increment}) {{")
+                if for_info.guard_block is not None:
+                    guard_blocks.add(for_info.guard_block)
             else:
                 lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
@@ -349,14 +354,14 @@ def _render_blocks_with_loops(
                         block_lines = _format_block_lines_filtered(
                             ssa_func, loop_body_id, indent + "    ", formatter, skip_var,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                            early_returns
+                            early_returns, guard_blocks
                         )
                         lines.extend(block_lines)
                     else:
                         lines.extend(_format_block_lines(
                             ssa_func, loop_body_id, indent + "    ", formatter,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                            early_returns
+                            early_returns, guard_blocks
                         ))
 
             lines.append(f"{indent}}}")
@@ -376,14 +381,14 @@ def _render_blocks_with_loops(
                 block_lines = _format_block_lines_filtered(
                     ssa_func, body_block_id, indent, formatter, skip_var,
                     block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                    early_returns
+                    early_returns, guard_blocks
                 )
                 lines.extend(block_lines)
             else:
                 lines.extend(_format_block_lines(
                     ssa_func, body_block_id, indent, formatter,
                     block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                    early_returns
+                    early_returns, guard_blocks
                 ))
 
             # DEAD CODE ELIMINATION: Check if block terminates execution

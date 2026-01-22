@@ -105,3 +105,4 @@ class ForLoopInfo:
     condition: str                 # Loop condition (e.g., "i < gRecs")
     increment: str                 # Increment expression (e.g., "i++")
     init_var: str = ""            # Original initialization variable (e.g., "local_2") for filtering
+    guard_block: Optional[int] = None  # Optional guard block to omit (if condition is in loop body)

@@ -508,6 +508,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     emitted_blocks: Set[int] = set()    # Track all blocks we've rendered
     goto_targets: Set[int] = set()      # Track blocks referenced by goto statements (Pattern 1 fix)
     skipped_orphan_blocks: Set[int] = set()  # FIX (01-21): Track orphaned blocks to filter gotos
+    loop_guard_blocks: Set[int] = set()  # Track guard blocks folded into for-loop conditions
 
     for idx, (addr, block_id, block) in enumerate(func_blocks):
         # Skip blocks that have already been rendered (unless they're goto targets - Pattern 1 fix)
@@ -937,6 +938,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             for_info = _detect_for_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; {for_info.condition}; {for_info.increment}) {{")
+                if for_info.guard_block is not None:
+                    loop_guard_blocks.add(for_info.guard_block)
             else:
                 lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
@@ -966,6 +969,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # handling below to avoid duplicate output
         if block_id in visited_ifs:
             continue  # Skip to next block - this one was handled as if/else
+
+        if block_id in loop_guard_blocks:
+            continue
 
         if block.instructions:
             last_instr = block.instructions[-1]
