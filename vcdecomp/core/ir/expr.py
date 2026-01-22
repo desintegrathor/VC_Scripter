@@ -334,16 +334,21 @@ class ExpressionFormatter:
         # FIX 2: Variable name collision resolution (SSA value name → final name)
         self._rename_map = rename_map or {}
         # Build parameter offset -> name mapping
-        self._param_names = {}  # stack_offset -> param_name
+        self._param_names = {}  # stack_offset (dword index) -> param_name
         if func_signature and func_signature.param_types:
-            # Parameters are at negative stack offsets: -4, -8, -12, ...
+            # Parameters are at negative stack offsets in dwords: -3, -4, -5, ...
             # Extract actual parameter names from type strings like "float time"
             for i, param_type in enumerate(func_signature.param_types):
-                offset = -(i + 1) * 4  # -4, -8, -12, ...
-                # Extract name from "float time" -> "time"
-                parts = param_type.split()
-                if len(parts) >= 2:
-                    self._param_names[offset] = parts[-1]  # Last part is the name
+                offset = -(i + 3)  # -3, -4, -5, ...
+                # Extract name from "float time" -> "time", "dword *list" -> "list"
+                tokens = param_type.replace('*', ' * ').split()
+                param_name = None
+                for token in reversed(tokens):
+                    if token != '*':
+                        param_name = token.lstrip('*')
+                        break
+                if param_name:
+                    self._param_names[offset] = param_name
         # Track variable -> structure type mapping
         self._var_struct_types: Dict[str, str] = {}
         # Track structure ranges: base_var -> (start_index, end_index, struct_name)
