@@ -141,6 +141,9 @@ class GlobalResolver:
         # NEW Pattern 7: Infer struct types from XCALL arguments
         self._analyze_xcall_struct_args()
 
+        # NEW Pattern 7b: Heuristics for BOOL usage in conditions
+        self._apply_condition_type_hints()
+
         # NEW Pattern 8: Heuristics for BOOL and Vector3 globals from calls
         self._apply_call_type_hints()
 
@@ -1233,8 +1236,11 @@ class GlobalResolver:
         """
         Apply heuristics for BOOL and c_Vector3 globals based on function call usage.
         """
-        if not self.header_db:
-            return
+        vector3_param_hints = {
+            "SC_P_GetPos": {1},
+            "SC_IsNear2D": {0, 1},
+            "SC_2VectorsDist": {0, 1},
+        }
 
         for block_id, instructions in self.ssa_func.instructions.items():
             for inst in instructions:
@@ -1249,60 +1255,150 @@ class GlobalResolver:
                     continue
 
                 func_name = xfn_entry.name.split("(")[0]
-                func_sig = self.header_db.get_function_signature(func_name)
-                if not func_sig:
-                    continue
+                params = []
+                return_type = None
+                func_sig = self.header_db.get_function_signature(func_name) if self.header_db else None
+                if func_sig:
+                    params = func_sig.get("parameters") or []
+                    return_type = func_sig.get("return_type")
 
-                params = func_sig.get("parameters") or []
                 for idx, value in enumerate(inst.inputs):
-                    if idx >= len(params) or not value:
-                        continue
-                    param_type = params[idx][0]
-                    if param_type not in {"BOOL", "c_Vector3", "c_Vector3 *", "c_Vector3*", "c_vector3", "c_vector3 *", "c_vector3*"}:
+                    if not value:
                         continue
 
-                    global_usage = self._get_global_usage_from_value(value)
+                    param_type = None
+                    if idx < len(params):
+                        param_type = params[idx][0]
+
+                    if func_name in vector3_param_hints and idx in vector3_param_hints[func_name]:
+                        param_type = "c_Vector3"
+
+                    if param_type not in {
+                        "BOOL",
+                        "c_Vector3",
+                        "c_Vector3 *",
+                        "c_Vector3*",
+                        "c_vector3",
+                        "c_vector3 *",
+                        "c_vector3*",
+                    }:
+                        continue
+
+                    global_usage, is_array_access, element_size = self._get_global_usage_from_value(value)
                     if not global_usage:
                         continue
 
                     if param_type == "BOOL":
-                        self._update_usage_type(global_usage, "BOOL", 0.9)
+                        self._apply_bool_usage(global_usage, is_array_access, element_size)
                     else:
                         self._update_usage_type(global_usage, "c_Vector3", 0.85)
                         global_usage.is_struct_base = True
-                        global_usage.array_element_size = global_usage.array_element_size or 12
+                        if is_array_access:
+                            global_usage.is_array_base = True
+                        global_usage.array_element_size = global_usage.array_element_size or element_size or 12
 
-                return_type = func_sig.get("return_type")
-                if return_type != "BOOL":
-                    continue
-
-                for out_val in inst.outputs or []:
-                    global_usage = self._get_global_usage_from_value(out_val)
-                    if global_usage:
-                        self._update_usage_type(global_usage, "BOOL", 0.9)
+                if return_type == "BOOL":
+                    for out_val in inst.outputs or []:
+                        global_usage, is_array_access, element_size = self._get_global_usage_from_value(out_val)
+                        if global_usage:
+                            self._apply_bool_usage(global_usage, is_array_access, element_size)
 
     def _update_usage_type(self, usage: GlobalUsage, inferred_type: str, confidence: float) -> None:
         if not usage.inferred_type or confidence >= usage.type_confidence:
             usage.inferred_type = inferred_type
             usage.type_confidence = max(usage.type_confidence, confidence)
 
-    def _get_global_usage_from_value(self, value) -> Optional[GlobalUsage]:
-        if not value or not value.alias:
-            return None
+    def _apply_bool_usage(
+        self,
+        usage: GlobalUsage,
+        is_array_access: bool,
+        element_size: Optional[int],
+    ) -> None:
+        self._update_usage_type(usage, "BOOL", 0.9)
+        if is_array_access or (usage.saveinfo_size_dwords and usage.saveinfo_size_dwords > 1) or usage.array_dimensions:
+            usage.is_array_base = True
+            usage.array_element_size = usage.array_element_size or element_size or 4
 
-        alias = value.alias
-        if alias.startswith("&"):
-            alias = alias[1:]
-        if not alias.startswith("data_"):
-            return None
+    def _get_global_usage_from_value(self, value) -> Tuple[Optional[GlobalUsage], bool, Optional[int]]:
+        if not value:
+            return None, False, None
 
-        try:
-            dword_offset = int(alias[5:])
-        except ValueError:
-            return None
+        if value.alias:
+            alias = value.alias
+            if alias.startswith("&"):
+                alias = alias[1:]
+            if alias.startswith("data_"):
+                try:
+                    dword_offset = int(alias[5:])
+                except ValueError:
+                    return None, False, None
+                byte_offset = dword_offset * 4
+                return self.globals.get(byte_offset), False, None
 
-        byte_offset = dword_offset * 4
-        return self.globals.get(byte_offset)
+        if not value.producer_inst:
+            return None, False, None
+
+        producer = value.producer_inst
+        if producer.mnemonic in {"GCP", "GLD", "GADR"}:
+            if producer.instruction and producer.instruction.instruction:
+                dword_offset = producer.instruction.instruction.arg1
+                byte_offset = dword_offset * 4
+                return self.globals.get(byte_offset), False, None
+            return None, False, None
+
+        if producer.mnemonic == "ADD" and len(producer.inputs) >= 2:
+            left, right = producer.inputs[0], producer.inputs[1]
+            base_inst = None
+            offset_val = None
+            if left.producer_inst and left.producer_inst.mnemonic == "GADR":
+                base_inst = left.producer_inst
+                offset_val = right
+            elif right.producer_inst and right.producer_inst.mnemonic == "GADR":
+                base_inst = right.producer_inst
+                offset_val = left
+
+            if base_inst and base_inst.instruction and base_inst.instruction.instruction:
+                dword_offset = base_inst.instruction.instruction.arg1
+                byte_offset = dword_offset * 4
+                element_size = None
+                if offset_val and offset_val.producer_inst and offset_val.producer_inst.mnemonic in {"MUL", "IMUL"}:
+                    mul_inst = offset_val.producer_inst
+                    if len(mul_inst.inputs) >= 2:
+                        element_size = self._get_constant_value(mul_inst.inputs[1])
+                        if element_size is None:
+                            element_size = self._get_constant_value(mul_inst.inputs[0])
+                return self.globals.get(byte_offset), True, element_size
+
+        return None, False, None
+
+    def _apply_condition_type_hints(self) -> None:
+        """
+        Infer BOOL globals when used in conditional jumps.
+        """
+        condition_ops = {"JZ", "JNZ"}
+        compare_ops = {"EQU", "NEQU", "GRE", "LESS", "GREEQ", "LESSEQ", "UGRE", "ULESS", "UGEQ", "ULES"}
+
+        for block_id, instructions in self.ssa_func.instructions.items():
+            for inst in instructions:
+                if inst.mnemonic not in condition_ops:
+                    continue
+
+                for value in inst.inputs:
+                    if not value:
+                        continue
+
+                    usage, is_array_access, element_size = self._get_global_usage_from_value(value)
+                    if usage:
+                        self._apply_bool_usage(usage, is_array_access, element_size)
+                        continue
+
+                    if not value.producer_inst or value.producer_inst.mnemonic not in compare_ops:
+                        continue
+
+                    for compare_input in value.producer_inst.inputs:
+                        usage, is_array_access, element_size = self._get_global_usage_from_value(compare_input)
+                        if usage:
+                            self._apply_bool_usage(usage, is_array_access, element_size)
 
     def _apply_data_segment_initializers(self) -> None:
         if not self.scr or not self.scr.data_segment:
@@ -1358,7 +1454,7 @@ class GlobalResolver:
             elif usage.is_array_base:
                 continue
 
-            if element_count == 1 and element_type in {"float", "dword"} and looks_like_vector3(data_segment, byte_offset):
+            if element_count in {1, 3} and element_type in {"float", "dword", "int"} and looks_like_vector3(data_segment, byte_offset):
                 self._update_usage_type(usage, "c_Vector3", 0.75)
                 element_type = "c_Vector3"
                 element_size = 12
