@@ -8,6 +8,7 @@ Poskytuje caching pro opakované přístupy a clean separation of concerns.
 from typing import Dict, Optional, Tuple
 from ..loader.scr_loader import DataSegment
 from .global_resolver import GlobalUsage
+from ..constants import get_constant_name
 
 
 def _is_likely_float(val: int) -> bool:
@@ -232,6 +233,11 @@ class DataResolver:
 
         # Integer types (int, dword, void*, BOOL, etc.)
         val = self.data_segment.get_dword(byte_offset)
+
+        if type_hint == "BOOL":
+            name = get_constant_name("BOOL", val)
+            if name:
+                return name
 
         # FIXED (Phase 3): Heuristic float detection for 'unknown' type ONLY
         # When type_hint is explicitly 'int', 'dword', etc. (from context or function signature),
