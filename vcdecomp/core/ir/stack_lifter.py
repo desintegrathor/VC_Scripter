@@ -18,6 +18,24 @@ from .cfg import CFG, build_cfg, BasicBlock
 logger = logging.getLogger(__name__)
 
 
+SIMPLE_ARITHMETIC_MNEMONICS = {
+    "ADD",
+    "SUB",
+    "IADD",
+    "ISUB",
+    "FADD",
+    "FSUB",
+    "DADD",
+    "DSUB",
+    "CADD",
+    "CSUB",
+    "SADD",
+    "SSUB",
+    "INC",
+    "DEC",
+}
+
+
 def _to_signed(val: int) -> int:
     return val - 0x100000000 if val >= 0x80000000 else val
 
@@ -274,6 +292,7 @@ class StackValue:
     value_type: opcodes.ResultType = opcodes.ResultType.UNKNOWN
     phi_sources: Optional[List[Tuple[int, "StackValue"]]] = None
     alias: Optional[str] = None
+    metadata: Dict = field(default_factory=dict)
 
 
 @dataclass
@@ -395,11 +414,16 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
                 result_type = inferred_type
 
             alias = inferred_alias if idx == 0 else None
+            metadata = {}
+            if mnemonic in SIMPLE_ARITHMETIC_MNEMONICS:
+                metadata["simple_arithmetic"] = True
+
             stack_val = StackValue(
                 name=f"t{instr.address}_{idx}",
                 producer=instr,
                 value_type=result_type,
                 alias=alias,
+                metadata=metadata,
             )
 
             # Log type assignment for debugging

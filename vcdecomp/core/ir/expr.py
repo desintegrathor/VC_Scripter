@@ -1355,7 +1355,8 @@ class ExpressionFormatter:
             if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
                 if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}:
                     is_array_indexing = True
-        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing and not is_gcp_constant:
+        preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
+        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing and not is_gcp_constant and not preserve_compound:
             return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -2523,10 +2524,17 @@ class ExpressionFormatter:
                     preserve_numeric_defaults = True
 
         # Render both values first to analyze them
-        rendered0 = call_expr_override if call_expr_override else self._render_value(
-            inst.inputs[0],
-            expected_type_str="float" if preserve_numeric_defaults else None
-        )
+        source_val = inst.inputs[0]
+        preserve_compound = bool(getattr(source_val, "metadata", {}).get("preserve_compound"))
+        if call_expr_override:
+            rendered0 = call_expr_override
+        elif preserve_compound and source_val.producer_inst:
+            rendered0 = self._inline_expression(source_val)
+        else:
+            rendered0 = self._render_value(
+                source_val,
+                expected_type_str="float" if preserve_numeric_defaults else None,
+            )
         rendered1 = self._render_value(inst.inputs[1])
 
         # Determine which operand is the target (lvalue) and which is the source (rvalue)
@@ -2699,14 +2707,15 @@ class ExpressionFormatter:
             "/": "/=",
         }
         for op_symbol, compound in compound_ops.items():
-            left_pattern = rf"^{re.escape(target)}\s*\\{op_symbol}\s*(.+)$"
+            op_regex = re.escape(op_symbol)
+            left_pattern = rf"^{re.escape(target)}\s*{op_regex}\s*(.+)$"
             match = re.match(left_pattern, simplified_source)
             if match:
                 rhs = match.group(1).strip()
                 if rhs:
                     return f"{target} {compound} {rhs};"
             if op_symbol in {"+", "*"}:
-                right_pattern = rf"^(.+)\s*\\{op_symbol}\s*{re.escape(target)}$"
+                right_pattern = rf"^(.+)\s*{op_regex}\s*{re.escape(target)}$"
                 match = re.match(right_pattern, simplified_source)
                 if match:
                     rhs = match.group(1).strip()

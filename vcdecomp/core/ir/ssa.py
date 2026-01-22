@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple
 from ..loader.scr_loader import SCRFile
 from ..disasm import opcodes
 from .cfg import CFG, _compute_dominance_frontiers
-from .stack_lifter import lift_function, LiftedInstruction, StackValue
+from .stack_lifter import lift_function, LiftedInstruction, StackValue, SIMPLE_ARITHMETIC_MNEMONICS
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +107,7 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
                 producer=stack_val.producer.address if stack_val.producer else None,
                 phi_sources=phi_sources,
                 alias=stack_val.alias,
+                metadata=dict(stack_val.metadata),
             )
         val = values[stack_val.name]
         if stack_val.phi_sources and not val.phi_sources:
@@ -115,6 +116,8 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
             val.value_type = stack_val.value_type
         if not val.alias and stack_val.alias:
             val.alias = stack_val.alias
+        if stack_val.metadata:
+            val.metadata.update(stack_val.metadata)
         return val
 
     for block_id, insts in lifted.items():
@@ -171,8 +174,27 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
         instructions[block_id] = ssa_block
 
     _propagate_types(resolver, instructions)
+    _mark_simple_arithmetic_compound_stores(instructions)
 
     return SSAFunction(cfg=cfg, values=values, instructions=instructions, scr=scr)
+
+
+def _mark_simple_arithmetic_compound_stores(instructions: Dict[int, List[SSAInstruction]]) -> None:
+    """Mark arithmetic temporaries used in stores for compound reconstruction."""
+    for block_insts in instructions.values():
+        for inst in block_insts:
+            if inst.mnemonic != "ASGN" or len(inst.inputs) < 2:
+                continue
+            source = inst.inputs[0]
+            if not source.producer_inst:
+                continue
+            if source.producer_inst.mnemonic not in SIMPLE_ARITHMETIC_MNEMONICS:
+                continue
+            if source.uses:
+                real_uses = {addr for addr, _ in source.uses if addr >= 0}
+                if len(real_uses) > 1:
+                    continue
+            source.metadata["preserve_compound"] = True
 
 
 FLOAT_OPS = {
