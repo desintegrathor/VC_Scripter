@@ -10,6 +10,7 @@ from __future__ import annotations
 import sys
 import struct
 import math
+import re
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Set, Tuple
 
@@ -1357,6 +1358,10 @@ class ExpressionFormatter:
             return array_load
 
         if value.alias:
+            # Preserve constant expressions (e.g., 8 * 60) when safely reconstructable
+            if value.producer_inst and self._can_render_constant_expression(value):
+                return self._inline_expression(value, context, parent_operator)
+
             # PRIORITY 1: Check for global variable name FIRST (before literals)
             # Global variable names from SaveInfo/headers take precedence over data segment values
             # This ensures we show "gEndRule" instead of "0" even though gEndRule's initial value is 0
@@ -1640,6 +1645,69 @@ class ExpressionFormatter:
         # Integer literal
         if rendered.isdigit() or (rendered.startswith('-') and rendered[1:].replace('.', '').isdigit()):
             return True
+        return False
+
+    def _is_numeric_literal_text(self, rendered: str) -> bool:
+        """Check if a rendered string is a numeric literal (int/float/hex)."""
+        if self._is_string_literal(rendered):
+            return False
+
+        if re.match(r'^[+-]?0x[0-9a-fA-F]+$', rendered):
+            return True
+
+        numeric_pattern = r'^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?f?$'
+        return re.match(numeric_pattern, rendered) is not None
+
+    def _get_literal_constant_text(
+        self,
+        value: SSAValue,
+        expected_type_str: str = None,
+        context: ExpressionContext = ExpressionContext.IN_EXPRESSION
+    ) -> Optional[str]:
+        """Return literal text for a value if it's a safe numeric literal."""
+        if not value or not value.alias:
+            return None
+
+        alias = value.alias
+
+        if alias.startswith("data_"):
+            try:
+                offset = int(alias[5:])
+            except ValueError:
+                return None
+            if self._global_names.get(offset):
+                return None
+            literal = self._load_literal(alias, value.value_type, expected_type_str=expected_type_str, context=context)
+            if literal is not None and self._is_numeric_literal_text(literal):
+                return literal
+            return None
+
+        if alias.startswith("&"):
+            return None
+
+        if self._is_numeric_literal_text(alias):
+            return alias
+
+        return None
+
+    def _can_render_constant_expression(self, value: SSAValue, depth: int = 0) -> bool:
+        """Check if value is a pure constant expression (no variables, no side effects)."""
+        if depth > 8:
+            return False
+
+        if self._get_literal_constant_text(value) is not None:
+            return True
+
+        inst = value.producer_inst
+        if not inst:
+            return False
+
+        if inst.mnemonic in INFIX_OPS and len(inst.inputs) == 2:
+            return all(self._can_render_constant_expression(inp, depth + 1) for inp in inst.inputs)
+
+        if inst.mnemonic in UNARY_PREFIX and len(inst.inputs) == 1:
+            return self._can_render_constant_expression(inst.inputs[0], depth + 1)
+
         return False
 
     def _detect_target_field_type(self, target: str) -> Optional[str]:

@@ -982,16 +982,23 @@ class GlobalResolver:
         from ..headers.database import get_header_database
         header_db = get_header_database()
 
-        # Get all SGI constants
+        # Get all SGI/SGF/GVAR constants
         sgi_constants = header_db.get_constants_by_prefix('SGI')
+        sgf_constants = header_db.get_constants_by_prefix('SGF')
+        gvar_constants = header_db.get_constants_by_prefix('GVAR')
 
-        if not sgi_constants:
-            logger.debug("No SGI constants found in header database")
+        all_constants = {}
+        all_constants.update(sgi_constants)
+        all_constants.update(sgf_constants)
+        all_constants.update(gvar_constants)
+
+        if not all_constants:
+            logger.debug("No SGI/SGF/GVAR constants found in header database")
             return sgi_mapping
 
         # Build mapping from SGI index to constant name
         # SGI constants are defined like: #define SGI_MISSIONDEATHCOUNT 1
-        for const_name, const_data in sgi_constants.items():
+        for const_name, const_data in all_constants.items():
             value_str = const_data.get('value', '')
             try:
                 # Parse SGI index
