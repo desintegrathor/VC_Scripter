@@ -21,6 +21,31 @@ from ..analysis.flow import _find_case_body_blocks
 logger = logging.getLogger(__name__)
 
 
+def _resolve_conditional_targets(
+    block: "BasicBlock",
+    start_to_block: Dict[int, int],
+    resolver: opcodes.OpcodeResolver
+) -> Tuple[Optional[int], Optional[int]]:
+    """Resolve conditional jump targets using disassembler addresses."""
+    if not block or not block.instructions:
+        return (None, None)
+
+    last_instr = block.instructions[-1]
+    if not resolver.is_conditional_jump(last_instr.opcode):
+        return (None, None)
+
+    jump_target = start_to_block.get(last_instr.arg1)
+    fallthrough_addr = last_instr.address + 1
+    fallthrough = start_to_block.get(fallthrough_addr)
+    if fallthrough is None:
+        for succ in block.successors:
+            if succ != jump_target:
+                fallthrough = succ
+                break
+
+    return (jump_target, fallthrough)
+
+
 def _detect_binary_search_switch(
     cfg: CFG,
     start_block: int,
@@ -56,9 +81,10 @@ def _detect_binary_search_switch(
     ssa_blocks = ssa_func.instructions
 
     # Try to build decision tree
+    start_to_block = {block.start: block_id for block_id, block in cfg.blocks.items()}
     tree_result = _build_decision_tree(
         start_block, cfg, ssa_blocks, resolver, func_block_ids,
-        ssa_func, formatter, max_depth=10
+        ssa_func, formatter, start_to_block, max_depth=10
     )
 
     if not tree_result:
@@ -117,6 +143,7 @@ def _build_decision_tree(
     func_block_ids: Set[int],
     ssa_func: SSAFunction,
     formatter: ExpressionFormatter,
+    start_to_block: Dict[int, int],
     max_depth: int = 10,
     visited: Optional[Set[int]] = None,
     expected_var: Optional[str] = None
@@ -173,18 +200,19 @@ def _build_decision_tree(
         logger.debug(f"Variable mismatch in decision tree: expected {expected_var}, got {var_name}")
         return None
 
-    # Get true/false branches from block successors
-    # Conditional jumps have 2 successors: [jump_target, fall_through]
+    # Get true/false branches using disassembler jump targets
     if len(block.successors) < 2:
         return None
 
-    # For JZ/JNZ: true branch is usually first successor, false is second
-    # But we should handle both orderings
-    successors = list(block.successors)
-    if len(successors) == 2:
-        true_block, false_block = successors[0], successors[1]
-    else:
+    jump_target, fallthrough = _resolve_conditional_targets(block, start_to_block, resolver)
+    if jump_target is None or fallthrough is None:
         return None
+
+    mnemonic = resolver.get_mnemonic(last_instr.opcode)
+    if mnemonic == "JNZ":
+        true_block, false_block = jump_target, fallthrough
+    else:  # JZ
+        true_block, false_block = fallthrough, jump_target
 
     case_map: Dict[int, int] = {}
     tree_blocks: Set[int] = {block_id}
@@ -201,7 +229,7 @@ def _build_decision_tree(
         # False branch continues searching
         false_result = _build_decision_tree(
             false_block, cfg, ssa_blocks, resolver, func_block_ids,
-            ssa_func, formatter, max_depth - 1, visited, var_name
+            ssa_func, formatter, start_to_block, max_depth - 1, visited, var_name
         )
 
         if false_result:
@@ -214,12 +242,12 @@ def _build_decision_tree(
         # Both branches might lead to more comparisons or cases
         true_result = _build_decision_tree(
             true_block, cfg, ssa_blocks, resolver, func_block_ids,
-            ssa_func, formatter, max_depth - 1, visited, var_name
+            ssa_func, formatter, start_to_block, max_depth - 1, visited, var_name
         )
 
         false_result = _build_decision_tree(
             false_block, cfg, ssa_blocks, resolver, func_block_ids,
-            ssa_func, formatter, max_depth - 1, visited, var_name
+            ssa_func, formatter, start_to_block, max_depth - 1, visited, var_name
         )
 
         if true_result:

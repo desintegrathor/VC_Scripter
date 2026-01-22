@@ -18,6 +18,7 @@ from ..cfg import find_loops_in_function
 from ..parenthesization import ExpressionContext, is_simple_expression
 from ...disasm import opcodes
 from ..type_inference import TypeInferenceEngine
+from ...headers.database import get_header_database
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,62 @@ def _find_reachable_blocks(cfg, entry_block: int) -> Set[int]:
                     stack.append(succ)
 
     return reachable
+
+
+def _parse_header_constant_value(value_str: str) -> Optional[int]:
+    if not value_str:
+        return None
+    try:
+        if value_str.startswith("0x"):
+            return int(value_str, 16)
+        return int(value_str)
+    except (ValueError, TypeError):
+        return None
+
+
+def _resolve_verified_sc_net_mes(
+    case_value: int,
+    formatter: Optional[ExpressionFormatter]
+) -> Optional[str]:
+    if formatter is None:
+        return None
+
+    const_resolver = getattr(formatter, "_constant_resolver", None)
+    if const_resolver is None:
+        return None
+
+    candidate = const_resolver.resolve_constant(case_value, "net_message")
+    if not candidate or not candidate.startswith("SC_NET_MES_"):
+        return None
+
+    header_db = get_header_database()
+    matches = []
+    for const_name, const_data in header_db.constants.items():
+        if not const_name.startswith("SC_NET_MES_"):
+            continue
+        parsed = _parse_header_constant_value(const_data.get("value", ""))
+        if parsed == case_value:
+            matches.append(const_name)
+
+    if len(matches) != 1:
+        return None
+
+    if matches[0] != candidate:
+        return None
+
+    return candidate
+
+
+def _render_switch_case_value(
+    case_value: int,
+    switch: SwitchPattern,
+    formatter: Optional[ExpressionFormatter]
+) -> str:
+    if isinstance(case_value, int) and switch.test_var == "info->message":
+        const_name = _resolve_verified_sc_net_mes(case_value, formatter)
+        if const_name:
+            return const_name
+    return str(case_value)
 
 
 def format_structured_function(ssa_func: SSAFunction) -> str:
@@ -638,7 +695,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             debug_print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'")
             # FIX (01-21): Sort cases by value to ensure consistent ordering
             for case in sorted(switch.cases, key=lambda c: c.value):
-                lines.append(f"{base_indent}case {case.value}:")
+                case_label = _render_switch_case_value(case.value, switch, formatter)
+                lines.append(f"{base_indent}case {case_label}:")
                 # Render all blocks in case body (sorted by address) with loop support
                 case_body_sorted = sorted(case.body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
                 case_start_line = len(lines)  # Track where case body starts
