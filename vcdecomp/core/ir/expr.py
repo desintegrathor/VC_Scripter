@@ -1333,7 +1333,7 @@ class ExpressionFormatter:
             right = value.producer_inst.inputs[1]
             # Check if left is GADR/DADR (global/data address) and right is MUL (index * size)
             if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
-                if right.producer_inst and right.producer_inst.mnemonic == "MUL":
+                if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}:
                     is_array_indexing = True
         if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing and not is_gcp_constant:
             return self._rename_map[value.name]
@@ -1719,6 +1719,33 @@ class ExpressionFormatter:
         numeric_pattern = r'^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?f?$'
         return re.match(numeric_pattern, rendered) is not None
 
+    def _get_constant_int(self, value: SSAValue) -> Optional[int]:
+        """Extract a constant integer value from an SSAValue if possible."""
+        if not value:
+            return None
+
+        if value.alias:
+            if value.alias.isdigit():
+                return int(value.alias)
+            if value.alias.startswith("data_") and self.data_segment:
+                try:
+                    offset = int(value.alias[5:])
+                    raw_val = self.data_segment.get_dword(offset * 4)
+                    if raw_val > 0x7FFFFFFF:
+                        raw_val -= 0x100000000
+                    return raw_val
+                except (ValueError, AttributeError):
+                    pass
+
+        const_val = self._constant_propagator.get_constant(value)
+        if const_val is not None:
+            try:
+                return int(const_val.value)
+            except (TypeError, ValueError):
+                return None
+
+        return None
+
     def _get_literal_constant_text(
         self,
         value: SSAValue,
@@ -1953,7 +1980,7 @@ class ExpressionFormatter:
                                             return result
 
                             # Make sure this isn't actually array indexing (check if right is MUL result OR base is array)
-                            if not (right.producer_inst and right.producer_inst.mnemonic == "MUL") and not base_is_array:
+                            if not (right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}) and not base_is_array:
                                 # FIX (01-20): Only emit struct field notation if we know the variable is a struct
                                 # Otherwise we get `int_var.field_4` which won't compile
                                 struct_type = None
@@ -2101,38 +2128,42 @@ class ExpressionFormatter:
 
             # Check if right is (index * element_size) pattern
             index_expr = None
-            if right.producer_inst and right.producer_inst.mnemonic == "MUL" and len(right.producer_inst.inputs) == 2:
+            if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"} and len(right.producer_inst.inputs) == 2:
                 # Pattern: index * size
                 mul_left = right.producer_inst.inputs[0]
                 mul_right = right.producer_inst.inputs[1]
 
                 # Check if mul_right is a constant (element size like 4, 8, 16)
-                size_val = None
-                try:
-                    if mul_right.alias and mul_right.alias.isdigit():
-                        size_val = int(mul_right.alias)
-                    elif mul_right.alias and mul_right.alias.startswith("data_"):
-                        # Load from data segment - get RAW VALUE (no constant substitution)
-                        # We need the numeric value for array size detection, not symbolic names
-                        # This prevents array detection from failing when element size (e.g., 4)
-                        # happens to match a symbolic constant value (e.g., SCM_BOOBYTRAPFOUND=4)
-                        offset = int(mul_right.alias[5:])  # Extract offset from "data_123"
-                        if self.data_segment:
-                            raw_val = self.data_segment.get_dword(offset * 4)
-                            # Handle signed/unsigned conversion for negative values
-                            if raw_val > 0x7FFFFFFF:
-                                raw_val = raw_val - 0x100000000
-                            size_val = raw_val
-                except (ValueError, AttributeError):
-                    pass
+                size_val = self._get_constant_int(mul_right)
+                if size_val is None:
+                    size_val = self._get_constant_int(mul_left)
 
-                # If size is 1, 2, 4, 8, 16, etc., treat as array element size
+                base_element_size = None
+                base_is_array = False
+                if (
+                    left.producer_inst
+                    and left.producer_inst.mnemonic == "GADR"
+                    and left.producer_inst.instruction
+                    and left.producer_inst.instruction.instruction
+                ):
+                    gadr_offset = left.producer_inst.instruction.instruction.arg1
+                    if gadr_offset in self._global_type_info:
+                        global_info = self._global_type_info[gadr_offset]
+                        base_is_array = global_info.is_array_base
+                        base_element_size = global_info.array_element_size
+
                 if size_val and size_val > 0 and size_val <= 256:
-                    index_expr = self._render_value(mul_left, context=ExpressionContext.IN_ARRAY_INDEX)
-                    # NOTE (01-20): Don't add first field access here. This is array indexing detection,
-                    # not value assignment. When we compute &array[index], the result IS a pointer to
-                    # the struct element, not to a field within it. First field access should only be
-                    # added when assigning a scalar value to a struct array element (handled elsewhere).
+                    index_operand = mul_left if size_val == self._get_constant_int(mul_right) else mul_right
+                    if base_is_array and base_element_size and size_val != base_element_size:
+                        size_val = base_element_size
+                    index_expr = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
+                elif base_is_array and base_element_size:
+                    index_operand = mul_left if self._get_constant_int(mul_right) == base_element_size else mul_right
+                    index_expr = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
+                # NOTE (01-20): Don't add first field access here. This is array indexing detection,
+                # not value assignment. When we compute &array[index], the result IS a pointer to
+                # the struct element, not to a field within it. First field access should only be
+                # added when assigning a scalar value to a struct array element (handled elsewhere).
 
             # Also handle simple offset (no multiplication)
             # NEW: Only treat as array if base is marked as is_array_base
@@ -2251,17 +2282,10 @@ class ExpressionFormatter:
                         add_inst = value.producer_inst
                         if len(add_inst.inputs) >= 2:
                             right = add_inst.inputs[1]
-                            if right.producer_inst and right.producer_inst.mnemonic == "MUL":
+                            if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}:
                                 mul_right = right.producer_inst.inputs[1]
                                 # Get element size from constant
-                                size_val = None
-                                if mul_right.alias and mul_right.alias.startswith("data_"):
-                                    try:
-                                        offset = int(mul_right.alias[5:])
-                                        if self.data_segment:
-                                            size_val = self.data_segment.get_dword(offset * 4)
-                                    except (ValueError, AttributeError):
-                                        pass
+                                size_val = self._get_constant_int(mul_right)
                                 if size_val and size_val > 4:
                                     structs = get_struct_by_size(size_val)
                                     if structs:
@@ -2507,7 +2531,7 @@ class ExpressionFormatter:
             # Check if left is base address (GADR/DADR/LADR)
             is_base = left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR", "LADR"}
             # Check if right is multiplication (index * size)
-            is_mul = right.producer_inst and right.producer_inst.mnemonic == "MUL"
+            is_mul = right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}
             return is_base and is_mul
 
         def is_struct_field_pattern(value: SSAValue) -> bool:
