@@ -1368,6 +1368,27 @@ class TypeInferenceEngine:
         info = self.type_info.get(var_name)
         return info.evidence if info else []
 
+    def dump_type_evidence(self) -> Dict[str, List[Dict[str, object]]]:
+        """
+        Dump type inference evidence for all variables.
+
+        Returns:
+            Mapping of var_name -> list of evidence dictionaries containing
+            source, confidence, inferred_type, and reason.
+        """
+        dump: Dict[str, List[Dict[str, object]]] = {}
+        for var_name, info in self.type_info.items():
+            evidence_entries = []
+            for ev in info.evidence:
+                evidence_entries.append({
+                    "source": ev.source.value,
+                    "confidence": ev.confidence,
+                    "inferred_type": ev.inferred_type,
+                    "reason": ev.reason,
+                })
+            dump[var_name] = evidence_entries
+        return dump
+
     def get_confidence(self, var_name: str) -> float:
         """
         Get the maximum confidence score for a variable's type.

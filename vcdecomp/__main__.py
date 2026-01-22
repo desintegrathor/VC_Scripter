@@ -272,6 +272,12 @@ Příklady:
         default=False,
         help='Use legacy single-pass SSA construction (faster but lower quality)'
     )
+    p_structure.add_argument(
+        '--dump-type-evidence',
+        nargs='?',
+        const='-',
+        help='Dump type inference evidence as JSON (stdout with "-", or write to file)'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -653,6 +659,21 @@ def cmd_structure(args):
         )
         print(text)
         print()
+
+    if args.dump_type_evidence:
+        from .core.ir.type_inference import TypeInferenceEngine
+
+        type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
+        type_engine.integrate_with_ssa_values()
+        evidence_dump = type_engine.dump_type_evidence()
+        evidence_json = json.dumps(evidence_dump, indent=2, sort_keys=True)
+
+        if args.dump_type_evidence == '-':
+            print(evidence_json)
+        else:
+            output_path = Path(args.dump_type_evidence)
+            output_path.write_text(evidence_json, encoding='utf-8')
+            print(f"Type evidence JSON saved to: {output_path}", file=sys.stderr)
 
 
 def cmd_symbols(args):
