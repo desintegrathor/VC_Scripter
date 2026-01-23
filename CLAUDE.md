@@ -6,6 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **VC-Script-Decompiler** decompiles Vietcong (2003) game scripts from `.scr` bytecode back to readable C-like source code. The scripts use a proprietary C-like language with external engine functions.
 
+### Project Philosophy & Goals
+
+This is a **one-time-use tool** for reconstructing a finite set of Vietcong game scripts. The decompiled output will later be further refined with AI assistance, so the decompiler's job is to produce the most **correct and accurate** output possible.
+
+**Critical Guidelines:**
+- **Evidence-based decisions:** Use hard evidence as extensively as possible before making any inferences
+- **Conservative naming:** Do NOT rename functions or variables unless there is **100% confidence** based on hard evidence. Generic names (`func_001`, `var_42`) are far better than incorrect names
+- **Acceptable guesses:** Only guess things that are critical for logical function (e.g., data types, control flow structures)
+- **Unacceptable guesses:** Never guess semantic meaning (function purposes, variable meanings) without concrete evidence
+- **Err on the side of caution:** When uncertain, keep the generic/raw representation
+
+**Evidence hierarchy (strongest to weakest):**
+1. String literals used in context (e.g., `SC_message("player created")` near a variable)
+2. External function signatures from SDK headers (`sc_global.h`)
+3. Consistent usage patterns across multiple call sites
+4. Type constraints from opcodes (IADD = int, FADD = float)
+5. Structural patterns (loop counters, array indices)
+
 ## Essential Commands
 
 ### Running the Decompiler
