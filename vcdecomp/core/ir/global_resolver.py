@@ -1457,6 +1457,17 @@ class GlobalResolver:
         type_info_dwords = {offset // 4: usage for offset, usage in self.globals.items()}
         data_resolver = DataResolver(data_segment, type_info_dwords, confidence_threshold=0.70)
 
+        def _format_zero_initializer(element_type: str, element_count: int) -> str:
+            if element_count > 1:
+                return "{0}"
+            if element_type == "float":
+                return "0.0f"
+            if element_type == "double":
+                return "0.0"
+            if element_type in {"c_Vector3", "c_vector3"}:
+                return "{0}"
+            return "0"
+
         for byte_offset, usage in self.globals.items():
             if usage.initializer:
                 continue
@@ -1508,26 +1519,12 @@ class GlobalResolver:
                 element_count=element_count,
             )
 
-            if not initializer and element_count > 1 and element_size:
+            if not initializer and element_size and element_count > 0:
                 total_bytes = element_size * element_count
                 if byte_offset + total_bytes <= len(data_segment.raw_data):
                     block = data_segment.raw_data[byte_offset:byte_offset + total_bytes]
                     if block and all(b == 0 for b in block):
-                        candidate_offset = byte_offset + total_bytes
-                        candidate_usage = self.globals.get(candidate_offset)
-                        if not candidate_usage or (
-                            not candidate_usage.name
-                            and not candidate_usage.saveinfo_size_dwords
-                            and candidate_usage.write_count == 0
-                        ):
-                            initializer = build_initializer(
-                                data_segment,
-                                data_resolver,
-                                byte_offset=candidate_offset,
-                                element_type=element_type,
-                                element_size=element_size,
-                                element_count=element_count,
-                            )
+                        initializer = _format_zero_initializer(element_type, element_count)
 
             if initializer:
                 usage.initializer = initializer

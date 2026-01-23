@@ -618,9 +618,10 @@ def cmd_structure(args):
                 element_type = element_type.replace(" *", "").rstrip("*").strip()
                 element_size = _infer_element_size(element_type)
 
+            initializer = f" = {usage.initializer}" if usage.initializer else ""
+
             # Format declaration
             if is_array:
-                initializer = f" = {usage.initializer}" if usage.initializer else ""
                 if usage.array_dimensions:
                     dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in usage.array_dimensions)
                     print(f"{element_type} {var_name}{dim_text}{initializer};")
@@ -636,11 +637,9 @@ def cmd_structure(args):
             elif usage.is_array_base and usage.array_element_size:
                 # Fallback: use dynamic array detection (for scripts without SaveInfo)
                 array_size = 64  # Default estimate
-                initializer = f" = {usage.initializer}" if usage.initializer else ""
                 print(f"{var_type} {var_name}[{array_size}]{initializer};")
             else:
                 # Simple variable: type name;
-                initializer = f" = {usage.initializer}" if usage.initializer else ""
                 print(f"{var_type} {var_name}{initializer};")
         print()
 
