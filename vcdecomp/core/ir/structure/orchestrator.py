@@ -504,6 +504,13 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             debug_print(f"DEBUG: PHASE 5 DCE (SSA-level) - Skipping unused temp from lowering: {var_name}")
             continue
 
+        # PHASE 6: Skip undefined variables (used but never assigned)
+        # These come from broken PHI nodes with no real definitions
+        from .analysis.variables import _is_undefined_variable
+        if _is_undefined_variable(var_name, ssa_func, func_block_ids, lowering_result.lowered_rename_map):
+            debug_print(f"DEBUG: PHASE 6 (SSA-level) - Skipping undefined tmp from lowering: {var_name}")
+            continue
+
         # FIX: Handle array types correctly (e.g., "s_SC_MP_EnumPlayers[64]")
         # Array syntax should be after variable name: "s_SC_MP_EnumPlayers local_296[64]"
         if "[" in var_type:
@@ -1260,10 +1267,23 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if line.strip() and not line.strip().startswith('//')
     )
 
+    # PHASE 4: Enhanced return detection - check if the last line ends with break or closing brace
+    # This handles switch/case statements where break falls through to function end
+    # The presence of returns in switch cases doesn't mean all paths are covered
+    last_line_is_break_or_brace = False
+    for line in reversed(lines):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("//"):
+            # Check for break statement or closing brace (end of switch/loop)
+            if stripped == "break;" or stripped == "}":
+                last_line_is_break_or_brace = True
+            break
+
     # Add return statement if needed and not already present
     # FIX (06-05): Pattern 3 - Synthesize return values for non-void functions
     # Functions with non-void return type ending with bare "return;" crash SCMP.exe
-    if needs_return and not last_line_has_return and not any_return_exists:
+    # PHASE 4: Also add return if function ends with break/brace (switch fallthrough)
+    if needs_return and not last_line_has_return and (not any_return_exists or last_line_is_break_or_brace):
         if return_value:
             lines.append(f"    return {return_value};")
         else:
@@ -1338,6 +1358,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Skip if already seen (duplicate)
         if base_name in seen_vars:
             continue
+
+        # PHASE 6: Skip undefined temp variables (used but never assigned)
+        # These come from broken PHI nodes with no real definitions
+        if base_name.startswith('tmp'):
+            from .analysis.variables import _is_undefined_variable
+            if _is_undefined_variable(base_name, ssa_func, func_block_ids, lowering_result.lowered_rename_map):
+                debug_print(f"DEBUG: PHASE 6 TWO-PASS - Skipping undefined tmp: {base_name}")
+                continue
 
         # Non-temps are always kept if they were candidates
         if not base_name.startswith('tmp'):
@@ -1461,6 +1489,43 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
         # Default to int
         return "int"
+
+    def _has_assignment(var_name: str, lines: ListType[str]) -> bool:
+        """
+        Check if a variable has any assignments in the code.
+
+        This detects patterns like:
+        - var = expr;
+        - var += expr; (compound assignment)
+        - for (var = ...; ...)
+        - func(&var) (address-of can imply assignment by callee)
+
+        Returns True if the variable appears to be assigned somewhere.
+        """
+        # Pattern 1: Direct assignment (var = expr)
+        # Note: We need to avoid matching == (equality)
+        assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*=[^=]')
+
+        # Pattern 2: Compound assignment (var += expr, var -= expr, etc.)
+        compound_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*[+\-*/&|^%]+=')
+
+        # Pattern 3: Increment/decrement (var++, ++var, var--, --var)
+        incr_decr_pattern = re.compile(rf'(\+\+|\-\-)\s*{re.escape(var_name)}\b|\b{re.escape(var_name)}\s*(\+\+|\-\-)')
+
+        # Pattern 4: Address-of passed to function (func(&var)) - callee may assign
+        address_of_pattern = re.compile(rf'\w+\s*\([^)]*&{re.escape(var_name)}\b')
+
+        for line in lines:
+            if assign_pattern.search(line):
+                return True
+            if compound_assign_pattern.search(line):
+                return True
+            if incr_decr_pattern.search(line):
+                return True
+            if address_of_pattern.search(line):
+                return True
+
+        return False
 
     # Define C keywords and built-in identifiers to skip
     c_keywords = {
@@ -1596,12 +1661,21 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # 4. Infer types for undefined variables
     # PHASE 5: Apply DCE filtering before adding declarations
+    # PHASE 6: Skip variables that are used but never assigned (broken PHI references)
     var_declarations_to_add: ListType[Tuple[str, str]] = []
     for var_name in sorted(undefined_vars):
         # PHASE 5: Skip unused temporaries (dead code elimination)
         if _is_unused_temporary(var_name, use_counts):
             debug_print(f"DEBUG: PHASE 5 DCE - Skipping unused temp from undefined vars: {var_name}")
             continue
+
+        # PHASE 6: Skip variables that are used but never assigned
+        # These come from broken PHI nodes or incorrect SSA analysis
+        # They would cause compilation errors (undefined behavior)
+        if not _has_assignment(var_name, lines):
+            debug_print(f"DEBUG: PHASE 6 - Skipping undefined variable (no assignment): {var_name}")
+            continue
+
         var_type = _infer_type_from_usage(var_name, lines)
         var_declarations_to_add.append((var_type, var_name))
 

@@ -43,8 +43,10 @@ def _is_likely_float(val: int) -> bool:
     - Float hodnota musí být "hezká" (celé číslo, nebo malý počet desetinných míst)
     - Vyloučíme hodnoty které vypadají jako adresy nebo flagy
     """
-    # FIXED: Allow 0 as 0.0f (valid float constant)
-    # Removed exclusion: if val == 0: return False
+    # FIX: 0 is more commonly an integer, should not be float by heuristic
+    # If 0 needs to be 0.0f, it should be determined by expected type context
+    if val == 0:
+        return False
 
     # FIXED: Narrowed range exclusion from 0-1000 to 0-10
     # This allows common whole number floats like 10.0f, 30.0f, 60.0f, 100.0f
@@ -247,12 +249,20 @@ def _get_operand_type_from_mnemonic(mnemonic: str) -> Optional[str]:
     Get expected operand type based on instruction mnemonic.
 
     Float and double operations should render their operands as float/double
-    literals rather than raw integers.
+    literals rather than raw integers. Integer comparisons should render
+    operands as integers to avoid 0.0f in conditions like "gMission_phase > 0".
     """
     if mnemonic in FLOAT_OPS:
         return "float"
     if mnemonic in DOUBLE_OPS:
         return "double"
+    # Integer comparison and arithmetic operations should use int operands
+    # This prevents 0 from being rendered as 0.0f in conditions like "x > 0"
+    if mnemonic in {"GRE", "GEQ", "LES", "LEQ", "EQU", "NEQ",
+                    "UGRE", "UGEQ", "ULES", "ULEQ",  # Unsigned comparisons
+                    "ADD", "SUB", "MUL", "DIV", "IDIV", "MOD",  # Integer arithmetic
+                    "BA", "BO", "BX", "LS", "RS"}:  # Bitwise operations
+        return "int"
     return None
 
 
@@ -1392,6 +1402,18 @@ class ExpressionFormatter:
         if value.producer_inst and value.producer_inst.mnemonic == "PHI":
             phi = value.producer_inst
 
+            # PHASE 3: Handle empty/undefined PHI nodes
+            # These represent variables that are used but never assigned in all paths
+            if len(phi.inputs) == 0:
+                # Empty PHI - return a sensible default based on expected type
+                if expected_type_str:
+                    if 'float' in expected_type_str.lower() and '*' not in expected_type_str:
+                        return "0.0f"  # Undefined float
+                    elif '*' in expected_type_str:
+                        return "0"  # NULL pointer
+                # Default to 0 for undefined values
+                return "0"
+
             if len(phi.inputs) == 1:
                 # Single input PHI - use the input value directly
                 return self._render_value(phi.inputs[0], expected_type_str)
@@ -1462,14 +1484,24 @@ class ExpressionFormatter:
                     # Array indices MUST be integers in C
                     return str(val)
 
-                # PRIORITY 2c: SDK constant resolution (before float heuristic)
+                # PRIORITY 2c: Check SSA value_type - if INT, render as integer
+                # This prevents 0 from becoming 0.0f when the value is known to be int
+                if value.value_type == opcodes.ResultType.INT:
+                    # Try SDK constant resolution first
+                    if self._constant_resolver and self._constant_resolver.should_resolve_constant(val):
+                        const_name = self._try_resolve_constant(value, val)
+                        if const_name:
+                            return const_name
+                    return str(val)
+
+                # PRIORITY 2d: SDK constant resolution (before float heuristic)
                 # Try to resolve small integers to named constants
                 if self._constant_resolver and self._constant_resolver.should_resolve_constant(val):
                     const_name = self._try_resolve_constant(value, val)
                     if const_name:
                         return const_name
 
-                # PRIORITY 2d: Float heuristic (fallback for general contexts)
+                # PRIORITY 2e: Float heuristic (fallback for general contexts)
                 if _is_likely_float(val):
                     return _format_float(val)
 
@@ -1507,10 +1539,80 @@ class ExpressionFormatter:
             if literal is not None:
                 return literal
 
+            # PHASE 3: Check for undefined tmp variables from broken PHI chains
+            # These are tmp variables that have no real definition (only PHI/LCP/GCP producers)
+            # and should be replaced with a sensible default to avoid compilation errors
+            if value.alias.startswith("tmp") and self._is_undefined_value(value):
+                if expected_type_str:
+                    if 'float' in expected_type_str.lower() and '*' not in expected_type_str:
+                        return "0.0f"  # Undefined float
+                    elif '*' in expected_type_str:
+                        return "0"  # NULL pointer
+                # Default to 0 for undefined values
+                return "0"
+
             return value.alias
         if self._can_inline(value):
             return self._inline_expression(value, context, parent_operator)
         return value.name
+
+    def _is_undefined_value(self, value: SSAValue) -> bool:
+        """
+        PHASE 3: Check if a value is undefined (used but never assigned).
+
+        This detects broken PHI outputs and variables from invalid SSA construction
+        that would cause compilation errors if used directly.
+
+        Returns True if the value has no real definition traceable through its
+        producer chain (only PHI/LCP/GCP nodes with no real assignments).
+        """
+        # Track visited values to prevent infinite loops on cyclic PHI chains
+        visited = set()
+
+        def has_real_definition(val: SSAValue) -> bool:
+            if val is None:
+                return False
+            val_id = id(val)
+            if val_id in visited:
+                return False  # Cyclic reference - no real definition found
+            visited.add(val_id)
+
+            if not val.producer_inst:
+                # No producer instruction - check if alias is a literal
+                if val.alias and (val.alias.lstrip('-').isdigit() or
+                                  val.alias.startswith("data_") or
+                                  val.alias.startswith("local_") or
+                                  val.alias.startswith("param_")):
+                    return True  # Has a known source (literal or variable)
+                return False  # Unknown - undefined
+
+            mnemonic = val.producer_inst.mnemonic
+
+            # Real assignments that provide values
+            if mnemonic in {"ASGN", "XCALL", "CALL", "ADD", "SUB", "MUL", "DIV",
+                           "FADD", "FSUB", "FMUL", "FDIV",
+                           "GLD", "LLD", "DCP", "LADR", "GADR",
+                           "ITOF", "FTOI", "INC", "DEC", "NEG", "FNEG",
+                           "EQU", "NEQ", "LES", "LEQ", "GRE", "GEQ",
+                           "FLES", "FLEQ", "FGRE", "FGEQ"}:
+                return True
+
+            # PHI nodes - check if any input has a real definition
+            if mnemonic == "PHI":
+                for inp in val.producer_inst.inputs:
+                    if has_real_definition(inp):
+                        return True
+                return False  # PHI with no real inputs
+
+            # Load from stack/globals - these have real values
+            if mnemonic in {"LCP", "GCP"}:
+                # These load from known locations, consider as defined
+                return True
+
+            # Default: consider undefined if we can't trace a real source
+            return False
+
+        return not has_real_definition(value)
 
     def _is_valid_pointer(self, value: SSAValue) -> bool:
         """Check if value is a valid pointer that can be dereferenced."""

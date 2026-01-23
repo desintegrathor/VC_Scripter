@@ -24,12 +24,13 @@ def _is_likely_float(val: int) -> bool:
     import struct
     import math
 
-    # FIXED: Allow 0 as 0.0f (valid float constant)
-    # Removed exclusion: if val == 0: return False
+    # FIX: 0 is more commonly an integer than 0.0f
+    # If 0 needs to be 0.0f, it should be determined by expected type context
+    if val == 0:
+        return False
 
-    # FIXED: Narrowed range exclusion from [0,1,2,3,4,5] to [1,2,3,4,5]
-    # This allows 0.0f while still filtering very small integers
-    if val in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0xFFFFFFFF]:  # Common small int values
+    # Common small integer values - not floats
+    if val in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0xFFFFFFFF]:
         return False
 
     # Convert to float and check if it's a reasonable value

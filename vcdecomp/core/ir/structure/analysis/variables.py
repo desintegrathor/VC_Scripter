@@ -218,6 +218,68 @@ def _is_unused_temporary(var_name: str, use_counts: Dict[str, int]) -> bool:
     return actual_uses == 0
 
 
+def _is_undefined_variable(var_name: str, ssa_func: SSAFunction, func_block_ids: Set[int], rename_map: Optional[Dict[str, str]] = None) -> bool:
+    """
+    Check if a variable is used but never defined (no assignment).
+
+    This detects broken PHI outputs that have no corresponding assignment statement.
+    Such variables cause compilation errors due to undefined behavior.
+
+    Args:
+        var_name: The display name of the variable (after renaming)
+        ssa_func: SSA function data
+        func_block_ids: Block IDs belonging to this function
+        rename_map: Mapping from SSA value names to display names
+
+    Returns:
+        True if the variable is used but never has an assignment
+    """
+    import re
+
+    # Only check tmp* variables (these are most likely to come from broken PHIs)
+    if not var_name.startswith("tmp"):
+        return False
+
+    # Build reverse map: display_name -> SSA value names
+    reverse_map = {}
+    if rename_map:
+        for ssa_name, display_name in rename_map.items():
+            if display_name not in reverse_map:
+                reverse_map[display_name] = []
+            reverse_map[display_name].append(ssa_name)
+
+    # Get SSA names for this display variable
+    ssa_names = reverse_map.get(var_name, [var_name])
+
+    # Check if any of these SSA values have a defining instruction that's not PHI
+    # PHI nodes don't count as "real" definitions for our purposes
+    has_real_definition = False
+    for block_id in func_block_ids:
+        for inst in ssa_func.instructions.get(block_id, []):
+            # Check outputs
+            for output in inst.outputs:
+                output_name = output.alias or output.name
+                # Check if this output matches our variable
+                if output_name == var_name or output.name in ssa_names:
+                    # Check if this is a "real" assignment (not PHI, not just LCP/GCP loads)
+                    if inst.mnemonic not in {"PHI", "LCP", "GCP", "LADR", "GADR"}:
+                        # This is a real assignment (ASGN, arithmetic, function call result, etc.)
+                        has_real_definition = True
+                        break
+                    elif inst.mnemonic == "PHI":
+                        # For PHI, check if any input has a real definition
+                        for phi_input in inst.inputs:
+                            if phi_input.producer_inst and phi_input.producer_inst.mnemonic not in {"PHI", "LCP", "GCP"}:
+                                has_real_definition = True
+                                break
+            if has_real_definition:
+                break
+        if has_real_definition:
+            break
+
+    return not has_real_definition
+
+
 def _scan_used_variables_in_code(lines: List[str]) -> Set[str]:
     """
     Scan generated code lines for actually-used variable names.
@@ -1176,6 +1238,12 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # Skip unused temporaries that made it through earlier collection
             if _is_unused_temporary(var_name, use_counts):
                 debug_print(f"DEBUG variables.py: PHASE 5 DCE (final) - Skipping unused temp: {var_name}")
+                continue
+
+            # PHASE 6: Skip undefined variables (used but never assigned)
+            # These come from broken PHI nodes with no real definitions
+            if _is_undefined_variable(var_name, ssa_func, func_block_ids, rename_map):
+                debug_print(f"DEBUG variables.py: PHASE 6 - Skipping undefined tmp: {var_name}")
                 continue
 
             # UNIFIED TYPE TRACKER: Priority 0 - Use type_tracker if available

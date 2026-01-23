@@ -24,7 +24,7 @@ dword gRecTimer[384] = {0};
 s_sphere gStepSwitch[6] = {0};
 int gEndRule = 0;
 int gEndValue = 0;
-int gTime = 0;
+float gTime = 0.0f;
 dword gSidePoints[2] = {0};
 dword gCLN_SidePoints[2] = {0};
 int gCLN_gamephase = 0;
@@ -32,21 +32,21 @@ int gMainPhase = 0;
 int gAttackingSide = 0;
 int gCurStep = 0;
 int gMission_phase = 0;
-int gNoActiveTime = 0;
-int gPhaseTimer = 0;
+float gNoActiveTime = 0.0f;
+float gPhaseTimer = 0.0f;
 float gMissionTime_update = 10.0f;
-int gMissionTime = 0;
-int gMissionTimePrev = 0;
+float gMissionTime = 0.0f;
+float gMissionTimePrev = 0.0f;
 float gMissionTimeToBeat = 0.0f;
 int gCLN_MissionTimePrevID = 0;
 float gCLN_MissionTime = 0.0f;
 int gCLN_CurStep = 0;
-int gCLN_ShowInfo = 0;
-int gCLN_ShowStartInfo = 0;
-int gCLN_ShowWaitingInfo = 0;
-int gMission_starting_timer = 0;
-int gMission_afterstart_time = 0;
-int gNextRecover = 0;
+float gCLN_ShowInfo = 0.0f;
+float gCLN_ShowStartInfo = 0.0f;
+float gCLN_ShowWaitingInfo = 0.0f;
+float gMission_starting_timer = 0.0f;
+float gMission_afterstart_time = 0.0f;
+float gNextRecover = 0.0f;
 dword gFlagNod[18] = {0};
 c_Vector3 gFlagPos[6] = {0};
 dword gRespawn_id[12] = {0};
@@ -70,7 +70,7 @@ int func_0050(float param_0) {
 
     switch (gEndRule) {
     case 0:
-        if (gMission_phase > 0.0f) {
+        if (gMission_phase > 0) {
             gTime += param_1;
         }
         SC_MP_EndRule_SetTimeLeft(gTime, gMission_phase);
@@ -78,7 +78,7 @@ int func_0050(float param_0) {
             SC_MP_LoadNextMap();
             return TRUE;
         }
-        return 0.0f;
+        return FALSE;
     case 2:
         if (gSidePoints[0] >= gEndValue || gSidePoints[1] >= gEndValue) {
             SC_MP_LoadNextMap();
@@ -89,6 +89,7 @@ int func_0050(float param_0) {
         SC_message("EndRule unsopported: %d", gEndRule);
         break;
     }
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 float func_0119(void) {
@@ -108,6 +109,7 @@ float func_0119(void) {
         }
         return local_0;
     }
+    return 0.0f;  // FIX (06-05): Synthesized return value
 }
 
 int func_0155(int param_0) {
@@ -135,6 +137,7 @@ int func_0155(int param_0) {
         }
         return local_0;
     }
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 float func_0213(void) {
@@ -159,6 +162,7 @@ float func_0213(void) {
         }
         return local_0;
     }
+    return 0.0f;  // FIX (06-05): Synthesized return value
 }
 
 void func_0249(void) {
@@ -191,31 +195,30 @@ void func_0294(void) {
 
     gCurStep = tmp;
     SC_sgi(507, gCurStep);
-    if (tmp1 == 0.0f) {
+    if (tmp1 == 0) {
         gMissionTime = func_0213();
         gMissionTimePrev = gMissionTime;
     } else {
         gMissionTime = gMissionTimeToBeat;
     }
     gMissionTime_update = -1.0f;
-    func_0264(0.0f);
+    func_0264(0);
     return;
 }
 
 int func_0334(int param_0) {
-    int local_0;  // Auto-generated
-
     int n;
 
     block_50:
-    if (local_0 == 0.0f) {
+    if (local_0 == 0) {
     } else {
         if (local_0 == 3) {
-            return 0.0f;
+            return FALSE;
         } else {
             return TRUE;
         }
     }
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 void func_0355(void) {
@@ -261,6 +264,7 @@ void func_0355(void) {
         SC_sgi(507, 6);
         return;
     }
+    return;
 }
 
 void func_0498(int param_0, int param_1) {
@@ -297,13 +301,13 @@ void func_0498(int param_0, int param_1) {
     void* tmp21;
     void* tmp29;
 
-    local_4 = 0.0f;
-    local_3 = 0.0f;
+    local_4 = 0;
+    local_3 = 0;
     // Loop header - Block 70 @512
-    for (obj = 0.0f; obj < 6; obj = tmp58) {
-        local_0 = 0.0f;
-        local_1 = 0.0f;
-        local_2 = 0.0f;
+    for (obj = 0; obj < 6; obj = tmp58) {
+        local_0 = 0;
+        local_1 = 0;
+        local_2 = 0;
         if (i == param_0) {
         } else {
             if (obj < param_0) {
@@ -311,7 +315,7 @@ void func_0498(int param_0, int param_1) {
             } else {
             }
         }
-        if (local_41 == 0.0f) {
+        if (local_41 == 0) {
             local_1 = SGI_DV_BOMB1;
         } else {
             if (local_41 == SGI_DV_BOMB2) {
@@ -331,7 +335,7 @@ void func_0498(int param_0, int param_1) {
         } else {
             if (tmp25) {
             } else {
-                local_5[ptr].id = 0.0f;
+                local_5[ptr].id = 0;
             }
         }
         SC_DUMMY_Set_DoNotRenHier2(tmp21, 1);
@@ -362,9 +366,7 @@ void func_0498(int param_0, int param_1) {
 }
 
 void func_0752(int param_0) {
-    int abl_list;  // Auto-generated
     int local_1;  // Auto-generated
-    dword local_2;  // Auto-generated
     int t765_ret;  // Auto-generated
     int t827_ret;  // Auto-generated
 
@@ -384,11 +386,11 @@ void func_0752(int param_0) {
 
     switch (local_2.field_8) {
     case 0:
-        if (local_0 > 0.0f) break;
+        if (local_0 > 0) break;
         break;
     case 1:
-        if (local_0 < 0.0f) {
-            local_1 = 0.0f;
+        if (local_0 < 0) {
+            local_1 = 0;
             t827_ret = SC_MP_SRV_P_SetSideClass(param_0, ptr, tmp7);
             if (abl_lists < 64) {
                 abl_list[abl_lists] = param_0;
@@ -410,6 +412,7 @@ void func_0752(int param_0) {
     if (local_0 < 3 && local_0 > -3) {
         return;
     }
+    return;
 }
 
 void func_0852(void) {
@@ -452,19 +455,20 @@ void func_0852(void) {
     }
     // Loop header - Block 146 @929
     while (TRUE) {  // loop body: blocks [146, 147, 148, 149, 150, 151, 152, 153, 155, 156]
-        if (!ptr1 != 0.0f) break;  // exit loop @1027
+        if (!(ptr1 != 0)) break;  // exit loop @1027
         t935_ret = rand();
         local_266 = tmp11;
         local_264 = ptr4;
-        if (tmp14 == 0.0f || side2 == 0.0f) {
+        if (tmp14 == 0 || side2 == 0) {
             local_264 = tmp16;
             if (ptr6 == obj) {
-                local_264 = 0.0f;
+                local_264 = 0;
             } else {
                 return;
             }
         }
     }
+    return;
 }
 
 void func_1028(void) {
@@ -495,10 +499,10 @@ void func_1028(void) {
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, ptr);
     if (t1057_ret) {
-        local_256 = 0.0f;
+        local_256 = 0;
     }
     // Loop header - Block 160 @1065
-    for (obj = 0.0f; obj < ptr1; obj = tmp6) {
+    for (obj = 0; obj < ptr1; obj = tmp6) {
         if (side2 == 2) {
             SC_MP_RecoverPlayer(tmp5);
         } else {
@@ -639,23 +643,23 @@ void ScriptMain(s_SC_NET_info *info) {
 
     switch (info->message) {
     case 0:
-        if (i != 0.0f) {
-            gSidePoints[0] = 0.0f;
-            gSidePoints[1] = 0.0f;
+        if (i != 0) {
+            gSidePoints[0] = 0;
+            gSidePoints[1] = 0;
             func_0249();
         }
         break;
     case 3:
         if (func_0050(t1131_)) break;
-        local_296[0].status = 0.0f;
+        local_296[0].status = 0;
         tmp6 = t1131_;
         local_12 = 64;
         if (t1157_ret = SC_MP_EnumPlayers(enum_pl, &local_12, -1)) {
         }
         // Loop header - Block 193 @1322
-        for (ptr28 = 0.0f; ptr28 < 2; ptr28 = tmp70) {
-            local_9 = 0.0f;
-            local_10 = 0.0f;
+        for (ptr28 = 0; ptr28 < 2; ptr28 = tmp70) {
+            local_9 = 0;
+            local_10 = 0;
             tmp66 = tmp60;
             local_10 = tmp68;
             local_9 = tmp69;
@@ -665,12 +669,12 @@ void ScriptMain(s_SC_NET_info *info) {
         if (gNextRecover < 0.0f) {
             gNextRecover = func_0119();
         }
-        if (local_419 == 0.0f) {
+        if (local_419 == 0) {
             gNoActiveTime += tmp79;
             if (gMissionTime > -10.0f) {
                 gMissionTime = -10.0f;
                 gMissionTime_update = -1.0f;
-                func_0264(0.0f);
+                func_0264(0);
             }
         } else {
             if (local_419 == 1) {
@@ -683,8 +687,8 @@ void ScriptMain(s_SC_NET_info *info) {
                     gPhaseTimer = 8.0f;
                     func_0355();
                 } else {
-                    if (gMission_afterstart_time > 5.0f && gCurStep > 0.0f) {
-                        local_8 = 0.0f;
+                    if (gMission_afterstart_time > 5.0f && gCurStep > 0) {
+                        local_8 = 0;
                         if (tmp99 == gAttackingSide && side6 == 1) {
                             SC_P_GetPos(tmp103, &vec);
                             local_9 = tmp104;
@@ -718,8 +722,8 @@ void ScriptMain(s_SC_NET_info *info) {
                     if (local_419 == 2) {
                         gPhaseTimer -= tmp129;
                         if (gPhaseTimer < 0.0f) {
-                            gNoActiveTime = 0.0f;
-                            gMission_phase = 0.0f;
+                            gNoActiveTime = 0;
+                            gMission_phase = 0;
                             SC_sgi(GVAR_SIDE1DEATHS, gMission_phase);
                             func_0852();
                             SC_MP_SetInstantRecovery(1);
@@ -730,7 +734,7 @@ void ScriptMain(s_SC_NET_info *info) {
             }
         }
         // Loop header - Block 216 @1517
-        for (ptr29 = 0.0f; ptr29 < obj; ptr29 = tmp125) {
+        for (ptr29 = 0; ptr29 < obj; ptr29 = tmp125) {
             local_8 = tmp125;
         }
         break;
@@ -743,12 +747,12 @@ void ScriptMain(s_SC_NET_info *info) {
             gCLN_ShowWaitingInfo -= tmp145;
         }
         t1752_ret = SC_ggi(GVAR_SIDE1DEATHS);
-        if (local_419 == 0.0f) {
+        if (local_419 == 0) {
             t1764_ret = SC_ggi(508);
             func_0498(tmp152, 2);
         } else {
             if (local_419 == 1) {
-                if (t1782_ret = SC_ggi(507) && t1800_ret = SC_ggi(508) && gCLN_CurStep > 0.0f) {
+                if (t1782_ret = SC_ggi(507) && t1800_ret = SC_ggi(508) && gCLN_CurStep > 0) {
                     gCLN_ShowInfo = 5.0f;
                     SC_SND_PlaySound2D(10425);
                 }
@@ -768,7 +772,7 @@ void ScriptMain(s_SC_NET_info *info) {
             }
         }
         // Loop header - Block 260 @1884
-        for (ptr30 = 0.0f; ptr30 < 2; ptr30 = tmp202) {
+        for (ptr30 = 0; ptr30 < 2; ptr30 = tmp202) {
             t1891_0 = 500 + ptr30;
             t1893_ret = SC_ggi(tmp178);
             gCLN_SidePoints[ptr30] = t1893_ret;
@@ -784,7 +788,7 @@ void ScriptMain(s_SC_NET_info *info) {
             *tmp206 = -1140850689;
             tmp209 = 6;
             if (t2000_ret = SC_ggi(GVAR_SIDE1DEATHS)) {
-                *tmp214 = 0.0f;
+                *tmp214 = 0;
             } else {
                 *tmp219 = tmp217;
             }
@@ -795,8 +799,8 @@ void ScriptMain(s_SC_NET_info *info) {
         break;
     default:
         // Loop header - Block 176 @1195
-        for (ptr27 = 0.0f; ptr27 < obj; ptr27 = tmp30) {
-            if (side2 != 0.0f && tmp22 < 2) {
+        for (ptr27 = 0; ptr27 < obj; ptr27 = tmp30) {
+            if (side2 != 0 && tmp22 < 2) {
                 tmp28 = 1;
             }
             local_8 = tmp30;
@@ -805,30 +809,31 @@ void ScriptMain(s_SC_NET_info *info) {
         if (tmp35 && local_296[0].status) {
             SC_MP_SetInstantRecovery(0);
             gMission_phase = 1;
-            gMission_afterstart_time = 0.0f;
+            gMission_afterstart_time = 0;
             SC_sgi(GVAR_SIDE1DEATHS, gMission_phase);
             func_0294();
             SC_MP_SRV_InitGameAfterInactive();
             SC_MP_RestartMission();
             SC_MP_RecoverAllNoAiPlayers();
             gMission_starting_timer = 8.0f;
-            local_8 = 0.0f;
-            local_9 = 0.0f;
-            local_10 = 0.0f;
+            local_8 = 0;
+            local_9 = 0;
+            local_10 = 0;
             tmp66 = tmp60;
             local_10 = tmp68;
             local_9 = tmp69;
             local_8 = tmp70;
             return TRUE;
         }
-        if (gMission_starting_timer <= 0.0f && gMission_phase > 0.0f) {
-            gMission_phase = 0.0f;
-            gMission_afterstart_time = 0.0f;
+        if (gMission_starting_timer <= 0.0f && gMission_phase > 0) {
+            gMission_phase = 0;
+            gMission_afterstart_time = 0;
             SC_sgi(GVAR_SIDE1DEATHS, gMission_phase);
             func_0852();
             func_0294();
         }
     }
+    return;
 }
 
 // Function abl_lists at 2020 - entry block not found

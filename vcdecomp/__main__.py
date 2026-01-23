@@ -520,6 +520,78 @@ def cmd_structure(args):
     print(include_block)
     print()
 
+    # PHASE 1: Detect float globals from opcode evidence
+    # Scan all SSA instructions for float opcodes (FADD, FSUB, FMUL, FDIV, etc.)
+    # Any global variable used in these operations is definitively a float
+    float_globals = set()  # Set of byte offsets for float globals
+    FLOAT_OPCODES = {
+        "FADD", "FSUB", "FMUL", "FDIV", "FMOD", "FNEG",
+        "FLES", "FGRE", "FLEQ", "FGEQ", "FNEQ", "FEQ", "FEQU"
+    }
+    for block_id, instrs in ssa_func.instructions.items():
+        for inst in instrs:
+            if inst.mnemonic in FLOAT_OPCODES:
+                # Check all inputs and outputs for global variable references
+                for val in list(inst.inputs) + list(inst.outputs):
+                    if val.alias:
+                        # Check for data_N pattern (global reference)
+                        if val.alias.startswith("data_"):
+                            try:
+                                # data_N where N is dword offset -> byte offset = N * 4
+                                dword_idx = int(val.alias.split("_")[1])
+                                byte_offset = dword_idx * 4
+                                float_globals.add(byte_offset)
+                            except (IndexError, ValueError):
+                                pass
+                        # Check for named globals (gVarName pattern)
+                        elif len(val.alias) >= 2 and val.alias[0] == 'g' and val.alias[1].isupper():
+                            # Named global - need to find its offset
+                            # This will be resolved during GlobalResolver phase
+                            pass
+
+    # PHASE 2: Detect multi-dimensional arrays from access patterns
+    # Pattern: ADD(base_addr, MUL(index, stride)) reveals stride = inner_dimension * element_size
+    # Maps byte_offset -> list of detected strides (for multi-dim analysis)
+    array_strides = {}  # byte_offset -> set of strides
+    for block_id, instrs in ssa_func.instructions.items():
+        for inst in instrs:
+            # Look for ADD instructions (used in array indexing)
+            if inst.mnemonic == "ADD" and len(inst.inputs) >= 2:
+                left = inst.inputs[0]
+                right = inst.inputs[1]
+
+                # Check if either operand is a base address (&data_N) and the other is MUL
+                base_offset = None
+                mul_val = None
+
+                for candidate_base, candidate_mul in [(left, right), (right, left)]:
+                    if candidate_base.alias and candidate_base.alias.startswith("&data_"):
+                        try:
+                            dword_idx = int(candidate_base.alias.split("_")[1])
+                            base_offset = dword_idx * 4
+                            mul_val = candidate_mul
+                            break
+                        except (IndexError, ValueError):
+                            pass
+
+                if base_offset is not None and mul_val is not None:
+                    # Check if mul_val is produced by a MUL instruction
+                    if mul_val.producer_inst and mul_val.producer_inst.mnemonic in {"MUL", "IMUL"}:
+                        mul_inst = mul_val.producer_inst
+                        if len(mul_inst.inputs) >= 2:
+                            # Look for constant stride in MUL inputs
+                            for mul_inp in mul_inst.inputs:
+                                stride = None
+                                if hasattr(mul_inp, 'constant_value') and mul_inp.constant_value is not None:
+                                    stride = mul_inp.constant_value
+                                elif mul_inp.alias and mul_inp.alias.lstrip('-').isdigit():
+                                    stride = int(mul_inp.alias)
+
+                                if stride and stride > 0:
+                                    if base_offset not in array_strides:
+                                        array_strides[base_offset] = set()
+                                    array_strides[base_offset].add(stride)
+
     # P0.1 FIX: Analyze and export global variables
     # FIX 4: Enable aggressive type inference for globals
     resolver = GlobalResolver(
@@ -566,6 +638,56 @@ def cmd_structure(args):
         }
         return type_sizes.get(var_type, None)
 
+    def _infer_array_dimensions(offset: int, total_dwords: int, element_size: int) -> Optional[list]:
+        """
+        PHASE 2: Infer multi-dimensional array dimensions from strides.
+
+        Args:
+            offset: Byte offset of array base
+            total_dwords: Total size in dwords from SaveInfo
+            element_size: Size of each element in bytes
+
+        Returns:
+            List of dimensions [outer, inner, ...] or None if cannot infer
+        """
+        if offset not in array_strides:
+            return None
+
+        strides = sorted(array_strides[offset], reverse=True)
+        if not strides:
+            return None
+
+        total_bytes = total_dwords * 4
+        num_elements = total_bytes // element_size if element_size else total_dwords
+
+        # For 2D array: stride = inner_dim * element_size
+        # For 3D array: stride1 = inner_dim2 * inner_dim3 * element_size
+        #               stride2 = inner_dim3 * element_size
+        dimensions = []
+
+        for stride in strides:
+            if element_size and stride >= element_size:
+                inner_dim = stride // element_size
+                if inner_dim > 0 and num_elements % inner_dim == 0:
+                    dimensions.append(inner_dim)
+                    num_elements //= inner_dim
+
+        # Add remaining outer dimension
+        if num_elements > 1:
+            dimensions.insert(0, num_elements)
+
+        # Verify dimensions multiply to total
+        if dimensions:
+            product = 1
+            for d in dimensions:
+                product *= d
+            expected = total_bytes // element_size if element_size else total_dwords
+            if product != expected:
+                # Dimensions don't match - fall back
+                return None
+
+        return dimensions if len(dimensions) > 1 else None
+
     # Generate global variable declarations
     if globals_usage:
         print("// Global variables")
@@ -588,8 +710,12 @@ def cmd_structure(args):
                 continue
 
             # Determine type and name
-            # FIX 4.4: Improved fallback logic for type inference
-            if usage.inferred_type:
+            # PHASE 1: Check if this global is used in float operations (ABSOLUTE evidence)
+            # This takes priority over all other type inference methods
+            if offset in float_globals:
+                var_type = "float"
+            elif usage.inferred_type:
+                # FIX 4.4: Use inferred type from GlobalResolver
                 var_type = usage.inferred_type
             elif usage.header_type:
                 var_type = usage.header_type
@@ -606,6 +732,7 @@ def cmd_structure(args):
             # FIX: Detect float type from initializer value in data segment
             # If a variable has type "int" or "dword" and its initializer looks like
             # a float constant (IEEE 754 pattern), type it as float instead.
+            # NOTE: Only apply this heuristic if PHASE 1 didn't already detect it as float
             detected_float_init = False
             if var_type in {"int", "dword"} and scr.data_segment:
                 dword_idx = offset // 4
@@ -632,13 +759,16 @@ def cmd_structure(args):
                 element_type = element_type.replace(" *", "").rstrip("*").strip()
                 element_size = _infer_element_size(element_type)
 
-            # FIX: Format float initializer properly if type was detected from data segment
-            if detected_float_init and scr.data_segment:
+            # FIX: Format float initializer properly if type is float
+            # This handles both detected_float_init (heuristic) and float_globals (opcode evidence)
+            if var_type == "float" and scr.data_segment:
                 init_value = scr.data_segment.get_dword(offset)
                 import struct
                 float_val = struct.unpack('<f', struct.pack('<I', init_value & 0xFFFFFFFF))[0]
                 # Format as float literal
-                if float_val == int(float_val):
+                if float_val == 0.0:
+                    initializer = " = 0.0f"
+                elif float_val == int(float_val):
                     initializer = f" = {int(float_val)}.0f"
                 else:
                     initializer = f" = {float_val}f"
@@ -651,14 +781,21 @@ def cmd_structure(args):
                     dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in usage.array_dimensions)
                     print(f"{element_type} {var_name}{dim_text}{initializer};")
                 else:
-                    # Array declaration: type name[size];
-                    array_size = size_dwords
-                    if element_size and element_size > 0:
-                        total_bytes = size_dwords * 4
-                        if total_bytes % element_size == 0:
-                            array_size = total_bytes // element_size
+                    # PHASE 2: Try to infer multi-dimensional array from stride patterns
+                    inferred_dims = _infer_array_dimensions(offset, size_dwords, element_size or 4)
+                    if inferred_dims:
+                        # Multi-dimensional array detected from access patterns
+                        dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in inferred_dims)
+                        print(f"{element_type} {var_name}{dim_text}{initializer};")
+                    else:
+                        # Fallback: 1D array declaration: type name[size];
+                        array_size = size_dwords
+                        if element_size and element_size > 0:
+                            total_bytes = size_dwords * 4
+                            if total_bytes % element_size == 0:
+                                array_size = total_bytes // element_size
 
-                    print(f"{element_type} {var_name}[{array_size}]{initializer};")
+                        print(f"{element_type} {var_name}[{array_size}]{initializer};")
             elif usage.is_array_base and usage.array_element_size:
                 # Fallback: use dynamic array detection (for scripts without SaveInfo)
                 array_size = 64  # Default estimate
