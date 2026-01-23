@@ -67,6 +67,9 @@ class TypeEvidence:
     inferred_type: str
     """The inferred type (e.g., 'int', 'float', 'char*')"""
 
+    distance: int = 0
+    """Propagation distance in hops (0 = direct evidence)."""
+
     reason: str = ""
     """Human-readable explanation"""
 
@@ -273,7 +276,7 @@ class TypeInferenceEngine:
         # Context-aware propagation settings
         self.propagation_depth_limit = 10  # Max propagation hops
         self.propagation_min_confidence = 0.70  # Min confidence to propagate
-        self.propagation_decay = 0.05  # 5% confidence loss per hop
+        self.propagation_hop_decay = 0.9  # Exponential confidence decay per hop
         self.max_iterations = 20  # Safety limit for fixed-point iteration
 
         # Opcode → inferred type mapping
@@ -1340,6 +1343,7 @@ class TypeInferenceEngine:
         # Find struct type in source evidence
         struct_type = None
         struct_confidence = 0.0
+        struct_distance = 0
 
         for ev in source_info.evidence:
             inferred_type = ev.inferred_type
@@ -1350,15 +1354,19 @@ class TypeInferenceEngine:
                 inferred_type.startswith('c_') or
                 (inferred_type.endswith('*') and ('SC_' in inferred_type or '_' in inferred_type))
             ):
-                if ev.confidence > struct_confidence:
+                hops = ev.distance + 1
+                if hops > self.propagation_depth_limit:
+                    continue
+                candidate_confidence = ev.confidence * (self.propagation_hop_decay ** hops)
+                if candidate_confidence > struct_confidence:
                     struct_type = inferred_type
-                    struct_confidence = ev.confidence
+                    struct_confidence = candidate_confidence
+                    struct_distance = hops
 
         if not struct_type:
             return False
 
-        # Apply confidence decay for propagation
-        propagated_confidence = struct_confidence * (1.0 - self.propagation_decay)
+        propagated_confidence = struct_confidence
 
         # Check minimum confidence threshold
         if propagated_confidence < self.propagation_min_confidence:
@@ -1381,12 +1389,14 @@ class TypeInferenceEngine:
             confidence=propagated_confidence,
             source=TypeSource.ASSIGNMENT,
             inferred_type=struct_type,
-            reason=f'Struct type propagated from {source.name}'
+            distance=struct_distance,
+            reason=f'Struct type propagated from {source.name} (hops={struct_distance})'
         ))
 
         logger.debug(
             f"Struct type propagation: {source.name} ({struct_type}) → {dest.name} "
-            f"(confidence: {struct_confidence:.2f} → {propagated_confidence:.2f})"
+            f"(confidence: {struct_confidence:.2f} → {propagated_confidence:.2f}, "
+            f"hops={struct_distance})"
         )
 
         return True
@@ -1416,13 +1426,6 @@ class TypeInferenceEngine:
         if not source_info or not source_info.evidence:
             return False
 
-        # Get max confidence from source evidence
-        max_source_confidence = max(ev.confidence for ev in source_info.evidence)
-
-        # Only propagate if source confidence is high enough
-        if max_source_confidence < self.propagation_min_confidence:
-            return False
-
         # Get source type
         if not source_info.final_type:
             source_info.resolve_type()
@@ -1431,9 +1434,23 @@ class TypeInferenceEngine:
         if not source_type:
             return False
 
-        # Apply confidence decay
-        propagated_confidence = max_source_confidence * (1.0 - self.propagation_decay)
-        propagated_confidence = min(propagated_confidence, base_confidence)
+        propagated_confidence = 0.0
+        propagated_distance = 0
+        for ev in source_info.evidence:
+            if ev.inferred_type != source_type:
+                continue
+            hops = ev.distance + 1
+            if hops > self.propagation_depth_limit:
+                continue
+            candidate_confidence = min(ev.confidence, base_confidence)
+            candidate_confidence *= (self.propagation_hop_decay ** hops)
+            if candidate_confidence > propagated_confidence:
+                propagated_confidence = candidate_confidence
+                propagated_distance = hops
+
+        # Only propagate if source confidence is high enough
+        if propagated_confidence < self.propagation_min_confidence:
+            return False
 
         if self._is_global_value(dest) and propagated_confidence < 0.95:
             return False
@@ -1452,7 +1469,11 @@ class TypeInferenceEngine:
             confidence=propagated_confidence,
             source=TypeSource.ASSIGNMENT,
             inferred_type=source_type,
-            reason=f'Propagated from {source.name} (confidence: {max_source_confidence:.2f})'
+            distance=propagated_distance,
+            reason=(
+                f'Propagated from {source.name} '
+                f'(confidence: {propagated_confidence:.2f}, hops={propagated_distance})'
+            )
         ))
 
         return True
