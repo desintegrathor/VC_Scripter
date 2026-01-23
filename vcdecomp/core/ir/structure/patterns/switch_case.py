@@ -1186,34 +1186,65 @@ def _detect_switch_patterns(
 
                 # FIX #1 PART 2: Find the actual default entry block
                 # current_block is the last test block (e.g., block 18 at 091)
-                # The default entry is typically the fall-through or jump target
+                # The default entry is typically the non-case branch of the last comparison.
                 default_entry = None
                 curr_blk = cfg.blocks.get(current_block)
                 if curr_blk and curr_blk.instructions:
-                    last_test_instr = curr_blk.instructions[-1]
-                    test_mnem = resolver.get_mnemonic(last_test_instr.opcode)
+                    compare_to_case = {
+                        compare_block_id: case_block_id
+                        for (case_value, case_block_id), compare_block_id in filtered_case_sources.items()
+                    }
+                    case_block_id = compare_to_case.get(current_block)
+                    default_candidates = []
+                    for compare_block_id, compare_case_block_id in compare_to_case.items():
+                        compare_blk = cfg.blocks.get(compare_block_id)
+                        if not compare_blk:
+                            continue
+                        cmp_jump, cmp_fallthrough = _resolve_conditional_targets(
+                            compare_blk, start_to_block, resolver
+                        )
+                        if cmp_jump is None or cmp_fallthrough is None:
+                            continue
+                        if compare_case_block_id == cmp_jump:
+                            candidate = cmp_fallthrough
+                        elif compare_case_block_id == cmp_fallthrough:
+                            candidate = cmp_jump
+                        else:
+                            continue
+                        if candidate in chain_blocks or candidate in all_case_blocks:
+                            continue
+                        default_candidates.append(candidate)
+                    if default_candidates:
+                        default_entry = min(
+                            default_candidates,
+                            key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else bid
+                        )
 
-                    # If it's a conditional jump (JZ), default is either target or fall-through
-                    if resolver.is_conditional_jump(last_test_instr.opcode):
-                        # JZ jumps on false (zero), so target is next test or default
-                        target_addr = last_test_instr.arg1
-                        fall_through_addr = last_test_instr.address + 1
+                    jump_target, fallthrough = _resolve_conditional_targets(
+                        curr_blk, start_to_block, resolver
+                    )
 
-                        # Find which one is the default (not in chain_blocks)
-                        for bid, b in cfg.blocks.items():
-                            if b.start == target_addr and bid not in chain_blocks:
-                                default_entry = bid
-                                break
-                            elif b.start == fall_through_addr and bid not in chain_blocks:
-                                default_entry = bid
-                                break
-                    elif test_mnem == "JMP":
-                        # Direct JMP to default
-                        target_addr = last_test_instr.arg1
-                        for bid, b in cfg.blocks.items():
-                            if b.start == target_addr:
-                                default_entry = bid
-                                break
+                    if default_entry is None and jump_target is not None and fallthrough is not None:
+                        if case_block_id is not None:
+                            if case_block_id == jump_target:
+                                default_entry = fallthrough
+                            elif case_block_id == fallthrough:
+                                default_entry = jump_target
+                        if default_entry is None:
+                            for candidate in (jump_target, fallthrough):
+                                if candidate not in chain_blocks and candidate not in all_case_blocks:
+                                    default_entry = candidate
+                                    break
+                    if default_entry is None:
+                        last_test_instr = curr_blk.instructions[-1]
+                        test_mnem = resolver.get_mnemonic(last_test_instr.opcode)
+                        if test_mnem == "JMP":
+                            # Direct JMP to default
+                            target_addr = last_test_instr.arg1
+                            for bid, b in cfg.blocks.items():
+                                if b.start == target_addr:
+                                    default_entry = bid
+                                    break
 
                 # Add default entry to stop blocks so cases don't leak into default
                 if default_entry is not None:
