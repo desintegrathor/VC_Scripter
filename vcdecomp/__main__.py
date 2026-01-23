@@ -591,6 +591,8 @@ def cmd_structure(args):
             # FIX 4.4: Improved fallback logic for type inference
             if usage.inferred_type:
                 var_type = usage.inferred_type
+            elif usage.header_type:
+                var_type = usage.header_type
             elif usage.is_incremented or usage.is_decremented:
                 # INC/DEC operations imply integer type
                 var_type = "int"
