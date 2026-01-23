@@ -1084,75 +1084,37 @@ class TypeInferenceEngine:
 
     def _infer_from_constants(self):
         """Infer types from constant value ranges."""
+        power_of_two_counts: Counter[int] = Counter()
+        for block_id, instructions in self.ssa.instructions.items():
+            for inst in instructions:
+                if inst.mnemonic in ['GCP', 'LCP'] and inst.outputs:
+                    value = inst.outputs[0]
+                    if value and value.alias:
+                        int_value = self._parse_int_constant(value.alias)
+                        if int_value is not None and self._is_power_of_two(int_value):
+                            power_of_two_counts[int_value] += 1
+
         for block_id, instructions in self.ssa.instructions.items():
             for inst in instructions:
                 # Check for constant loads (GCP, LCP)
                 if inst.mnemonic in ['GCP', 'LCP'] and inst.outputs:
                     value = inst.outputs[0]
                     if value and value.alias:
-                        self._infer_from_constant_value(value)
+                        self._infer_from_constant_value(value, power_of_two_counts)
 
-    def _infer_from_constant_value(self, value: SSAValue):
+    def _infer_from_constant_value(
+        self,
+        value: SSAValue,
+        power_of_two_counts: Optional[Counter[int]] = None,
+    ):
         """Infer type from constant value."""
         if not value.alias:
             return
 
         alias = value.alias
 
-        # Check if it's a numeric constant
-        if alias.replace('-', '').replace('.', '').isdigit():
-            # Float constant (has decimal point)
-            if '.' in alias or 'e' in alias.lower():
-                confidence = 0.70
-                reason_parts = [f'Constant value {alias} has decimal point']
-                decimal_match = re.match(r'^-?\d+\.(\d+)$', alias)
-                decimal_places = None
-                if decimal_match:
-                    decimal_places = len(decimal_match.group(1))
-                    if re.match(r'^-?\d+\.\d{1,2}$', alias):
-                        confidence = 0.83
-                        reason_parts = [f'Constant value {alias} has 1-2 decimal places']
-                    elif decimal_places >= 3:
-                        confidence = 0.60
-                        reason_parts = [f'Constant value {alias} has many decimal places']
-
-                if decimal_places is not None and decimal_places <= 1:
-                    try:
-                        float_value = float(alias)
-                    except ValueError:
-                        float_value = None
-                    if float_value is not None and float_value <= 512.0:
-                        confidence = min(confidence + 0.05, 0.95)
-                        reason_parts.append('Value <= 512.0 with <=1 decimal place')
-
-                info = self._get_or_create_type_info(value.name)
-                info.add_evidence(TypeEvidence(
-                    confidence=confidence,
-                    source=TypeSource.CONSTANT_VALUE,
-                    inferred_type='float',
-                    reason='; '.join(reason_parts)
-                ))
-            # Integer constant
-            else:
-                val = int(alias)
-                # Check range for char/short/int
-                if -128 <= val <= 127:
-                    type_hint = 'char'
-                elif -32768 <= val <= 32767:
-                    type_hint = 'short'
-                else:
-                    type_hint = 'int'
-
-                info = self._get_or_create_type_info(value.name)
-                info.add_evidence(TypeEvidence(
-                    confidence=0.60,
-                    source=TypeSource.CONSTANT_VALUE,
-                    inferred_type=type_hint,
-                    reason=f'Constant value {alias} fits {type_hint} range'
-                ))
-
         # String constant
-        elif alias.startswith('"') or alias.startswith("'"):
+        if alias.startswith('"') or alias.startswith("'"):
             info = self._get_or_create_type_info(value.name)
             info.add_evidence(TypeEvidence(
                 confidence=0.95,
@@ -1160,6 +1122,69 @@ class TypeInferenceEngine:
                 inferred_type='char*',
                 reason='String literal constant'
             ))
+            return
+
+        # Check if it's a numeric constant
+        if '.' in alias or 'e' in alias.lower():
+            # Float constant (has decimal point)
+            confidence = 0.70
+            reason_parts = [f'Constant value {alias} has decimal point']
+            decimal_match = re.match(r'^-?\d+\.(\d+)$', alias)
+            decimal_places = None
+            if decimal_match:
+                decimal_places = len(decimal_match.group(1))
+                if re.match(r'^-?\d+\.\d{1,2}$', alias):
+                    confidence = 0.83
+                    reason_parts = [f'Constant value {alias} has 1-2 decimal places']
+                elif decimal_places >= 3:
+                    confidence = 0.60
+                    reason_parts = [f'Constant value {alias} has many decimal places']
+
+            if decimal_places is not None and decimal_places <= 1:
+                try:
+                    float_value = float(alias)
+                except ValueError:
+                    float_value = None
+                if float_value is not None and float_value <= 512.0:
+                    confidence = min(confidence + 0.05, 0.95)
+                    reason_parts.append('Value <= 512.0 with <=1 decimal place')
+
+            info = self._get_or_create_type_info(value.name)
+            info.add_evidence(TypeEvidence(
+                confidence=confidence,
+                source=TypeSource.CONSTANT_VALUE,
+                inferred_type='float',
+                reason='; '.join(reason_parts)
+            ))
+        else:
+            int_value = self._parse_int_constant(alias)
+            if int_value is None:
+                return
+            # Integer constant
+            val = int_value
+            # Check range for char/short/int
+            if -128 <= val <= 127:
+                type_hint = 'char'
+            elif -32768 <= val <= 32767:
+                type_hint = 'short'
+            else:
+                type_hint = 'int'
+
+            info = self._get_or_create_type_info(value.name)
+            info.add_evidence(TypeEvidence(
+                confidence=0.60,
+                source=TypeSource.CONSTANT_VALUE,
+                inferred_type=type_hint,
+                reason=f'Constant value {alias} fits {type_hint} range'
+            ))
+            if power_of_two_counts and self._is_power_of_two(val) and power_of_two_counts[val] >= 2:
+                flag_confidence = min(0.78 + (power_of_two_counts[val] - 2) * 0.02, 0.90)
+                info.add_evidence(TypeEvidence(
+                    confidence=flag_confidence,
+                    source=TypeSource.CONSTANT_VALUE,
+                    inferred_type='int',
+                    reason=f'Repeated power-of-two constant {alias} suggests enum/flag int'
+                ))
 
     def _infer_from_usage_roles(self):
         """
@@ -1171,10 +1196,29 @@ class TypeInferenceEngine:
         - Used in DCP → pointer → void*
         - Used in SCPY/SLEN → string → char*
         """
+        bitwise_usage_counts: Counter[str] = Counter()
+        bitwise_power_of_two_counts: Counter[str] = Counter()
+
         for block_id, instructions in self.ssa.instructions.items():
             for inst in instructions:
                 if inst.mnemonic in self.bitwise_shift_ops:
                     self._add_disallowed_types_for_inst(inst, 'float')
+                    for value in inst.inputs + inst.outputs:
+                        if value and value.name and not self._is_numeric_constant_alias(value.alias):
+                            bitwise_usage_counts[value.name] += 1
+
+                    power_of_two_constants = {
+                        self._parse_int_constant(value.alias)
+                        for value in inst.inputs
+                        if value and value.alias and self._parse_int_constant(value.alias) is not None
+                    }
+                    power_of_two_constants = {
+                        val for val in power_of_two_constants if self._is_power_of_two(val)
+                    }
+                    if power_of_two_constants:
+                        for value in inst.inputs + inst.outputs:
+                            if value and value.name and not self._is_numeric_constant_alias(value.alias):
+                                bitwise_power_of_two_counts[value.name] += len(power_of_two_constants)
 
                 if inst.mnemonic in self.address_arithmetic_ops:
                     self._add_disallowed_types_for_inst(inst, 'char*', 'float')
@@ -1215,6 +1259,60 @@ class TypeInferenceEngine:
                             inferred_type='void*',
                             reason='Dereferenced with DCP'
                         ))
+
+        for var_name, count in bitwise_usage_counts.items():
+            if count >= 2:
+                info = self._get_or_create_type_info(var_name)
+                confidence = min(0.78 + (count - 2) * 0.02, 0.90)
+                info.add_evidence(TypeEvidence(
+                    confidence=confidence,
+                    source=TypeSource.INSTRUCTION,
+                    inferred_type='int',
+                    reason='Frequently used in bitwise ops; likely enum/flag int'
+                ))
+                info.add_disallowed_type('float')
+
+        for var_name, count in bitwise_power_of_two_counts.items():
+            if count >= 2:
+                info = self._get_or_create_type_info(var_name)
+                confidence = min(0.82 + (count - 2) * 0.02, 0.94)
+                info.add_evidence(TypeEvidence(
+                    confidence=confidence,
+                    source=TypeSource.INSTRUCTION,
+                    inferred_type='int',
+                    reason='Bitwise ops with repeated power-of-two masks suggest enum/flag int'
+                ))
+                info.add_disallowed_type('float')
+
+    def _parse_int_constant(self, alias: Optional[str]) -> Optional[int]:
+        """Parse an integer constant from alias (supports decimal/hex)."""
+        if not alias:
+            return None
+        alias_lower = alias.lower()
+        if re.match(r'^-?0x[0-9a-f]+$', alias_lower):
+            try:
+                return int(alias_lower, 16)
+            except ValueError:
+                return None
+        if re.match(r'^-?\d+$', alias):
+            try:
+                return int(alias)
+            except ValueError:
+                return None
+        return None
+
+    def _is_numeric_constant_alias(self, alias: Optional[str]) -> bool:
+        """Return True if alias looks like a numeric literal."""
+        if not alias:
+            return False
+        if self._parse_int_constant(alias) is not None:
+            return True
+        return '.' in alias or 'e' in alias.lower()
+
+    @staticmethod
+    def _is_power_of_two(value: int) -> bool:
+        """Return True for positive powers of two."""
+        return value > 0 and (value & (value - 1)) == 0
 
     def _get_users(self, value: SSAValue) -> List[SSAInstruction]:
         """Get all instructions that use this value as input."""
