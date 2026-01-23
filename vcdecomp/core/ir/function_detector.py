@@ -9,7 +9,7 @@ This fixes the issue where multiple separate functions are merged together,
 causing unreachable code to appear after return statements in decompiled output.
 """
 
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, Set, Optional
 import logging
 
 from vcdecomp.core.loader.scr_loader import SCRFile
@@ -17,6 +17,57 @@ from vcdecomp.core.disasm.opcodes import OpcodeResolver
 from .debug_output import debug_print
 
 logger = logging.getLogger(__name__)
+
+def _resolve_saveinfo_code_address(value: int, code_count: int) -> Optional[int]:
+    """Resolve SaveInfo val1 to a code address if it looks like a valid code offset."""
+    if code_count <= 0:
+        return None
+    if 0 <= value < code_count:
+        return value
+    if value % 4 == 0:
+        candidate = value // 4
+        if 0 <= candidate < code_count:
+            return candidate
+    return None
+
+
+def _load_saveinfo_function_names(scr: SCRFile) -> Dict[int, str]:
+    """Build mapping of function start addresses to names from SaveInfo, if present."""
+    if not scr.save_info:
+        return {}
+    code_count = scr.code_segment.code_count
+    mapping: Dict[int, str] = {}
+    for item in scr.save_info.items:
+        name = (item.get("name") or "").strip()
+        if not name:
+            continue
+        if len(name) >= 2 and name[0] == "g" and name[1].isupper():
+            # Likely a global variable name (SaveInfo globals start with gX)
+            continue
+        val1 = item.get("val1")
+        if val1 is None:
+            continue
+        addr = _resolve_saveinfo_code_address(val1, code_count)
+        if addr is None:
+            continue
+        mapping[addr] = name
+    return mapping
+
+
+def _ensure_unique_name(name: str, existing: Set[str], start_addr: int) -> str:
+    """Ensure function name uniqueness within bounds mapping."""
+    if name not in existing:
+        return name
+    suffix = f"_{start_addr:04d}"
+    candidate = f"{name}{suffix}"
+    if candidate not in existing:
+        return candidate
+    counter = 2
+    while True:
+        candidate = f"{name}{suffix}_{counter}"
+        if candidate not in existing:
+            return candidate
+        counter += 1
 
 
 def detect_function_boundaries_v2(
@@ -67,6 +118,9 @@ def detect_function_boundaries_v2(
 
     logger.debug(f"Found {len(call_targets)} CALL targets: {sorted(call_targets)}")
 
+    saveinfo_names = _load_saveinfo_function_names(scr)
+    saveinfo_starts = set(saveinfo_names.keys())
+
     # Step 3: Build function starts using CALL targets + entry point
     #
     # STRATEGY:
@@ -92,6 +146,9 @@ def detect_function_boundaries_v2(
     # Add CALL targets as definitive function starts
     function_starts.extend(call_targets)
 
+    # Add SaveInfo-reported function starts (if present)
+    function_starts.extend(saveinfo_starts)
+
     # Handle orphan code before first function
     if function_starts:
         first_func = min(function_starts)
@@ -107,6 +164,7 @@ def detect_function_boundaries_v2(
     # NEW STRATEGY: Use next function start as boundary instead of first RET.
     # This prevents functions with early returns from being truncated and
     # leaving orphaned code that contains switch statements.
+    used_names: Set[str] = set()
     for i, start in enumerate(function_starts):
         # End is just before next function starts, or end of code segment
         if i + 1 < len(function_starts):
@@ -124,13 +182,18 @@ def detect_function_boundaries_v2(
                 f"Function at {start} doesn't end with RET (ends at {end} with {end_instr.opcode})"
             )
 
-        # Assign name
+        # Assign name (prefer SaveInfo, otherwise generic)
         if start == entry_point:
             func_name = "ScriptMain"
         elif start == 0 and start not in call_targets:
             func_name = "_init"
+        elif start in saveinfo_names:
+            func_name = saveinfo_names[start]
         else:
             func_name = f"func_{start:04d}"
+
+        func_name = _ensure_unique_name(func_name, used_names, start)
+        used_names.add(func_name)
 
         boundaries[func_name] = (start, end)
         logger.debug(f"Function {func_name}: addresses {start} to {end}")
@@ -161,6 +224,8 @@ def detect_function_boundaries_call_only(
     instructions = scr.code_segment.instructions
     internal_call_opcodes = resolver.internal_call_opcodes
 
+    saveinfo_names = _load_saveinfo_function_names(scr)
+
     # Find CALL targets
     call_targets = set()
     for instr in instructions:
@@ -174,6 +239,7 @@ def detect_function_boundaries_call_only(
     sorted_addrs = sorted(call_targets)
     boundaries = {}
 
+    used_names: Set[str] = set()
     for i, start in enumerate(sorted_addrs):
         # End = start of next function - 1, or end of code
         if i + 1 < len(sorted_addrs):
@@ -184,8 +250,13 @@ def detect_function_boundaries_call_only(
         # Assign name
         if start == entry_point:
             func_name = "ScriptMain"
+        elif start in saveinfo_names:
+            func_name = saveinfo_names[start]
         else:
             func_name = f"func_{start:04d}"
+
+        func_name = _ensure_unique_name(func_name, used_names, start)
+        used_names.add(func_name)
 
         boundaries[func_name] = (start, end)
 
