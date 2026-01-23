@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
-from collections import defaultdict
+from collections import Counter, defaultdict
 from enum import Enum
 import logging
 import re
@@ -221,6 +221,17 @@ class TypeInfo:
         return self.final_type
 
 
+@dataclass(frozen=True)
+class CallArgumentUsage:
+    """Captured call-site argument usage for cross-call aggregation."""
+
+    func_name: str
+    arg_index: int
+    value: SSAValue
+    inferred_type: str
+    confidence: float
+
+
 class TypeInferenceEngine:
     """
     Aggressive type inference for globals and locals.
@@ -258,6 +269,10 @@ class TypeInferenceEngine:
 
         # Opcode → inferred type mapping
         self._setup_opcode_type_map()
+
+        # Cross-call evidence for function arguments
+        self._call_argument_evidence: Dict[str, List[TypeEvidence]] = defaultdict(list)
+        self._call_argument_usages: Dict[str, List[CallArgumentUsage]] = defaultdict(list)
 
     def _setup_opcode_type_map(self):
         """Setup mapping from opcodes to type hints."""
@@ -737,12 +752,16 @@ class TypeInferenceEngine:
         for block_id, instructions in self.ssa.instructions.items():
             for idx, inst in enumerate(instructions):
                 if inst.mnemonic == 'XCALL':
+                    func_name = self._get_xcall_function_name(inst)
+                    if func_name:
+                        self._record_call_argument_evidence(func_name, inst.inputs)
                     return_type = self._analyze_function_call(inst)
                     if return_type and return_type not in {'void'}:
                         self._infer_xcall_return_type(instructions, idx, return_type)
+        self._apply_call_site_consensus()
 
-    def _analyze_function_call(self, inst: SSAInstruction) -> Optional[str]:
-        """Analyze function call for type evidence."""
+    def _get_xcall_function_name(self, inst: SSAInstruction) -> Optional[str]:
+        """Extract function name for XCALL instructions."""
         if not inst.instruction or not inst.instruction.instruction:
             return None
 
@@ -750,7 +769,6 @@ class TypeInferenceEngine:
         if not self.ssa.scr.xfn_table:
             return None
 
-        # Get XFN entry
         xfn_entries = getattr(self.ssa.scr.xfn_table, 'entries', [])
         if xfn_index >= len(xfn_entries):
             return None
@@ -759,8 +777,96 @@ class TypeInferenceEngine:
         if not xfn_entry.name:
             return None
 
-        # Extract function name
-        func_name = xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
+        return xfn_entry.name.split('(')[0] if '(' in xfn_entry.name else xfn_entry.name
+
+    def _record_call_argument_evidence(self, func_name: str, inputs: List[SSAValue]) -> None:
+        """Record argument type evidence for a call-site."""
+        for arg_index, value in enumerate(inputs):
+            if not value or not value.name:
+                continue
+            inferred = self._infer_argument_type(value)
+            if not inferred:
+                continue
+            inferred_type, confidence = inferred
+            evidence = TypeEvidence(
+                confidence=confidence,
+                source=TypeSource.FUNCTION_CALL,
+                inferred_type=inferred_type,
+                reason=f'Call-site argument {arg_index} to {func_name}'
+            )
+            self._call_argument_evidence[func_name].append(evidence)
+            self._call_argument_usages[func_name].append(CallArgumentUsage(
+                func_name=func_name,
+                arg_index=arg_index,
+                value=value,
+                inferred_type=inferred_type,
+                confidence=confidence,
+            ))
+
+    def _infer_argument_type(self, value: SSAValue) -> Optional[tuple[str, float]]:
+        """Infer the best known type for a call argument."""
+        info = self.type_info.get(value.name)
+        if info and info.evidence:
+            best = max(info.evidence, key=lambda ev: ev.confidence)
+            return best.inferred_type, best.confidence
+
+        if value.value_type != opcodes.ResultType.UNKNOWN:
+            inferred_type = self._result_type_to_string(value.value_type)
+            if inferred_type:
+                return inferred_type, 0.80
+
+        return None
+
+    def _apply_call_site_consensus(self) -> None:
+        """Aggregate call-site argument evidence and boost consensus types."""
+        for func_name, usages in self._call_argument_usages.items():
+            per_param: Dict[int, List[CallArgumentUsage]] = defaultdict(list)
+            for usage in usages:
+                per_param[usage.arg_index].append(usage)
+
+            for arg_index, entries in per_param.items():
+                if not entries:
+                    continue
+                type_counts = Counter(entry.inferred_type for entry in entries)
+                if not type_counts:
+                    continue
+
+                best_type, best_count = type_counts.most_common(1)[0]
+                total = sum(type_counts.values())
+                if best_count == total:
+                    consensus = "unanimous"
+                    consensus_confidence = 0.96
+                elif best_count > total / 2:
+                    consensus = "majority"
+                    consensus_confidence = 0.92
+                else:
+                    continue
+
+                for entry in entries:
+                    if entry.inferred_type != best_type:
+                        continue
+                    boosted = min(0.99, max(entry.confidence, consensus_confidence))
+                    info = self._get_or_create_type_info(entry.value.name)
+                    if any(
+                        ev.inferred_type == best_type and ev.confidence >= boosted
+                        for ev in info.evidence
+                    ):
+                        continue
+                    info.add_evidence(TypeEvidence(
+                        confidence=boosted,
+                        source=TypeSource.FUNCTION_CALL,
+                        inferred_type=best_type,
+                        reason=(
+                            f'Call-site consensus for {func_name} arg {arg_index} '
+                            f'({consensus}: {best_count}/{total})'
+                        )
+                    ))
+
+    def _analyze_function_call(self, inst: SSAInstruction) -> Optional[str]:
+        """Analyze function call for type evidence."""
+        func_name = self._get_xcall_function_name(inst)
+        if not func_name:
+            return None
 
         # Lookup signature in header database
         func_sig = self.header_db.get_function_signature(func_name)
