@@ -107,6 +107,29 @@ class TestEndToEndDecompilation(unittest.TestCase):
         # At least some functions should succeed
         self.assertGreater(success_count, 0, "At least one function should decompile successfully")
 
+    def test_tdm_param_alias_preserved(self):
+        """Ensure gTime += time keeps the parameter name (from decompiler_source_tests/test2/tdm.scr)."""
+        source_path = Path("decompiler_source_tests/test2/tdm.scr")
+        if not source_path.exists():
+            self.skipTest("decompiler_source_tests/test2/tdm.scr not found")
+
+        scr = SCRFile.load(str(source_path))
+        ssa_func = build_ssa_all_blocks(scr)
+        disasm = Disassembler(scr)
+        func_bounds = disasm.get_function_boundaries()
+        resolver = GlobalResolver(ssa_func, aggressive_typing=True, infer_structs=False)
+        resolver.analyze()
+
+        outputs = []
+        for func_name, (start, end) in func_bounds.items():
+            output = format_structured_function_named(
+                ssa_func, func_name, start, end, resolver
+            )
+            outputs.append(output)
+
+        full_output = "\n".join(outputs)
+        self.assertIn("gTime += time", full_output)
+
     def test_refactored_modules_work_in_pipeline(self):
         """Test that refactored structure modules work correctly in pipeline"""
         # Import all refactored modules to ensure they work
