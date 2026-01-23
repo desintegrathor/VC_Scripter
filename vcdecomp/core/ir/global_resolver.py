@@ -130,6 +130,8 @@ class GlobalResolver:
 
         # NEW Pattern 5: Infer types from instruction usage
         # Disabled by default: global typing is limited to header/SDK signatures.
+        if self.aggressive_typing:
+            self._infer_global_types()
 
         # NEW Pattern 6: Infer struct definitions from access patterns
         # NOTE: Temporarily disabled until struct_inference module is implemented
@@ -1461,7 +1463,7 @@ class GlobalResolver:
             if byte_offset >= len(data_segment.raw_data):
                 continue
 
-            element_type = usage.inferred_type or "dword"
+            element_type = usage.inferred_type or usage.header_type or "dword"
             element_size = usage.array_element_size
 
             struct_def = get_struct_by_name(element_type)
