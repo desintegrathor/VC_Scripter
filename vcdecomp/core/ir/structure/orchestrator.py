@@ -32,9 +32,9 @@ from .utils.helpers import (
     set_debug_enabled,
     debug_print,
 )
-from .patterns.models import SwitchPattern, IfElsePattern
+from .patterns.models import SwitchPattern, IfElsePattern, CaseInfo
 from .patterns.if_else import _detect_if_else_pattern, _detect_early_return_pattern
-from .patterns.switch_case import _detect_switch_patterns
+from .patterns.switch_case import _detect_switch_patterns, _case_has_break
 from .patterns.loops import _detect_for_loop
 from .analysis.variables import _collect_local_variables
 from .analysis.condition import render_condition
@@ -842,20 +842,24 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 default_has_return = any(
                     line.strip().startswith("return") for line in default_lines
                 )
-                fallback_return_line = None
-                if not default_has_return:
-                    fallback_return_line = _find_return_line_from_cfg_path(
-                        cfg,
-                        ssa_func,
-                        formatter,
-                        switch.default_body_blocks,
-                        resolver,
-                        base_indent + "    "
-                    )
-                    if fallback_return_line:
-                        default_lines.append(fallback_return_line)
-                        default_has_return = True
                 lines.extend(default_lines)
+                default_has_break = False
+                if switch.default_body_blocks:
+                    default_entry = next(iter(default_body_sorted), None)
+                    if default_entry is not None:
+                        default_case = CaseInfo(
+                            value=-1,
+                            block_id=default_entry,
+                            body_blocks=set(switch.default_body_blocks),
+                        )
+                        default_has_break = _case_has_break(
+                            cfg, default_case, switch.exit_block, resolver
+                        )
+                default_has_explicit_break = any(
+                    line.strip() == "break;" for line in default_lines
+                )
+                if default_has_break and not default_has_return and not default_has_explicit_break:
+                    lines.append(f"{base_indent}    break;")
                 # FIX: Ensure default case has at least a break statement if body is empty
                 # An empty default: case is a C syntax error
                 if (
