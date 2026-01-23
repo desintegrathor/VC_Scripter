@@ -31,6 +31,7 @@ class TypePriority(Enum):
 class TypeSource(Enum):
     """Source of type evidence."""
     INSTRUCTION = "instruction"
+    SEQUENCE_PATTERN = "sequence_pattern"
     FUNCTION_CALL = "function_call"
     STRUCT_ACCESS = "struct_access"
     CONSTANT_VALUE = "constant_value"
@@ -44,6 +45,7 @@ class TypeSource(Enum):
 
 TYPE_SOURCE_PRIORITY = {
     TypeSource.INSTRUCTION: TypePriority.HARD,
+    TypeSource.SEQUENCE_PATTERN: TypePriority.NEUTRAL,
     TypeSource.FUNCTION_CALL: TypePriority.HARD,
     TypeSource.STRUCT_ACCESS: TypePriority.HARD,
     TypeSource.CONSTANT_VALUE: TypePriority.SOFT,
@@ -276,6 +278,7 @@ class TypeInferenceEngine:
 
         # Opcode → inferred type mapping
         self._setup_opcode_type_map()
+        self._setup_sequence_pattern_map()
 
         # Cross-call evidence for function arguments
         self._call_argument_evidence: Dict[str, List[TypeEvidence]] = defaultdict(list)
@@ -344,6 +347,16 @@ class TypeInferenceEngine:
             'ITOC': ('int', 'char'),
             'STOI': ('short', 'int'),
             'ITOS': ('int', 'short'),
+        }
+
+    def _setup_sequence_pattern_map(self) -> None:
+        """Setup known instruction sequences that imply operand types."""
+        self.sequence_patterns = {
+            ('ITOF', 'FADD', 'FTOI'): {
+                'expected_type': 'int',
+                'confidence': 0.88,
+                'reason': 'Integer arithmetic expressed via float add with round-trip conversion',
+            },
         }
 
     def infer_types(self) -> Dict[str, str]:
@@ -507,6 +520,84 @@ class TypeInferenceEngine:
                     self._add_disallowed_types_for_inst(inst, 'float')
                 if inst.mnemonic in self.address_arithmetic_ops:
                     self._add_disallowed_types_for_inst(inst, 'char*', 'float')
+            self._analyze_sequence_patterns(instructions)
+
+    def _analyze_sequence_patterns(self, instructions: List[SSAInstruction]) -> None:
+        """Analyze instruction sequences for higher-level type patterns."""
+        if not instructions or not self.sequence_patterns:
+            return
+
+        for start_idx in range(len(instructions)):
+            for pattern, metadata in self.sequence_patterns.items():
+                if not self._sequence_matches(instructions, start_idx, pattern):
+                    continue
+                self._add_sequence_pattern_evidence(
+                    instructions[start_idx:start_idx + len(pattern)],
+                    pattern,
+                    metadata
+                )
+
+    def _sequence_matches(
+        self,
+        instructions: List[SSAInstruction],
+        start_idx: int,
+        pattern: tuple[str, ...],
+    ) -> bool:
+        """Check whether a sequence of instructions matches a known pattern."""
+        end_idx = start_idx + len(pattern)
+        if end_idx > len(instructions):
+            return False
+
+        window = instructions[start_idx:end_idx]
+        if any(inst.mnemonic != expected for inst, expected in zip(window, pattern)):
+            return False
+
+        for prev_inst, next_inst in zip(window, window[1:]):
+            if not prev_inst.outputs or not prev_inst.outputs[0]:
+                return False
+            output_value = prev_inst.outputs[0]
+            if not any(output_value == input_val for input_val in next_inst.inputs):
+                return False
+
+        return True
+
+    def _add_sequence_pattern_evidence(
+        self,
+        window: List[SSAInstruction],
+        pattern: tuple[str, ...],
+        metadata: Dict[str, object],
+    ) -> None:
+        """Add type evidence based on a matched sequence pattern."""
+        expected_type = metadata.get('expected_type')
+        confidence = float(metadata.get('confidence', 0.80))
+        reason = metadata.get('reason', 'Sequence pattern indicates operand type')
+
+        if not expected_type:
+            return
+
+        if pattern == ('ITOF', 'FADD', 'FTOI'):
+            itof_inst, _fadd_inst, ftoi_inst = window
+            if itof_inst.inputs:
+                for input_val in itof_inst.inputs:
+                    if input_val and input_val.name:
+                        info = self._get_or_create_type_info(input_val.name)
+                        info.add_evidence(TypeEvidence(
+                            confidence=confidence,
+                            source=TypeSource.SEQUENCE_PATTERN,
+                            inferred_type=expected_type,
+                            reason=reason,
+                        ))
+
+            if ftoi_inst.outputs:
+                for output_val in ftoi_inst.outputs:
+                    if output_val and output_val.name:
+                        info = self._get_or_create_type_info(output_val.name)
+                        info.add_evidence(TypeEvidence(
+                            confidence=confidence,
+                            source=TypeSource.SEQUENCE_PATTERN,
+                            inferred_type=expected_type,
+                            reason=reason,
+                        ))
 
     def _analyze_instruction(self, inst: SSAInstruction):
         """Analyze single instruction for type evidence."""
