@@ -1335,35 +1335,6 @@ class ExpressionFormatter:
         if constant_value is not None:
             return self._format_constant_value(constant_value, expected_type_str, context)
 
-        # PRIORITY 2: Check rename_map for variable collision resolution
-        # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
-        # This allows sideA and sideB to have different names even though both have alias="local_2"
-        # NOTE: This comes AFTER field_expr check to avoid losing struct field accesses
-        # BUGFIX: Skip rename_map for LADR values - these produce address-of expressions (&local_X)
-        # that should preserve the original variable name for proper struct type detection
-        # FIX (01-20): Also skip rename_map for ADD values that are array indexing patterns
-        # Pattern: ADD(GADR, MUL(...)) should be inlined as &array[index], not renamed to tmpN
-        # FIX (01-21): Skip rename_map for GCP values that load constants from data segment
-        # These should resolve to their actual constant values, not renamed tmpN variables
-        is_ladr = value.producer_inst and value.producer_inst.mnemonic == "LADR"
-        is_gcp_constant = value.producer_inst and value.producer_inst.mnemonic == "GCP" and value.alias and value.alias.startswith("data_")
-        is_array_indexing = False
-        if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
-            left = value.producer_inst.inputs[0]
-            right = value.producer_inst.inputs[1]
-            # Check if left is GADR/DADR (global/data address) and right is MUL (index * size)
-            if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
-                if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}:
-                    is_array_indexing = True
-        preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
-        if self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing and not is_gcp_constant and not preserve_compound:
-            return self._rename_map[value.name]
-
-        # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
-        string_literal = self._check_string_literal(value)
-        if string_literal:
-            return string_literal  # Return escaped string literal (e.g., "\"EndRule unsopported: %d\"")
-
         # FÁZE 3.3: Check if value is a function parameter (VERY HIGH PRIORITY)
         if value.producer_inst and value.producer_inst.mnemonic == "LCP":
             # Get the original stack offset from the instruction
@@ -1379,6 +1350,37 @@ class ExpressionFormatter:
                 if stack_offset in self._param_names:
                     param_name = self._param_names[stack_offset]
                     return param_name
+
+        # PRIORITY 2: Check rename_map for variable collision resolution
+        # Must check SSA value NAME (t123_0, t456_0), NOT alias (local_2)!
+        # This allows sideA and sideB to have different names even though both have alias="local_2"
+        # NOTE: This comes AFTER field_expr check to avoid losing struct field accesses
+        # BUGFIX: Skip rename_map for LADR values - these produce address-of expressions (&local_X)
+        # that should preserve the original variable name for proper struct type detection
+        # FIX (01-20): Also skip rename_map for ADD values that are array indexing patterns
+        # Pattern: ADD(GADR, MUL(...)) should be inlined as &array[index], not renamed to tmpN
+        # FIX (01-21): Skip rename_map for GCP values that load constants from data segment
+        # These should resolve to their actual constant values, not renamed tmpN variables
+        is_ladr = value.producer_inst and value.producer_inst.mnemonic == "LADR"
+        is_gcp_constant = value.producer_inst and value.producer_inst.mnemonic == "GCP" and value.alias and value.alias.startswith("data_")
+        is_parametric_alias = value.alias and self._is_parametric_alias(value.alias)
+        is_array_indexing = False
+        if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
+            left = value.producer_inst.inputs[0]
+            right = value.producer_inst.inputs[1]
+            # Check if left is GADR/DADR (global/data address) and right is MUL (index * size)
+            if left.producer_inst and left.producer_inst.mnemonic in {"GADR", "DADR"}:
+                if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"}:
+                    is_array_indexing = True
+        preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
+        if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
+                and not is_gcp_constant and not preserve_compound and not is_parametric_alias):
+            return self._rename_map[value.name]
+
+        # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
+        string_literal = self._check_string_literal(value)
+        if string_literal:
+            return string_literal  # Return escaped string literal (e.g., "\"EndRule unsopported: %d\"")
 
         # REMOVED: Constant symbol substitution causes more problems than it solves
         # - It replaces array indices with unrelated constants (e.g., gData[1] -> gData[SCM_BOOBYTRAPFOUND])
@@ -2528,6 +2530,8 @@ class ExpressionFormatter:
         preserve_compound = bool(getattr(source_val, "metadata", {}).get("preserve_compound"))
         if call_expr_override:
             rendered0 = call_expr_override
+        elif source_val.alias and self._is_parametric_alias(source_val.alias):
+            rendered0 = source_val.alias
         elif preserve_compound and source_val.producer_inst:
             rendered0 = self._inline_expression(source_val)
         else:
@@ -2723,6 +2727,10 @@ class ExpressionFormatter:
                         return f"{target} {compound} {rhs};"
 
         return f"{target} = {source};"
+
+    @staticmethod
+    def _is_parametric_alias(alias: str) -> bool:
+        return alias.startswith("param_") or alias.startswith("info->")
 
     def _inline_expression(
         self,
