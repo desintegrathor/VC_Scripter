@@ -85,6 +85,9 @@ class TypeInfo:
     final_type: Optional[str] = None
     """Resolved final type"""
 
+    disallowed_types: Set[str] = field(default_factory=set)
+    """Types that must not be selected as final"""
+
     def add_evidence(self, ev: TypeEvidence):
         """Add new evidence."""
         self.evidence.append(ev)
@@ -92,6 +95,13 @@ class TypeInfo:
             self.candidate_scores.get(ev.inferred_type, 0.0) + ev.confidence
         )
         self.final_type = None
+
+    def add_disallowed_type(self, type_name: str) -> None:
+        """Register a type that must not be selected."""
+        if type_name:
+            self.disallowed_types.add(type_name)
+            if self.final_type == type_name:
+                self.final_type = None
 
     def has_hard_evidence(self, min_confidence: float = 0.95) -> bool:
         """Check if variable has strong evidence from hard sources."""
@@ -163,6 +173,11 @@ class TypeInfo:
 
         type_scores = self.prune_candidates(scores=type_scores)
 
+        def filter_disallowed(scores: Dict[str, float]) -> Dict[str, float]:
+            if not self.disallowed_types:
+                return scores
+            return {name: score for name, score in scores.items() if name not in self.disallowed_types}
+
         hard_confidence_by_type: Dict[str, float] = {}
         for ev in self.evidence:
             if ev.source.priority == TypePriority.HARD:
@@ -185,8 +200,18 @@ class TypeInfo:
             for banned in hard_ban_rules.get(hard_type, set()):
                 type_scores.pop(banned, None)
 
+        type_scores = filter_disallowed(type_scores)
+
         if not type_scores:
-            type_scores = dict(self.candidate_scores)
+            type_scores = filter_disallowed(dict(self.candidate_scores))
+
+        if not type_scores:
+            for fallback_type in ("int", "short", "char", "void*", "char*", "double", "float"):
+                if fallback_type not in self.disallowed_types:
+                    self.final_type = fallback_type
+                    return self.final_type
+            self.final_type = "unknown"
+            return self.final_type
 
         def score_key(type_name: str):
             return (type_scores[type_name], hard_confidence_by_type.get(type_name, 0.0))
@@ -271,6 +296,18 @@ class TypeInferenceEngine:
         # Pointer operations
         self.pointer_ops = {
             'PNT', 'DADR', 'LADR', 'GADR',
+        }
+
+        # Bitwise and shift operations
+        self.bitwise_shift_ops = {
+            'BA', 'BO', 'BX', 'BN', 'LS', 'RS',
+            'CBA', 'CBX', 'CBO', 'CBN', 'CLS', 'CRS',
+            'SBA', 'SBX', 'SBO', 'SBN', 'SLS', 'SRS',
+        }
+
+        # Address arithmetic operations
+        self.address_arithmetic_ops = {
+            'DADR', 'PNT',
         }
 
         # Type conversion opcodes
@@ -424,11 +461,30 @@ class TypeInferenceEngine:
             self.type_info[var_name] = TypeInfo(var_name=var_name)
         return self.type_info[var_name]
 
+    def _add_disallowed_type(self, value: Optional[SSAValue], type_name: str) -> None:
+        """Add a disallowed type for a value."""
+        if value and value.name:
+            info = self._get_or_create_type_info(value.name)
+            info.add_disallowed_type(type_name)
+
+    def _add_disallowed_types_for_inst(self, inst: SSAInstruction, *type_names: str) -> None:
+        """Add disallowed types for all inputs and outputs of an instruction."""
+        for value in inst.inputs:
+            for type_name in type_names:
+                self._add_disallowed_type(value, type_name)
+        for value in inst.outputs:
+            for type_name in type_names:
+                self._add_disallowed_type(value, type_name)
+
     def _infer_from_instructions(self):
         """Infer types from instruction opcodes."""
         for block_id, instructions in self.ssa.instructions.items():
             for inst in instructions:
                 self._analyze_instruction(inst)
+                if inst.mnemonic in self.bitwise_shift_ops:
+                    self._add_disallowed_types_for_inst(inst, 'float')
+                if inst.mnemonic in self.address_arithmetic_ops:
+                    self._add_disallowed_types_for_inst(inst, 'char*', 'float')
 
     def _analyze_instruction(self, inst: SSAInstruction):
         """Analyze single instruction for type evidence."""
@@ -910,6 +966,12 @@ class TypeInferenceEngine:
         """
         for block_id, instructions in self.ssa.instructions.items():
             for inst in instructions:
+                if inst.mnemonic in self.bitwise_shift_ops:
+                    self._add_disallowed_types_for_inst(inst, 'float')
+
+                if inst.mnemonic in self.address_arithmetic_ops:
+                    self._add_disallowed_types_for_inst(inst, 'char*', 'float')
+
                 # Loop counter pattern: INC/DEC
                 if inst.mnemonic in ['INC', 'DEC']:
                     if inst.outputs and inst.outputs[0].name:
