@@ -88,8 +88,15 @@ class TypeInfo:
     disallowed_types: Set[str] = field(default_factory=set)
     """Types that must not be selected as final"""
 
+    locked_type: Optional[str] = None
+    """Locked type based on high-confidence hard evidence"""
+
     def add_evidence(self, ev: TypeEvidence):
         """Add new evidence."""
+        if self.locked_type and ev.source.priority == TypePriority.SOFT:
+            return
+        if ev.source.priority == TypePriority.HARD and ev.confidence >= 0.98:
+            self.locked_type = ev.inferred_type
         self.evidence.append(ev)
         self.candidate_scores[ev.inferred_type] = (
             self.candidate_scores.get(ev.inferred_type, 0.0) + ev.confidence
@@ -1271,6 +1278,8 @@ class TypeInferenceEngine:
 
         # Check if destination already has this or better evidence
         dest_info = self._get_or_create_type_info(dest.name)
+        if not self._should_accept_evidence(dest_info, TypeSource.ASSIGNMENT):
+            return False
         for existing_ev in dest_info.evidence:
             if existing_ev.inferred_type == struct_type:
                 if existing_ev.confidence >= propagated_confidence:
@@ -1293,6 +1302,8 @@ class TypeInferenceEngine:
 
     def _should_accept_evidence(self, dest_info: TypeInfo, source: TypeSource) -> bool:
         """Check if new evidence is allowed based on existing hard types."""
+        if dest_info.locked_type and source.priority == TypePriority.SOFT:
+            return False
         if dest_info.has_hard_evidence() and source.priority == TypePriority.SOFT:
             return False
         return True
