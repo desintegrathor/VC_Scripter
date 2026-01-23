@@ -540,3 +540,127 @@ def _collect_and_chain(
     # The fallthrough block itself is the TRUE target (when all conditions pass)
     # This is the common case for AND chains ending with normal code
     return (chain_blocks, fallthrough_block_id, false_target)
+
+
+def _collect_or_chain(
+    start_block_id: int,
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    visited: Set[int]
+) -> Tuple[List[int], Optional[int], Optional[int]]:
+    """
+    Collect blocks forming an OR chain by following fallthrough paths.
+
+    An OR chain is a sequence of blocks where:
+    1. Each block ends with JNZ jumping to the same TRUE target
+    2. Blocks are connected via fallthrough (sequential addresses)
+    3. Final block in chain has a fallthrough to JMP block (FALSE target)
+
+    Example CFG structure:
+        Block A: cond1; JNZ true_target  → fallthrough to B
+        Block B: cond2; JNZ true_target  → fallthrough to C
+        Block C: JMP false_target
+
+    This represents: if (cond1 || cond2) goto true_target else goto false_target
+
+    Args:
+        start_block_id: Block ID to start from
+        cfg: Control flow graph
+        resolver: Opcode resolver
+        start_to_block: Address to block ID mapping
+        visited: Set of already visited blocks (to prevent infinite loops)
+
+    Returns:
+        Tuple of (chain_blocks, true_target, false_target):
+        - chain_blocks: List of block IDs in the OR chain
+        - true_target: Block ID to jump to when any condition is TRUE
+        - false_target: Block ID to jump to when all conditions are FALSE
+        Returns ([], None, None) if no OR chain detected
+    """
+    if start_block_id in visited:
+        return ([], None, None)
+
+    visited.add(start_block_id)
+
+    block = cfg.blocks.get(start_block_id)
+    if not block or not block.instructions:
+        return ([], None, None)
+
+    last_instr = block.instructions[-1]
+    conditional_instr = None
+    explicit_false_target = None
+
+    # Block must contain a conditional jump (JNZ specifically) to be part of OR chain
+    if resolver.is_conditional_jump(last_instr.opcode):
+        mnemonic = resolver.get_mnemonic(last_instr.opcode)
+        if mnemonic == "JNZ":
+            conditional_instr = last_instr
+    elif len(block.instructions) >= 2:
+        second_last = block.instructions[-2]
+        mnemonic = resolver.get_mnemonic(second_last.opcode)
+        if (mnemonic == "JNZ" and
+                resolver.get_mnemonic(last_instr.opcode) == "JMP"):
+            conditional_instr = second_last
+            explicit_false_target = start_to_block.get(last_instr.arg1)
+
+    if conditional_instr is None:
+        return ([], None, None)
+
+    # This is the first block in potential OR chain
+    chain_blocks = [start_block_id]
+    true_target_addr = conditional_instr.arg1  # Where to go if condition is true
+    true_target = start_to_block.get(true_target_addr)
+
+    if explicit_false_target is not None:
+        return (chain_blocks, true_target, explicit_false_target)
+
+    # Follow fallthrough path to find more conditions or FALSE target
+    fallthrough_addr = last_instr.address + 1
+    fallthrough_block_id = start_to_block.get(fallthrough_addr)
+
+    if not fallthrough_block_id:
+        return (chain_blocks, true_target, None)
+
+    fallthrough_block = cfg.blocks.get(fallthrough_block_id)
+    if not fallthrough_block or not fallthrough_block.instructions:
+        return (chain_blocks, true_target, None)
+
+    # Check if fallthrough block is just a JMP (end of OR chain, this is FALSE target)
+    if len(fallthrough_block.instructions) == 1:
+        ft_last = fallthrough_block.instructions[-1]
+        if resolver.get_mnemonic(ft_last.opcode) == "JMP":
+            # This JMP is where we go if all conditions fail
+            false_target = start_to_block.get(ft_last.arg1)
+            return (chain_blocks, true_target, false_target)
+
+    # Check if fallthrough block is another condition in the OR chain
+    ft_last_instr = fallthrough_block.instructions[-1]
+    ft_mnemonic = resolver.get_mnemonic(ft_last_instr.opcode)
+    if ft_mnemonic == "JNZ":
+        # Check if it jumps to the SAME true target
+        if ft_last_instr.arg1 == true_target_addr:
+            # It's part of the OR chain! Recursively collect the rest
+            rest_chain, _, false_target = _collect_or_chain(
+                fallthrough_block_id, cfg, resolver, start_to_block, visited
+            )
+            if rest_chain:
+                chain_blocks.extend(rest_chain)
+                # CRITICAL FIX: If recursive call returned false_target=None,
+                # use the fallthrough block of the last condition as the false target
+                if false_target is None:
+                    # Find the last block's fallthrough
+                    last_block = cfg.blocks.get(chain_blocks[-1])
+                    if last_block and last_block.instructions:
+                        last_addr = last_block.instructions[-1].address
+                        last_fallthrough_addr = last_addr + 1
+                        false_target = start_to_block.get(last_fallthrough_addr)
+
+                return (chain_blocks, true_target, false_target)
+        else:
+            # Fallthrough is a conditional jump but to DIFFERENT target (not OR chain)
+            return (chain_blocks, true_target, None)
+
+    # Fallthrough doesn't continue the OR chain and is not a JNZ
+    # The fallthrough block itself is the FALSE target (when all conditions fail)
+    return (chain_blocks, true_target, fallthrough_block_id)

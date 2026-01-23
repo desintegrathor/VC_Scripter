@@ -18,7 +18,7 @@ from ...expr import ExpressionFormatter
 
 from .models import IfElsePattern, CompoundCondition
 from ..analysis.flow import _find_common_successor, _find_if_body_blocks
-from ..analysis.condition import _collect_and_chain, render_condition
+from ..analysis.condition import _collect_and_chain, _collect_or_chain, render_condition
 
 
 def _detect_early_return_pattern(
@@ -124,12 +124,11 @@ def _detect_short_circuit_pattern(
     Detect short-circuit && and || patterns using multi-block analysis.
 
     NEW IMPLEMENTATION: Follows fallthrough chains across multiple blocks
-    to detect AND chains, then identifies OR by finding multiple branches
-    jumping to the same TRUE target.
+    to detect AND chains and OR chains, then identifies combined patterns.
 
     Patterns detected:
-    1. Simple AND: Block A → Block B → JMP (conditions in separate blocks)
-    2. Simple OR: Multiple blocks with different conditions jumping to same target
+    1. Simple AND: Block A → Block B → JMP (JZ to same false target)
+    2. Simple OR: Block A → Block B → JMP (JNZ to same true target)
     3. Combined: (AND) OR (AND) - multiple AND chains to same TRUE target
 
     Args:
@@ -144,10 +143,73 @@ def _detect_short_circuit_pattern(
         CompoundCondition if pattern detected, None otherwise
     """
     # Step 1: Try to collect an AND chain starting from this block
-    visited = set()
-    and_blocks, true_target, false_target = _collect_and_chain(
-        header_block_id, cfg, resolver, start_to_block, visited
+    visited_and = set()
+    and_blocks, and_true_target, and_false_target = _collect_and_chain(
+        header_block_id, cfg, resolver, start_to_block, visited_and
     )
+
+    # Step 1b: Also try to collect an OR chain starting from this block
+    visited_or = set()
+    or_blocks, or_true_target, or_false_target = _collect_or_chain(
+        header_block_id, cfg, resolver, start_to_block, visited_or
+    )
+
+    # Prefer OR chain if it has more blocks than AND chain (OR is usually the outer pattern)
+    # OR chain with 2+ blocks takes precedence over single-block AND chain
+    if or_blocks and len(or_blocks) >= 2:
+        # We have a multi-block OR chain - use it
+        or_conditions = []
+        or_condition_addrs: Set[int] = set()
+        for block_id in or_blocks:
+            condition_render = render_condition(
+                ssa_func,
+                block_id,
+                formatter,
+                cfg,
+                resolver,
+                negate=False
+            )
+            if condition_render.text:
+                or_conditions.append(condition_render.text)
+                or_condition_addrs.update(condition_render.addresses)
+
+        if len(or_conditions) >= 2:
+            # Import here to avoid circular dependency
+            from ..analysis.flow import _find_compound_body_blocks
+
+            # Create temporary compound to calculate bodies
+            temp_compound = CompoundCondition(
+                operator="||",
+                conditions=or_conditions,
+                true_target=or_true_target if or_true_target is not None else -1,
+                false_target=or_false_target if or_false_target is not None else -1,
+                involved_blocks=set(or_blocks),
+                condition_addrs=set(or_condition_addrs)
+            )
+
+            # Calculate bodies for this OR compound
+            true_body, false_body, merge_point = _find_compound_body_blocks(
+                cfg, temp_compound, resolver
+            )
+
+            # VALIDATION: Empty body means bad detection
+            if true_body:
+                # Create final compound with calculated bodies
+                return CompoundCondition(
+                    operator="||",
+                    conditions=or_conditions,
+                    true_target=or_true_target if or_true_target is not None else -1,
+                    false_target=or_false_target if or_false_target is not None else -1,
+                    involved_blocks=set(or_blocks),
+                    condition_addrs=set(or_condition_addrs),
+                    true_body=true_body,
+                    false_body=false_body,
+                    merge_point=merge_point
+                )
+
+    # Fall back to AND chain detection
+    true_target = and_true_target
+    false_target = and_false_target
 
     # No AND chain detected
     if not and_blocks:

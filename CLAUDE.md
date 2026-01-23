@@ -30,6 +30,10 @@ python -m vcdecomp gui [script.scr]
 
 # Export global variable symbols
 python -m vcdecomp symbols script.scr -o output.json -f json
+
+# Aggregate external function signatures from multiple .scr files
+python -m vcdecomp xfn-aggregate scripts/ --format summary
+python -m vcdecomp xfn-aggregate scripts/ --format sdk -o functions.json
 ```
 
 ### Validation System (Recompilation Testing)
@@ -48,17 +52,17 @@ python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts
 
 ### Running Tests
 ```bash
-# Run all tests
-PYTHONPATH=. python -m pytest vcdecomp/tests/ -v
+# Run all tests (Windows)
+py -3 -m pytest vcdecomp/tests/ -v
 
 # Run specific test suite
-PYTHONPATH=. python -m pytest vcdecomp/tests/test_structure_patterns.py -v
+py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v
 
 # Run with coverage
-PYTHONPATH=. python -m pytest vcdecomp/tests/ --cov=vcdecomp.core.ir.structure
+py -3 -m pytest vcdecomp/tests/ --cov=vcdecomp.core.ir.structure
 
 # Run integration tests (end-to-end decompilation)
-PYTHONPATH=. python -m pytest vcdecomp/tests/test_end_to_end_decompilation.py -v
+py -3 -m pytest vcdecomp/tests/test_end_to_end_decompilation.py -v
 ```
 
 ### Compiling Scripts (Original Compiler)
@@ -192,7 +196,7 @@ Function prototypes are in `original-resources/h/sc_global.h`.
 
 ### Pattern Detection Accuracy
 When modifying control flow reconstruction:
-1. Test on `Compiler-testruns/` scripts (known source + bytecode pairs)
+1. Test on `decompiler_source_tests/` scripts (known source + bytecode pairs)
 2. Verify switch/case jump tables are correctly identified
 3. Ensure for-loop patterns (init, condition, increment) are detected
 4. Check early return patterns don't break if/else chains
@@ -254,9 +258,9 @@ Get-ChildItem *.scr | ForEach-Object {
 ### Improving Control Flow Detection
 1. Modify pattern detection in `vcdecomp/core/ir/structure/patterns/`
 2. Update CFG analysis in `vcdecomp/core/ir/structure/analysis/`
-3. Test with known scripts in `Compiler-testruns/`
-4. Run regression tests: `PYTHONPATH=. python -m pytest vcdecomp/tests/test_regression_baseline.py`
-5. Validate output compiles correctly: `python -m vcdecomp validate original.scr decompiled.c`
+3. Test with known scripts in `decompiler_source_tests/`
+4. Run regression tests: `py -3 -m pytest vcdecomp/tests/test_regression_baseline.py`
+5. Validate output compiles correctly: `py -3 -m vcdecomp validate original.scr decompiled.c`
 
 ### Adding New External Function Signatures
 1. Update `original-resources/h/sc_global.h` or relevant header
@@ -266,13 +270,11 @@ Get-ChildItem *.scr | ForEach-Object {
 ## Test Data
 
 ### Test Scripts
-- `Compiler-testruns/` - Original C source + compiled .scr files with debug info
+- `decompiler_source_tests/` - Original C source + compiled .scr files for validation:
+  - `test1/tt.c` - General test file used by `compile_simple.py`
+  - `test2/tdm.c` - Team deathmatch script
+  - `test3/LEVEL.C` - Full level script
 - `script-folders/` - Real game mission scripts (production code)
-
-### Known Good Test Cases
-- `testrun1/tdm.c` - Team deathmatch script
-- `testrun1/hitable.c` - Object hit detection
-- `testrun1/camping_bot.c` - AI camping behavior
 
 ## Documentation
 

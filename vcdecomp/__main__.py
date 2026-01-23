@@ -603,6 +603,20 @@ def cmd_structure(args):
                 # True fallback - unknown type
                 var_type = "dword"
 
+            # FIX: Detect float type from initializer value in data segment
+            # If a variable has type "int" or "dword" and its initializer looks like
+            # a float constant (IEEE 754 pattern), type it as float instead.
+            detected_float_init = False
+            if var_type in {"int", "dword"} and scr.data_segment:
+                dword_idx = offset // 4
+                if dword_idx < scr.data_segment.data_count:
+                    from vcdecomp.core.ir.expr import _is_likely_float
+                    init_value = scr.data_segment.get_dword(offset)
+                    # Check if it's a non-zero value that looks like a float
+                    if init_value != 0 and _is_likely_float(init_value):
+                        var_type = "float"
+                        detected_float_init = True
+
             var_name = usage.name if usage.name else f"data_{offset}"
 
             # FIX #7: Use SaveInfo to detect arrays and get accurate sizes
@@ -618,7 +632,18 @@ def cmd_structure(args):
                 element_type = element_type.replace(" *", "").rstrip("*").strip()
                 element_size = _infer_element_size(element_type)
 
-            initializer = f" = {usage.initializer}" if usage.initializer else ""
+            # FIX: Format float initializer properly if type was detected from data segment
+            if detected_float_init and scr.data_segment:
+                init_value = scr.data_segment.get_dword(offset)
+                import struct
+                float_val = struct.unpack('<f', struct.pack('<I', init_value & 0xFFFFFFFF))[0]
+                # Format as float literal
+                if float_val == int(float_val):
+                    initializer = f" = {int(float_val)}.0f"
+                else:
+                    initializer = f" = {float_val}f"
+            else:
+                initializer = f" = {usage.initializer}" if usage.initializer else ""
 
             # Format declaration
             if is_array:

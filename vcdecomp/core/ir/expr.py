@@ -2700,16 +2700,51 @@ class ExpressionFormatter:
             return f"{target}--;"
 
         # Expression simplification: x = x <op> y → x <op>= y
-        simplified_source = source.strip()
-        if simplified_source.startswith("(") and simplified_source.endswith(")"):
-            simplified_source = simplified_source[1:-1].strip()
-
+        # FIX: Also check SSA structure for compound patterns when source is a temp variable
+        # This handles cases where the source was rendered as tmpN instead of inlined
         compound_ops = {
             "+": "+=",
             "-": "-=",
             "*": "*=",
             "/": "/=",
         }
+
+        # Map mnemonics to operators for SSA-based detection
+        mnemonic_to_op = {
+            "IADD": "+", "FADD": "+", "DADD": "+", "ADD": "+",
+            "ISUB": "-", "FSUB": "-", "DSUB": "-", "SUB": "-",
+            "IMUL": "*", "FMUL": "*", "DMUL": "*", "MUL": "*",
+            "IDIV": "/", "FDIV": "/", "DDIV": "/", "DIV": "/",
+        }
+
+        # Check SSA structure for compound assignment pattern
+        # Pattern: ASGN(ARITH_OP(target_load, rhs), target_addr)
+        # where target_load reads from the same location as target_addr
+        source_val = inst.inputs[0]
+        if source_val.producer_inst and source_val.producer_inst.mnemonic in mnemonic_to_op:
+            arith_inst = source_val.producer_inst
+            op_symbol = mnemonic_to_op[arith_inst.mnemonic]
+            if op_symbol in compound_ops and len(arith_inst.inputs) >= 2:
+                left_input = arith_inst.inputs[0]
+                right_input = arith_inst.inputs[1]
+
+                # Render both operands
+                left_rendered = self._render_value(left_input)
+                right_rendered = self._render_value(right_input)
+
+                # Check if left operand matches target (x = x + y -> x += y)
+                if left_rendered == target:
+                    return f"{target} {compound_ops[op_symbol]} {right_rendered};"
+
+                # For commutative ops (+, *), check if right matches target (x = y + x -> x += y)
+                if op_symbol in {"+", "*"} and right_rendered == target:
+                    return f"{target} {compound_ops[op_symbol]} {left_rendered};"
+
+        # Fallback: Try string-based pattern matching on rendered source
+        simplified_source = source.strip()
+        if simplified_source.startswith("(") and simplified_source.endswith(")"):
+            simplified_source = simplified_source[1:-1].strip()
+
         for op_symbol, compound in compound_ops.items():
             op_regex = re.escape(op_symbol)
             left_pattern = rf"^{re.escape(target)}\s*{op_regex}\s*(.+)$"

@@ -51,7 +51,10 @@ def build_initializer(
     element_size = element_size or 4
 
     is_vector3 = element_type in VECTOR3_TYPES
-    if element_count == 1 and not is_vector3 and element_type in {"float", "dword", "int"}:
+    # FIX: Only apply vector3 heuristic for unknown types ("dword")
+    # Do NOT apply to explicit "float" or "int" types - those were inferred/specified
+    # from SaveInfo or type inference and should not be expanded.
+    if element_count == 1 and not is_vector3 and element_type == "dword":
         if looks_like_vector3(data_segment, byte_offset):
             element_type = "c_Vector3"
             is_vector3 = True

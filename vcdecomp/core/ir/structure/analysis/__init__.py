@@ -22,6 +22,7 @@ from .condition import (
     _extract_condition_expr,
     _combine_conditions,
     _collect_and_chain,
+    _collect_or_chain,
     render_condition,
 )
 
@@ -52,6 +53,7 @@ __all__ = [
     "_extract_condition_expr",
     "_combine_conditions",
     "_collect_and_chain",
+    "_collect_or_chain",
     "render_condition",
     # Value tracing
     "_trace_value_to_function_call",
