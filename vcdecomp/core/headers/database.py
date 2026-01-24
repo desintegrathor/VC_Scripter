@@ -83,23 +83,55 @@ class HeaderDatabase:
         # Parse struct field definitions from header files
         self._parse_struct_fields()
 
+    def _resolve_constant_value(self, value_str: str, visited: set = None) -> Optional[int]:
+        """
+        Resolve a constant value, handling both numeric and alias references.
+
+        Alias constants like SGI_DEBRIEF_MEDIC_VARA have value "SGI_DEBR_01"
+        which needs to be resolved to the actual numeric value (3501).
+
+        Args:
+            value_str: The value string (can be numeric like "3501" or an alias like "SGI_DEBR_01")
+            visited: Set of already visited constant names to prevent infinite loops
+
+        Returns:
+            Resolved integer value or None if resolution fails
+        """
+        if visited is None:
+            visited = set()
+
+        # Try direct numeric parse first
+        try:
+            if value_str.startswith('0x'):
+                return int(value_str, 16)
+            return int(value_str)
+        except ValueError:
+            pass
+
+        # If it's a reference to another constant, resolve it recursively
+        if value_str in self.constants:
+            # Prevent infinite loops
+            if value_str in visited:
+                return None
+            visited.add(value_str)
+
+            ref_data = self.constants[value_str]
+            ref_value = ref_data.get('value', '')
+            return self._resolve_constant_value(ref_value, visited)
+
+        return None
+
     def _build_constant_value_map(self):
         """Build reverse lookup: integer value → constant names."""
         for name, const_data in self.constants.items():
             value_str = const_data['value']
-            # Try to parse as integer
-            try:
-                if value_str.startswith('0x'):
-                    value = int(value_str, 16)
-                else:
-                    value = int(value_str)
+            # Resolve the value, handling aliases
+            value = self._resolve_constant_value(value_str)
 
+            if value is not None:
                 if value not in self._constant_value_map:
                     self._constant_value_map[value] = []
                 self._constant_value_map[value].append(name)
-            except ValueError:
-                # Not an integer constant
-                pass
 
     def _merge_sdk_constants(self):
         """Merge SDK constants into reverse lookup map."""

@@ -3568,7 +3568,8 @@ class ExpressionFormatter:
                 # Render with type hint to avoid "ÿ" instead of 255
                 arg_str = self._render_value(val, expected_type_str=expected_type)
                 # Try to substitute constants for specific functions
-                arg_str = self._substitute_constant(func_name, i, arg_str)
+                # Pass rendered_args for context-aware substitution (e.g., MISSION_* when first arg is SGI_CURRENTMISSION)
+                arg_str = self._substitute_constant(func_name, i, arg_str, rendered_args)
                 rendered_args.append(arg_str)
             args = ", ".join(rendered_args)
 
@@ -3620,8 +3621,17 @@ class ExpressionFormatter:
             return f"{dest} = {inst.mnemonic}({args});"
         return f"{inst.mnemonic}({args});"
 
-    def _substitute_constant(self, func_name: str, arg_index: int, arg_str: str) -> str:
-        """Nahradí číselnou hodnotu argumentu symbolickou konstantou."""
+    def _substitute_constant(self, func_name: str, arg_index: int, arg_str: str,
+                              rendered_args: List[str] = None) -> str:
+        """
+        Nahradí číselnou hodnotu argumentu symbolickou konstantou.
+
+        Args:
+            func_name: Name of the function being called
+            arg_index: Index of the argument (0-based)
+            arg_str: The rendered argument string
+            rendered_args: List of already-rendered arguments (for context-aware substitution)
+        """
         # Pokus o parsování jako číslo
         try:
             value = int(arg_str)
@@ -3635,6 +3645,14 @@ class ExpressionFormatter:
                 name = get_constant_name("SGI", value)
                 if name:
                     return name
+            # Druhý argument může být MISSION_* když první je SGI_CURRENTMISSION
+            elif arg_index == 1 and rendered_args:
+                first_arg = rendered_args[0] if rendered_args else ""
+                # Check if first arg is SGI_CURRENTMISSION (200) or its symbolic name
+                if first_arg == "SGI_CURRENTMISSION" or first_arg == "200":
+                    name = get_constant_name("MISSION", value)
+                    if name:
+                        return name
         elif func_name in ("SC_ggf", "SC_sgf"):
             # První argument je SGF index
             if arg_index == 0:
