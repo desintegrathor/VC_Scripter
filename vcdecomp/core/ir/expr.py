@@ -32,6 +32,14 @@ from .parenthesization import (
     get_operator_info,
     wrap_if_needed
 )
+from ..text_database import (
+    should_annotate_function,
+    format_text_annotation,
+    get_text_database,
+    StructAssignmentTracker,
+    TEXT_ID_MIN,
+    TEXT_ID_MAX,
+)
 
 
 def _is_likely_float(val: int) -> bool:
@@ -332,6 +340,7 @@ class ExpressionFormatter:
         self.data_segment = getattr(ssa, "scr", None).data_segment if getattr(ssa, "scr", None) else None
         self._inline_cache: Dict[str, str] = {}
         self._visiting: set[str] = set()
+        self._inline_visiting: set[str] = set()  # Separate set for _inline_expression cycle detection
         self._declared: Set[str] = set()
         self._store_ops = {"ASGN"}
         # Function boundaries for scoped analysis
@@ -430,6 +439,11 @@ class ExpressionFormatter:
             )
         else:
             self._data_resolver = None
+
+        # Initialize struct assignment tracker for text annotations
+        # Tracks constant assignments to struct fields (e.g., local_80.field0 = 9136)
+        # Used by _format_call to annotate functions like SC_MissionSave(&local_80)
+        self._struct_text_tracker = StructAssignmentTracker()
 
     def _resolve_field_name(self, base_var: str, offset: int) -> str:
         """
@@ -1374,6 +1388,9 @@ class ExpressionFormatter:
         is_ladr = value.producer_inst and value.producer_inst.mnemonic == "LADR"
         is_gcp_constant = value.producer_inst and value.producer_inst.mnemonic == "GCP" and value.alias and value.alias.startswith("data_")
         is_parametric_alias = value.alias and self._is_parametric_alias(value.alias)
+        # FIX: Skip rename_map for CAST_OPS (ITOF, FTOI, etc.) - these should inline to show
+        # the actual value being cast, not a temp variable like "tmp3"
+        is_cast_op = value.producer_inst and value.producer_inst.mnemonic in CAST_OPS
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1384,7 +1401,7 @@ class ExpressionFormatter:
                     is_array_indexing = True
         preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
-                and not is_gcp_constant and not preserve_compound and not is_parametric_alias):
+                and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op):
             return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -2558,6 +2575,71 @@ class ExpressionFormatter:
         # Plain value (number, string) - not a valid target, return as-is
         return rendered
 
+    def _track_text_id_assignment(self, target: str, source: str, inst: SSAInstruction) -> None:
+        """Track constant assignments to local variables for text annotation.
+
+        This enables annotation of functions like SC_MissionSave(&local_80) by
+        tracking what constants were assigned to local_80's fields beforehand.
+
+        Args:
+            target: The target variable (e.g., "local_80", "local_80.field0", "local_63[0].y")
+            source: The source value as string (e.g., "9136")
+            inst: The SSA instruction for additional context
+        """
+        # Try to parse source as integer constant
+        try:
+            const_val = int(source)
+        except ValueError:
+            return
+
+        # Check if it's in the reasonable text ID range
+        if not (TEXT_ID_MIN <= const_val <= TEXT_ID_MAX):
+            return
+
+        # Extract base variable name from various patterns:
+        # - local_80
+        # - local_80.field0
+        # - local_80.savename_id
+        # - local_63[0].y
+        # - local_63[0]
+        base_name = target
+        offset = 0
+
+        # Handle array indexing: local_63[0].y -> local_63
+        array_match = re.match(r'^(local_\d+)\[\d+\]', target)
+        if array_match:
+            base_name = array_match.group(1)
+            # Try to extract field offset from remaining part
+            remaining = target[len(array_match.group(0)):]
+            if remaining.startswith('.'):
+                field_part = remaining[1:]
+                # Parse field as numeric offset or named field
+                offset_match = re.match(r'field_?(\d+)', field_part)
+                if offset_match:
+                    offset = int(offset_match.group(1))
+                elif field_part in ('x', 'y', 'z', 'w'):
+                    # Common vector/struct fields
+                    offset = {'x': 0, 'y': 1, 'z': 2, 'w': 3}[field_part]
+        elif '.' in target:
+            # Handle struct field access: local_80.field0
+            parts = target.split('.', 1)
+            base_name = parts[0]
+            field_part = parts[1]
+
+            # Try to extract numeric offset from field name
+            match = re.match(r'field_?(\d+)', field_part)
+            if match:
+                offset = int(match.group(1))
+            elif field_part in ('x', 'y', 'z', 'w'):
+                offset = {'x': 0, 'y': 1, 'z': 2, 'w': 3}[field_part]
+
+        # Only track assignments to local variables
+        if not base_name.startswith('local_'):
+            return
+
+        # Track the assignment
+        self._struct_text_tracker.track_assignment(base_name, const_val, offset)
+
     def _format_store(self, inst: SSAInstruction) -> Optional[str]:
         if inst.mnemonic not in self._store_ops:
             return None
@@ -2863,6 +2945,10 @@ class ExpressionFormatter:
                     if rhs:
                         return f"{target} {compound} {rhs};"
 
+        # Track constant assignments for text annotation (struct pointer arguments)
+        # Pattern: local_80.field0 = 9136 -> track for SC_MissionSave(&local_80)
+        self._track_text_id_assignment(target, source, inst)
+
         return f"{target} = {source};"
 
     @staticmethod
@@ -2878,12 +2964,15 @@ class ExpressionFormatter:
         cache_key = value.name
         if cache_key in self._inline_cache:
             return self._inline_cache[cache_key]
-        if cache_key in self._visiting:
+        # Use _inline_visiting for inline-specific cycle detection
+        # This is separate from _visiting (used by _render_value) to prevent
+        # false cycle detection when _render_value calls _inline_expression
+        if cache_key in self._inline_visiting:
             return value.name
         inst = value.producer_inst
         if inst is None:
             return value.name
-        self._visiting.add(cache_key)
+        self._inline_visiting.add(cache_key)
 
         # SPECIAL CASE: Check if ADD is actually structure field access or redundant +0
         # Pattern: ADD(PNT(ADR(local_X), offset1), offset2) → &local_X.fieldN
@@ -2894,7 +2983,7 @@ class ExpressionFormatter:
                 if right_str == "0":
                     # ADD(expr, 0) → expr (identity)
                     expr = self._render_value(inst.inputs[0])
-                    self._visiting.remove(cache_key)
+                    self._inline_visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
             except:
@@ -2921,7 +3010,7 @@ class ExpressionFormatter:
                         # FIX (01-21): Use semantic name for struct field accesses
                         display_name = self._get_field_base_name(base_var, field_name)
                         expr = f"&{display_name}.{field_name}"
-                        self._visiting.remove(cache_key)
+                        self._inline_visiting.remove(cache_key)
                         self._inline_cache[cache_key] = expr
                         return expr
             except:
@@ -2932,7 +3021,7 @@ class ExpressionFormatter:
             if field_notation:
                 # This is structure field access, return address of field
                 expr = f"&{field_notation}"
-                self._visiting.remove(cache_key)
+                self._inline_visiting.remove(cache_key)
                 self._inline_cache[cache_key] = expr
                 return expr
 
@@ -3019,26 +3108,32 @@ class ExpressionFormatter:
             )
             expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
         elif inst.mnemonic in CAST_OPS and len(inst.inputs) >= 1:
-            # FIX #4: Handle double-precision conversions specially
+            # Handle type conversion operations
+            arg_text = self._render_value(inst.inputs[0])
+            # Check if argument needs wrapping (only for complex expressions)
+            needs_wrap = not is_simple_expression(arg_text)
+
             if inst.mnemonic == "FTOD":
                 # Float to double conversion
-                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
-                expr = f"(double){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+                expr = f"(double){wrap_if_needed(arg_text, needs_wrap)}"
             elif inst.mnemonic == "DTOF":
                 # Double to float conversion
-                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
-                expr = f"(float){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+                expr = f"(float){wrap_if_needed(arg_text, needs_wrap)}"
             elif inst.mnemonic == "ITOD":
                 # Int to double conversion
-                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
-                expr = f"(double){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+                expr = f"(double){wrap_if_needed(arg_text, needs_wrap)}"
             elif inst.mnemonic == "DTOI":
                 # Double to int conversion
-                arg_text = self._render_value(inst.inputs[0], context=ExpressionContext.CAST)
-                expr = f"(int){wrap_if_needed(arg_text, context == ExpressionContext.CAST, ExpressionContext.CAST)}"
+                expr = f"(int){wrap_if_needed(arg_text, needs_wrap)}"
+            elif inst.mnemonic == "ITOF":
+                # Int to float conversion
+                expr = f"(float){wrap_if_needed(arg_text, needs_wrap)}"
+            elif inst.mnemonic == "FTOI":
+                # Float to int conversion
+                expr = f"(int){wrap_if_needed(arg_text, needs_wrap)}"
             else:
-                # Other cast operations (keep existing behavior)
-                expr = f"{inst.mnemonic}({self._render_value(inst.inputs[0])})"
+                # Other cast operations (SCI, SSI, UCI, USI - sign/zero extension)
+                expr = f"{inst.mnemonic}({arg_text})"
         # FIX #4: Handle double-precision arithmetic operations
         # These operations have 4 inputs (2 doubles = 4 dwords) but should render as binary operators
         elif inst.mnemonic in {"DMUL", "DADD", "DSUB", "DDIV"} and len(inst.inputs) >= 2:
@@ -3101,7 +3196,7 @@ class ExpressionFormatter:
                     field_name = self._resolve_field_name(base_var, offset_num)
                     # Input is array indexing, create struct field access
                     expr = f"{array_notation}.{field_name}"
-                    self._visiting.remove(cache_key)
+                    self._inline_visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
 
@@ -3134,7 +3229,7 @@ class ExpressionFormatter:
                                     # FIX (01-21): Use semantic name for struct field accesses
                                     display_name = self._get_field_base_name(base_name, field_name)
                                     expr = f"&{display_name}.{field_name}"
-                                    self._visiting.remove(cache_key)
+                                    self._inline_visiting.remove(cache_key)
                                     self._inline_cache[cache_key] = expr
                                     return expr
                             except (ValueError, AttributeError):
@@ -3151,7 +3246,7 @@ class ExpressionFormatter:
                     # FIX (01-21): Use semantic name for struct field accesses
                     display_name = self._get_field_base_name(base_name, field_name)
                     expr = f"&{display_name}.{field_name}"
-                    self._visiting.remove(cache_key)
+                    self._inline_visiting.remove(cache_key)
                     self._inline_cache[cache_key] = expr
                     return expr
 
@@ -3205,7 +3300,7 @@ class ExpressionFormatter:
             expr = call_expr
         else:
             expr = value.name
-        self._visiting.remove(cache_key)
+        self._inline_visiting.remove(cache_key)
         self._inline_cache[cache_key] = expr
         return expr
 
@@ -3402,11 +3497,40 @@ class ExpressionFormatter:
 
             # Check if XCALL has an output (return value)
             # External functions can return values too!
+
+            # Build text annotation for functions that display text
+            text_annotation = ""
+            if should_annotate_function(func_name):
+                # Extract numeric arguments that could be text IDs
+                text_ids = []
+
+                for idx, val in enumerate(inst.inputs[:num_args_to_render]):
+                    # Try to get the constant value from SSA value
+                    const_val = getattr(val, 'constant_value', None)
+                    if const_val is not None and isinstance(const_val, int):
+                        text_ids.append(const_val)
+                    elif hasattr(val, 'value') and isinstance(val.value, int):
+                        # Direct integer value
+                        text_ids.append(val.value)
+                    else:
+                        # Check if this is a struct pointer argument (&local_X)
+                        # If so, look up tracked assignments to that struct
+                        rendered_arg = rendered_args[idx] if idx < len(rendered_args) else ""
+                        if rendered_arg.startswith('&'):
+                            var_name = rendered_arg[1:]  # Strip the &
+                            struct_ids = self._struct_text_tracker.get_text_ids_for_var(var_name)
+                            text_ids.extend(struct_ids)
+
+                if text_ids:
+                    annotation = format_text_annotation(text_ids)
+                    if annotation:
+                        text_annotation = f"  // {annotation}"
+
             if inst.outputs:
                 dest = self._format_target(inst.outputs[0])
-                return f"{dest} = {func_name}({args});"
+                return f"{dest} = {func_name}({args});{text_annotation}"
             else:
-                return f"{func_name}({args});"
+                return f"{func_name}({args});{text_annotation}"
 
         args = ", ".join(self._render_value(val) for val in inst.inputs)
 

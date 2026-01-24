@@ -78,6 +78,36 @@ def build_initializer(
     if all(val == 0 for val in raw_values):
         return None
 
+    # FIX: Detect garbage initializers - arrays with uninitialized memory.
+    # This handles cases like gRecs[12] and gRec[1536] which have no initializer
+    # in the original source but the data segment contains garbage at those offsets.
+    #
+    # Heuristics:
+    # 1. If only the first element is non-zero and looks like garbage (> 65536), skip
+    # 2. If non-zeros are only at the END (after 80%+ zeros at start), and look like
+    #    garbage/pointers, skip - this is likely adjacent data being read
+    if element_count > 1:
+        non_zero_indices = [i for i, val in enumerate(raw_values) if val != 0]
+
+        # Case 1: Only first element is non-zero and looks like garbage
+        if len(non_zero_indices) == 1 and non_zero_indices[0] == 0:
+            first_val = raw_values[0]
+            if first_val > 0x10000:  # > 65536
+                return None
+
+        # Case 2: Non-zeros are only in the trailing portion (last 20%) of the array
+        # and the values look like garbage/pointers
+        if non_zero_indices:
+            min_non_zero_idx = min(non_zero_indices)
+            threshold_idx = int(element_count * 0.8)  # 80% of array must be leading zeros
+
+            if min_non_zero_idx >= threshold_idx:
+                # Non-zeros are only at the end - check if they look like garbage
+                non_zero_values = [raw_values[i] for i in non_zero_indices]
+                # If any value is large (looks like pointer/garbage), skip initializer
+                if any(val > 0x10000 for val in non_zero_values):
+                    return None
+
     dword_offset = byte_offset // 4
 
     if element_count == 1:
