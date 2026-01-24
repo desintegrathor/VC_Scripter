@@ -18,40 +18,30 @@ from .debug_output import debug_print
 
 logger = logging.getLogger(__name__)
 
-def _resolve_saveinfo_code_address(value: int, code_count: int) -> Optional[int]:
-    """Resolve SaveInfo val1 to a code address if it looks like a valid code offset."""
-    if code_count <= 0:
-        return None
-    if 0 <= value < code_count:
-        return value
-    if value % 4 == 0:
-        candidate = value // 4
-        if 0 <= candidate < code_count:
-            return candidate
-    return None
-
-
 def _load_saveinfo_function_names(scr: SCRFile) -> Dict[int, str]:
-    """Build mapping of function start addresses to names from SaveInfo, if present."""
-    if not scr.save_info:
-        return {}
-    code_count = scr.code_segment.code_count
-    mapping: Dict[int, str] = {}
-    for item in scr.save_info.items:
-        name = (item.get("name") or "").strip()
-        if not name:
-            continue
-        if len(name) >= 2 and name[0] == "g" and name[1].isupper():
-            # Likely a global variable name (SaveInfo globals start with gX)
-            continue
-        val1 = item.get("val1")
-        if val1 is None:
-            continue
-        addr = _resolve_saveinfo_code_address(val1, code_count)
-        if addr is None:
-            continue
-        mapping[addr] = name
-    return mapping
+    """
+    Build mapping of function start addresses to names from SaveInfo, if present.
+
+    NOTE: SaveInfo does NOT contain function names! It only stores global variable
+    information (name, data_segment_offset, size). The val1 field is a dword index
+    into the data segment, NOT a code address.
+
+    This function now returns an empty dict to prevent incorrectly treating
+    data segment offsets as function entry points. For example, LEVEL.SCR has:
+      - gphase: val1=224 (data segment offset, NOT code address)
+      - g_dialog: val1=225 (data segment offset, NOT code address)
+
+    These were incorrectly being added as function start addresses because 224/225
+    happen to be valid code instruction indices, causing bogus "entry block not found"
+    errors in the decompiler output.
+
+    Function names come from:
+      1. CALL targets (detected from code analysis)
+      2. Entry point (ScriptMain from header.enter_ip)
+      3. _init for orphan code at address 0
+    """
+    # SaveInfo only contains global variables, not function names
+    return {}
 
 
 def _ensure_unique_name(name: str, existing: Set[str], start_addr: int) -> str:

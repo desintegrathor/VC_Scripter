@@ -251,7 +251,7 @@ class XFNEntry:
         uint32_t ret_size       - Velikost návratové hodnoty
         uint32_t arg_count      - Počet argumentů
         uint32_t arg_types      - Info o typech argumentů
-        uint32_t field4         - Další metadata
+        uint32_t field4         - Return type flag (1 = float, 0 = int/void/pointer)
         uint32_t last_flag      - 0, nebo 1 pro poslední záznam
     """
     index: int

@@ -161,9 +161,13 @@ def _get_xcall_return_info(
         return False, opcodes.ResultType.VOID
 
     # Function returns a value - determine type
-    result_type = opcodes.ResultType.INT  # Default for non-void
+    # PRIMARY: field4 from XFN table (1 = float return type)
+    if xfn_entry.field4 == 1:
+        result_type = opcodes.ResultType.FLOAT
+    else:
+        result_type = opcodes.ResultType.INT  # Default for non-void
 
-    # Secondary: SDK database for precise type info
+    # SECONDARY: SDK database for more precise type info (can override for pointers)
     if sdk_db:
         get_sig = getattr(sdk_db, 'get_function_signature', None)
         if get_sig:

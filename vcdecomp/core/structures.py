@@ -450,11 +450,82 @@ def _load_sdk_structures() -> Dict[str, StructDef]:
         return {}
 
 
-# Merge hardcoded structures with SDK structures
-# SDK structures override hardcoded ones if there's a conflict
+def _load_parsed_structures() -> Dict[str, StructDef]:
+    """
+    Load structure definitions from sc_global.h parser.
+
+    Returns:
+        Dictionary of structure name -> StructDef
+    """
+    try:
+        from .headers.sc_global_parser import get_struct_definitions
+
+        parsed_structs = {}
+        struct_defs = get_struct_definitions()
+
+        for struct_name, fields_list in struct_defs.items():
+            # Convert parsed format: [(offset, name, type), ...]
+            fields = []
+            for offset, field_name, field_type in fields_list:
+                is_pointer = '*' in field_type
+                is_array = '[' in field_type
+
+                # Determine field size
+                size = 4  # Default size
+                if is_pointer:
+                    size = 4
+                elif field_type in ('char', 'byte'):
+                    size = 1
+                elif field_type in ('short', 'ushort'):
+                    size = 2
+                elif field_type == 'double':
+                    size = 8
+                elif field_type == 'c_Vector3':
+                    size = 12
+                elif field_type == 's_sphere':
+                    size = 16
+
+                fields.append(StructField(
+                    offset=offset,
+                    name=field_name,
+                    type_name=field_type,
+                    size=size,
+                    is_pointer=is_pointer,
+                    is_array=is_array,
+                    array_count=1  # Array count already accounted for in offset
+                ))
+
+            # Calculate total struct size from last field
+            total_size = 0
+            if fields:
+                last_field = fields[-1]
+                total_size = last_field.offset + last_field.size
+                # Apply 4-byte alignment
+                if total_size % 4 != 0:
+                    total_size += (4 - total_size % 4)
+
+            parsed_structs[struct_name] = StructDef(
+                name=struct_name,
+                size=total_size,
+                fields=fields
+            )
+
+        return parsed_structs
+    except Exception:
+        # Parser not available, return empty dict
+        return {}
+
+
+# Merge structures from multiple sources
+# Priority order (later sources override earlier):
+# 1. Hardcoded structures (fallback)
+# 2. Parsed structures from sc_global.h
+# 3. SDK structures (highest priority)
 ALL_STRUCTURES: Dict[str, StructDef] = _HARDCODED_STRUCTURES.copy()
+_parsed_structures = _load_parsed_structures()
+ALL_STRUCTURES.update(_parsed_structures)  # Parsed takes priority over hardcoded
 _sdk_structures = _load_sdk_structures()
-ALL_STRUCTURES.update(_sdk_structures)  # SDK takes priority
+ALL_STRUCTURES.update(_sdk_structures)  # SDK takes highest priority
 
 # Map size -> possible structures (for heuristic detection)
 STRUCTURES_BY_SIZE: Dict[int, List[str]] = {}
@@ -545,43 +616,95 @@ def get_verified_field_name(struct_name: str, offset: int) -> Optional[str]:
 # Used to infer structure types from function calls
 # ============================================================================
 
-FUNCTION_STRUCT_PARAMS: Dict[str, Dict[int, str]] = {
-    # SC_P_Create takes pointer to s_SC_P_Create
-    "SC_P_Create": {0: "s_SC_P_Create"},
-    # SC_P_GetInfo takes pointer to s_SC_P_getinfo
-    "SC_P_GetInfo": {1: "s_SC_P_getinfo"},
-    # SC_P_Ai_GetProps takes pointer to s_SC_P_AI_props
-    "SC_P_Ai_GetProps": {1: "s_SC_P_AI_props"},
-    "SC_P_Ai_SetProps": {1: "s_SC_P_AI_props"},
-    # SC_P_GetPos takes pointer to c_Vector3
-    "SC_P_GetPos": {1: "c_Vector3"},
-    "SC_P_SetPos": {1: "c_Vector3"},
-    # Sphere-based functions
-    "SC_GetPls": {0: "s_sphere"},
-    "SC_GetRndWp": {0: "s_sphere", 1: "c_Vector3"},
-    # Zone functions
-    "SC_NOD_GetWorldPos": {1: "c_Vector3"},
-    # ZeroMem - need size analysis
-    "SC_ZeroMem": {},  # First arg is pointer, second is size
-    # FIX #5: Multiplayer/networking functions
-    "SC_MP_GetSRVsettings": {0: "s_SC_MP_SRV_settings"},
-    "SC_MP_HUD_SetTabInfo": {0: "s_SC_MP_hud"},
-    "SC_MP_SetIconHUD": {0: "s_SC_HUD_MP_icon"},
-    "SC_MP_EnumPlayers": {0: "s_SC_MP_EnumPlayers"},
-    # Phase 2: Missing functions from field_tracker.py
-    "SC_MP_SRV_GetAtgSettings": {0: "s_SC_MP_SRV_AtgSettings"},
-    "SC_NOD_GetInfo": {0: "s_SC_OBJ_info"},
-    "SC_L_GetInfo": {0: "s_SC_L_info"},
-    # FIX (01-20): FpvMapSign functions
-    "SC_MP_FpvMapSign_Set": {1: "s_SC_FpvMapSign"},
-    # FIX (01-20): Vector functions that take c_Vector3* arguments
-    "SC_IsNear3D": {0: "c_Vector3", 1: "c_Vector3"},
-    "SC_GetScriptHelper": {1: "c_Vector3"},
+# Lazy-loaded parsed data from sc_global.h
+_PARSED_FUNCTION_STRUCT_PARAMS: Optional[Dict[str, Dict[int, str]]] = None
+
+
+def _get_parsed_function_struct_params() -> Dict[str, Dict[int, str]]:
+    """Get function struct params by parsing sc_global.h."""
+    global _PARSED_FUNCTION_STRUCT_PARAMS
+    if _PARSED_FUNCTION_STRUCT_PARAMS is None:
+        try:
+            from .headers.sc_global_parser import get_function_struct_params
+            _PARSED_FUNCTION_STRUCT_PARAMS = get_function_struct_params()
+        except Exception:
+            # Fallback to empty dict if parsing fails
+            _PARSED_FUNCTION_STRUCT_PARAMS = {}
+    return _PARSED_FUNCTION_STRUCT_PARAMS
+
+
+# Manual overrides for cases where the parser might miss or get wrong
+# These take priority over parsed data
+MANUAL_FUNCTION_OVERRIDES: Dict[str, Dict[int, str]] = {
+    # ZeroMem - first arg is pointer, second is size (parser doesn't detect void*)
+    "SC_ZeroMem": {},
+    # These functions use s_sphere* as output but parser may not detect them
+    "SC_GetScriptHelper": {1: "s_sphere"},  # Returns s_sphere, not c_Vector3
     "SC_GetNearestScriptHelper": {0: "c_Vector3", 1: "c_Vector3"},
+    # NOD_GetInfo is not in sc_global.h but exists in the engine
+    "SC_NOD_GetInfo": {0: "s_SC_OBJ_info"},
+    # L_GetInfo is not a standard function but may be used
+    "SC_L_GetInfo": {0: "s_SC_L_info"},
 }
+
+
+def get_function_struct_params() -> Dict[str, Dict[int, str]]:
+    """
+    Get the combined function struct params mapping.
+
+    Merges parsed data from sc_global.h with manual overrides.
+    Manual overrides take priority.
+    """
+    parsed = _get_parsed_function_struct_params()
+    # Merge: parsed first, then overrides
+    result = dict(parsed)
+    result.update(MANUAL_FUNCTION_OVERRIDES)
+    return result
+
+
+# Legacy compatibility: provide FUNCTION_STRUCT_PARAMS as a computed property
+# This is populated on first access for backwards compatibility
+def _get_function_struct_params_compat() -> Dict[str, Dict[int, str]]:
+    """Get function struct params for backwards compatibility."""
+    return get_function_struct_params()
+
+
+# Create a lazy-loading wrapper for FUNCTION_STRUCT_PARAMS
+class _LazyFunctionStructParams:
+    """Lazy-loading wrapper for FUNCTION_STRUCT_PARAMS."""
+    _data: Optional[Dict[str, Dict[int, str]]] = None
+
+    def _load(self):
+        if self._data is None:
+            self._data = get_function_struct_params()
+        return self._data
+
+    def get(self, key, default=None):
+        return self._load().get(key, default)
+
+    def __getitem__(self, key):
+        return self._load()[key]
+
+    def __contains__(self, key):
+        return key in self._load()
+
+    def __iter__(self):
+        return iter(self._load())
+
+    def items(self):
+        return self._load().items()
+
+    def keys(self):
+        return self._load().keys()
+
+    def values(self):
+        return self._load().values()
+
+
+FUNCTION_STRUCT_PARAMS = _LazyFunctionStructParams()
 
 
 def infer_struct_from_function(func_name: str, arg_index: int) -> Optional[str]:
     """Infer structure type from function parameter."""
-    params = FUNCTION_STRUCT_PARAMS.get(func_name, {})
+    params = get_function_struct_params().get(func_name, {})
     return params.get(arg_index)

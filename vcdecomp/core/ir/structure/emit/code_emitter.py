@@ -13,7 +13,7 @@ from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
 from ...cfg import CFG, NaturalLoop
 from ....disasm import opcodes
-from ..patterns.models import IfElsePattern, CompoundCondition
+from ..patterns.models import IfElsePattern, CompoundCondition, SwitchPattern, CaseInfo
 from ..patterns.loops import _detect_for_loop
 from ..analysis.condition import _combine_conditions, render_condition
 from ..utils.helpers import SHOW_BLOCK_COMMENTS, _is_control_flow_only
@@ -261,12 +261,16 @@ def _render_blocks_with_loops(
     emitted_blocks: Set[int],
     global_map: Optional[Dict[int, str]] = None,
     # FÁZE 1.3: Early return/break pattern detection
-    early_returns: Optional[Dict[int, tuple]] = None
+    early_returns: Optional[Dict[int, tuple]] = None,
+    # FIX (01-24): Nested switch support
+    block_to_switch: Optional[Dict[int, SwitchPattern]] = None,
+    render_switch_callback: Optional[Any] = None  # Callback to render nested switches
 ) -> List[str]:
     """
     Render a sequence of blocks with loop detection support.
 
     Used for rendering switch case bodies where loops may be present.
+    Also supports nested switch/case patterns via block_to_switch parameter.
     """
     lines: List[str] = []
     processed_in_loop: Set[int] = set()
@@ -317,6 +321,20 @@ def _render_blocks_with_loops(
             # Not a loop header - check if already emitted as part of if/else
             if body_block_id in emitted_blocks:
                 continue
+
+        # FIX (01-24): Check if this block is a nested switch header
+        if block_to_switch and body_block_id in block_to_switch:
+            nested_switch = block_to_switch[body_block_id]
+            if body_block_id == nested_switch.header_block:
+                # This is a nested switch header - render it using the callback
+                if render_switch_callback:
+                    switch_lines = render_switch_callback(
+                        nested_switch, indent, block_to_if, visited_ifs, emitted_blocks
+                    )
+                    lines.extend(switch_lines)
+                    # Mark all switch blocks as processed
+                    processed_in_loop.update(nested_switch.all_blocks)
+                continue  # Skip normal block rendering
 
         if header_loop:
             # Render loop

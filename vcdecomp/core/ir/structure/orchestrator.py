@@ -133,6 +133,178 @@ def _render_switch_case_value(
     return str(case_value)
 
 
+def _render_nested_switch(
+    switch: SwitchPattern,
+    indent: str,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    cfg,
+    func_loops: List,
+    start_to_block: Dict[int, int],
+    resolver,
+    block_to_if: Dict[int, IfElsePattern],
+    visited_ifs: Set[int],
+    emitted_blocks: Set[int],
+    global_map: Optional[Dict[int, str]],
+    parent_switch: Optional[SwitchPattern] = None
+) -> List[str]:
+    """
+    Render a nested switch statement.
+
+    This is a simplified version of switch rendering used for nested switches
+    found inside case bodies. It handles the switch structure recursively.
+
+    Args:
+        switch: The switch pattern to render
+        indent: Current indentation level
+        ssa_func: SSA function data
+        formatter: Expression formatter
+        cfg: Control flow graph
+        func_loops: List of detected loops in the function
+        start_to_block: Address to block ID mapping
+        resolver: Opcode resolver
+        block_to_if: Map of block IDs to if/else patterns
+        visited_ifs: Set of already visited if patterns
+        emitted_blocks: Set of already emitted blocks
+        global_map: Global variable name resolution map
+        parent_switch: Parent switch pattern (for nested context)
+
+    Returns:
+        List of rendered lines for the switch statement
+    """
+    lines: List[str] = []
+    base_indent = indent
+
+    # Render switch statement header
+    debug_print(f"DEBUG NESTED SWITCH: Rendering nested switch for {switch.test_var} with {len(switch.cases)} cases")
+    lines.append(f"{base_indent}switch ({switch.test_var}) {{")
+
+    # Sort cases by detection_order to preserve bytecode/source order
+    for case in sorted(switch.cases, key=lambda c: c.detection_order):
+        case_label = _render_switch_case_value(case.value, switch, formatter)
+        lines.append(f"{base_indent}case {case_label}:")
+
+        # Handle fall-through cases
+        if getattr(case, 'falls_through_to', None) is not None:
+            debug_print(f"DEBUG NESTED SWITCH: Fall-through case {case.value} -> case {case.falls_through_to}, skipping body")
+            continue
+
+        # Render case body
+        case_body_sorted = sorted(case.body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+        case_start_line = len(lines)
+
+        # Build stop blocks from other cases
+        case_stop_blocks = set()
+        for other_case in switch.cases:
+            if other_case.value != case.value:
+                case_stop_blocks.update(other_case.body_blocks)
+        if switch.default_body_blocks:
+            case_stop_blocks.update(switch.default_body_blocks)
+        if switch.exit_block:
+            case_stop_blocks.add(switch.exit_block)
+
+        # Detect if/else patterns in case body
+        for body_block_id in case_body_sorted:
+            if body_block_id not in block_to_if:
+                temp_visited = set()
+                if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
+                if if_pattern:
+                    block_to_if[body_block_id] = if_pattern
+
+        # Detect early return patterns
+        early_returns: Dict[int, tuple] = {}
+        for body_block_id in case_body_sorted:
+            early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
+            if early_ret:
+                early_returns[body_block_id] = early_ret
+
+        # Render case body blocks
+        case_lines = _render_blocks_with_loops(
+            case_body_sorted,
+            base_indent + "    ",
+            ssa_func,
+            formatter,
+            cfg,
+            func_loops,
+            start_to_block,
+            resolver,
+            block_to_if,
+            visited_ifs,
+            emitted_blocks,
+            global_map,
+            early_returns
+        )
+        lines.extend(case_lines)
+
+        # Check if last line is a return statement - if so, don't add break
+        has_return = False
+        for i in range(len(lines) - 1, case_start_line - 1, -1):
+            line = lines[i].strip()
+            if line and not line.startswith("//"):
+                if line.startswith("return"):
+                    has_return = True
+                break
+
+        if case.has_break and not has_return:
+            lines.append(f"{base_indent}    break;")
+
+    # Render default case if present
+    if switch.default_block is not None and switch.default_body_blocks:
+        lines.append(f"{base_indent}default:")
+        default_body_sorted = sorted(switch.default_body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+
+        # Detect if/else patterns in default body
+        for body_block_id in default_body_sorted:
+            if body_block_id not in block_to_if:
+                temp_visited = set()
+                if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, ssa_func=ssa_func, formatter=formatter)
+                if if_pattern:
+                    block_to_if[body_block_id] = if_pattern
+
+        default_lines = _render_blocks_with_loops(
+            default_body_sorted,
+            base_indent + "    ",
+            ssa_func,
+            formatter,
+            cfg,
+            func_loops,
+            start_to_block,
+            resolver,
+            block_to_if,
+            visited_ifs,
+            emitted_blocks,
+            global_map
+        )
+        default_has_return = any(line.strip().startswith("return") for line in default_lines)
+        lines.extend(default_lines)
+
+        default_has_break = False
+        if switch.default_body_blocks:
+            default_entry = next(iter(default_body_sorted), None)
+            if default_entry is not None:
+                default_case = CaseInfo(
+                    value=-1,
+                    block_id=default_entry,
+                    body_blocks=set(switch.default_body_blocks),
+                )
+                default_has_break = _case_has_break(cfg, default_case, switch.exit_block, resolver)
+
+        default_has_explicit_break = any(line.strip() == "break;" for line in default_lines)
+        if default_has_break and not default_has_return and not default_has_explicit_break:
+            lines.append(f"{base_indent}    break;")
+
+        # Ensure default case has at least a break statement if body is empty
+        if (not default_lines or all(line.strip() == "" for line in default_lines)) and not default_has_return:
+            lines.append(f"{base_indent}    break;")
+
+    lines.append(f"{base_indent}}}")
+
+    # Mark all switch blocks as emitted
+    emitted_blocks.update(switch.all_blocks)
+
+    return lines
+
+
 def _find_return_line_from_cfg_path(
     cfg,
     ssa_func: SSAFunction,
@@ -795,8 +967,25 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         if if_pattern:
                             block_to_if[body_block_id] = if_pattern
 
+                # FIX (01-24): Detect nested switches within case body
+                nested_switches = _detect_switch_patterns(ssa_func, set(case_body_sorted), formatter, start_to_block)
+                nested_block_to_switch: Dict[int, SwitchPattern] = {}
+                for ns in nested_switches:
+                    debug_print(f"DEBUG NESTED SWITCH: Found nested switch {ns.test_var} in case {case.value} body")
+                    for ns_block_id in ns.all_blocks:
+                        nested_block_to_switch[ns_block_id] = ns
+
+                # Create callback for rendering nested switches
+                def render_switch_callback(sw, ind, b2if, vis_ifs, emit_blks):
+                    return _render_nested_switch(
+                        sw, ind, ssa_func, formatter, cfg, func_loops,
+                        start_to_block, resolver, b2if, vis_ifs, emit_blks,
+                        global_map, parent_switch=switch
+                    )
+
                 # FIX 3A: Use _render_blocks_with_loops to support loops in case bodies
                 # FÁZE 1.3: Pass early_returns for early return/break detection
+                # FIX (01-24): Pass nested switches and callback for nested switch support
                 case_lines = _render_blocks_with_loops(
                     case_body_sorted,
                     base_indent + "    ",
@@ -810,7 +999,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     visited_ifs,
                     emitted_blocks,
                     global_map,
-                    early_returns
+                    early_returns,
+                    nested_block_to_switch,
+                    render_switch_callback
                 )
                 lines.extend(case_lines)
 
@@ -840,7 +1031,24 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                         if if_pattern:
                             block_to_if[body_block_id] = if_pattern
 
+                # FIX (01-24): Detect nested switches within default body
+                default_nested_switches = _detect_switch_patterns(ssa_func, set(default_body_sorted), formatter, start_to_block)
+                default_nested_block_to_switch: Dict[int, SwitchPattern] = {}
+                for ns in default_nested_switches:
+                    debug_print(f"DEBUG NESTED SWITCH: Found nested switch {ns.test_var} in default body")
+                    for ns_block_id in ns.all_blocks:
+                        default_nested_block_to_switch[ns_block_id] = ns
+
+                # Create callback for rendering nested switches in default body
+                def default_render_switch_callback(sw, ind, b2if, vis_ifs, emit_blks):
+                    return _render_nested_switch(
+                        sw, ind, ssa_func, formatter, cfg, func_loops,
+                        start_to_block, resolver, b2if, vis_ifs, emit_blks,
+                        global_map, parent_switch=switch
+                    )
+
                 # FIX 3A: Use _render_blocks_with_loops to support loops in default body
+                # FIX (01-24): Pass nested switches and callback for nested switch support
                 default_lines = _render_blocks_with_loops(
                     default_body_sorted,
                     base_indent + "    ",
@@ -853,7 +1061,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     block_to_if,
                     visited_ifs,
                     emitted_blocks,
-                    global_map
+                    global_map,
+                    None,  # early_returns
+                    default_nested_block_to_switch,
+                    default_render_switch_callback
                 )
                 default_has_return = any(
                     line.strip().startswith("return") for line in default_lines
