@@ -738,6 +738,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             for case in sorted(switch.cases, key=lambda c: c.value):
                 case_label = _render_switch_case_value(case.value, switch, formatter)
                 lines.append(f"{base_indent}case {case_label}:")
+
+                # FALL-THROUGH CASE HANDLING: If this case falls through to another,
+                # don't render any body - just the label. The body will be rendered
+                # by the target case. This produces: "case 0:\n case 3:\n    return 0;"
+                if getattr(case, 'falls_through_to', None) is not None:
+                    debug_print(f"DEBUG ORCHESTRATOR: Fall-through case {case.value} -> case {case.falls_through_to}, skipping body")
+                    continue
+
                 # Render all blocks in case body (sorted by address) with loop support
                 case_body_sorted = sorted(case.body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
                 case_start_line = len(lines)  # Track where case body starts

@@ -206,7 +206,6 @@ int func_0334(int param_0) {
 
     switch (param_0%4) {
     case 0:
-        break;
     case 3:
         return FALSE;
     default:

@@ -45,6 +45,73 @@ def _switch_debug(msg: str):
         debug_print(f"[SWITCH] {msg}")
 
 
+def _detect_case_fallthrough(
+    cfg: CFG,
+    cases: List[CaseInfo],
+    resolver: opcodes.OpcodeResolver
+) -> Dict[int, int]:
+    """
+    Detect which cases fall through to other cases.
+
+    A case falls through when its entry block is a single-instruction JMP
+    that targets another case's entry block.
+
+    Pattern example (GetAttackingSide):
+        case 0 entry (block 343): JMP 348  -> falls through to case 3
+        case 3 entry (block 348): return 0
+
+    This detects the bytecode pattern where the compiler generates a JMP
+    from one case's entry point directly to another case's entry point,
+    indicating fall-through semantics in the original source.
+
+    Args:
+        cfg: Control flow graph
+        cases: List of detected case info objects
+        resolver: Opcode resolver for mnemonic lookup
+
+    Returns:
+        Dict mapping case_value -> target_case_value for fall-through cases
+    """
+    fallthrough_map: Dict[int, int] = {}
+
+    # Build map: entry block_id -> case value
+    block_to_case: Dict[int, int] = {case.block_id: case.value for case in cases}
+
+    for case in cases:
+        case_block = cfg.blocks.get(case.block_id)
+        if not case_block or not case_block.instructions:
+            continue
+
+        # Check if single-instruction JMP block
+        if len(case_block.instructions) != 1:
+            continue
+
+        instr = case_block.instructions[0]
+        mnem = resolver.get_mnemonic(instr.opcode)
+
+        if mnem != "JMP":
+            continue
+
+        # Find JMP target block
+        target_addr = instr.arg1
+        target_block_id = None
+        for bid, b in cfg.blocks.items():
+            if b.start == target_addr:
+                target_block_id = bid
+                break
+
+        if target_block_id is None:
+            continue
+
+        # Check if target is another case's entry
+        if target_block_id in block_to_case:
+            target_case_value = block_to_case[target_block_id]
+            fallthrough_map[case.value] = target_case_value
+            _switch_debug(f"Fall-through detected: case {case.value} -> case {target_case_value}")
+
+    return fallthrough_map
+
+
 def _resolve_conditional_targets(
     block: "BasicBlock",
     start_to_block: Dict[int, int],
@@ -1110,6 +1177,18 @@ def _detect_switch_patterns(
             if (case.value, case.block_id) in case_sources
         }
 
+        # Detect fall-through patterns BEFORE body block analysis
+        # This detects cases like: case 0: case 3: return 0;
+        # where case 0's entry block is a single JMP to case 3's entry block
+        fallthrough_map = _detect_case_fallthrough(cfg, cases, resolver)
+
+        # Update cases with fall-through info
+        for case in cases:
+            if case.value in fallthrough_map:
+                case.falls_through_to = fallthrough_map[case.value]
+                case.has_break = False  # Fall-through cases don't have break
+                _switch_debug(f"Marked case {case.value} as fall-through to case {case.falls_through_to}")
+
         # Determine if this should be a switch statement
         # 3+ cases always becomes a switch
         # 2 cases becomes a switch only if there's a default case OR case values are non-sequential
@@ -1266,6 +1345,12 @@ def _detect_switch_patterns(
 
             # For each case, find all blocks in its body
             for case in cases:
+                # Skip body detection for fall-through cases - they have no body, just a label
+                if case.falls_through_to is not None:
+                    case.body_blocks = set()  # No body - just a label that falls through
+                    _switch_debug(f"Skipping body detection for fall-through case {case.value}")
+                    continue
+
                 case.body_blocks = _find_case_body_blocks(
                     cfg, case.block_id, stop_blocks, resolver
                 )
@@ -1290,7 +1375,11 @@ def _detect_switch_patterns(
 
             # FIX #1: Detect break statements in each case
             # Analyze each case's exit behavior to determine if it has break
+            # IMPORTANT: Skip fall-through cases - their has_break was already set to False
             for case in cases:
+                if case.falls_through_to is not None:
+                    # Fall-through cases don't have break - already set above
+                    continue
                 case.has_break = _case_has_break(cfg, case, exit_block, resolver)
 
             # Determine switch type for rendering

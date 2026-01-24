@@ -19,6 +19,7 @@ class CaseInfo:
     block_id: int              # Block ID for this case body (entry point)
     body_blocks: Set[int] = None  # All blocks in this case body
     has_break: bool = True     # Whether case ends with break (vs fall-through)
+    falls_through_to: Optional[int] = None  # Target case value if fall-through (e.g., case 0: falls through to case 3)
 
     def __post_init__(self):
         if self.body_blocks is None:
