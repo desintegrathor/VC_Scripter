@@ -602,33 +602,15 @@ class GlobalResolver:
                 # Get SGI constant name from symbol_db
                 sgi_name = get_constant_name_for_value(sgi_index)
 
-                # For SC_sgi/SC_sgf, track which global offset is used
-                if func_name in ['SC_sgi', 'SC_sgf']:
-                    # Second argument is the value being stored
-                    # The global slot corresponds to SGI index
-                    # Map: SGI index → data segment offset
-                    # (Assuming SC_GLOBAL_VARIABLE_MAX slots starting at offset 0)
-                    estimated_offset = sgi_index * 4  # Each global is 4 bytes
-
-                    if estimated_offset not in self.globals:
-                        self.globals[estimated_offset] = GlobalUsage(offset=estimated_offset)
-
-                    usage = self.globals[estimated_offset]
-                    usage.sgi_index = sgi_index
-                    usage.sgi_name = sgi_name
-                    usage.write_count += 1
-
-                # For SC_ggi/SC_ggf, also track
-                elif func_name in ['SC_ggi', 'SC_ggf']:
-                    estimated_offset = sgi_index * 4
-
-                    if estimated_offset not in self.globals:
-                        self.globals[estimated_offset] = GlobalUsage(offset=estimated_offset)
-
-                    usage = self.globals[estimated_offset]
-                    usage.sgi_index = sgi_index
-                    usage.sgi_name = sgi_name
-                    usage.read_count += 1
+                # For SC_sgi/SC_sgf/SC_ggi/SC_ggf, track the SGI index usage
+                # NOTE: We DO NOT create globals based on sgi_index * 4 offset estimation
+                # because SGI globals are managed by the game engine, not stored in the
+                # script's data segment. Creating fake globals here would incorrectly
+                # assign SGI names to arbitrary numeric constants in the data segment.
+                #
+                # The sgi_name will be used for contextual substitution in expr.py
+                # _substitute_constant() when rendering SC_sgi/SC_ggi calls.
+                pass  # SGI tracking removed - contextual substitution handles this
 
     def _analyze_xcall_struct_args(self):
         """
@@ -982,6 +964,11 @@ class GlobalResolver:
         Maps global variable offsets to SGI constant names from headers.
         SGI constants are game engine globals defined in sc_def.h.
 
+        IMPORTANT: Only maps globals that were ACTUALLY used with SC_sgi/SC_ggi
+        (tracked via sgi_index on GlobalUsage). We do NOT map based purely on
+        offset matching, as this would incorrectly assign SGI names to arbitrary
+        numeric constants stored in the data segment.
+
         Returns:
             Dict[int, str] - mapping byte_offset -> SGI constant name
         """
@@ -1008,8 +995,8 @@ class GlobalResolver:
             logger.debug("No SGI/SGF/GVAR constants found in header database")
             return sgi_mapping
 
-        # Build mapping from SGI index to constant name
-        # SGI constants are defined like: #define SGI_MISSIONDEATHCOUNT 1
+        # Build reverse lookup: SGI index -> constant name
+        sgi_index_to_name = {}
         for const_name, const_data in all_constants.items():
             value_str = const_data.get('value', '')
             try:
@@ -1018,21 +1005,20 @@ class GlobalResolver:
                     sgi_index = int(value_str, 16)
                 else:
                     sgi_index = int(value_str)
-
-                # SGI index maps to byte offset (each global is 4 bytes)
-                # NOTE: This assumes SGI constants are sequential starting at offset 0
-                # The actual mapping might be different based on engine implementation
-                byte_offset = sgi_index * 4
-
-                # Only map if this offset exists in our globals
-                if byte_offset in self.globals:
-                    sgi_mapping[byte_offset] = const_name
-                    logger.debug(f"SGI mapping: offset {byte_offset} -> {const_name} (index {sgi_index})")
-
+                sgi_index_to_name[sgi_index] = const_name
             except (ValueError, TypeError):
-                # Skip non-integer constants
                 logger.debug(f"Skipping non-integer SGI constant: {const_name} = {value_str}")
                 continue
+
+        # Only map globals that were ACTUALLY used with SC_sgi/SC_ggi
+        # These have sgi_index set from _track_sgi_usages()
+        for byte_offset, usage in self.globals.items():
+            if usage.sgi_index is not None:
+                # This global was used with SC_sgi/SC_ggi - look up the constant name
+                const_name = sgi_index_to_name.get(usage.sgi_index)
+                if const_name:
+                    sgi_mapping[byte_offset] = const_name
+                    logger.debug(f"SGI mapping: offset {byte_offset} -> {const_name} (index {usage.sgi_index})")
 
         return sgi_mapping
 

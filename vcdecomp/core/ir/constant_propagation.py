@@ -96,25 +96,47 @@ class ConstantPropagator:
     # =========================================================================
 
     def _build_literal_map(self):
-        """Build reverse lookup: value → symbol for all constants from header database."""
-        # First, load from hardcoded constants (backwards compatibility)
+        """
+        Build reverse lookup: value → symbol for constants SAFE for global substitution.
+
+        IMPORTANT: We EXCLUDE SGI/SGF/GVAR/PLAYER indices from this map because:
+        - These are SGI indices meant ONLY for SC_sgi/SC_ggi function calls
+        - Values like 6 should remain as "6" in SC_ZeroMem(ptr, 6) - it's a byte count
+        - But 6 should become "SGI_LEVELPHASE" in SC_sgi(6, value)
+        - The contextual substitution is handled by _substitute_constant() in expr.py
+
+        We DO include:
+        - SCM_* constants (always used with S_Mes, SC_P_ScriptMessage)
+        - BESID_* constants (equipment IDs)
+        - MISSION_* constants (mission IDs)
+        """
+        # Load SCM_* constants - these are safe for global substitution
+        # (SCM values like 52 for SCM_OBJECTDESTROYED are only used in messaging contexts)
         for value, name in SCM_CONSTANTS.items():
             # Skip 0 and 1 - they are used as FALSE/TRUE booleans
             if value in (0, 1):
                 continue
             self.literal_map[value] = name
 
-        for value, name in SGI_CONSTANTS.items():
-            if value not in self.literal_map and value not in (0, 1):
-                self.literal_map[value] = name
-
+        # Load BESID_* constants - equipment IDs, safe for global substitution
         for value, name in BESID_CONSTANTS.items():
             if value not in self.literal_map and value not in (0, 1):
                 self.literal_map[value] = name
 
-        # Now load ALL constants from header database (437 from SC_DEF.H + 270 from SC_GLOBAL.H)
-        # This will add many more constants like MISSION_*, SC_P_*, etc.
+        # DO NOT load SGI_CONSTANTS here - they should only be substituted contextually
+        # in SC_sgi/SC_ggi calls (handled by expr.py _substitute_constant)
+
+        # Load additional safe constants from header database
+        # Exclude SGI/SGF/GVAR/PLAYER which are SGI indices
+        excluded_prefixes = {'SGI', 'SGF', 'GVAR', 'PLAYER'}
+
         for const_name, const_data in self._header_db.constants.items():
+            prefix = const_data.get('prefix', '')
+
+            # Skip SGI index constants - they need contextual substitution
+            if prefix in excluded_prefixes:
+                continue
+
             value_str = const_data.get('value', '')
             try:
                 # Parse value (handle hex and decimal)
@@ -127,9 +149,12 @@ class ConstantPropagator:
                 if value in (0, 1):
                     continue
 
-                # Add to map (header constants can override hardcoded ones if present)
-                # Prioritize by prefix: SCM > SGI > others
-                prefix = const_data.get('prefix', '')
+                # Skip small integers (0-200) that commonly conflict with sizes/indices
+                # Exception: SCM values which are in this range but are safe
+                if value < 200 and prefix != 'SCM':
+                    continue
+
+                # Add to map - SCM constants take priority
                 if prefix == 'SCM' or value not in self.literal_map:
                     self.literal_map[value] = const_name
 

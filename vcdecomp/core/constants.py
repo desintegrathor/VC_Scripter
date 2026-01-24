@@ -344,6 +344,23 @@ def load_constants_from_headers() -> None:
             except (ValueError, TypeError):
                 pass
 
+        # Load PLAYER_ constants (used with SC_sgi/SC_ggi for weapon slots)
+        # These are SGI indices (50-110 range) used for player weapon/equipment slots
+        player_constants = db.get_constants_by_prefix('PLAYER')
+        for name, data in player_constants.items():
+            try:
+                value_str = data.get('value', '')
+                if value_str.startswith('0x'):
+                    value = int(value_str, 16)
+                else:
+                    value = int(value_str)
+
+                # Add to SGI_CONSTANTS since these are used with SC_sgi/SC_ggi
+                if value not in SGI_CONSTANTS:
+                    SGI_CONSTANTS[value] = name
+            except (ValueError, TypeError):
+                pass
+
         _CONSTANTS_LOADED = True
 
     except Exception as e:
