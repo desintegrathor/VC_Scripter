@@ -772,6 +772,7 @@ def _detect_switch_patterns(
         visited_blocks = set()
         to_visit = [(block_id, 0)]  # (block_id, depth)
         max_bfs_depth = 15  # Reasonable limit to avoid exploring too far
+        last_chain_block: Optional[int] = None  # Track last comparison/test block in chain
 
         # BFS exploration to find all comparison blocks
         while to_visit:
@@ -1110,6 +1111,7 @@ def _detect_switch_patterns(
                             # TEMPORARY: Also add to old structure for compatibility
                             cases.append(case_info)
                             chain_blocks.append(current_block)
+                            last_chain_block = current_block  # Track last test block
                             found_equ = True
                             debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}, order={case_info.detection_order}")
 
@@ -1200,6 +1202,9 @@ def _detect_switch_patterns(
         # (non-sequential values like 0,2 suggest intentional switch; sequential 0,1 is likely if-else)
         debug_print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)")
 
+        # Use last_chain_block instead of current_block (which might be a body block)
+        # The last chain block is the last test/comparison block in the switch chain
+        current_block = last_chain_block
         has_default = current_block is not None  # current_block becomes the default block
         case_values_sorted = sorted([c.value for c in cases if c.value is not None])
         non_sequential = len(case_values_sorted) >= 2 and any(
@@ -1233,24 +1238,94 @@ def _detect_switch_patterns(
                     test_var = "info->message"
                     debug_print(f"DEBUG SWITCH: ScriptMain heuristic applied: {test_var}")
 
-            # Find the exit block - common successor of all case blocks
-            # For now, we'll use a simple heuristic: find the most common successor
-            # that is not part of the switch itself
+            # Find the exit block - the convergence point where all case paths meet
+            #
+            # BUG FIX: The old algorithm looked at immediate successors of case ENTRY blocks,
+            # but those are often body blocks (e.g., if/else branches), not the exit.
+            #
+            # New algorithm:
+            # 1. Do preliminary body detection without exit constraint
+            # 2. Find where body blocks exit TO (successors outside body)
+            # 3. The most common such successor is the real exit block
             all_case_blocks = {case.block_id for case in cases}
-            exit_candidates: Dict[int, int] = {}  # block_id -> count
 
+            # Step 1: Find preliminary body blocks for each case
+            # Use only case entries and chain blocks as stop barriers (no exit_block yet)
+            preliminary_stop = all_case_blocks.copy()
+            preliminary_stop.update(chain_blocks)
+
+            preliminary_bodies: Dict[int, Set[int]] = {}
             for case in cases:
-                # Find successors of the case block
-                case_block = cfg.blocks.get(case.block_id)
-                if case_block:
-                    for succ in case_block.successors:
-                        if succ not in all_case_blocks and succ not in chain_blocks:
-                            exit_candidates[succ] = exit_candidates.get(succ, 0) + 1
+                if case.falls_through_to is not None:
+                    preliminary_bodies[case.block_id] = set()
+                    continue
+                preliminary_bodies[case.block_id] = _find_case_body_blocks(
+                    cfg, case.block_id, preliminary_stop, resolver
+                )
+                # Add this body to stop blocks so next cases don't overlap
+                preliminary_stop.update(preliminary_bodies[case.block_id])
 
-            # The exit block is the one referenced by most cases
-            exit_block = None
-            if exit_candidates:
-                exit_block = max(exit_candidates.items(), key=lambda x: x[1])[0]
+            # Step 2: Find exit block - block reached by multiple cases
+            # The exit block is where case bodies converge - it has predecessors from multiple cases
+            #
+            # We look for blocks that are successors of case body blocks and are reached
+            # from bodies of different cases.
+
+            # Collect all body blocks per case (for tracking which case reaches what)
+            all_preliminary_body = set()
+            for body in preliminary_bodies.values():
+                all_preliminary_body.update(body)
+            all_preliminary_body.update(all_case_blocks)
+            all_preliminary_body.update(chain_blocks)
+
+            # Find exit candidates: blocks that are successors of body blocks
+            # Track which cases reach each successor
+            exit_candidates: Dict[int, Set[int]] = {}  # block_id -> set of case entries that reach it
+
+            for case_entry, body in preliminary_bodies.items():
+                for bid in body:
+                    block = cfg.blocks.get(bid)
+                    if block:
+                        for succ in block.successors:
+                            if succ not in exit_candidates:
+                                exit_candidates[succ] = set()
+                            exit_candidates[succ].add(case_entry)
+
+            debug_print(f"DEBUG SWITCH: exit_candidates with reaching cases: {exit_candidates}")
+
+            # Exit block must be reached by ALL cases (or at least multiple)
+            # Also, if a block is in a case body but reached by another case, it's an exit
+            best_exit = None
+            best_score = 0
+            for bid, reaching_cases in exit_candidates.items():
+                # Skip blocks that are part of the switch structure itself
+                if bid in all_case_blocks or bid in chain_blocks:
+                    continue
+
+                # Calculate score: how many DIFFERENT cases reach this block?
+                score = len(reaching_cases)
+
+                # Bonus: if this block is already in some case's body but also reached
+                # by other cases, it's a strong exit candidate
+                if bid in all_preliminary_body and len(reaching_cases) > 1:
+                    score += 10  # Strong indicator
+
+                # Prefer blocks reached by MORE cases
+                if score > best_score:
+                    best_score = score
+                    best_exit = bid
+                    debug_print(f"DEBUG SWITCH: New best exit: {bid} with score {score} (reached by {reaching_cases})")
+
+            exit_candidates_simple: Dict[int, int] = {
+                bid: len(cases) for bid, cases in exit_candidates.items()
+                if bid not in all_case_blocks and bid not in chain_blocks
+            }
+            debug_print(f"DEBUG SWITCH: exit_candidates (simplified): {exit_candidates_simple}")
+
+            # The exit block is the best candidate from our analysis
+            exit_block = best_exit
+            if exit_block is not None:
+                debug_print(f"DEBUG SWITCH: Selected exit_block: {exit_block}")
 
                 # FÁZE 1.3 FIX: If exit block is just a JMP, follow it to find the real exit
                 exit_blk = cfg.blocks.get(exit_block)
@@ -1261,6 +1336,7 @@ def _detect_switch_patterns(
                         # Follow the JMP to find real exit
                         real_exit = start_to_block.get(instr.arg1)
                         if real_exit is not None:
+                            debug_print(f"DEBUG SWITCH: Following JMP from {exit_block} to real exit {real_exit}")
                             exit_block = real_exit
 
             # Collect all blocks belonging to the switch (initially just chain and case entries)
@@ -1275,9 +1351,12 @@ def _detect_switch_patterns(
             # Find body blocks for each case using graph traversal
             # Build stop blocks: all case entries + exit + default
             stop_blocks = all_case_blocks.copy()
+            debug_print(f"DEBUG SWITCH: Initial stop_blocks (case entries): {sorted(stop_blocks)}")
             # BUG FIX: Add chain blocks (test blocks) to prevent BFS from crossing into next case test
+            debug_print(f"DEBUG SWITCH: Adding chain_blocks to stop_blocks: {sorted(chain_blocks)}")
             stop_blocks.update(chain_blocks)
             if exit_block is not None:
+                debug_print(f"DEBUG SWITCH: Adding exit_block to stop_blocks: {exit_block}")
                 stop_blocks.add(exit_block)
             if current_block is not None:
                 stop_blocks.add(current_block)
@@ -1356,9 +1435,11 @@ def _detect_switch_patterns(
                     _switch_debug(f"Skipping body detection for fall-through case {case.value}")
                     continue
 
+                debug_print(f"DEBUG SWITCH: Finding body for case {case.value}, entry={case.block_id}, stop_blocks={sorted(stop_blocks)}")
                 case.body_blocks = _find_case_body_blocks(
                     cfg, case.block_id, stop_blocks, resolver
                 )
+                debug_print(f"DEBUG SWITCH: Case {case.value} body_blocks: {sorted(case.body_blocks)}")
                 # BUG FIX #3: Add this case's body to stop_blocks so next cases don't cross into it
                 stop_blocks.update(case.body_blocks)
                 # Update all_blocks to include all case body blocks
@@ -1373,10 +1454,48 @@ def _detect_switch_patterns(
                 if default_entry is not None and default_entry in stop_blocks:
                     stop_blocks.remove(default_entry)
 
-                default_body = _find_case_body_blocks(
-                    cfg, default_body_entry, stop_blocks, resolver
-                )
-                all_blocks.update(default_body)
+                # BUG FIX: If default_entry equals exit_block, there is NO explicit default case.
+                # The "default" path just falls through to the post-switch code (exit_block).
+                # In this case, we should NOT create a default body, otherwise the post-switch
+                # code will be incorrectly rendered inside the default case.
+                debug_print(f"DEBUG SWITCH: Checking default: default_body_entry={default_body_entry}, exit_block={exit_block}, default_entry={default_entry}")
+                if default_body_entry == exit_block:
+                    debug_print(f"DEBUG SWITCH: No explicit default case - default_entry equals exit_block ({exit_block})")
+                    default_body = None
+                    current_block = None  # Clear to signal no default
+                else:
+                    default_body = _find_case_body_blocks(
+                        cfg, default_body_entry, stop_blocks, resolver
+                    )
+                    debug_print(f"DEBUG SWITCH: Found default body blocks: {default_body}")
+
+                    # BUG FIX #2: Check if the "default body" is actually just the exit point.
+                    # If the default body is a single block that starts AFTER all case bodies,
+                    # it's the post-switch code (common exit), not a real default case.
+                    if default_body and len(default_body) == 1:
+                        potential_exit = next(iter(default_body))
+                        potential_exit_blk = cfg.blocks.get(potential_exit)
+
+                        if potential_exit_blk:
+                            potential_exit_addr = potential_exit_blk.start
+                            # Find the maximum address of any case body block
+                            max_case_addr = 0
+                            for case in cases:
+                                for body_bid in case.body_blocks:
+                                    body_blk = cfg.blocks.get(body_bid)
+                                    if body_blk:
+                                        max_case_addr = max(max_case_addr, body_blk.end)
+
+                            debug_print(f"DEBUG SWITCH: Checking if {potential_exit} (addr {potential_exit_addr}) is after all case bodies (max addr {max_case_addr})")
+
+                            # If the potential exit block starts after all case bodies, it's post-switch code
+                            if potential_exit_addr >= max_case_addr:
+                                debug_print(f"DEBUG SWITCH: No explicit default case - default body {default_body} is post-switch code")
+                                default_body = None
+                                current_block = None
+
+                    if default_body:
+                        all_blocks.update(default_body)
 
             # FIX #1: Detect break statements in each case
             # Analyze each case's exit behavior to determine if it has break

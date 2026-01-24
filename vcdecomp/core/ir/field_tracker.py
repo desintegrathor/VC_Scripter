@@ -364,7 +364,7 @@ class FieldAccessTracker:
                                 if target_var not in self.var_struct_types:
                                     self.var_struct_types[target_var] = self.var_struct_types[base_var]
                                     self.semantic_names[target_var] = self.semantic_names.get(base_var, "info")
-                                    print(f"DEBUG Propagate LADR: {target_var} → {self.var_struct_types[base_var]}")
+                                    debug_print(f"DEBUG Propagate LADR: {target_var} → {self.var_struct_types[base_var]}")
                                     changed = True
 
         debug_print(f"DEBUG Propagate: Completed in {iterations} iterations, tracking {len(self.var_struct_types)} struct variables")

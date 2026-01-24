@@ -122,13 +122,12 @@ SGI_CONSTANTS: Dict[int, str] = {
     2081: "SGI_INTELCOUNT",
     2222: "SGI_PHASE",
 
-    # Multiplayer Global Variables (GVAR_*)
-    # From Scripting_SDK.txt and multiplayer script headers
-    499: "GVAR_MP_MISSIONTYPE",
-    500: "GVAR_SIDE0FRAGS",
-    501: "GVAR_SIDE1FRAGS",
-    502: "GVAR_SIDE0DEATHS",
-    503: "GVAR_SIDE1DEATHS",
+    # Note: Values 499-503+ are game-mode-specific (GVAR_*) defined per-script.
+    # Different game modes use these indices for different variables:
+    # - ATG mode: 500=GVAR_SIDE0POINTS, 502=GVAR_MAINPHASE
+    # - DM mode: may use different mappings
+    # We intentionally do NOT map these to avoid incorrect symbolic names.
+    # Let numeric values pass through - they're defined in the game script headers.
 }
 
 # =============================================================================

@@ -2932,9 +2932,48 @@ class ExpressionFormatter:
                 if left_rendered == target:
                     return f"{target} {compound_ops[op_symbol]} {right_rendered};"
 
+                # FIX: Check if left operand is a DCP (load) from the same address as target
+                # This handles array[index]++ pattern where the load and store use same address
+                if left_input.producer_inst and left_input.producer_inst.mnemonic == "DCP":
+                    # Get the address that DCP loaded from
+                    dcp_inst = left_input.producer_inst
+                    if len(dcp_inst.inputs) > 0:
+                        load_addr = dcp_inst.inputs[0]
+                        # Get the address being stored to (inst.inputs[1] for ASGN)
+                        store_addr = inst.inputs[1] if len(inst.inputs) > 1 else None
+                        # Check if load and store address expressions are equivalent
+                        if store_addr and load_addr.producer_inst and store_addr.producer_inst:
+                            # Compare rendered addresses
+                            load_addr_rendered = self._format_pointer_target(load_addr)
+                            store_addr_rendered = self._format_pointer_target(store_addr)
+                            if load_addr_rendered == store_addr_rendered:
+                                # Same address - this is a compound assignment!
+                                # Special case: += 1 -> ++, -= 1 -> --
+                                if right_rendered == "1":
+                                    if op_symbol == "+":
+                                        return f"{target}++;"
+                                    elif op_symbol == "-":
+                                        return f"{target}--;"
+                                return f"{target} {compound_ops[op_symbol]} {right_rendered};"
+
                 # For commutative ops (+, *), check if right matches target (x = y + x -> x += y)
                 if op_symbol in {"+", "*"} and right_rendered == target:
                     return f"{target} {compound_ops[op_symbol]} {left_rendered};"
+
+                # FIX: Also check right operand for DCP from same address (commutative)
+                if op_symbol in {"+", "*"} and right_input.producer_inst and right_input.producer_inst.mnemonic == "DCP":
+                    dcp_inst = right_input.producer_inst
+                    if len(dcp_inst.inputs) > 0:
+                        load_addr = dcp_inst.inputs[0]
+                        store_addr = inst.inputs[1] if len(inst.inputs) > 1 else None
+                        if store_addr and load_addr.producer_inst and store_addr.producer_inst:
+                            load_addr_rendered = self._format_pointer_target(load_addr)
+                            store_addr_rendered = self._format_pointer_target(store_addr)
+                            if load_addr_rendered == store_addr_rendered:
+                                # Special case: += 1 -> ++
+                                if left_rendered == "1" and op_symbol == "+":
+                                    return f"{target}++;"
+                                return f"{target} {compound_ops[op_symbol]} {left_rendered};"
 
         # Fallback: Try string-based pattern matching on rendered source
         simplified_source = source.strip()
@@ -3114,6 +3153,32 @@ class ExpressionFormatter:
             expr_needs_parens = needs_parens(
                 child_expr=expr_without_parens,
                 child_operator=unary_op,
+                parent_operator=parent_operator,
+                context=context,
+                is_left_operand=True
+            )
+            expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
+        elif inst.mnemonic in {"INC", "CINC", "SINC"} and len(inst.inputs) == 1:
+            # INC opcodes: render as (operand + 1)
+            # This enables _format_store to detect x = x + 1 → x++ pattern
+            operand = self._inline_expression(inst.inputs[0], context, parent_operator="+")
+            expr_without_parens = f"{operand} + 1"
+            expr_needs_parens = needs_parens(
+                child_expr=expr_without_parens,
+                child_operator="+",
+                parent_operator=parent_operator,
+                context=context,
+                is_left_operand=True
+            )
+            expr = wrap_if_needed(expr_without_parens, expr_needs_parens)
+        elif inst.mnemonic in {"DEC", "CDEC", "SDEC"} and len(inst.inputs) == 1:
+            # DEC opcodes: render as (operand - 1)
+            # This enables _format_store to detect x = x - 1 → x-- pattern
+            operand = self._inline_expression(inst.inputs[0], context, parent_operator="-")
+            expr_without_parens = f"{operand} - 1"
+            expr_needs_parens = needs_parens(
+                child_expr=expr_without_parens,
+                child_operator="-",
                 parent_operator=parent_operator,
                 context=context,
                 is_left_operand=True

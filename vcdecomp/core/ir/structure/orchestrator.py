@@ -888,8 +888,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
             # FIX 1A: Mark all switch blocks as emitted to prevent re-rendering
             emitted_blocks.update(switch.all_blocks)
-            if switch.exit_block is not None:
-                emitted_blocks.add(switch.exit_block)
+            # NOTE: Do NOT add exit_block to emitted_blocks here!
+            # The exit_block contains post-switch code that needs to be rendered.
+            # It will be processed in the normal block iteration.
 
             # FIX 3C: Skip next block if it's unreachable connector after switch
             if idx + 1 < len(func_blocks):
