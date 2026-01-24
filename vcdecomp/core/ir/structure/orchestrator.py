@@ -1572,6 +1572,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # Filter candidate declarations - only keep those actually used
     filtered_declarations: List[str] = []
     seen_vars = set()  # Track to avoid duplicates
+    import re
+    ssa_temp_pattern = re.compile(r'^t\d+_')  # Pattern: t followed by digits then underscore
+
     for var_name, formatted_decl in candidate_declarations:
         # Extract base name (handle arrays like "buf[32]")
         base_name = var_name.split('[')[0]
@@ -1580,16 +1583,21 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if base_name in seen_vars:
             continue
 
+        # PHASE 2.1: Determine if this is a temp variable (tmp* or t{addr}_*)
+        is_basic_temp = base_name.startswith('tmp')
+        is_ssa_temp = bool(ssa_temp_pattern.match(base_name))
+        is_any_temp = is_basic_temp or is_ssa_temp
+
         # PHASE 6: Skip undefined temp variables (used but never assigned)
         # These come from broken PHI nodes with no real definitions
-        if base_name.startswith('tmp'):
+        if is_any_temp:
             from .analysis.variables import _is_undefined_variable
             if _is_undefined_variable(base_name, ssa_func, func_block_ids, lowering_result.lowered_rename_map):
-                debug_print(f"DEBUG: PHASE 6 TWO-PASS - Skipping undefined tmp: {base_name}")
+                debug_print(f"DEBUG: PHASE 6 TWO-PASS - Skipping undefined temp: {base_name}")
                 continue
 
         # Non-temps are always kept if they were candidates
-        if not base_name.startswith('tmp'):
+        if not is_any_temp:
             filtered_declarations.append(formatted_decl)
             seen_vars.add(base_name)
         # Temps only kept if they appear in output

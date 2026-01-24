@@ -34,14 +34,33 @@ def _is_back_edge_target(cfg: CFG, source: int, target: int, loops: List[Natural
     return False
 
 
-def _find_if_body_blocks(cfg: CFG, entry: int, stop_blocks: Set[int], resolver: opcodes.OpcodeResolver) -> Set[int]:
+def _find_if_body_blocks(
+    cfg: CFG,
+    entry: int,
+    stop_blocks: Set[int],
+    resolver: opcodes.OpcodeResolver,
+    context_stop_blocks: Optional[Set[int]] = None
+) -> Set[int]:
     """
     Find all blocks belonging to an if branch using BFS.
     Similar to _find_case_body_blocks but for if/else branches.
+
+    Args:
+        cfg: Control flow graph
+        entry: Entry block of the if branch
+        stop_blocks: Blocks where we should stop (merge point, other branches)
+        resolver: Opcode resolver
+        context_stop_blocks: Optional additional stop blocks from enclosing structures
+                             (e.g., case blocks when detecting if/else inside a switch case)
     """
     body_blocks: Set[int] = set()
     worklist = [entry]
     visited: Set[int] = set()
+
+    # PHASE 3.1: Combine stop_blocks with context_stop_blocks
+    effective_stop = set(stop_blocks)
+    if context_stop_blocks:
+        effective_stop.update(context_stop_blocks)
 
     while worklist:
         block_id = worklist.pop(0)
@@ -49,8 +68,8 @@ def _find_if_body_blocks(cfg: CFG, entry: int, stop_blocks: Set[int], resolver: 
         if block_id in visited:
             continue
 
-        # Stop at barriers (merge point, other branches, etc.)
-        if block_id in stop_blocks and block_id != entry:
+        # Stop at barriers (merge point, other branches, context boundaries)
+        if block_id in effective_stop and block_id != entry:
             continue
 
         visited.add(block_id)
@@ -204,15 +223,28 @@ def _find_common_true_target(
     return None
 
 
-def _find_case_body_blocks(cfg: CFG, case_entry: int, stop_blocks: Set[int], resolver: opcodes.OpcodeResolver) -> Set[int]:
+def _find_case_body_blocks(
+    cfg: CFG,
+    case_entry: int,
+    stop_blocks: Set[int],
+    resolver: opcodes.OpcodeResolver,
+    known_exit_blocks: Optional[Set[int]] = None,
+    convergence_threshold: int = 2
+) -> Set[int]:
     """
-    Find all blocks belonging to a case body using BFS.
+    Find all blocks belonging to a case body using BFS with improved stopping.
+
+    This function performs breadth-first traversal from the case entry block,
+    stopping at various boundaries to prevent code leakage between cases.
 
     Args:
         cfg: Control flow graph
         case_entry: Entry block of the case
         stop_blocks: Blocks where we should stop (other case entries, exit, default)
         resolver: Opcode resolver
+        known_exit_blocks: Optional set of known exit points to stop at
+        convergence_threshold: Stop at blocks with >= this many predecessors from
+                               different sources (convergence points)
 
     Returns:
         Set of all block IDs in the case body
@@ -220,6 +252,11 @@ def _find_case_body_blocks(cfg: CFG, case_entry: int, stop_blocks: Set[int], res
     body_blocks: Set[int] = set()
     worklist = [case_entry]
     visited: Set[int] = set()
+
+    # Combine stop_blocks with known_exit_blocks
+    effective_stop = set(stop_blocks)
+    if known_exit_blocks:
+        effective_stop.update(known_exit_blocks)
 
     while worklist:
         block_id = worklist.pop(0)
@@ -229,24 +266,59 @@ def _find_case_body_blocks(cfg: CFG, case_entry: int, stop_blocks: Set[int], res
             continue
 
         # Stop at barriers (other cases, exit, etc.)
-        if block_id in stop_blocks and block_id != case_entry:
+        if block_id in effective_stop and block_id != case_entry:
             continue
+
+        block = cfg.blocks.get(block_id)
+        if not block:
+            continue
+
+        # PHASE 1.1 FIX: Check for convergence points
+        # A convergence point is where multiple cases' control flow merges.
+        # These are typically the switch exit block or post-switch code.
+        # If a block has multiple predecessors from different cases, stop.
+        if block_id != case_entry:
+            predecessors = getattr(block, 'predecessors', [])
+            if predecessors:
+                preds_in_body = sum(1 for p in predecessors if p in body_blocks)
+                preds_outside = len(predecessors) - preds_in_body
+                # If this block has predecessors from outside our body traversal,
+                # it might be a convergence point
+                if preds_outside >= convergence_threshold and len(predecessors) >= convergence_threshold:
+                    # This is likely a convergence point - don't include it
+                    continue
 
         visited.add(block_id)
         body_blocks.add(block_id)
 
-        # Get block and check if it ends with return
-        block = cfg.blocks.get(block_id)
-        if block and block.instructions:
+        # Check if block ends with return - don't follow after return
+        if block.instructions:
             last_instr = block.instructions[-1]
             if resolver.is_return(last_instr.opcode):
-                continue  # Don't follow after return
+                continue
+
+            # PHASE 1.1 FIX: Check for "break blocks"
+            # A break block is a single-instruction JMP to the exit block.
+            # We include it in the body but don't follow its successors.
+            mnem = resolver.get_mnemonic(last_instr.opcode)
+            if mnem == "JMP" and len(block.instructions) == 1:
+                # This is a potential break block - find where it jumps
+                target_addr = last_instr.arg1
+                target_block = None
+                for bid, b in cfg.blocks.items():
+                    if b.start == target_addr:
+                        target_block = bid
+                        break
+
+                # If the target is a stop block (exit), this is a break
+                # Include the break block but don't traverse further
+                if target_block in effective_stop:
+                    continue
 
         # Add successors to worklist
-        if block:
-            for succ in block.successors:
-                if succ not in visited:
-                    worklist.append(succ)
+        for succ in block.successors:
+            if succ not in visited:
+                worklist.append(succ)
 
     return body_blocks
 

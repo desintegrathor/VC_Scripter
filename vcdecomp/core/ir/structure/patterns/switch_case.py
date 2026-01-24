@@ -1312,6 +1312,18 @@ def _detect_switch_patterns(
                 if bid in all_case_blocks or bid in chain_blocks:
                     continue
 
+                # PHASE 1.3 FIX: Verify exit isn't a nested structure entry
+                # Check if this block starts a nested switch (has JZ/JNZ)
+                candidate_block = cfg.blocks.get(bid)
+                if candidate_block and candidate_block.instructions:
+                    last_instr = candidate_block.instructions[-1]
+                    if resolver.is_conditional_jump(last_instr.opcode):
+                        # This might be the start of a nested if/else or switch
+                        # It's NOT a good exit candidate if it's only reached by one case
+                        if len(reaching_cases) == 1:
+                            debug_print(f"DEBUG SWITCH: Skipping potential nested structure at {bid}")
+                            continue
+
                 # Calculate score: how many DIFFERENT cases reach this block?
                 score = len(reaching_cases)
 
@@ -1444,7 +1456,60 @@ def _detect_switch_patterns(
                 if default_entry is not None:
                     stop_blocks.add(default_entry)
 
-            # For each case, find all blocks in its body
+            # PHASE 1.2: Two-pass case body detection
+            # Pass 1: Find preliminary bodies to identify break blocks
+            # Pass 2: Re-run with break blocks from ALL cases as stop blocks
+
+            # Pass 1: Preliminary body detection
+            _switch_debug(f"Pass 1: Preliminary body detection for {len(cases)} cases")
+            preliminary_bodies: Dict[int, Set[int]] = {}
+            preliminary_stop = set(stop_blocks)
+
+            for case in cases:
+                if case.falls_through_to is not None:
+                    preliminary_bodies[case.block_id] = set()
+                    continue
+
+                preliminary_bodies[case.block_id] = _find_case_body_blocks(
+                    cfg, case.block_id, preliminary_stop, resolver,
+                    known_exit_blocks={exit_block} if exit_block else None
+                )
+                # Add this case's body to stop_blocks for next cases
+                preliminary_stop.update(preliminary_bodies[case.block_id])
+
+            # Identify break blocks: single-instruction JMP blocks targeting exit
+            break_blocks: Set[int] = set()
+            for case in cases:
+                for body_bid in preliminary_bodies.get(case.block_id, set()):
+                    body_block = cfg.blocks.get(body_bid)
+                    if not body_block or not body_block.instructions:
+                        continue
+                    if len(body_block.instructions) == 1:
+                        instr = body_block.instructions[0]
+                        mnem = resolver.get_mnemonic(instr.opcode)
+                        if mnem == "JMP":
+                            # Find target block
+                            target_addr = instr.arg1
+                            target_block = None
+                            for bid, b in cfg.blocks.items():
+                                if b.start == target_addr:
+                                    target_block = bid
+                                    break
+                            # If target is exit block or outside all preliminary bodies, it's a break
+                            if target_block == exit_block:
+                                break_blocks.add(body_bid)
+                            elif target_block is not None:
+                                is_in_any_body = any(
+                                    target_block in pb
+                                    for pb in preliminary_bodies.values()
+                                )
+                                if not is_in_any_body and target_block not in all_case_blocks:
+                                    break_blocks.add(body_bid)
+
+            _switch_debug(f"Identified {len(break_blocks)} break blocks: {sorted(break_blocks)}")
+
+            # Pass 2: Final body detection with break blocks from other cases as stop blocks
+            _switch_debug(f"Pass 2: Final body detection with break block barriers")
             for case in cases:
                 # Skip body detection for fall-through cases - they have no body, just a label
                 if case.falls_through_to is not None:
@@ -1452,9 +1517,20 @@ def _detect_switch_patterns(
                     _switch_debug(f"Skipping body detection for fall-through case {case.value}")
                     continue
 
-                debug_print(f"DEBUG SWITCH: Finding body for case {case.value}, entry={case.block_id}, stop_blocks={sorted(stop_blocks)}")
+                # Build stop blocks: include break blocks from OTHER cases
+                pass2_stop = set(stop_blocks)
+                for other_case in cases:
+                    if other_case.block_id != case.block_id:
+                        # Add break blocks from other cases
+                        other_body = preliminary_bodies.get(other_case.block_id, set())
+                        for bb in break_blocks:
+                            if bb in other_body:
+                                pass2_stop.add(bb)
+
+                debug_print(f"DEBUG SWITCH: Finding body for case {case.value}, entry={case.block_id}, stop_blocks={sorted(pass2_stop)}")
                 case.body_blocks = _find_case_body_blocks(
-                    cfg, case.block_id, stop_blocks, resolver
+                    cfg, case.block_id, pass2_stop, resolver,
+                    known_exit_blocks={exit_block} if exit_block else None
                 )
                 debug_print(f"DEBUG SWITCH: Case {case.value} body_blocks: {sorted(case.body_blocks)}")
                 # BUG FIX #3: Add this case's body to stop_blocks so next cases don't cross into it
@@ -1482,7 +1558,8 @@ def _detect_switch_patterns(
                     current_block = None  # Clear to signal no default
                 else:
                     default_body = _find_case_body_blocks(
-                        cfg, default_body_entry, stop_blocks, resolver
+                        cfg, default_body_entry, stop_blocks, resolver,
+                        known_exit_blocks={exit_block} if exit_block else None
                     )
                     debug_print(f"DEBUG SWITCH: Found default body blocks: {default_body}")
 

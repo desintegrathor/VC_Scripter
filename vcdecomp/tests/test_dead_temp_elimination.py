@@ -86,14 +86,32 @@ class TestIsUnusedTemporary:
         use_counts = {"i": 0}
         assert _is_unused_temporary("i", use_counts) is False
 
-    def test_return_value_temp_not_eliminated(self):
-        """Return value temps (t123_ret) should NOT be eliminated."""
+    def test_return_value_temp_eliminated_when_unused(self):
+        """Return value temps (t123_ret) SHOULD be eliminated when they have zero uses.
+
+        PHASE 2.1 FIX: These patterns are now considered temp variables and can be
+        eliminated when they have no uses.
+        """
         use_counts = {"t123_ret": 0}
+        assert _is_unused_temporary("t123_ret", use_counts) is True
+
+    def test_ssa_temp_eliminated_when_unused(self):
+        """SSA temps (t100_0) SHOULD be eliminated when they have zero uses.
+
+        PHASE 2.1 FIX: These patterns are now considered temp variables and can be
+        eliminated when they have no uses.
+        """
+        use_counts = {"t100_0": 0}
+        assert _is_unused_temporary("t100_0", use_counts) is True
+
+    def test_return_value_temp_kept_when_used(self):
+        """Return value temps (t123_ret) should be kept when they have uses."""
+        use_counts = {"t123_ret": 1}
         assert _is_unused_temporary("t123_ret", use_counts) is False
 
-    def test_ssa_temp_not_eliminated(self):
-        """SSA temps (t100_0) should NOT be eliminated by this function."""
-        use_counts = {"t100_0": 0}
+    def test_ssa_temp_kept_when_used(self):
+        """SSA temps (t100_0) should be kept when they have uses."""
+        use_counts = {"t100_0": 2}
         assert _is_unused_temporary("t100_0", use_counts) is False
 
     def test_missing_var_treated_as_unused(self):

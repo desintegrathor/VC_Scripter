@@ -197,6 +197,7 @@ def _is_unused_temporary(var_name: str, use_counts: Dict[str, int]) -> bool:
 
     Dead code elimination for temporary variables:
     - Only consider temps for elimination (tmp, tmp1, tmp2, etc.)
+    - PHASE 2.1: Also consider t{addr}_ret patterns (SSA temps from return values)
     - Check actual use count from SSA
     - Return True if the variable has zero uses and should be eliminated
 
@@ -207,10 +208,18 @@ def _is_unused_temporary(var_name: str, use_counts: Dict[str, int]) -> bool:
     Returns:
         True if this is an unused temporary that should not be declared
     """
+    import re
+
     # Only consider temps for elimination
     # Match: tmp, tmp1, tmp2, ... (basic temps)
-    # Don't eliminate: t123_ret (return value temps - these may be needed even with 0 uses)
-    if not var_name.startswith("tmp"):
+    is_basic_temp = var_name.startswith("tmp")
+
+    # PHASE 2.1: Also match t{addr}_ret patterns (SSA temps from return values)
+    # Pattern: t followed by digits, underscore, then any suffix
+    # Examples: t138_ret, t1157_ret, t2087_ret
+    is_ssa_temp = bool(re.match(r'^t\d+_', var_name))
+
+    if not is_basic_temp and not is_ssa_temp:
         return False
 
     # Check actual use count
@@ -236,8 +245,10 @@ def _is_undefined_variable(var_name: str, ssa_func: SSAFunction, func_block_ids:
     """
     import re
 
-    # Only check tmp* variables (these are most likely to come from broken PHIs)
-    if not var_name.startswith("tmp"):
+    # Only check tmp* and t{addr}_* variables (most likely to come from broken PHIs)
+    is_basic_temp = var_name.startswith("tmp")
+    is_ssa_temp = bool(re.match(r'^t\d+_', var_name))
+    if not is_basic_temp and not is_ssa_temp:
         return False
 
     # Build reverse map: display_name -> SSA value names

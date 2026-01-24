@@ -63,7 +63,7 @@ class TestEndToEndDecompilation(unittest.TestCase):
         outputs = []
         for func_name, (start, end) in func_bounds.items():
             output = format_structured_function_named(
-                ssa_func, func_name, start, end, resolver
+                ssa_func, func_name, start, end, func_bounds
             )
             outputs.append(output)
             self.assertIn(func_name, output, f"Function name {func_name} not in output")
@@ -123,7 +123,7 @@ class TestEndToEndDecompilation(unittest.TestCase):
         outputs = []
         for func_name, (start, end) in func_bounds.items():
             output = format_structured_function_named(
-                ssa_func, func_name, start, end, resolver
+                ssa_func, func_name, start, end, func_bounds
             )
             outputs.append(output)
 

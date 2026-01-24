@@ -80,7 +80,6 @@ int func_0050(float param_0) {
 }
 
 float func_0119(void) {
-    float t138_ret;
     int local_0;
     int n;
     s_SC_MP_SRV_AtgSettings atg_settings;
@@ -100,7 +99,6 @@ float func_0119(void) {
 }
 
 int func_0155(int param_0) {
-    float t196_ret;
     int local_0;
     int n;
     s_SC_MP_SRV_AtgSettings atg_settings;
@@ -127,7 +125,6 @@ int func_0155(int param_0) {
 }
 
 float func_0213(void) {
-    float t232_ret;
     int local_0;
     int n;
     int side;
@@ -158,8 +155,6 @@ void func_0249(void) {
 }
 
 void func_0264(int param_0, float param_1) {
-    int t286_ret;  // Auto-generated
-
     int data_;
 
     gMissionTime_update -= param_0;
@@ -257,9 +252,6 @@ void func_0498(int param_0, int param_1) {
     int ptr1;
     int ptr4;
     int ptr5;
-    int t703_;
-    int t717_;
-    int t726_;
     int tmp17;
     int tmp25;
     int tmp50;
@@ -334,8 +326,6 @@ void func_0498(int param_0, int param_1) {
 
 void func_0752(int param_0, int param_1) {
     int local_1;  // Auto-generated
-    int t765_ret;  // Auto-generated
-    int t827_ret;  // Auto-generated
 
     int i;
     int idx;
@@ -383,9 +373,6 @@ void func_0752(int param_0, int param_1) {
 
 void func_0852(void) {
     int local_264;  // Auto-generated
-    int t862_ret;  // Auto-generated
-    int t870_ret;  // Auto-generated
-    int t935_ret;  // Auto-generated
 
     int idx;
     int k;
@@ -403,7 +390,6 @@ void func_0852(void) {
     int side2;
     int side3;
     int sideB;
-    int t959_;
     int tmp14;
     s_SC_MP_EnumPlayers enum_pl;
 
@@ -437,7 +423,6 @@ void func_0852(void) {
 
 void func_1028(void) {
     int local_256;  // Auto-generated
-    int t1057_ret;  // Auto-generated
 
     int idx;
     int local_257;
@@ -451,7 +436,6 @@ void func_1028(void) {
     int side3;
     int sideB;
     int t1037_ret;
-    int t1073_;
     int tmp5;
     s_SC_MP_EnumPlayers enum_pl;
 
@@ -478,71 +462,15 @@ int ScriptMain(s_SC_NET_info *info) {
     int local_10;  // Auto-generated
     int local_11;  // Auto-generated
     int local_9;  // Auto-generated
-    int t1157_ret;  // Auto-generated
-    int t1576_ret;  // Auto-generated
-    int t1595_ret;  // Auto-generated
-    int t1628_ret;  // Auto-generated
-    int t1752_ret;  // Auto-generated
-    int t1764_ret;  // Auto-generated
-    int t1782_ret;  // Auto-generated
-    int t1800_ret;  // Auto-generated
-    int t1823_ret;  // Auto-generated
-    int t1839_ret;  // Auto-generated
-    int t1847_ret;  // Auto-generated
-    int t1866_ret;  // Auto-generated
-    int t1891_0;  // Auto-generated
-    int t1893_ret;  // Auto-generated
-    int t1975_ret;  // Auto-generated
-    int t2000_ret;  // Auto-generated
-    int t2087_ret;  // Auto-generated
-    int t2096_ret;  // Auto-generated
-    int t2105_ret;  // Auto-generated
-    int t2286_ret;  // Auto-generated
-    int t2484_ret;  // Auto-generated
-    int t2513_ret;  // Auto-generated
-    int t2757_ret;  // Auto-generated
-    int t2769_ret;  // Auto-generated
-    int t2813_ret;  // Auto-generated
-    int t2823_ret;  // Auto-generated
-    int t2831_ret;  // Auto-generated
-    int t2852_ret;  // Auto-generated
-    int t2915_ret;  // Auto-generated
-    int t2982_ret;  // Auto-generated
-    int t2986_ret;  // Auto-generated
-    int t3012_ret;  // Auto-generated
-    int t3028_ret;  // Auto-generated
-    int t3039_ret;  // Auto-generated
-    int t3093_ret;  // Auto-generated
-    int t3129_ret;  // Auto-generated
-    int t3147_ret;  // Auto-generated
-    int t3151_ret;  // Auto-generated
-    int t3168_ret;  // Auto-generated
-    int t3177_ret;  // Auto-generated
-    int t3237_ret;  // Auto-generated
-    int t3259_ret;  // Auto-generated
-    int t3263_ret;  // Auto-generated
-    int t3280_ret;  // Auto-generated
-    int t3289_ret;  // Auto-generated
-    int t3296_ret;  // Auto-generated
-    int t3332_ret;  // Auto-generated
-    int t3562_ret;  // Auto-generated
-    int t3622_ret;  // Auto-generated
     int y;  // Auto-generated
     int z;  // Auto-generated
 
-    c_Vector3 t1567_0;
-    c_Vector3 t2307_0;
     c_Vector3 vec;
     char local_0[32];
-    char* t2998_ret;
-    char* t3163_ret;
-    char* t3275_ret;
     float data_1976;
     float local_411;
     float local_421;
     float ptr62;
-    float t1856_ret;
-    float t3357_ret;
     int data_;
     int data_1;
     int data_1549;
@@ -585,10 +513,9 @@ int ScriptMain(s_SC_NET_info *info) {
     int precov;
     int ptr;
     int ptr27;
-    int ptr28;
-    int ptr36;
-    int ptr40;
-    int ptr41;
+    int ptr29;
+    int ptr45;
+    int ptr46;
     int ptr49;
     int ptr50;
     int ptr51;
@@ -596,7 +523,6 @@ int ScriptMain(s_SC_NET_info *info) {
     int ptr54;
     int ptr55;
     int ptr56;
-    int ptr57;
     int ptr58;
     int ptr59;
     int ptr60;
@@ -616,22 +542,8 @@ int ScriptMain(s_SC_NET_info *info) {
     int side9;
     int sideB;
     int sphere;
-    int t1131_;
-    int t1203_;
-    int t1213_;
-    int t1225_;
-    int t1525_;
-    int t1535_;
-    int t1572_;
     int t1593_;
     int t1626_;
-    int t1918_;
-    int t1942_;
-    int t1951_;
-    int t1985_;
-    int t2011_;
-    int t2024_;
-    int t2033_;
     int t2933_ret;
     int t3057_ret;
     int tmp102;
@@ -668,51 +580,21 @@ int ScriptMain(s_SC_NET_info *info) {
     int tmp596;
     s_SC_HUD_MP_icon icon[32];
     s_SC_MP_EnumPlayers enum_pl[32];
-    s_SC_MP_Recover t2510_0;
-    s_SC_MP_Recover t2617_0;
-    s_SC_MP_Recover t3600_0;
     s_SC_MP_SRV_settings srv_settings;
     s_SC_MP_hud hudinfo;
     s_SC_P_getinfo player_info;
-    s_sphere t2767_0;
-    unsigned short* t3003_ret;
     ushort* local_314;
-    ushort* t2881_ret;
-    ushort* t2945_ret;
-    ushort* t2955_ret;
-    ushort* t3021_ret;
-    ushort* t3073_ret;
-    ushort* t3085_ret;
-    ushort* t3109_ret;
-    ushort* t3121_ret;
-    ushort* t3231_ret;
-    ushort* t3326_ret;
     void* local_295;
-    void* t2294_ret;
-    void* t2314_ret;
-    void* t2330_ret;
-    void* t2346_ret;
 
     switch (info->message) {
     case 3:
-        if (func_0050(info->elapsed_time)) break;
-        local_296[0].status = 0;
-        local_296 = info->elapsed_time;
-        local_12 = 64;
-        if (t1157_ret = SC_MP_EnumPlayers(enum_pl, &local_12, -1)) {
-        }
-        // Loop header - Block 193 @1322
-        for (ptr28 = 0; ptr28 < 2; ptr28 = ptr28 + 1) {
-            local_9 = 0;
-            local_10 = 0;
-            (&gRecTimer) + ptr28 * 768 + ptr40 * 128 + ptr * 4 -= info->elapsed_time;
-            local_10 = ptr + 1;
-            local_9 = ptr40 + 1;
-            local_8 = ptr28 + 1;
-        }
-        gNextRecover -= info->elapsed_time;
-        if (gNextRecover < 0.0f) {
-            gNextRecover = func_0119();
+        if (func_0050(info->elapsed_time)) {
+        } else {
+            local_296[0].status = 0;
+            local_296 = info->elapsed_time;
+            local_12 = 64;
+            if (t1157_ret = SC_MP_EnumPlayers(enum_pl, &local_12, -1)) {
+            }
         }
         break;
     case 4:
@@ -753,10 +635,10 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_SetClassLimit(39, 0);
         SC_MP_GetSRVsettings(&srv_settings);
         // Loop header - Block 276 @2136
-        for (ptr28 = 0; ptr28 < 6; ptr28 = ptr28 + 1) {
-            SC_MP_SRV_SetClassLimit(ptr28 + 1, tmp242);
-            SC_MP_SRV_SetClassLimit(ptr28 + 21, tmp247);
-            local_8 = ptr28 + 1;
+        for (ptr27 = 0; ptr27 < 6; ptr27 = ptr27 + 1) {
+            SC_MP_SRV_SetClassLimit(ptr27 + 1, tmp242);
+            SC_MP_SRV_SetClassLimit(ptr27 + 21, tmp247);
+            local_8 = ptr27 + 1;
         }
         SC_ZeroMem(&hudinfo, 60);
         hudinfo.title = 5100;
@@ -774,96 +656,101 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_HUD_SetTabInfo(&hudinfo);
         SC_MP_AllowStPwD(1);
         SC_MP_AllowFriendlyFireOFF(1);
-        if (!info->param2) break;
-        SC_ZeroMem(&gFlagNod, 72);
+        SC_MP_SetItemsNoDisappear(0);
+        if (info->param2) {
+            SC_ZeroMem(&gFlagNod, 72);
+            local_8 = 0;
+        }
         // Loop header - Block 280 @2276
-        for (ptr28 = 0; ptr28 < 6; ptr28 = ptr28 + 1) {
-            t2286_ret = sprintf(local_0, "TT_flag_%d", ptr28);
+        for (ptr27 = 0; ptr27 < 6; ptr27 = ptr27 + 1) {
+            t2286_ret = sprintf(local_0, "TT_flag_%d", ptr27);
             t2294_ret = SC_NOD_GetNoMessage(0, local_0);
             local_295 = SC_NOD_GetNoMessage(0, local_0);
             if (ptr54) {
-                SC_NOD_GetPivotWorld(ptr54, &gFlagPos[ptr28]);
+                SC_NOD_GetPivotWorld(ptr54, &gFlagPos[ptr27]);
                 t2314_ret = SC_NOD_Get(ptr54, &tmp285);
-                gFlagNod[ptr28].field_0 = SC_NOD_Get(ptr54, &tmp285);
+                gFlagNod[ptr27].field_0 = SC_NOD_Get(ptr54, &tmp285);
                 t2330_ret = SC_NOD_Get(ptr54, &tmp286);
-                gFlagNod[ptr28].field_4 = SC_NOD_Get(ptr54, &tmp286);
+                gFlagNod[ptr27].field_4 = SC_NOD_Get(ptr54, &tmp286);
                 t2346_ret = SC_NOD_Get(ptr54, &tmp287);
-                gFlagNod[ptr28].field_8 = SC_NOD_Get(ptr54, &tmp287);
+                gFlagNod[ptr27].field_8 = SC_NOD_Get(ptr54, &tmp287);
             } else {
-                local_8 = ptr28 + 1;
+                local_8 = ptr27 + 1;
             }
-            local_8 = ptr28 + 1;
+            local_8 = ptr27 + 1;
         }
-        if (!param_0->field_4) break;
-        SC_MP_Gvar_SetSynchro(500);
-        SC_MP_Gvar_SetSynchro(501);
-        func_0249();
-        SC_MP_Gvar_SetSynchro(503);
-        SC_sgi(503, 0);
-        SC_MP_Gvar_SetSynchro(502);
-        SC_sgi(502, 0);
-        SC_MP_Gvar_SetSynchro(506);
-        SC_sgi(506, 0);
-        SC_MP_Gvar_SetSynchro(509);
-        SC_sgi(509, 0);
-        SC_MP_Gvar_SetSynchro(510);
-        SC_sgi(510, 0);
-        SC_MP_Gvar_SetSynchro(507);
-        SC_sgi(507, 0);
-        SC_MP_Gvar_SetSynchro(508);
-        SC_MP_Gvar_SetSynchro(504);
-        SC_MP_Gvar_SetSynchro(505);
-        SC_sgf(504, 0.0f);
-        SC_sgi(505, 0);
-        SC_ZeroMem(&gRecs, 48);
+        if (param_0->field_4) {
+            SC_MP_Gvar_SetSynchro(500);
+            SC_MP_Gvar_SetSynchro(501);
+            func_0249();
+            SC_MP_Gvar_SetSynchro(503);
+            SC_sgi(503, 0);
+            SC_MP_Gvar_SetSynchro(502);
+            SC_sgi(502, 0);
+            SC_MP_Gvar_SetSynchro(506);
+            SC_sgi(506, 0);
+            SC_MP_Gvar_SetSynchro(509);
+            SC_sgi(509, 0);
+            SC_MP_Gvar_SetSynchro(510);
+            SC_sgi(510, 0);
+            SC_MP_Gvar_SetSynchro(507);
+            SC_sgi(507, 0);
+            SC_MP_Gvar_SetSynchro(508);
+            SC_MP_Gvar_SetSynchro(504);
+            SC_MP_Gvar_SetSynchro(505);
+            SC_sgf(504, 0.0f);
+            SC_sgi(505, 0);
+            SC_ZeroMem(&gRecs, 48);
+            local_10 = 0;
+        }
         // Loop header - Block 286 @2445
-        for (ptr = 0; ptr < 2; ptr = ptr + 1) {
-            if (ptr) {
+        for (ptr46 = 0; ptr46 < 2; ptr46 = ptr46 + 1) {
+            if (ptr46) {
                 local_294 = 68;
             } else {
                 local_294 = 65;
             }
             local_9 = 0;
             local_8 = 0;
-            t2484_ret = sprintf(local_0, "TT_%c%d_%d", ptr55, ptr40, ptr28);
-            if (t2513_ret = SC_NET_FillRecover((&gRec) + ptr * 3072 + ptr40 * 512 + tmp353 * 16, local_0)) {
-                gRecs[ptr] + ptr40 * 4++;
+            t2484_ret = sprintf(local_0, "TT_%c%d_%d", ptr55, ptr, ptr27);
+            if (t2513_ret = SC_NET_FillRecover((&gRec) + ptr46 * 3072 + ptr * 512 + tmp353 * 16, local_0)) {
+                gRecs[ptr46] + ptr * 4++;
             } else {
-                local_8 = ptr28 + 1;
+                local_8 = ptr27 + 1;
             }
             if (tmp377) {
                 local_8 = 32 - tmp382;
-                SC_MP_GetRecovers(tmp388, (&gRec) + ptr * 3072 + ptr40 * 512 + tmp397 * 16, &local_8);
-                gRecs[ptr] + ptr40 * 4 += ptr28;
+                SC_MP_GetRecovers(tmp388, (&gRec) + ptr46 * 3072 + ptr * 512 + tmp397 * 16, &local_8);
+                gRecs[ptr46] + ptr * 4 += ptr27;
             } else {
-                local_9 = ptr40 + 1;
+                local_9 = ptr + 1;
             }
-            local_10 = ptr + 1;
+            local_10 = ptr46 + 1;
         }
         gSteps = 0;
         // Loop header - Block 302 @2670
-        for (ptr28 = 0; ptr28 < 6; ptr28 = ptr28 + 1) {
+        for (ptr27 = 0; ptr27 < 6; ptr27 = ptr27 + 1) {
             if (tmp416) {
-                gSteps = ptr28 + 1;
+                gSteps = ptr27 + 1;
             } else {
-                local_8 = ptr28 + 1;
+                local_8 = ptr27 + 1;
             }
-            local_8 = ptr28 + 1;
+            local_8 = ptr27 + 1;
         }
         // Loop header - Block 307 @2702
-        for (ptr28 = 0; ptr28 < gSteps; ptr28 = ptr28 + 1) {
-            SC_Log(3, "TurnTable recovers #%d: att:%d  def:%d", ptr28, tmp423, tmp427);
-            local_8 = ptr28 + 1;
+        for (ptr27 = 0; ptr27 < gSteps; ptr27 = ptr27 + 1) {
+            SC_Log(3, "TurnTable recovers #%d: att:%d  def:%d", ptr27, tmp423, tmp427);
+            local_8 = ptr27 + 1;
         }
         SC_ZeroMem(&gRecTimer, 1536);
         // Loop header - Block 310 @2745
-        for (ptr36 = 0; ptr36 < (gSteps - 1); ptr36 = ptr36 + 1) {
-            t2757_ret = sprintf(local_0, "TTS_%d", ptr36);
-            if (t2769_ret = SC_GetScriptHelper(local_0, &gStepSwitch[ptr36])) {
+        for (ptr27 = 0; ptr27 < (gSteps - 1); ptr27 = ptr27 + 1) {
+            t2757_ret = sprintf(local_0, "TTS_%d", ptr27);
+            if (t2769_ret = SC_GetScriptHelper(local_0, &gStepSwitch[ptr27])) {
             } else {
                 SC_message(&tmp435, local_0);
             }
-            local_8 = ptr36 + 1;
+            local_8 = ptr27 + 1;
         }
         SC_sgi(508, gSteps);
         break;
@@ -894,9 +781,9 @@ int ScriptMain(s_SC_NET_info *info) {
         local_13 = info->param2;
         local_9 = param_0->field_4;
         if (gAttackingSide) {
-            local_9 = 1 - ptr40;
+            local_9 = 1 - ptr;
         }
-        if (ptr40) {
+        if (ptr) {
             local_10 = 0;
             t3562_ret = rand();
             local_10 = gCurStep - 1 - rand() % 2;
@@ -950,10 +837,12 @@ int ScriptMain(s_SC_NET_info *info) {
             local_8 = 0;
             local_9 = 0;
             local_10 = 0;
-            (&gRecTimer) + ptr28 * 768 + ptr40 * 128 + ptr * 4 -= info->elapsed_time;
-            local_10 = ptr + 1;
-            local_9 = ptr40 + 1;
-            local_8 = ptr28 + 1;
+            (&gRecTimer) + ptr27 * 768 + ptr * 128 + ptr45 * 4 -= info->elapsed_time;
+            local_10 = ptr45 + 1;
+            local_9 = ptr + 1;
+            local_8 = ptr27 + 1;
+            gNextRecover -= info->elapsed_time;
+            gNextRecover = func_0119();
             gNoActiveTime += info->elapsed_time;
             gMissionTime = -10.0f;
             gMissionTime_update = -1.0f;
@@ -968,8 +857,8 @@ int ScriptMain(s_SC_NET_info *info) {
             local_8 = 0;
             SC_P_GetPos(tmp102, &vec);
             local_9 = gCurStep - 1;
-            t1576_ret = SC_IsNear3D(&vec, &gStepSwitch[ptr41], tmp109);
-            gCurStep = ptr41;
+            t1576_ret = SC_IsNear3D(&vec, &gStepSwitch[ptr], tmp109);
+            gCurStep = ptr;
             t1595_ret = SC_MP_GetHandleofPl(t1593_);
             SC_sgi(t1593_, SC_MP_GetHandleofPl(t1593_));
             SC_sgi(507, gCurStep);
@@ -982,8 +871,8 @@ int ScriptMain(s_SC_NET_info *info) {
             gPhaseTimer = 8.0f;
             func_0355();
             SC_P_MP_AddPoints(tmp122, 2);
-            local_9 = ptr41 + 1;
-            local_8 = ptr28 + 1;
+            local_9 = ptr + 1;
+            local_8 = ptr29 + 1;
             gPhaseTimer -= info->elapsed_time;
             gNoActiveTime = 0;
             gMission_phase = 0;
@@ -1028,16 +917,16 @@ int ScriptMain(s_SC_NET_info *info) {
     }
     local_8 = 0;
     // Loop header - Block 260 @1884
-    for (ptr28 = 0; ptr28 < 2; ptr28 = ptr28 + 1) {
-        t1891_0 = 500 + ptr28;
+    for (ptr27 = 0; ptr27 < 2; ptr27 = ptr27 + 1) {
+        t1891_0 = 500 + ptr27;
         t1893_ret = SC_ggi(t1891_0);
-        gCLN_SidePoints[ptr28] = SC_ggi(t1891_0);
-        SC_MP_SetSideStats(ptr28, 0, tmp183);
-        local_299[ptr28].y = 1;
-        local_299[ptr28].icon_id = 3 * ptr28;
-        local_299[ptr28].z = tmp193;
-        local_299[ptr28].field_12 = -1140850689;
-        local_8 = ptr28 + 1;
+        gCLN_SidePoints[ptr27] = SC_ggi(t1891_0);
+        SC_MP_SetSideStats(ptr27, 0, tmp183);
+        local_299[ptr27].y = 1;
+        local_299[ptr27].icon_id = 3 * ptr27;
+        local_299[ptr27].z = tmp193;
+        local_299[ptr27].field_12 = -1140850689;
+        local_8 = ptr27 + 1;
         continue;  // back to loop header @1884
     }
     local_11 = 2;
@@ -1067,8 +956,8 @@ int ScriptMain(s_SC_NET_info *info) {
             if (gCLN_ShowStartInfo > 0.0f) {
                 t2915_ret = SC_PC_Get();
                 local_8 = SC_PC_Get();
-                if (ptr28) {
-                    SC_P_GetInfo(ptr28, &player_info);
+                if (ptr27) {
+                    SC_P_GetInfo(ptr27, &player_info);
                     t2933_ret = SC_ggi(502);
                     func_0334(t2933_ret);
                     if (t2933_ret == local_421) {
@@ -1086,9 +975,9 @@ int ScriptMain(s_SC_NET_info *info) {
                     t2982_ret = SC_ggi(510);
                     t2986_ret = SC_MP_GetPlofHandle(SC_ggi(510));
                     local_9 = SC_MP_GetPlofHandle(SC_ggi(510));
-                    if (ptr40) {
-                        t2998_ret = SC_P_GetName(ptr40);
-                        t3003_ret = SC_AnsiToUni(SC_P_GetName(ptr40), &local_379);
+                    if (ptr) {
+                        t2998_ret = SC_P_GetName(ptr);
+                        t3003_ret = SC_AnsiToUni(SC_P_GetName(ptr), &local_379);
                     } else {
                         t3012_ret = SC_AnsiToUni("'disconnected'", &local_379);
                     }
@@ -1096,16 +985,16 @@ int ScriptMain(s_SC_NET_info *info) {
                     t3028_ret = swprintf(5107, SC_Wtxt(5107), &local_379, gCLN_CurStep);
                     local_314 = &local_315;
                     SC_GetScreenRes(&local_411, &local_412);
-                    t3357_ret = SC_Fnt_GetWidthW(ptr57, 1.0f);
-                    local_411 = 1.0f - SC_Fnt_GetWidthW(ptr57, 1.0f);
+                    t3357_ret = SC_Fnt_GetWidthW(ptr56, 1.0f);
+                    local_411 = 1.0f - SC_Fnt_GetWidthW(ptr56, 1.0f);
                     local_412 = 0.5f * ptr64 - 40.0f;
                     local_412 = 15.0f;
-                    SC_Fnt_WriteW(ptr62 * 0.5f, ptr64, ptr57, 1.0f, -1);
+                    SC_Fnt_WriteW(ptr62 * 0.5f, ptr64, ptr56, 1.0f, -1);
                 }
                 t3039_ret = SC_PC_Get();
                 local_8 = SC_PC_Get();
-                if (ptr28) {
-                    SC_P_GetInfo(ptr28, &player_info);
+                if (ptr27) {
+                    SC_P_GetInfo(ptr27, &player_info);
                     t3057_ret = SC_ggi(502);
                     func_0334(t3057_ret);
                     if (t3057_ret == local_421) {
@@ -1134,9 +1023,9 @@ int ScriptMain(s_SC_NET_info *info) {
                 t3147_ret = SC_ggi(510);
                 t3151_ret = SC_MP_GetPlofHandle(SC_ggi(510));
                 local_9 = SC_MP_GetPlofHandle(SC_ggi(510));
-                if (ptr40) {
-                    t3163_ret = SC_P_GetName(ptr40);
-                    t3168_ret = SC_AnsiToUni(SC_P_GetName(ptr40), &local_379);
+                if (ptr) {
+                    t3163_ret = SC_P_GetName(ptr);
+                    t3168_ret = SC_AnsiToUni(SC_P_GetName(ptr), &local_379);
                 } else {
                     t3177_ret = SC_AnsiToUni("'disconnected'", &local_379);
                 }
@@ -1155,8 +1044,8 @@ int ScriptMain(s_SC_NET_info *info) {
                         }
                     }
                 }
-                t3231_ret = SC_Wtxt(ptr28);
-                t3237_ret = swprintf(ptr28, SC_Wtxt(ptr28), &local_379);
+                t3231_ret = SC_Wtxt(ptr27);
+                t3237_ret = swprintf(ptr27, SC_Wtxt(ptr27), &local_379);
                 local_314 = &local_315;
                 gCLN_ShowStartInfo = 0;
             } else {
@@ -1164,9 +1053,9 @@ int ScriptMain(s_SC_NET_info *info) {
                     t3259_ret = SC_ggi(510);
                     t3263_ret = SC_MP_GetPlofHandle(SC_ggi(510));
                     local_9 = SC_MP_GetPlofHandle(SC_ggi(510));
-                    if (ptr40) {
-                        t3275_ret = SC_P_GetName(ptr40);
-                        t3280_ret = SC_AnsiToUni(SC_P_GetName(ptr40), &local_379);
+                    if (ptr) {
+                        t3275_ret = SC_P_GetName(ptr);
+                        t3280_ret = SC_AnsiToUni(SC_P_GetName(ptr), &local_379);
                     } else {
                         t3289_ret = SC_AnsiToUni("'disconnected'", &local_379);
                     }
@@ -1178,8 +1067,8 @@ int ScriptMain(s_SC_NET_info *info) {
                             local_8 = 5106;
                         }
                     }
-                    t3326_ret = SC_Wtxt(ptr28);
-                    t3332_ret = swprintf(ptr28, SC_Wtxt(ptr28), &local_379);
+                    t3326_ret = SC_Wtxt(ptr27);
+                    t3332_ret = swprintf(ptr27, SC_Wtxt(ptr27), &local_379);
                     local_314 = &local_315;
                     gCLN_ShowStartInfo = 0;
                 }
@@ -1187,10 +1076,10 @@ int ScriptMain(s_SC_NET_info *info) {
         }
     }
     // Loop header - Block 410 @3415
-    for (ptr28 = 0; ptr28 < abl_lists; ptr28 = ptr28 + 1) {
+    for (ptr27 = 0; ptr27 < abl_lists; ptr27 = ptr27 + 1) {
         if (param_0->field_4 == tmp532) {
             abl_lists--;
-            abl_list[ptr28] = tmp537;
+            abl_list[ptr27] = tmp537;
             if (ptr27 < abl_lists) {
                 &idx.fval1 = 0.1f;
             } else {
@@ -1202,12 +1091,12 @@ int ScriptMain(s_SC_NET_info *info) {
                 }
             }
         } else {
-            local_8 = ptr28 + 1;
+            local_8 = ptr27 + 1;
         }
     }
-    t3622_ret = SC_MP_SRV_GetBestDMrecov((&gRec) + ptr40 * 3072 + ptr * 512, tmp577, (&gRecTimer) + ptr40 * 768 + ptr * 128, 3.0f);
-    local_8 = SC_MP_SRV_GetBestDMrecov((&gRec) + ptr40 * 3072 + ptr * 512, tmp577, (&gRecTimer) + ptr40 * 768 + ptr * 128, 3.0f);
-    (&gRecTimer) + ptr40 * 768 + ptr * 128 + ptr27 * 4 = 3.0f;
+    t3622_ret = SC_MP_SRV_GetBestDMrecov((&gRec) + ptr * 3072 + ptr45 * 512, tmp577, (&gRecTimer) + ptr * 768 + ptr45 * 128, 3.0f);
+    local_8 = SC_MP_SRV_GetBestDMrecov((&gRec) + ptr * 3072 + ptr45 * 512, tmp577, (&gRecTimer) + ptr * 768 + ptr45 * 128, 3.0f);
+    (&gRecTimer) + ptr * 768 + ptr45 * 128 + ptr27 * 4 = 3.0f;
     ptr66 = tmp596;
 }
 
