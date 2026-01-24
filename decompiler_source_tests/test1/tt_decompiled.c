@@ -6,8 +6,8 @@
 
 // Global variables
 int gSteps = 0;
-dword gRecs[12] = {9702944, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-dword gRec[1536] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 919464, 9699468, 9699468, 8323128, 8323128, 9220096, 147456, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+dword gRecs[12];
+dword gRec[1536];
 dword gVar = 0;
 dword gVar1 = 0;
 dword gVar2 = 0;
@@ -66,15 +66,14 @@ int func_0050(float param_0) {
     int data_;
     int data_1959;
     int n;
-    int tmp3;
 
     switch (gEndRule) {
     case 0:
         if (gMission_phase > 0) {
-            gTime += param_1;
+            gTime += param_0;
         }
         SC_MP_EndRule_SetTimeLeft(gTime, gMission_phase);
-        if (gTime > tmp3) {
+        if (gTime > ((float)gEndValue)) {
             SC_MP_LoadNextMap();
             return TRUE;
         }
@@ -103,7 +102,7 @@ float func_0119(void) {
         return atg_settings.tt_respawntime;
     } else {
         t138_ret = SC_ggf(400);
-        local_0 = t138_ret;
+        local_0 = SC_ggf(400);
         if (local_0 == 0.0f) {
             local_0 = 30.0f;
         }
@@ -116,12 +115,11 @@ int func_0155(int param_0) {
     float t196_ret;
     int local_0;
     int n;
-    int tmp5;
     s_SC_MP_SRV_AtgSettings atg_settings;
 
     SC_MP_SRV_GetAtgSettings(&atg_settings);
     if (atg_settings.tt_respawntime > 1.0f) {
-        local_0 = tmp5;
+        local_0 = atg_settings.tt_respawntime / 3.0f;
         if (local_0 < 5.0f) {
             local_0 = 5.0f;
         }
@@ -131,7 +129,7 @@ int func_0155(int param_0) {
         return local_0;
     } else {
         t196_ret = SC_ggf(401);
-        local_0 = t196_ret;
+        local_0 = SC_ggf(401);
         if (local_0 == 0.0f) {
             local_0 = 10.0f;
         }
@@ -156,7 +154,7 @@ float func_0213(void) {
         return atg_settings.tt_timelimit;
     } else {
         t232_ret = SC_ggf(402);
-        local_0 = t232_ret;
+        local_0 = SC_ggf(402);
         if (local_0 == 0.0f) {
             local_0 = 480.0f;
         }
@@ -171,18 +169,17 @@ void func_0249(void) {
     return;
 }
 
-void func_0264(float param_0) {
+void func_0264(int param_0, float param_1) {
     int t286_ret;  // Auto-generated
 
     int data_;
-    int tmp4;
 
     gMissionTime_update -= param_0;
     if (gMissionTime_update < 0.0f) {
         gMissionTime_update = 10.0f;
         SC_sgf(504, gMissionTime);
         t286_ret = SC_ggi(505);
-        SC_sgi(505, tmp4);
+        SC_sgi(505, SC_ggi(505) + 1);
     }
     return;
 }
@@ -190,12 +187,10 @@ void func_0264(float param_0) {
 void func_0294(void) {
     int data_;
     int n;
-    int tmp;
-    int tmp1;
 
-    gCurStep = tmp;
+    gCurStep = gSteps - 1;
     SC_sgi(507, gCurStep);
-    if (tmp1 == 0) {
+    if ((gMainPhase % 2) == 0) {
         gMissionTime = func_0213();
         gMissionTimePrev = gMissionTime;
     } else {
@@ -209,14 +204,13 @@ void func_0294(void) {
 int func_0334(int param_0) {
     int n;
 
-    block_50:
-    if (local_0 == 0) {
-    } else {
-        if (local_0 == 3) {
-            return FALSE;
-        } else {
-            return TRUE;
-        }
+    switch (param_0%4) {
+    case 0:
+        break;
+    case 3:
+        return FALSE;
+    default:
+        return TRUE;
     }
     return 0;  // FIX (06-05): Synthesized return value
 }
@@ -227,33 +221,27 @@ void func_0355(void) {
     int data_1965_v1;
     int data_1965_v2;
     int n;
-    int tmp10;
-    int tmp11;
-    int tmp15;
-    int tmp16;
-    int tmp17;
-    int tmp21;
-    int tmp28;
-    int tmp32;
+    int tmp27;
+    int tmp9;
 
     switch (gMission_phase) {
     case 2:
         SC_sgi(509, gAttackingSide);
-        if (tmp21) {
-            gSidePoints[gAttackingSide] = tmp28;
+        if ((gMainPhase % 2)) {
+            gSidePoints[gAttackingSide] = tmp27 + 1;
             func_0249();
             SC_sgi(506, gAttackingSide);
         } else {
-            gMissionTimeToBeat = tmp32;
+            gMissionTimeToBeat = gMissionTimePrev - gMissionTime;
         }
         break;
     case 3:
-        gSidePoints[tmp11] = tmp10;
+        gSidePoints[(1 - gAttackingSide)] = tmp9 + 1;
         func_0249();
-        SC_sgi(506, tmp15);
-        SC_sgi(509, tmp16);
-        if (tmp17) {
-            gMainPhase += 1;
+        SC_sgi(506, 1 - gAttackingSide);
+        SC_sgi(509, 1 - gAttackingSide);
+        if ((gMainPhase % 2)) {
+            gMainPhase++;
         } else {
             gMainPhase += 2;
         }
@@ -271,11 +259,10 @@ void func_0498(int param_0, int param_1) {
     int local_1;  // Auto-generated
     int local_3;  // Auto-generated
     int local_4;  // Auto-generated
+    int y;  // Auto-generated
+    int z;  // Auto-generated
 
-    dword* tmp46;
-    dword* tmp52;
-    dword* tmp55;
-    float param_1;
+    float param_0;
     int i;
     int idx;
     int local_0;
@@ -294,8 +281,6 @@ void func_0498(int param_0, int param_1) {
     int tmp17;
     int tmp25;
     int tmp50;
-    int tmp57;
-    int tmp58;
     s_SC_FpvMapSign local_5[4];
     void* tmp13;
     void* tmp21;
@@ -304,11 +289,11 @@ void func_0498(int param_0, int param_1) {
     local_4 = 0;
     local_3 = 0;
     // Loop header - Block 70 @512
-    for (obj = 0; obj < 6; obj = tmp58) {
+    for (obj = 0; obj < 6; obj = obj + 1) {
         local_0 = 0;
         local_1 = 0;
         local_2 = 0;
-        if (i == param_0) {
+        if ((obj + 1) == param_0) {
         } else {
             if (obj < param_0) {
                 local_2 = SGF_DV_ALARMZ;
@@ -354,18 +339,18 @@ void func_0498(int param_0, int param_1) {
             } else {
             }
         }
-        *tmp46 = -1;
-        *tmp52 = tmp50;
-        *tmp55 = SGI_DOLOOP;
-        local_4 = tmp57;
-        local_3 = tmp58;
+        local_5[ptr].y = -1;
+        local_5[ptr].field_12 = tmp50;
+        local_5[ptr].z = SGI_DOLOOP;
+        local_4 = ptr + 1;
+        local_3 = obj + 1;
         continue;  // back to loop header @512
     }
     SC_MP_FpvMapSign_Set(ptr1, local_5);
     return;
 }
 
-void func_0752(int param_0) {
+void func_0752(int param_0, int param_1) {
     int local_1;  // Auto-generated
     int t765_ret;  // Auto-generated
     int t827_ret;  // Auto-generated
@@ -381,7 +366,6 @@ void func_0752(int param_0) {
     int side4;
     int side5;
     int sideB;
-    int tmp7;
     s_SC_P_getinfo player_info;
 
     switch (local_2.field_8) {
@@ -391,10 +375,10 @@ void func_0752(int param_0) {
     case 1:
         if (local_0 < 0) {
             local_1 = 0;
-            t827_ret = SC_MP_SRV_P_SetSideClass(param_0, ptr, tmp7);
+            t827_ret = SC_MP_SRV_P_SetSideClass(param_0, ptr, 1 + 20 * ptr);
             if (abl_lists < 64) {
-                abl_list[abl_lists] = param_0;
-                abl_lists += 1;
+                abl_list[abl_lists] = param_1;
+                abl_lists++;
             }
             return;
         } else {
@@ -408,7 +392,7 @@ void func_0752(int param_0) {
     return;
     block_116:
     t765_ret = SC_MP_SRV_GetTeamsNrDifference(1);
-    local_0 = t765_ret;
+    local_0 = SC_MP_SRV_GetTeamsNrDifference(1);
     if (local_0 < 3 && local_0 > -3) {
         return;
     }
@@ -438,15 +422,13 @@ void func_0852(void) {
     int side3;
     int sideB;
     int t959_;
-    int tmp11;
     int tmp14;
-    int tmp16;
     s_SC_MP_EnumPlayers enum_pl;
 
     t862_ret = SC_MP_SRV_GetAutoTeamBalance();
-    if (t862_ret) {
+    if (SC_MP_SRV_GetAutoTeamBalance()) {
         t870_ret = SC_MP_SRV_GetTeamsNrDifference(1);
-        local_0 = t870_ret;
+        local_0 = SC_MP_SRV_GetTeamsNrDifference(1);
         if (local_0 < 3 && local_0 > -3) {
             return;
         }
@@ -457,10 +439,10 @@ void func_0852(void) {
     while (TRUE) {  // loop body: blocks [146, 147, 148, 149, 150, 151, 152, 153, 155, 156]
         if (!(ptr1 != 0)) break;  // exit loop @1027
         t935_ret = rand();
-        local_266 = tmp11;
+        local_266 = rand() % obj;
         local_264 = ptr4;
         if (tmp14 == 0 || side2 == 0) {
-            local_264 = tmp16;
+            local_264 = ptr5 + 1;
             if (ptr6 == obj) {
                 local_264 = 0;
             } else {
@@ -488,30 +470,29 @@ void func_1028(void) {
     int sideB;
     int t1037_ret;
     int t1073_;
-    int tmp;
     int tmp5;
-    int tmp6;
     s_SC_MP_EnumPlayers enum_pl;
 
     t1037_ret = SC_ggi(GVAR_SIDE0DEATHS);
     func_0334(t1037_ret);
-    local_257 = tmp;
+    local_257 = t1037_ret - local_260;
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, ptr);
-    if (t1057_ret) {
+    if (SC_MP_EnumPlayers(&enum_pl, &local_258, ptr)) {
         local_256 = 0;
     }
     // Loop header - Block 160 @1065
-    for (obj = 0; obj < ptr1; obj = tmp6) {
+    for (obj = 0; obj < ptr1; obj = obj + 1) {
         if (side2 == 2) {
             SC_MP_RecoverPlayer(tmp5);
         } else {
-            local_256 = tmp6;
+            local_256 = obj + 1;
         }
     }
     return;
 }
 
+DEBUG Propagate LADR: &param_0 → s_SC_NET_info
 void ScriptMain(s_SC_NET_info *info) {
     int local_10;  // Auto-generated
     int local_11;  // Auto-generated
@@ -533,7 +514,6 @@ void ScriptMain(s_SC_NET_info *info) {
     int t1893_ret;  // Auto-generated
     int t1975_ret;  // Auto-generated
     int t2000_ret;  // Auto-generated
-    int* t2034_0;  // Auto-generated
 
     c_Vector3 t1567_0;
     c_Vector3 vec;
@@ -542,7 +522,6 @@ void ScriptMain(s_SC_NET_info *info) {
     dword* tmp200;
     dword* tmp206;
     dword* tmp214;
-    dword* tmp219;
     float data_1976;
     float t1856_ret;
     int data_;
@@ -601,76 +580,50 @@ void ScriptMain(s_SC_NET_info *info) {
     int t2011_;
     int t2024_;
     int tmp103;
-    int tmp104;
     int tmp110;
     int tmp117;
     int tmp123;
-    int tmp124;
-    int tmp125;
-    int tmp129;
-    int tmp136;
-    int tmp140;
-    int tmp145;
-    int tmp152;
     int tmp164;
-    int tmp173;
-    int tmp178;
     int tmp185;
-    int tmp189;
-    int tmp191;
     int tmp195;
-    int tmp202;
-    int tmp209;
-    int tmp217;
+    int tmp219;
     int tmp22;
-    int tmp28;
-    int tmp30;
-    int tmp32;
+    int tmp26;
     int tmp35;
-    int tmp6;
-    int tmp60;
-    int tmp66;
-    int tmp68;
-    int tmp69;
-    int tmp70;
-    int tmp72;
-    int tmp79;
-    int tmp86;
-    int tmp89;
-    int tmp92;
+    int tmp57;
     int tmp99;
     s_SC_MP_EnumPlayers enum_pl[2];
 
     switch (info->message) {
     case 0:
-        if (i != 0) {
+        if (gSidePoints[0] + gSidePoints[1] != 0) {
             gSidePoints[0] = 0;
             gSidePoints[1] = 0;
             func_0249();
         }
         break;
     case 3:
-        if (func_0050(t1131_)) break;
+        if (func_0050(info->elapsed_time)) break;
         local_296[0].status = 0;
-        tmp6 = t1131_;
+        local_296 = info->elapsed_time;
         local_12 = 64;
         if (t1157_ret = SC_MP_EnumPlayers(enum_pl, &local_12, -1)) {
         }
         // Loop header - Block 193 @1322
-        for (ptr28 = 0; ptr28 < 2; ptr28 = tmp70) {
+        for (ptr28 = 0; ptr28 < 2; ptr28 = ptr28 + 1) {
             local_9 = 0;
             local_10 = 0;
-            tmp66 = tmp60;
-            local_10 = tmp68;
-            local_9 = tmp69;
-            local_8 = tmp70;
+            (&gRecTimer) + ptr28 * 768 + ptr32 * 128 + ptr * 4 = tmp57 - info->elapsed_time;
+            local_10 = ptr + 1;
+            local_9 = ptr32 + 1;
+            local_8 = ptr28 + 1;
         }
-        gNextRecover -= tmp72;
+        gNextRecover -= info->elapsed_time;
         if (gNextRecover < 0.0f) {
             gNextRecover = func_0119();
         }
         if (local_419 == 0) {
-            gNoActiveTime += tmp79;
+            gNoActiveTime += info->elapsed_time;
             if (gMissionTime > -10.0f) {
                 gMissionTime = -10.0f;
                 gMissionTime_update = -1.0f;
@@ -678,9 +631,9 @@ void ScriptMain(s_SC_NET_info *info) {
             }
         } else {
             if (local_419 == 1) {
-                gMission_afterstart_time += tmp86;
-                gMissionTime -= tmp89;
-                func_0264(tmp92);
+                gMission_afterstart_time += info->elapsed_time;
+                gMissionTime -= info->elapsed_time;
+                func_0264(info->elapsed_time);
                 if (gMissionTime <= 0.0f) {
                     gMission_phase = 3;
                     SC_sgi(GVAR_SIDE1DEATHS, gMission_phase);
@@ -691,36 +644,36 @@ void ScriptMain(s_SC_NET_info *info) {
                         local_8 = 0;
                         if (tmp99 == gAttackingSide && side6 == 1) {
                             SC_P_GetPos(tmp103, &vec);
-                            local_9 = tmp104;
-                            if (t1576_ret = SC_IsNear3D(&vec, t1567_0, tmp110)) {
+                            local_9 = gCurStep - 1;
+                            if (t1576_ret = SC_IsNear3D(&vec, &gStepSwitch[ptr33], tmp110)) {
                                 if (ptr33) {
                                     gCurStep = ptr33;
                                     t1595_ret = SC_MP_GetHandleofPl(t1593_);
-                                    SC_sgi(t1593_, t1595_ret);
+                                    SC_sgi(t1593_, SC_MP_GetHandleofPl(t1593_));
                                     SC_sgi(507, gCurStep);
                                     func_1028();
                                     SC_P_MP_AddPoints(tmp117, 1);
                                 } else {
                                     gMission_phase = 2;
                                     t1628_ret = SC_MP_GetHandleofPl(t1626_);
-                                    SC_sgi(t1626_, t1628_ret);
+                                    SC_sgi(t1626_, SC_MP_GetHandleofPl(t1626_));
                                     SC_sgi(GVAR_SIDE1DEATHS, gMission_phase);
                                     gPhaseTimer = 8.0f;
                                     func_0355();
                                     SC_P_MP_AddPoints(tmp123, 2);
                                 }
                             } else {
-                                local_9 = tmp124;
+                                local_9 = ptr33 + 1;
                             }
                         }
-                        local_8 = tmp125;
+                        local_8 = ptr29 + 1;
                     }
                 }
             } else {
                 if (local_419 == 3) {
                 } else {
                     if (local_419 == 2) {
-                        gPhaseTimer -= tmp129;
+                        gPhaseTimer -= info->elapsed_time;
                         if (gPhaseTimer < 0.0f) {
                             gNoActiveTime = 0;
                             gMission_phase = 0;
@@ -734,22 +687,22 @@ void ScriptMain(s_SC_NET_info *info) {
             }
         }
         // Loop header - Block 216 @1517
-        for (ptr29 = 0; ptr29 < obj; ptr29 = tmp125) {
-            local_8 = tmp125;
+        for (ptr29 = 0; ptr29 < obj; ptr29 = ptr29 + 1) {
+            local_8 = ptr29 + 1;
         }
         break;
     case 4:
-        gCLN_ShowInfo -= tmp136;
+        gCLN_ShowInfo -= info->elapsed_time;
         if (gCLN_ShowStartInfo > 0.0f) {
-            gCLN_ShowStartInfo -= tmp140;
+            gCLN_ShowStartInfo -= info->elapsed_time;
         }
         if (gCLN_ShowWaitingInfo > 0.0f) {
-            gCLN_ShowWaitingInfo -= tmp145;
+            gCLN_ShowWaitingInfo -= info->elapsed_time;
         }
         t1752_ret = SC_ggi(GVAR_SIDE1DEATHS);
         if (local_419 == 0) {
             t1764_ret = SC_ggi(508);
-            func_0498(tmp152, 2);
+            func_0498(SC_ggi(508) - 1, 2);
         } else {
             if (local_419 == 1) {
                 if (t1782_ret = SC_ggi(507) && t1800_ret = SC_ggi(508) && gCLN_CurStep > 0) {
@@ -757,55 +710,55 @@ void ScriptMain(s_SC_NET_info *info) {
                     SC_SND_PlaySound2D(10425);
                 }
                 t1823_ret = SC_ggi(GVAR_SIDE0DEATHS);
-                func_0334(t1823_ret);
+                func_0334(SC_ggi(GVAR_SIDE0DEATHS));
                 func_0498(tmp164, gCLN_CurStep);
             }
         }
         if (t1839_ret = SC_ggi(505)) {
             t1847_ret = SC_ggi(505);
-            gCLN_MissionTimePrevID = t1847_ret;
+            gCLN_MissionTimePrevID = SC_ggi(505);
             t1856_ret = SC_ggf(504);
-            gCLN_MissionTime = t1856_ret;
+            gCLN_MissionTime = SC_ggf(504);
         } else {
             if (t1866_ret = SC_ggi(GVAR_SIDE1DEATHS)) {
-                gCLN_MissionTime -= tmp173;
+                gCLN_MissionTime -= info->elapsed_time;
             }
         }
         // Loop header - Block 260 @1884
-        for (ptr30 = 0; ptr30 < 2; ptr30 = tmp202) {
+        for (ptr30 = 0; ptr30 < 2; ptr30 = ptr30 + 1) {
             t1891_0 = 500 + ptr30;
-            t1893_ret = SC_ggi(tmp178);
-            gCLN_SidePoints[ptr30] = t1893_ret;
+            t1893_ret = SC_ggi(t1891_0);
+            gCLN_SidePoints[ptr30] = SC_ggi(t1891_0);
             SC_MP_SetSideStats(ptr30, 0, tmp185);
             *tmp187 = 1;
-            tmp191 = tmp189;
+            (&local_299) + ptr30 * 16 = 3 * ptr30;
             *tmp197 = tmp195;
             *tmp200 = -1140850689;
-            local_8 = tmp202;
+            local_8 = ptr30 + 1;
         }
         local_11 = 2;
         if (gCLN_MissionTime > 0.0f && t1975_ret = SC_ggi(GVAR_SIDE1DEATHS)) {
             *tmp206 = -1140850689;
-            tmp209 = 6;
+            (&local_299) + ptr39 * 16 = 6;
             if (t2000_ret = SC_ggi(GVAR_SIDE1DEATHS)) {
                 *tmp214 = 0;
             } else {
-                *tmp219 = tmp217;
+                (int)gCLN_MissionTime + 0.99f = tmp219;
             }
-            *t2034_0 = 2;
-            local_11 += 1;
+            *((&local_299) + local_11 * 16 + 4) = 2;
+            local_11++;
         }
         SC_MP_SetIconHUD(&local_299, local_11);
         break;
     default:
         // Loop header - Block 176 @1195
-        for (ptr27 = 0; ptr27 < obj; ptr27 = tmp30) {
+        for (ptr27 = 0; ptr27 < obj; ptr27 = ptr27 + 1) {
             if (side2 != 0 && tmp22 < 2) {
-                tmp28 = 1;
+                (&local_296) + tmp26 * 4 = 1;
             }
-            local_8 = tmp30;
+            local_8 = ptr27 + 1;
         }
-        gMission_starting_timer -= tmp32;
+        gMission_starting_timer -= info->elapsed_time;
         if (tmp35 && local_296[0].status) {
             SC_MP_SetInstantRecovery(0);
             gMission_phase = 1;
@@ -819,10 +772,10 @@ void ScriptMain(s_SC_NET_info *info) {
             local_8 = 0;
             local_9 = 0;
             local_10 = 0;
-            tmp66 = tmp60;
-            local_10 = tmp68;
-            local_9 = tmp69;
-            local_8 = tmp70;
+            (&gRecTimer) + ptr28 * 768 + ptr32 * 128 + ptr * 4 = tmp57 - info->elapsed_time;
+            local_10 = ptr + 1;
+            local_9 = ptr32 + 1;
+            local_8 = ptr28 + 1;
             return TRUE;
         }
         if (gMission_starting_timer <= 0.0f && gMission_phase > 0) {

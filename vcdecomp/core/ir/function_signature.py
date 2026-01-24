@@ -213,11 +213,22 @@ def detect_function_signature(
                     stack_offset = stack_offset - 0x100000000
 
                 # Parameters are accessed with NEGATIVE offsets in the callee
-                # Example: func is called, parameter was pushed at caller's [sp+something]
-                # Inside callee, it's at [sp-4] (just below return address)
+                # Empirical evidence from bytecode analysis:
+                # - SRV_CheckEndRule(float time): uses [sp-4] for its only param
+                # - SetFlagStatus(attacking_side, cur_step): uses [sp-4] for param_0, [sp-3] for param_1
+                #
+                # Formula: param_idx = offset + 4
+                # - offset -4 → param_0
+                # - offset -3 → param_1
+                # - offset -2 → param_2
                 if stack_offset < 0:
-                    # Parameter offset: -4 = param 0, -8 = param 1, etc.
-                    param_offset = abs(stack_offset)
+                    # Calculate parameter index using the same formula as stack_lifter
+                    # This ensures consistency between function signature and SSA value aliases
+                    param_idx = stack_offset + 4  # -4→0, -3→1, -2→2, etc.
+
+                    # Skip if this doesn't look like a valid parameter (offset < -4)
+                    if param_idx < 0:
+                        continue
 
                     # Check if next instruction uses this as float
                     is_float = False
@@ -226,7 +237,7 @@ def detect_function_signature(
                         if next_instr.mnemonic in {"FADD", "FSUB", "FMUL", "FDIV", "FGRE", "FLES", "FEQU"}:
                             is_float = True
 
-                    param_accesses[param_offset] = is_float
+                    param_accesses[param_idx] = is_float
 
             # Check for RET instruction to detect return type
             elif instr.mnemonic == "RET" and instr.instruction:
@@ -236,21 +247,22 @@ def detect_function_signature(
                 else:
                     has_void_return = True
 
-    # Determine parameter count from maximum offset
+    # Determine parameter count from detected parameter indices
+    # param_accesses now contains param_idx → is_float mappings
     if param_accesses:
-        # Sort offsets to determine parameter positions
-        sorted_offsets = sorted(param_accesses.keys())
+        # Parameter count is max(param_idx) + 1
+        # This handles sparse access (e.g., only param_1 accessed means 2 params)
+        max_param_idx = max(param_accesses.keys())
+        sig.param_count = max_param_idx + 1
 
-        # Parameter count = number of distinct offsets
-        sig.param_count = len(sorted_offsets)
-
-        # Build parameter type list
-        for param_index, offset in enumerate(sorted_offsets):
-            is_float = param_accesses[offset]
+        # Build parameter type list - iterate through all indices 0 to max
+        # This ensures we declare all parameters even if some aren't accessed
+        for param_idx in range(sig.param_count):
+            is_float = param_accesses.get(param_idx, False)  # Default to int if not accessed
             if is_float:
-                sig.param_types.append(f"float param_{param_index}")
+                sig.param_types.append(f"float param_{param_idx}")
             else:
-                sig.param_types.append(f"int param_{param_index}")
+                sig.param_types.append(f"int param_{param_idx}")
 
     # Apply call-site analysis to refine parameter count
     call_site_analysis = _analyze_call_sites(ssa_func, func_start)

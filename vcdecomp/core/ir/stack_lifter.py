@@ -43,10 +43,23 @@ def _to_signed(val: int) -> int:
 def _stack_alias_from_offset(offset: int) -> str:
     signed = _to_signed(offset)
     if signed < 0:
-        # Parameters: [sp-3]=param_0, [sp-4]=param_1, [sp-5]=param_2, etc.
-        # Note: [sp-3] is FIRST parameter, NOT return slot
-        # Return slot is only used by LLD before RET (context-dependent, handled elsewhere)
-        param_idx = abs(signed) - 3  # -3→0, -4→1, -5→2, etc.
+        # Parameters: [sp-4]=param_0, [sp-3]=param_1, [sp-2]=param_2, etc.
+        # Note: [sp-3] is SECOND parameter when there are 2+ params
+        # The slot at [sp-4] is always the first parameter (param_0)
+        #
+        # Empirical evidence from bytecode analysis:
+        # - SRV_CheckEndRule(float time): uses [sp-4] for its only param
+        # - SetFlagStatus(attacking_side, cur_step): uses [sp-4] for param_0, [sp-3] for param_1
+        #
+        # Formula: param_idx = offset + 4
+        # - offset -4 → param_0
+        # - offset -3 → param_1
+        # - offset -2 → param_2
+        param_idx = signed + 4  # -4→0, -3→1, -2→2, etc.
+        if param_idx < 0:
+            # Offsets below -4 are not valid parameters
+            # They might be something else (return address, saved frame, etc.)
+            return f"stack_{abs(signed)}"
         return f"param_{param_idx}"
     # FIX 2: Use BYTE offset, not dword index!
     # Compiler uses byte-level addressing (offset 8, 9, 10, 11, ...)

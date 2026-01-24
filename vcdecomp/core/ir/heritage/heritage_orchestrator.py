@@ -185,9 +185,14 @@ class HeritageOrchestrator:
 
         Parameters are known from the function header and are always
         heritaged in the first pass. They use negative stack offsets:
-        - param_0 at [sp-3]
-        - param_1 at [sp-4]
+        - param_0 at [sp-4]
+        - param_1 at [sp-3]
+        - param_2 at [sp-2]
         - etc.
+
+        Empirical evidence from bytecode analysis:
+        - SRV_CheckEndRule(float time): uses [sp-4] for its only param
+        - SetFlagStatus(attacking_side, cur_step): [sp-4] = param_0, [sp-3] = param_1
         """
         # Get parameter count from header if available
         param_count = getattr(self.scr.header, 'num_args', 0)
@@ -196,7 +201,7 @@ class HeritageOrchestrator:
             param_count = self._detect_parameter_count()
 
         for i in range(param_count):
-            offset = -(i + 3)  # param_0 at -3, param_1 at -4, etc.
+            offset = -(4 - i)  # param_0 at -4, param_1 at -3, param_2 at -2, etc.
             var_name = f"param_{i}"
 
             self.location_map.mark_heritaged(
@@ -222,6 +227,9 @@ class HeritageOrchestrator:
         """
         Detect parameter count by analyzing code for parameter accesses.
 
+        Parameter offsets: [sp-4] = param_0, [sp-3] = param_1, [sp-2] = param_2, etc.
+        Formula: param_idx = offset + 4
+
         Returns:
             Detected number of parameters
         """
@@ -233,9 +241,10 @@ class HeritageOrchestrator:
 
                 if mnemonic in {"LCP", "LLD"}:
                     offset = _to_signed(inst.instruction.arg1)
-                    if offset < -2:  # Parameter region starts at -3
-                        param_idx = abs(offset) - 3
-                        max_param_idx = max(max_param_idx, param_idx)
+                    if offset <= -4:  # Parameter region starts at -4
+                        param_idx = offset + 4  # -4→0, -3→1, -2→2, etc.
+                        if param_idx >= 0:
+                            max_param_idx = max(max_param_idx, param_idx)
 
         return max_param_idx + 1 if max_param_idx >= 0 else 0
 

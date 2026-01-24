@@ -975,13 +975,27 @@ def _detect_switch_patterns(
                     debug_print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}")
                 elif test_var != var_name:
                     # NESTED SWITCH FIX: Different variable = likely nested switch
-                    # Skip this block - it will be processed when we analyze the case body
-                    _switch_debug(f"Different variable seen: {test_var} -> {var_name} (skipping - likely nested switch)")
-                    chain_debug['variables_seen'].append(var_name)
-                    chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
-                    debug_print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)")
-                    # Don't add successors for nested switch blocks - let them be detected later
-                    continue
+                    # EXCEPTION: If test_var is a MOD expression (contains %), and var_name is local_N,
+                    # this is likely the same switch - the MOD result is stored on stack and reloaded.
+                    # Pattern: Block N: MOD param_0, 4 -> Block N+1: LCP [sp+0] (becomes local_0)
+                    is_mod_switch = '%' in test_var
+                    is_stack_load = var_name.startswith('local_') or var_name.startswith('n')
+
+                    if is_mod_switch and is_stack_load:
+                        # Same switch, different name - use the MOD-based name
+                        _switch_debug(f"MOD switch continuation: {test_var} vs {var_name} (treating as same variable)")
+                        chain_debug['variables_seen'].append(var_name)
+                        chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
+                        debug_print(f"DEBUG SWITCH: MOD switch continuation - keeping {test_var}")
+                        # Don't update test_var - keep the MOD-based name
+                    else:
+                        # Skip this block - it will be processed when we analyze the case body
+                        _switch_debug(f"Different variable seen: {test_var} -> {var_name} (skipping - likely nested switch)")
+                        chain_debug['variables_seen'].append(var_name)
+                        chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
+                        debug_print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)")
+                        # Don't add successors for nested switch blocks - let them be detected later
+                        continue
 
                 # Same variable (or first case), try to extract constant value using ConstantPropagator
                 _switch_debug(f"About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")

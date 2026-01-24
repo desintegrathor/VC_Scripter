@@ -1391,6 +1391,9 @@ class ExpressionFormatter:
         # FIX: Skip rename_map for CAST_OPS (ITOF, FTOI, etc.) - these should inline to show
         # the actual value being cast, not a temp variable like "tmp3"
         is_cast_op = value.producer_inst and value.producer_inst.mnemonic in CAST_OPS
+        # FIX Issue 5: Skip rename_map for INFIX_OPS (ADD, SUB, MUL, etc.) that can be inlined
+        # These should render as expressions like "gSteps - 1", not "tmp"
+        is_infix_op = value.producer_inst and value.producer_inst.mnemonic in INFIX_OPS
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1401,7 +1404,8 @@ class ExpressionFormatter:
                     is_array_indexing = True
         preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
-                and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op):
+                and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op
+                and not is_infix_op):
             return self._rename_map[value.name]
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -1567,6 +1571,14 @@ class ExpressionFormatter:
                         return "0"  # NULL pointer
                 # Default to 0 for undefined values
                 return "0"
+
+            # FIX Issue 5: Try to inline tmp variables to their source expressions
+            # Before returning the raw alias "tmp", check if we can inline the expression
+            # Example: tmp = gSteps - 1 should render as "gSteps - 1" not "tmp"
+            if value.alias.startswith("tmp") and self._can_inline(value):
+                inlined = self._inline_expression(value, context, parent_operator)
+                if inlined and inlined != value.alias:
+                    return inlined
 
             return value.alias
         if self._can_inline(value):
