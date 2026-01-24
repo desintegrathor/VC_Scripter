@@ -734,8 +734,9 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             switch_line = f"{base_indent}switch ({switch.test_var}) {{"
             lines.append(switch_line)
             debug_print(f"DEBUG ORCHESTRATOR: Appended to lines: '{switch_line}'")
-            # FIX (01-21): Sort cases by value to ensure consistent ordering
-            for case in sorted(switch.cases, key=lambda c: c.value):
+            # FIX: Sort cases by detection_order to preserve bytecode/source order
+            # (e.g., case 3 before case 2 in RoundEnd() if that's the original order)
+            for case in sorted(switch.cases, key=lambda c: c.detection_order):
                 case_label = _render_switch_case_value(case.value, switch, formatter)
                 lines.append(f"{base_indent}case {case_label}:")
 

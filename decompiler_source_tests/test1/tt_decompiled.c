@@ -224,16 +224,6 @@ void func_0355(void) {
     int tmp9;
 
     switch (gMission_phase) {
-    case 2:
-        SC_sgi(509, gAttackingSide);
-        if ((gMainPhase % 2)) {
-            gSidePoints[gAttackingSide] = tmp27 + 1;
-            func_0249();
-            SC_sgi(506, gAttackingSide);
-        } else {
-            gMissionTimeToBeat = gMissionTimePrev - gMissionTime;
-        }
-        break;
     case 3:
         gSidePoints[(1 - gAttackingSide)] = tmp9 + 1;
         func_0249();
@@ -243,6 +233,16 @@ void func_0355(void) {
             gMainPhase++;
         } else {
             gMainPhase += 2;
+        }
+        break;
+    case 2:
+        SC_sgi(509, gAttackingSide);
+        if ((gMainPhase % 2)) {
+            gSidePoints[gAttackingSide] = tmp27 + 1;
+            func_0249();
+            SC_sgi(506, gAttackingSide);
+        } else {
+            gMissionTimeToBeat = gMissionTimePrev - gMissionTime;
         }
         break;
     default:
@@ -594,13 +594,6 @@ void ScriptMain(s_SC_NET_info *info) {
     s_SC_MP_EnumPlayers enum_pl[2];
 
     switch (info->message) {
-    case 0:
-        if (gSidePoints[0] + gSidePoints[1] != 0) {
-            gSidePoints[0] = 0;
-            gSidePoints[1] = 0;
-            func_0249();
-        }
-        break;
     case 3:
         if (func_0050(info->elapsed_time)) break;
         local_296[0].status = 0;
@@ -748,6 +741,13 @@ void ScriptMain(s_SC_NET_info *info) {
             local_11++;
         }
         SC_MP_SetIconHUD(&local_299, local_11);
+        break;
+    case 0:
+        if (gSidePoints[0] + gSidePoints[1] != 0) {
+            gSidePoints[0] = 0;
+            gSidePoints[1] = 0;
+            func_0249();
+        }
         break;
     default:
         // Loop header - Block 176 @1195

@@ -757,6 +757,9 @@ def _detect_switch_patterns(
         all_potential_cases: List[tuple] = []
         case_sources: Dict[tuple[int, int], int] = {}
 
+        # FIX: Track detection order for cases (preserves bytecode order)
+        next_detection_order: int = 0
+
         # Chain tracking state for debug
         chain_debug = {
             'blocks_processed': [],
@@ -1098,7 +1101,9 @@ def _detect_switch_patterns(
                         if case_block_id is not None:
                             # PHASE 3 FIX: Store all potential cases with their variable info
                             # Don't filter yet - we'll do that after BFS completes
-                            case_info = CaseInfo(value=case_val, block_id=case_block_id)
+                            # FIX: Assign detection_order to preserve bytecode order
+                            case_info = CaseInfo(value=case_val, block_id=case_block_id, detection_order=next_detection_order)
+                            next_detection_order += 1
                             all_potential_cases.append((var_name, var_priority, var_value, case_info, current_block))
                             case_sources[(case_val, case_block_id)] = current_block
 
@@ -1106,7 +1111,7 @@ def _detect_switch_patterns(
                             cases.append(case_info)
                             chain_blocks.append(current_block)
                             found_equ = True
-                            debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}")
+                            debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}, order={case_info.detection_order}")
 
                             # BFS: Add ALL successors of this comparison block to the queue
                             # This allows us to find comparison blocks even if they're not directly chained

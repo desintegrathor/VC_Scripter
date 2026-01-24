@@ -150,11 +150,28 @@ class MockSSAFunction:
         self.scr = scr
 
 
+class MockConstantPropagator:
+    """Mock constant propagator for switch detection"""
+    def get_constant(self, value):
+        """Return constant info for SSA value"""
+        # Check if value has alias starting with data_ (constant from data segment)
+        if hasattr(value, 'alias') and value.alias and value.alias.startswith('data_'):
+            try:
+                # Extract offset from alias (e.g., "data_0" -> 0)
+                offset = int(value.alias[5:])
+                # Return a mock constant info object
+                return type('ConstantInfo', (), {'value': offset})()
+            except (ValueError, AttributeError):
+                pass
+        return None
+
+
 class MockExpressionFormatter:
     """Mock expression formatter"""
     def __init__(self, global_names: Dict[int, str] = None, semantic_names: Dict[str, str] = None):
         self._global_names = global_names or {}
         self._semantic_names = semantic_names or {}
+        self._constant_propagator = MockConstantPropagator()
 
     def render_value(self, value, context=None) -> str:
         """Render SSA value as string"""
