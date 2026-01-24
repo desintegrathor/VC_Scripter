@@ -768,6 +768,10 @@ def _detect_switch_patterns(
             'ssa_values_seen': []
         }
 
+        # NEW: Track blocks that are nested switch headers (different variable)
+        # These should be excluded from case body detection
+        nested_switch_headers: Set[int] = set()
+
         # BFS state: blocks to visit with their depth
         visited_blocks = set()
         to_visit = [(block_id, 0)]  # (block_id, depth)
@@ -1065,6 +1069,12 @@ def _detect_switch_patterns(
                         chain_debug['variables_seen'].append(var_name)
                         chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
                         debug_print(f"DEBUG SWITCH: Variable mismatch - test_var: {test_var}, new var_name: {var_name} (skipping - nested switch)")
+
+                        # NEW: Record this block as a nested switch header
+                        # This prevents case body BFS from traversing into nested switch structures
+                        nested_switch_headers.add(current_block)
+                        debug_print(f"DEBUG SWITCH: Added block {current_block} to nested_switch_headers")
+
                         # Don't add successors for nested switch blocks - let them be detected later
                         continue
 
@@ -1355,6 +1365,13 @@ def _detect_switch_patterns(
             # BUG FIX: Add chain blocks (test blocks) to prevent BFS from crossing into next case test
             debug_print(f"DEBUG SWITCH: Adding chain_blocks to stop_blocks: {sorted(chain_blocks)}")
             stop_blocks.update(chain_blocks)
+
+            # NEW: Add nested switch headers to stop_blocks
+            # This prevents case body BFS from traversing into nested switch structures
+            if nested_switch_headers:
+                debug_print(f"DEBUG SWITCH: Adding nested_switch_headers to stop_blocks: {sorted(nested_switch_headers)}")
+                stop_blocks.update(nested_switch_headers)
+
             if exit_block is not None:
                 debug_print(f"DEBUG SWITCH: Adding exit_block to stop_blocks: {exit_block}")
                 stop_blocks.add(exit_block)
