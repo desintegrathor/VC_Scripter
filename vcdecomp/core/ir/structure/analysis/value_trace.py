@@ -666,6 +666,10 @@ def _format_xcall_expression(xcall_inst, formatter: "ExpressionFormatter", ssa_f
             # Extract just the call part (remove semicolon if present)
             if call_expr.endswith(";"):
                 call_expr = call_expr[:-1].strip()
+            # Strip off any "t###_ret = " or similar assignment prefix
+            # We only want the function call expression, not the assignment
+            if " = " in call_expr:
+                call_expr = call_expr.split(" = ", 1)[1]
             if debug:
                 logger.debug(f"  -> Formatted XCALL via _format_call: {call_expr}")
             return call_expr

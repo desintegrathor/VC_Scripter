@@ -1091,6 +1091,13 @@ class ExpressionFormatter:
         # DCP (dereference/load) - inline to show dereferenced value
         if inst.mnemonic == "DCP":
             return True
+        # XCALL/CALL return values with single use should be inlined
+        # This prevents duplicate function calls (standalone XCALL + inlined use)
+        if inst.mnemonic in {"XCALL", "CALL"}:
+            # Only inline if exactly 1 real use (positive addresses are actual code locations)
+            real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
+            if real_uses == 1:
+                return True
         return False
 
     def _load_literal(self, alias: str, value_type: opcodes.ResultType = opcodes.ResultType.UNKNOWN, expected_type_str: str = None, context: ExpressionContext = None) -> Optional[str]:
@@ -2679,7 +2686,20 @@ class ExpressionFormatter:
         if source_val.producer_inst:
             pass  # Debug print removed
             # print(f"  producer: {source_val.producer_inst.mnemonic}@{source_val.producer_inst.address}", file=sys.stderr)
-        if source_val.producer_inst and source_val.producer_inst.mnemonic == "LLD":
+
+        # Pattern 3: Direct XCALL->ASGN (source is t###_ret from XCALL)
+        if source_val.producer_inst and source_val.producer_inst.mnemonic == "XCALL":
+            # Source comes directly from XCALL return value (t###_ret pattern)
+            xcall_inst = source_val.producer_inst
+            call_expr = self._format_call(xcall_inst)
+            if call_expr.endswith(";"):
+                call_expr = call_expr[:-1].strip()
+            # Strip off any "t###_ret = " prefix since we're replacing the target
+            if " = " in call_expr:
+                call_expr = call_expr.split(" = ", 1)[1]
+            call_expr_override = call_expr
+
+        elif source_val.producer_inst and source_val.producer_inst.mnemonic == "LLD":
             # print(f"DEBUG Pattern 2: ASGN@{inst.address} source from LLD@{source_val.producer_inst.address}", file=sys.stderr)
             # LLD loads return value - check if there's a CALL before it
             # We need to find the CALL in the block's instruction sequence
@@ -3803,6 +3823,8 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
     # FÁZE 1.6 Pattern 2: Detect CALL/XCALL + LLD + ASGN patterns
     # Build a map of CALL addresses that should be merged with assignments
     call_to_assignment = {}  # call_addr -> asgn_inst
+    # Pattern 3: Direct XCALL->ASGN (XCALL produces t###_ret which is directly used in ASGN)
+    xcall_to_assignment = {}  # xcall_addr -> asgn_inst
     for i, inst in enumerate(instructions):
         if inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
             # Check if the source value comes from LLD
@@ -3819,6 +3841,11 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                             # Found CALL+LLD+ASGN pattern!
                             call_to_assignment[instructions[check_idx].address] = inst
                             break
+            # Pattern 3: Direct XCALL->ASGN (XCALL output t###_ret used directly in ASGN)
+            elif source_val.producer_inst and source_val.producer_inst.mnemonic == "XCALL":
+                # Found ASGN with direct XCALL source (t###_ret pattern)
+                xcall_inst = source_val.producer_inst
+                xcall_to_assignment[xcall_inst.address] = inst
 
     formatted: List[FormattedExpression] = []
 
@@ -3955,6 +3982,11 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
         # FÁZE 1.6 Pattern 2: Skip CALL/XCALL if it's part of CALL+LLD+ASGN pattern
         if inst.address in call_to_assignment:
             # This call will be merged with the assignment - don't emit standalone
+            continue
+
+        # Pattern 3: Skip XCALL if its t###_ret output is directly used in ASGN
+        if inst.address in xcall_to_assignment:
+            # This XCALL will be rendered by the ASGN - don't emit standalone
             continue
 
         formatted.append(

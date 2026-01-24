@@ -810,6 +810,34 @@ def cmd_structure(args):
     # Pass style for debug output control: 'quiet' (default) or 'normal'/'verbose' with --debug
     # Heritage: Pass heritage_metadata for improved variable names (default with incremental SSA)
     style = 'normal' if debug_mode else 'quiet'
+
+    def _is_trivial_init_function(func_text: str) -> bool:
+        """Check if _init function only contains variable declarations and return."""
+        lines = func_text.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            # Skip empty lines
+            if not line:
+                continue
+            # Skip function signature
+            if line.startswith('void _init(') or line.startswith('dword _init('):
+                continue
+            # Skip opening/closing braces
+            if line in ('{', '}'):
+                continue
+            # Skip variable declarations (type name; or type name = value;)
+            if ';' in line and not '(' in line and not '=' in line:
+                continue
+            # Skip comments
+            if line.startswith('//'):
+                continue
+            # Skip simple return
+            if line == 'return;':
+                continue
+            # Found a non-trivial statement
+            return False
+        return True
+
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
         text = format_structured_function_named(
             ssa_func,
@@ -820,6 +848,11 @@ def cmd_structure(args):
             style=style,
             heritage_metadata=heritage_metadata
         )
+
+        # Skip empty _init function (only contains variable declarations and return)
+        if func_name == "_init" and _is_trivial_init_function(text):
+            continue
+
         print(text)
         print()
 

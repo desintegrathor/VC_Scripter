@@ -1073,6 +1073,14 @@ def _detect_switch_patterns(
                                 _switch_debug(f"  -> Detected modulo switch: {var_name}")
 
                 # If not MOD, try other variable resolution methods
+                # PRIORITY FIX: Try global variables FIRST, before parameter fields
+                # This prefers named globals like "gphase" over generic "info->param2"
+                if not var_name:
+                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
+                    if var_name:
+                        _switch_debug(f"  -> Found global: {var_name}")
+
+                # Then try parameter field access (info->message, info->param1, etc.)
                 if not var_name:
                     var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
                     if var_name:
@@ -1092,11 +1100,6 @@ def _detect_switch_patterns(
                             if semantic_name:
                                 var_name = semantic_name
                                 _switch_debug(f"  -> Inferred semantic parameter name: {var_name}")
-
-                if not var_name:
-                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
-                    if var_name:
-                        _switch_debug(f"  -> Found global: {var_name}")
 
                 if not var_name:
                     var_name = _trace_value_to_function_call(ssa_func, var_value, formatter)
@@ -1515,11 +1518,11 @@ def _detect_switch_patterns(
             debug_print(f"DEBUG SWITCH: Adding chain_blocks to stop_blocks: {sorted(chain_blocks)}")
             stop_blocks.update(chain_blocks)
 
-            # NEW: Add nested switch headers to stop_blocks
-            # This prevents case body BFS from traversing into nested switch structures
+            # FIX (01-24): Do NOT add nested_switch_headers to stop_blocks
+            # Instead, let them be included in case bodies and detected as nested switches later
+            # The nested_switch_headers will be stored in SwitchPattern.nested_headers for reference
             if nested_switch_headers:
-                debug_print(f"DEBUG SWITCH: Adding nested_switch_headers to stop_blocks: {sorted(nested_switch_headers)}")
-                stop_blocks.update(nested_switch_headers)
+                debug_print(f"DEBUG SWITCH: Found nested_switch_headers (will NOT add to stop_blocks): {sorted(nested_switch_headers)}")
 
             if exit_block is not None:
                 debug_print(f"DEBUG SWITCH: Adding exit_block to stop_blocks: {exit_block}")
@@ -1748,6 +1751,7 @@ def _detect_switch_patterns(
                 default_body_blocks=default_body,
                 exit_block=exit_block,
                 all_blocks=all_blocks,
+                nested_headers=nested_switch_headers.copy() if nested_switch_headers else set(),
                 _internal_type=switch_type,
             )
             debug_print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases")

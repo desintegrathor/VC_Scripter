@@ -203,22 +203,45 @@ def _render_nested_switch(
         if switch.exit_block:
             case_stop_blocks.add(switch.exit_block)
 
-        # Detect if/else patterns in case body
+        # FIX (01-24): Detect nested switches FIRST (before if/else detection)
+        nested_nested_switches = _detect_switch_patterns(ssa_func, set(case_body_sorted), formatter, start_to_block)
+        nested_nested_header_blocks: Set[int] = set()
+        for ns in nested_nested_switches:
+            nested_nested_header_blocks.add(ns.header_block)
+            nested_nested_header_blocks.update(ns.all_blocks)
+            debug_print(f"DEBUG NESTED SWITCH: Found deeply nested switch {ns.test_var} in case {case.value} body of {switch.test_var}")
+
+        # Detect if/else patterns in case body (skip nested switch headers)
         for body_block_id in case_body_sorted:
-            if body_block_id not in block_to_if:
+            if body_block_id not in block_to_if and body_block_id not in nested_nested_header_blocks:
                 temp_visited = set()
                 if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
                 if if_pattern:
                     block_to_if[body_block_id] = if_pattern
 
-        # Detect early return patterns
+        # Detect early return patterns (skip nested switch headers)
         early_returns: Dict[int, tuple] = {}
         for body_block_id in case_body_sorted:
-            early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
-            if early_ret:
-                early_returns[body_block_id] = early_ret
+            if body_block_id not in nested_nested_header_blocks:
+                early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
+                if early_ret:
+                    early_returns[body_block_id] = early_ret
 
-        # Render case body blocks
+        # Build nested switch block map for rendering
+        nested_nested_block_to_switch: Dict[int, SwitchPattern] = {}
+        for ns in nested_nested_switches:
+            for ns_block_id in ns.all_blocks:
+                nested_nested_block_to_switch[ns_block_id] = ns
+
+        # Create recursive callback for rendering deeply nested switches
+        def nested_render_switch_callback(sw, ind, b2if, vis_ifs, emit_blks):
+            return _render_nested_switch(
+                sw, ind, ssa_func, formatter, cfg, func_loops,
+                start_to_block, resolver, b2if, vis_ifs, emit_blks,
+                global_map, parent_switch=switch
+            )
+
+        # Render case body blocks with nested switch support
         case_lines = _render_blocks_with_loops(
             case_body_sorted,
             base_indent + "    ",
@@ -232,7 +255,9 @@ def _render_nested_switch(
             visited_ifs,
             emitted_blocks,
             global_map,
-            early_returns
+            early_returns,
+            nested_nested_block_to_switch,
+            nested_render_switch_callback
         )
         lines.extend(case_lines)
 
@@ -935,12 +960,23 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 if switch.exit_block:
                     case_stop_blocks.add(switch.exit_block)
 
+                # FIX (01-24): Detect nested switches FIRST (before if/else detection)
+                # Switch detection must happen before if/else detection to prevent switch headers
+                # from being misdetected as if/else patterns
+                nested_switches = _detect_switch_patterns(ssa_func, set(case_body_sorted), formatter, start_to_block)
+                nested_switch_header_blocks: Set[int] = set()
+                for ns in nested_switches:
+                    nested_switch_header_blocks.add(ns.header_block)
+                    # Also add chain blocks (comparison blocks) to avoid if/else detection
+                    nested_switch_header_blocks.update(ns.all_blocks)
+
                 # NEW FIX: Detect compound conditions FIRST (highest priority)
                 # Then detect early returns, but skip blocks that are part of compound patterns
+                # FIX (01-24): Also skip nested switch headers from if/else detection
                 compound_blocks = set()  # Blocks involved in compound conditions
 
                 for body_block_id in case_body_sorted:
-                    if body_block_id not in block_to_if:
+                    if body_block_id not in block_to_if and body_block_id not in nested_switch_header_blocks:
                         temp_visited = set()
                         # Try compound detection first
                         if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
@@ -953,22 +989,20 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 # Skip blocks that are part of compound patterns
                 early_returns: Dict[int, tuple] = {}
                 for body_block_id in case_body_sorted:
-                    if body_block_id not in compound_blocks:
+                    if body_block_id not in compound_blocks and body_block_id not in nested_switch_header_blocks:
                         early_ret = _detect_early_return_pattern(cfg, body_block_id, start_to_block, resolver, switch.exit_block)
                         if early_ret:
                             early_returns[body_block_id] = early_ret
 
                 # Now detect regular if/else patterns (not compound, not early return)
+                # FIX (01-24): Also skip nested switch headers from if/else detection
                 for body_block_id in case_body_sorted:
-                    if body_block_id not in block_to_if and body_block_id not in early_returns:
+                    if body_block_id not in block_to_if and body_block_id not in early_returns and body_block_id not in nested_switch_header_blocks:
                         temp_visited = set()
                         # Regular if/else detection (compound already done above)
                         if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, context_stop_blocks=case_stop_blocks, ssa_func=ssa_func, formatter=formatter)
                         if if_pattern:
                             block_to_if[body_block_id] = if_pattern
-
-                # FIX (01-24): Detect nested switches within case body
-                nested_switches = _detect_switch_patterns(ssa_func, set(case_body_sorted), formatter, start_to_block)
                 nested_block_to_switch: Dict[int, SwitchPattern] = {}
                 for ns in nested_switches:
                     debug_print(f"DEBUG NESTED SWITCH: Found nested switch {ns.test_var} in case {case.value} body")
