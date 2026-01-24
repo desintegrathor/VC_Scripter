@@ -757,7 +757,12 @@ def _format_argument(arg_value, formatter: "ExpressionFormatter", ssa_func: SSAF
     return "?"
 
 
-def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) -> Optional[str]:
+def _trace_value_to_global(
+    value,
+    formatter: ExpressionFormatter,
+    ssa_func: Optional[SSAFunction] = None,
+    visited: Optional[Set[int]] = None
+) -> Optional[str]:
     """
     Trace an SSA value back to its global variable source.
 
@@ -775,6 +780,7 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) 
     Args:
         value: SSA value to trace
         formatter: Expression formatter (must have _global_names attribute)
+        ssa_func: SSA function containing the value (optional, enables cross-block tracing)
         visited: Set of visited value IDs to prevent infinite recursion
 
     Returns:
@@ -821,12 +827,36 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) 
     # In this case, we need to trace through PHI or find the value's source
     elif producer.mnemonic == "LCP":
         # LCP loads from stack - the value might have been stored by GCP earlier
-        # Try to find the source through PHI sources
+
+        # Pattern 1: Check if this LCP value has phi_sources
         if value.phi_sources:
             for _, phi_source in value.phi_sources:
-                global_name = _trace_value_to_global(phi_source, formatter, visited)
+                global_name = _trace_value_to_global(phi_source, formatter, ssa_func, visited)
                 if global_name:
                     return global_name
+
+        # Pattern 2: Use cross-block tracing to find the ultimate producer
+        # This handles cases where the value flows through multiple blocks
+        if ssa_func:
+            ultimate_producer = _follow_ssa_value_across_blocks(value, ssa_func, visited.copy(), max_depth=10)
+            if ultimate_producer and ultimate_producer.mnemonic in {"GCP", "GLD"}:
+                if ultimate_producer.instruction and ultimate_producer.instruction.instruction:
+                    dword_offset = ultimate_producer.instruction.instruction.arg1
+                    if hasattr(formatter, '_global_names'):
+                        global_name = formatter._global_names.get(dword_offset)
+                        if global_name:
+                            logger.debug(f"_trace_value_to_global: Found global via cross-block trace: {global_name}")
+                            return global_name
+
+        # Pattern 3: Search predecessors for GCP loading to same stack offset
+        if ssa_func and producer.instruction and producer.instruction.instruction:
+            stack_offset = producer.instruction.instruction.arg1
+            global_name = _find_gcp_for_stack_offset(
+                producer.block_id, stack_offset, ssa_func, formatter, set(), max_depth=10
+            )
+            if global_name:
+                logger.debug(f"_trace_value_to_global: Found global via GCP search: {global_name}")
+                return global_name
 
     # Check if producer is DCP (load from memory via pointer)
     # Pattern: GADR global -> DCP -> value
@@ -847,9 +877,74 @@ def _trace_value_to_global(value, formatter: ExpressionFormatter, visited=None) 
     elif producer.mnemonic == "PHI":
         # Try to find global source from any PHI input
         for inp in producer.inputs:
-            global_name = _trace_value_to_global(inp, formatter, visited)
+            global_name = _trace_value_to_global(inp, formatter, ssa_func, visited)
             if global_name:
                 return global_name
+
+    return None
+
+
+def _find_gcp_for_stack_offset(
+    block_id: int,
+    stack_offset: int,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    visited: Optional[Set[int]] = None,
+    max_depth: int = 10
+) -> Optional[str]:
+    """
+    Search predecessor blocks for a GCP instruction that loaded a value
+    which was then stored to the given stack offset.
+
+    Pattern:
+        Block N: GCP data[X] -> value
+                 (value flows through CFG, gets stored to stack)
+        Block M: LCP [sp+offset] -> our_value
+
+    We need to find the GCP in Block N that is the ultimate source.
+
+    Args:
+        block_id: Current block ID to search from
+        stack_offset: Stack offset that LCP loads from
+        ssa_func: SSA function containing the blocks
+        formatter: Expression formatter (must have _global_names attribute)
+        visited: Set of visited block IDs to prevent cycles
+        max_depth: Maximum recursion depth for predecessor search
+
+    Returns:
+        Global variable name if found, None otherwise
+    """
+    if visited is None:
+        visited = set()
+    if block_id in visited or max_depth <= 0:
+        return None
+    visited.add(block_id)
+
+    # Get SSA instructions for this block
+    if not hasattr(ssa_func, 'instructions') or block_id not in ssa_func.instructions:
+        return None
+
+    block_instructions = ssa_func.instructions[block_id]
+
+    # Search for GCP/GLD in this block
+    for inst in block_instructions:
+        if inst.mnemonic in {"GCP", "GLD"}:
+            if inst.instruction and inst.instruction.instruction:
+                dword_offset = inst.instruction.instruction.arg1
+                if hasattr(formatter, '_global_names'):
+                    global_name = formatter._global_names.get(dword_offset)
+                    if global_name:
+                        return global_name
+
+    # Search predecessors
+    if hasattr(ssa_func, 'cfg') and ssa_func.cfg and block_id in ssa_func.cfg.blocks:
+        current_block = ssa_func.cfg.blocks[block_id]
+        for pred_id in current_block.predecessors:
+            result = _find_gcp_for_stack_offset(
+                pred_id, stack_offset, ssa_func, formatter, visited, max_depth - 1
+            )
+            if result:
+                return result
 
     return None
 

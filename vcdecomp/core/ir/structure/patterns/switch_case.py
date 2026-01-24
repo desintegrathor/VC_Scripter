@@ -620,6 +620,125 @@ def _find_switch_variable_from_nearby_gcp(
     return None
 
 
+def _extract_comparison_variable(
+    block_id: int,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter
+) -> Optional[str]:
+    """
+    Extract the variable being tested in a comparison block.
+
+    This is used during pre-scanning to identify nested switch headers.
+    A nested switch header tests a DIFFERENT variable than the outer switch.
+
+    Args:
+        block_id: Block ID to check
+        ssa_func: SSA function context
+        formatter: Expression formatter
+
+    Returns:
+        Variable name being tested if found, None otherwise
+    """
+    ssa_block = ssa_func.instructions.get(block_id)
+    if not ssa_block:
+        return None
+
+    for ssa_inst in ssa_block:
+        if ssa_inst.mnemonic == 'EQU':
+            if len(ssa_inst.inputs) >= 2:
+                var_value = ssa_inst.inputs[0]
+                # Use existing variable tracing logic
+                var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
+                if not var_name:
+                    var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+                if not var_name:
+                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
+                if not var_name and hasattr(var_value, 'alias'):
+                    var_name = var_value.alias
+                return var_name
+    return None
+
+
+def _pre_scan_for_nested_headers(
+    cfg: CFG,
+    case_entry: int,
+    case_entries: Set[int],
+    chain_blocks: List[int],
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    start_to_block: Dict[int, int],
+    resolver: opcodes.OpcodeResolver,
+    outer_switch_var: str,
+    max_depth: int = 15
+) -> Set[int]:
+    """
+    Pre-scan from a case entry to find blocks that start nested switches.
+
+    A nested switch header is a block that:
+    1. Has a conditional jump (JZ/JNZ)
+    2. Tests a DIFFERENT variable than the outer switch
+    3. Is reachable from the case entry
+
+    This function is called BEFORE preliminary body detection to ensure
+    that nested switch headers are included in stop_blocks, preventing
+    the BFS from traversing INTO nested switch structures.
+
+    Args:
+        cfg: Control flow graph
+        case_entry: Entry block of the case being scanned
+        case_entries: Set of all case entry blocks
+        chain_blocks: List of comparison chain blocks
+        ssa_func: SSA function context
+        formatter: Expression formatter
+        start_to_block: Map from instruction address to block ID
+        resolver: Opcode resolver
+        outer_switch_var: Variable being tested in the outer switch
+        max_depth: Maximum BFS depth to search
+
+    Returns:
+        Set of block IDs that are nested switch headers
+    """
+    nested_headers = set()
+    visited = set()
+    stop_blocks = set(case_entries)
+    stop_blocks.update(chain_blocks)
+
+    worklist = [(case_entry, 0)]  # (block_id, depth)
+
+    while worklist:
+        block_id, depth = worklist.pop(0)
+
+        if block_id in visited or depth > max_depth:
+            continue
+        if block_id in stop_blocks and block_id != case_entry:
+            continue
+
+        visited.add(block_id)
+        block = cfg.blocks.get(block_id)
+        if not block:
+            continue
+
+        # Check if this block has a conditional jump testing a different variable
+        if block.instructions:
+            last_instr = block.instructions[-1]
+            if resolver.is_conditional_jump(last_instr.opcode):
+                # Try to extract the test variable
+                var_name = _extract_comparison_variable(block_id, ssa_func, formatter)
+                if var_name and var_name != outer_switch_var:
+                    # This block tests a different variable - it's a nested switch header
+                    nested_headers.add(block_id)
+                    debug_print(f"DEBUG SWITCH: Pre-scan found nested header at {block_id}: tests '{var_name}' vs outer '{outer_switch_var}'")
+                    # Don't traverse into nested switch - it will be detected separately
+                    continue
+
+        # Add successors to worklist
+        for succ in block.successors:
+            if succ not in visited:
+                worklist.append((succ, depth + 1))
+
+    return nested_headers
+
+
 def _find_equ_for_comparison(
     current_block_id: int,
     jump_ssa,
@@ -925,7 +1044,7 @@ def _detect_switch_patterns(
                             # Try to get base variable name
                             base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
                             if not base_name:
-                                base_name = _trace_value_to_global(base_var, formatter)
+                                base_name = _trace_value_to_global(base_var, formatter, ssa_func)
                             if not base_name:
                                 # Phase 8B.1: Use multi-block SSA tracing for complex cases
                                 producer = _follow_ssa_value_across_blocks(base_var, ssa_func, max_depth=10)
@@ -935,7 +1054,7 @@ def _detect_switch_patterns(
                                         base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
                                     elif producer.mnemonic in {'GCP', 'GLD'}:
                                         # Global load - try to resolve again with producer context
-                                        base_name = _trace_value_to_global(base_var, formatter)
+                                        base_name = _trace_value_to_global(base_var, formatter, ssa_func)
                             if not base_name:
                                 base_name = formatter.render_value(base_var)
 
@@ -975,7 +1094,7 @@ def _detect_switch_patterns(
                                 _switch_debug(f"  -> Inferred semantic parameter name: {var_name}")
 
                 if not var_name:
-                    var_name = _trace_value_to_global(var_value, formatter)
+                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
                     if var_name:
                         _switch_debug(f"  -> Found global: {var_name}")
 
@@ -1254,15 +1373,33 @@ def _detect_switch_patterns(
             # but those are often body blocks (e.g., if/else branches), not the exit.
             #
             # New algorithm:
-            # 1. Do preliminary body detection without exit constraint
-            # 2. Find where body blocks exit TO (successors outside body)
-            # 3. The most common such successor is the real exit block
+            # 1. Pre-scan for nested switch headers (BEFORE body detection)
+            # 2. Do preliminary body detection with nested headers as stop barriers
+            # 3. Find where body blocks exit TO (successors outside body)
+            # 4. The most common such successor is the real exit block
             all_case_blocks = {case.block_id for case in cases}
 
+            # CRITICAL FIX: Pre-scan for nested switch headers BEFORE preliminary body detection
+            # This prevents the BFS from traversing INTO nested switch structures
+            # which was causing nested switch cases to appear outside their parent switch
+            for case in cases:
+                if case.falls_through_to is not None:
+                    continue
+                # Do limited BFS from each case entry to find nested switch headers
+                pre_scan_nested = _pre_scan_for_nested_headers(
+                    cfg, case.block_id, all_case_blocks, chain_blocks,
+                    ssa_func, formatter, start_to_block, resolver, test_var
+                )
+                nested_switch_headers.update(pre_scan_nested)
+
+            if nested_switch_headers:
+                debug_print(f"DEBUG SWITCH: Pre-scan found nested_switch_headers: {sorted(nested_switch_headers)}")
+
             # Step 1: Find preliminary body blocks for each case
-            # Use only case entries and chain blocks as stop barriers (no exit_block yet)
+            # Use case entries, chain blocks, AND nested headers as stop barriers
             preliminary_stop = all_case_blocks.copy()
             preliminary_stop.update(chain_blocks)
+            preliminary_stop.update(nested_switch_headers)  # CRITICAL: Include nested headers
 
             preliminary_bodies: Dict[int, Set[int]] = {}
             for case in cases:
