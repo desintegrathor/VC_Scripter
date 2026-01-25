@@ -11,12 +11,16 @@ from .models import (
     IfElsePattern,
     CompoundCondition,
     ForLoopInfo,
+    WhileLoopInfo,
+    DoWhileLoopInfo,
+    TernaryInfo,
 )
 
 from .if_else import (
     _detect_early_return_pattern,
     _detect_short_circuit_pattern,
     _detect_if_else_pattern,
+    _detect_ternary_pattern,
 )
 
 from .switch_case import (
@@ -26,6 +30,9 @@ from .switch_case import (
 
 from .loops import (
     _detect_for_loop,
+    _detect_while_loop,
+    _detect_do_while_loop,
+    _detect_loop_type,
 )
 
 __all__ = [
@@ -35,13 +42,20 @@ __all__ = [
     "IfElsePattern",
     "CompoundCondition",
     "ForLoopInfo",
+    "WhileLoopInfo",
+    "DoWhileLoopInfo",
+    "TernaryInfo",
     # If/else detection
     "_detect_early_return_pattern",
     "_detect_short_circuit_pattern",
     "_detect_if_else_pattern",
+    "_detect_ternary_pattern",
     # Switch/case detection
     "_detect_switch_patterns",
     "_find_switch_variable_from_nearby_gcp",
     # Loop detection
     "_detect_for_loop",
+    "_detect_while_loop",
+    "_detect_do_while_loop",
+    "_detect_loop_type",
 ]

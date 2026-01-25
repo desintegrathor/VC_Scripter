@@ -228,10 +228,20 @@ def _render_nested_switch(
                     early_returns[body_block_id] = early_ret
 
         # Build nested switch block map for rendering
+        # FIX (01-25): Recursively detect even deeper nesting (4+ levels)
         nested_nested_block_to_switch: Dict[int, SwitchPattern] = {}
         for ns in nested_nested_switches:
             for ns_block_id in ns.all_blocks:
                 nested_nested_block_to_switch[ns_block_id] = ns
+            # Recursively detect even deeper nesting within this nested switch
+            deeper_switches = _detect_switch_patterns(
+                ssa_func, set(ns.all_blocks), formatter, start_to_block
+            )
+            for ds in deeper_switches:
+                if ds.header_block != ns.header_block:  # Avoid self-reference
+                    for ds_block_id in ds.all_blocks:
+                        nested_nested_block_to_switch[ds_block_id] = ds
+                    debug_print(f"DEBUG NESTED SWITCH: Found 4th-level nested switch {ds.test_var} inside {ns.test_var}")
 
         # Create recursive callback for rendering deeply nested switches
         def nested_render_switch_callback(sw, ind, b2if, vis_ifs, emit_blks):
@@ -278,13 +288,34 @@ def _render_nested_switch(
         lines.append(f"{base_indent}default:")
         default_body_sorted = sorted(switch.default_body_blocks, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
 
-        # Detect if/else patterns in default body
+        # FIX (01-25): Detect nested switches in default body (for deep nesting support)
+        default_nested_switches = _detect_switch_patterns(ssa_func, set(default_body_sorted), formatter, start_to_block)
+        default_nested_header_blocks: Set[int] = set()
+        for dns in default_nested_switches:
+            default_nested_header_blocks.add(dns.header_block)
+            default_nested_header_blocks.update(dns.all_blocks)
+
+        # Detect if/else patterns in default body (skip nested switch headers)
         for body_block_id in default_body_sorted:
-            if body_block_id not in block_to_if:
+            if body_block_id not in block_to_if and body_block_id not in default_nested_header_blocks:
                 temp_visited = set()
                 if_pattern = _detect_if_else_pattern(cfg, body_block_id, start_to_block, resolver, temp_visited, func_loops, ssa_func=ssa_func, formatter=formatter)
                 if if_pattern:
                     block_to_if[body_block_id] = if_pattern
+
+        # Build nested switch block map for default body
+        default_nested_block_to_switch: Dict[int, SwitchPattern] = {}
+        for dns in default_nested_switches:
+            for dns_block_id in dns.all_blocks:
+                default_nested_block_to_switch[dns_block_id] = dns
+
+        # Create callback for rendering nested switches in default body
+        def default_nested_render_switch_callback(sw, ind, b2if, vis_ifs, emit_blks):
+            return _render_nested_switch(
+                sw, ind, ssa_func, formatter, cfg, func_loops,
+                start_to_block, resolver, b2if, vis_ifs, emit_blks,
+                global_map, parent_switch=switch
+            )
 
         default_lines = _render_blocks_with_loops(
             default_body_sorted,
@@ -298,7 +329,10 @@ def _render_nested_switch(
             block_to_if,
             visited_ifs,
             emitted_blocks,
-            global_map
+            global_map,
+            None,  # early_returns
+            default_nested_block_to_switch,
+            default_nested_render_switch_callback
         )
         default_has_return = any(line.strip().startswith("return") for line in default_lines)
         lines.extend(default_lines)
@@ -483,7 +517,7 @@ def format_structured_function(ssa_func: SSAFunction) -> str:
     return "\n".join(lines)
 
 
-def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal", heritage_metadata: Optional[Dict] = None) -> str:
+def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entry_addr: int, end_addr: int = None, function_bounds=None, style: str = "normal", heritage_metadata: Optional[Dict] = None, use_collapse: bool = False) -> str:
     """
     Format structured output for a specific function with custom name and entry point.
 
@@ -496,6 +530,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         style: Output verbosity - 'quiet' (no DEBUG), 'normal' (default), 'verbose' (full DEBUG)
         heritage_metadata: Optional heritage SSA metadata from HeritageOrchestrator.get_heritage_metadata()
                           Contains variable info and PHI placements for improved code generation.
+        use_collapse: If True, use Ghidra-style hierarchical collapse algorithm instead of
+                     flat pattern detection. This provides better handling of complex control flow.
 
     Uses per-function ExpressionFormatter with function boundaries for 100% reliable
     structure field detection. This ensures local_0 in different functions correctly
@@ -618,6 +654,83 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     for i, sw in enumerate(switch_patterns):
         debug_print(f"DEBUG ORCHESTRATOR: Switch {i}: {sw.test_var} with {len(sw.cases)} cases, header_block={sw.header_block}")
 
+    # =========================================================================
+    # GHIDRA-STYLE COLLAPSE ALGORITHM (use_collapse=True)
+    # =========================================================================
+    # When enabled, use hierarchical block structure and iterative collapse
+    # instead of flat pattern detection. This provides better handling of
+    # complex nested control flow and irreducible regions.
+    # =========================================================================
+    if use_collapse:
+        debug_print(f"DEBUG ORCHESTRATOR: Using Ghidra-style collapse algorithm")
+        from .blocks.hierarchy import BlockGraph
+        from .collapse.engine import CollapseStructure
+        from .emit.hierarchical_emitter import HierarchicalCodeEmitter
+
+        # Build block graph from this function's blocks only (not entire CFG)
+        block_graph = BlockGraph.from_cfg_subset(cfg, ssa_func, func_block_ids, entry_block)
+        debug_print(f"DEBUG COLLAPSE: Built block graph with {len(block_graph.blocks)} blocks (function has {len(func_block_ids)} blocks)")
+
+        # Create collapse engine with detected switch patterns
+        collapser = CollapseStructure(block_graph)
+        collapser.set_switch_patterns(switch_patterns)
+
+        # Run collapse algorithm
+        root_block = collapser.collapse_all()
+
+        # Get collapse statistics
+        stats = collapser.get_statistics()
+        debug_print(f"DEBUG COLLAPSE: {stats['iterations']} iterations, "
+                   f"{sum(stats['rules_applied'].values())} rules applied, "
+                   f"{stats['gotos_inserted']} gotos")
+
+        # Emit code using hierarchical emitter
+        emitter = HierarchicalCodeEmitter(
+            graph=block_graph,
+            ssa_func=ssa_func,
+            formatter=formatter,
+            resolver=resolver,
+            global_map=global_map,
+            start_to_block=start_to_block,
+            func_loops=func_loops,
+            func_block_ids=func_block_ids,
+        )
+
+        # Generate function body (emits root structure + remaining uncollapsed blocks)
+        body_lines = emitter.emit_function()
+
+        # Build complete function output
+        # First, we need to generate the function signature
+        from ..function_signature import get_function_signature_string
+        scr = ssa_func.scr
+        signature = get_function_signature_string(
+            ssa_func,
+            func_name,
+            entry_addr,
+            end_addr,
+            scr_header_enter_size=scr.header.enter_size,
+            type_engine=None
+        )
+
+        output_lines: List[str] = [f"{signature} {{"]
+
+        # Add variable declarations (reuse existing logic - imported at module level)
+        vars_decls = _collect_local_variables(ssa_func, func_block_ids, formatter)
+        for var_decl in vars_decls:
+            output_lines.append(f"    {var_decl};")
+        if vars_decls:
+            output_lines.append("")
+
+        # Add body
+        output_lines.extend(body_lines)
+
+        output_lines.append("}")
+        return "\n".join(output_lines)
+
+    # =========================================================================
+    # END COLLAPSE ALGORITHM - Continue with flat pattern detection
+    # =========================================================================
+
     # Build map: block_id -> switch pattern (for quick lookup)
     block_to_switch: Dict[int, SwitchPattern] = {}
     for switch in switch_patterns:
@@ -694,6 +807,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     candidate_declarations: List[tuple] = []  # (var_name, formatted_decl)
     lowered_var_names = set()
 
+    # FIX (01-25): Build set of global variable names for shadowing detection
+    # This prevents locals from being declared with names that conflict with globals
+    global_var_names: Set[str] = set()
+    if global_map:
+        global_var_names = set(global_map.values())
+
     # Collect from SSA lowering variable declarations
     for var_type, var_name in lowering_result.variable_declarations:
         # PHASE 5: Skip unused temporary variables at SSA level (first pass DCE)
@@ -706,6 +825,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         from .analysis.variables import _is_undefined_variable
         if _is_undefined_variable(var_name, ssa_func, func_block_ids, lowering_result.lowered_rename_map):
             debug_print(f"DEBUG: PHASE 6 (SSA-level) - Skipping undefined tmp from lowering: {var_name}")
+            continue
+
+        # FIX (01-25): Skip local declarations that shadow global variable names
+        if var_name in global_var_names:
+            debug_print(f"DEBUG: Skipping local declaration '{var_name}' - shadows global variable")
             continue
 
         # FIX: Handle array types correctly (e.g., "s_SC_MP_EnumPlayers[64]")
@@ -740,6 +864,11 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if len(parts) >= 2:
             # Get last part (variable name), strip array brackets if present
             var_name = parts[-1].split('[')[0]
+
+            # FIX (01-25): Skip local declarations that shadow global variable names
+            if var_name in global_var_names:
+                debug_print(f"DEBUG: Skipping old var declaration '{var_name}' - shadows global variable")
+                continue
 
             # BUGFIX: If this variable was already declared by lowering, but the old system
             # has better type info (struct types, arrays, pointers), REPLACE the lowering declaration

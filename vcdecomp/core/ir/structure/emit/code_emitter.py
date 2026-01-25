@@ -7,17 +7,102 @@ loops, and other control flow patterns into structured C-like code.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Set, Any, Tuple
 
 from ...ssa import SSAFunction
-from ...expr import ExpressionFormatter
+from ...expr import ExpressionFormatter, format_block_expressions
 from ...cfg import CFG, NaturalLoop
 from ....disasm import opcodes
-from ..patterns.models import IfElsePattern, CompoundCondition, SwitchPattern, CaseInfo
-from ..patterns.loops import _detect_for_loop
+from ..patterns.models import IfElsePattern, CompoundCondition, SwitchPattern, CaseInfo, TernaryInfo
+from ..patterns.loops import _detect_for_loop, _detect_while_loop, _detect_do_while_loop
+from ..patterns.if_else import _detect_ternary_pattern
+from ..patterns.models import WhileLoopInfo, DoWhileLoopInfo
 from ..analysis.condition import _combine_conditions, render_condition
 from ..utils.helpers import SHOW_BLOCK_COMMENTS, _is_control_flow_only
 from .block_formatter import _format_block_lines, _format_block_lines_filtered
+
+
+def _render_block_statements(
+    ssa_func: SSAFunction,
+    block_id: int,
+    formatter: ExpressionFormatter,
+    resolver: "opcodes.OpcodeResolver",
+    global_map: Optional[Dict[int, str]] = None,
+) -> List[str]:
+    """
+    Render statements for a basic block.
+
+    This is a simple helper function that formats expressions for a single block
+    without recursive if/else handling. Used by the hierarchical emitter.
+
+    Args:
+        ssa_func: SSA function data
+        block_id: Block ID to format
+        formatter: ExpressionFormatter to use
+        resolver: Opcode resolver
+        global_map: Optional global variable name map
+
+    Returns:
+        List of statement strings (without indentation)
+    """
+    expressions = format_block_expressions(ssa_func, block_id, formatter=formatter)
+
+    lines = []
+    found_return = False
+
+    for expr in expressions:
+        expr_text = expr.text.strip()
+
+        # Skip unreachable code after returns
+        if found_return:
+            continue
+
+        lines.append(expr_text)
+
+        # Check if this is an unconditional return
+        if expr_text.startswith("return"):
+            found_return = True
+
+    return lines
+
+
+def _partition_blocks_for_nested_switch(
+    block_ids: List[int],
+    nested_switch: SwitchPattern,
+    cfg: CFG
+) -> Tuple[List[int], List[int]]:
+    """
+    Partition blocks into pre-nested and post-nested groups.
+
+    Nested switch blocks are excluded entirely (rendered separately via callback).
+    This ensures correct structural order regardless of bytecode address interleaving.
+
+    Args:
+        block_ids: List of block IDs to partition
+        nested_switch: The nested switch pattern to partition around
+        cfg: Control flow graph for address lookups
+
+    Returns:
+        Tuple of (pre_nested_blocks, post_nested_blocks) both sorted by address.
+    """
+    nested_header_addr = cfg.blocks[nested_switch.header_block].start if nested_switch.header_block in cfg.blocks else 0
+    nested_blocks = nested_switch.all_blocks
+
+    pre: List[int] = []
+    post: List[int] = []
+
+    for bid in block_ids:
+        if bid in nested_blocks:
+            continue  # Skip - rendered with nested switch
+        block_addr = cfg.blocks[bid].start if bid in cfg.blocks else 0
+        if block_addr < nested_header_addr:
+            pre.append(bid)
+        else:
+            post.append(bid)
+
+    pre.sort(key=lambda b: cfg.blocks[b].start if b in cfg.blocks else 0)
+    post.sort(key=lambda b: cfg.blocks[b].start if b in cfg.blocks else 0)
+    return pre, post
 
 
 def _render_if_else_recursive(
@@ -151,8 +236,48 @@ def _render_if_else_recursive(
     )
     cond_text = condition_render.text or f"cond_{if_pattern.header_block}"
 
+    # NEW: Try to detect ternary pattern before rendering full if/else
+    ternary_info = _detect_ternary_pattern(
+        if_pattern, ssa_func, formatter, cfg, resolver, cond_text
+    )
+
+    if ternary_info:
+        # Render as ternary operator instead of if/else
+        # First, render any header statements (excluding the conditional jump)
+        ssa_block = ssa_blocks.get(if_pattern.header_block, [])
+
+        header_lines = _format_block_lines(
+            ssa_func, if_pattern.header_block, indent, formatter,
+            None, None, None, None, None, None,  # Disable recursion for header itself
+            early_returns
+        )
+
+        # Remove last line if it's the conditional jump
+        if header_lines and ("goto" in header_lines[-1] or "if (" in header_lines[-1]):
+            header_lines = header_lines[:-1]
+
+        # Remove condition statement if it duplicates the rendered condition
+        if header_lines and condition_render.text:
+            header_lines = [
+                line for line in header_lines
+                if line.strip().rstrip(";") != condition_render.text
+            ]
+
+        lines.extend(header_lines)
+
+        # Render the ternary expression
+        lines.append(f"{indent}{ternary_info.variable} = ({ternary_info.condition}) ? {ternary_info.true_value} : {ternary_info.false_value};")
+
+        # Mark all blocks as emitted
+        emitted_blocks.add(if_pattern.header_block)
+        emitted_blocks.update(if_pattern.true_body)
+        emitted_blocks.update(if_pattern.false_body)
+
+        return lines
+
     # Render header block statements (excluding conditional jump)
     # Only add comment if block has actual statements
+    ssa_block = ssa_blocks.get(if_pattern.header_block, [])
     if SHOW_BLOCK_COMMENTS and not _is_control_flow_only(ssa_block, resolver):
         lines.append(f"{indent}// Block {if_pattern.header_block} @{header_block.start}")
 
@@ -271,9 +396,72 @@ def _render_blocks_with_loops(
 
     Used for rendering switch case bodies where loops may be present.
     Also supports nested switch/case patterns via block_to_switch parameter.
+
+    FIX (01-25): Uses hierarchical block partitioning for nested switches.
+    Instead of iterating all case body blocks linearly by address, partitions them into:
+    - Pre-nested blocks: Blocks before the nested switch header
+    - Nested switch blocks: Delegated entirely to recursive rendering
+    - Post-nested blocks: Blocks after the nested switch
+    This ensures correct structural order regardless of bytecode address interleaving.
     """
     lines: List[str] = []
     processed_in_loop: Set[int] = set()
+
+    # FIX (01-25): Hierarchical block partitioning for nested switches
+    # If there are nested switches, use partitioning to ensure correct rendering order
+    if block_to_switch and render_switch_callback:
+        # Find ALL nested switch headers in this block set
+        block_ids_set = set(block_ids)
+        nested_headers_in_scope = [
+            bid for bid in block_ids
+            if bid in block_to_switch and bid == block_to_switch[bid].header_block
+        ]
+
+        if nested_headers_in_scope:
+            # Get the first nested switch (by address order)
+            first_nested_header = min(nested_headers_in_scope,
+                                      key=lambda b: cfg.blocks[b].start if b in cfg.blocks else 0)
+            nested_switch = block_to_switch[first_nested_header]
+
+            # Partition blocks around this nested switch
+            pre_blocks, post_blocks = _partition_blocks_for_nested_switch(
+                block_ids, nested_switch, cfg
+            )
+
+            # Build a filtered block_to_switch map excluding this nested switch's blocks
+            filtered_block_to_switch = {
+                k: v for k, v in block_to_switch.items()
+                if k not in nested_switch.all_blocks
+            }
+
+            # Render pre-nested blocks (recursive call without this switch)
+            if pre_blocks:
+                lines.extend(_render_blocks_with_loops(
+                    pre_blocks, indent, ssa_func, formatter, cfg, func_loops,
+                    start_to_block, resolver, block_to_if, visited_ifs,
+                    emitted_blocks, global_map, early_returns,
+                    filtered_block_to_switch, render_switch_callback
+                ))
+
+            # Render nested switch using the callback
+            switch_lines = render_switch_callback(
+                nested_switch, indent, block_to_if, visited_ifs, emitted_blocks
+            )
+            lines.extend(switch_lines)
+
+            # Mark all nested switch blocks as processed
+            processed_in_loop.update(nested_switch.all_blocks)
+
+            # Render post-nested blocks (recursive call)
+            if post_blocks:
+                lines.extend(_render_blocks_with_loops(
+                    post_blocks, indent, ssa_func, formatter, cfg, func_loops,
+                    start_to_block, resolver, block_to_if, visited_ifs,
+                    emitted_blocks, global_map, early_returns,
+                    filtered_block_to_switch, render_switch_callback
+                ))
+
+            return lines  # Early return - handled via partitioning
 
     # Track which blocks have for-loops as successors and what variable to skip
     skip_last_assignment: Dict[int, str] = {}  # block_id -> variable_name to skip
@@ -340,14 +528,28 @@ def _render_blocks_with_loops(
             # Render loop
             lines.append(f"{indent}// Loop header - Block {body_block_id} @{body_block.start}")
 
-            # Try to detect for-loop pattern
+            # Try to detect for-loop pattern (most specific)
             for_info = _detect_for_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
+            while_info = None
+            do_while_info = None
+
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; {for_info.condition}; {for_info.increment}) {{")
                 if for_info.guard_block is not None:
                     guard_blocks.add(for_info.guard_block)
             else:
-                lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
+                # Try while-loop pattern
+                while_info = _detect_while_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
+                if while_info:
+                    lines.append(f"{indent}while ({while_info.condition}) {{")
+                else:
+                    # Try do-while pattern
+                    do_while_info = _detect_do_while_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
+                    if do_while_info:
+                        lines.append(f"{indent}do {{")
+                    else:
+                        # Fallback: unrecognized loop pattern
+                        lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
             # Render loop body blocks
             loop_body_sorted = sorted(header_loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
@@ -382,7 +584,11 @@ def _render_blocks_with_loops(
                             early_returns, guard_blocks
                         ))
 
-            lines.append(f"{indent}}}")
+            # Close loop with appropriate syntax
+            if do_while_info:
+                lines.append(f"{indent}}} while ({do_while_info.condition});")
+            else:
+                lines.append(f"{indent}}}")
 
             # Mark all loop body blocks as processed
             processed_in_loop.update(header_loop.body)

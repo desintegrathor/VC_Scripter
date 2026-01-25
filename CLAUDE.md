@@ -24,6 +24,10 @@ This is a **one-time-use tool** for reconstructing a finite set of Vietcong game
 4. Type constraints from opcodes (IADD = int, FADD = float)
 5. Structural patterns (loop counters, array indices)
 
+**Inspiration from Ghidra decompiler:**
+Look often into this repository to find how a state of the art decompiler works. Take what you can from it.
+C:\Users\flori\Documents\GitHub\ghidra
+
 ## Essential Commands
 
 ### Running the Decompiler

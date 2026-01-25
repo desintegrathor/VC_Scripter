@@ -111,3 +111,91 @@ class ForLoopInfo:
     increment: str                 # Increment expression (e.g., "i++")
     init_var: str = ""            # Original initialization variable (e.g., "local_2") for filtering
     guard_block: Optional[int] = None  # Optional guard block to omit (if condition is in loop body)
+
+
+@dataclass
+class WhileLoopInfo:
+    """
+    Detected while-loop pattern.
+
+    Pattern (Ghidra-style):
+    - Condition block has exactly 2 outgoing edges
+    - One edge targets a clause block (loop body)
+    - Clause block has single output flowing back to condition
+    - Condition is evaluated BEFORE each iteration
+
+    CFG structure:
+        [condition] --false--> [exit]
+            |
+            v (true)
+        [body] --back_edge--> [condition]
+    """
+    condition: str                 # Loop condition expression (e.g., "x > 0")
+    header_block: int              # Block with the condition check (loop header)
+    body_blocks: Set[int] = None   # All blocks in loop body
+    exit_block: Optional[int] = None  # Block after loop (where false branch goes)
+
+    def __post_init__(self):
+        if self.body_blocks is None:
+            self.body_blocks = set()
+
+
+@dataclass
+class DoWhileLoopInfo:
+    """
+    Detected do-while loop pattern.
+
+    Pattern (Ghidra-style):
+    - Body executes at least once
+    - Condition block at end that loops back to start
+    - Condition evaluated AFTER each iteration
+
+    CFG structure:
+        [body_start]
+            |
+            v
+        [body_blocks]
+            |
+            v
+        [condition] --true--> [body_start] (back edge)
+            |
+            v (false)
+        [exit]
+    """
+    condition: str                 # Loop condition expression (e.g., "x > 0")
+    body_start_block: int          # First block of loop body (entry point)
+    condition_block: int           # Block with condition check (at end of body)
+    body_blocks: Set[int] = None   # All blocks in loop body (including condition block)
+    exit_block: Optional[int] = None  # Block after loop
+
+    def __post_init__(self):
+        if self.body_blocks is None:
+            self.body_blocks = {self.body_start_block, self.condition_block}
+
+
+@dataclass
+class TernaryInfo:
+    """
+    Ternary operator pattern detected from if/else.
+
+    Pattern:
+    - true_body and false_body each contain exactly 1 block
+    - Each block has exactly 1 assignment expression (no side effects)
+    - Both assignments target the SAME variable
+    - merge_block exists (branches rejoin)
+    - Neither branch has function calls, returns, or breaks
+
+    Renders as:
+        result = (x > 0) ? 1 : 0;
+
+    Instead of:
+        if (x > 0) {
+            result = 1;
+        } else {
+            result = 0;
+        }
+    """
+    variable: str          # Variable being assigned (e.g., "result")
+    condition: str         # Condition expression (e.g., "x > 0")
+    true_value: str        # Expression for true branch (e.g., "1")
+    false_value: str       # Expression for false branch (e.g., "0")

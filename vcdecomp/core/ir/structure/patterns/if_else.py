@@ -16,9 +16,10 @@ from ....disasm import opcodes
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
 
-from .models import IfElsePattern, CompoundCondition
+from .models import IfElsePattern, CompoundCondition, TernaryInfo
 from ..analysis.flow import _find_common_successor, _find_if_body_blocks
 from ..analysis.condition import _collect_and_chain, _collect_or_chain, render_condition
+import re
 
 
 def _detect_early_return_pattern(
@@ -558,4 +559,137 @@ def _detect_if_else_pattern(
         merge_block=merge_block,
         true_body=true_body,
         false_body=false_body
+    )
+
+
+def _detect_ternary_pattern(
+    if_pattern: IfElsePattern,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver,
+    condition_text: str
+) -> Optional[TernaryInfo]:
+    """
+    Detect if an if/else pattern can be rendered as a ternary operator.
+
+    Criteria:
+    1. true_body and false_body each contain exactly 1 block
+    2. Each block has exactly 1 assignment expression (no side effects)
+    3. Both assignments target the SAME variable
+    4. merge_block exists (branches rejoin)
+    5. Neither branch has function calls (XCALL/CALL), returns, or breaks
+
+    Args:
+        if_pattern: The if/else pattern to analyze
+        ssa_func: SSA function data
+        formatter: Expression formatter
+        cfg: Control flow graph
+        resolver: Opcode resolver
+        condition_text: Pre-rendered condition expression
+
+    Returns:
+        TernaryInfo if pattern matches, None otherwise
+    """
+    # Import here to avoid circular import
+    from ...expr import format_block_expressions
+
+    # Criterion 4: merge_block must exist (branches rejoin)
+    if if_pattern.merge_block is None:
+        return None
+
+    # Criterion 1a: true_body must have exactly 1 block
+    if len(if_pattern.true_body) != 1:
+        return None
+
+    # Criterion 1b: false_body must have exactly 1 block (and not be empty)
+    if not if_pattern.false_body or len(if_pattern.false_body) != 1:
+        return None
+
+    true_block_id = next(iter(if_pattern.true_body))
+    false_block_id = next(iter(if_pattern.false_body))
+
+    # Criterion 5a: Check true block for side effects (XCALL/CALL/RET/break)
+    true_block = cfg.blocks.get(true_block_id)
+    if true_block and true_block.instructions:
+        for instr in true_block.instructions:
+            mnem = resolver.get_mnemonic(instr.opcode)
+            # Skip if block has function calls or returns
+            if mnem in {"XCALL", "CALL", "RET"}:
+                return None
+            # JMP is OK (used to jump to merge point)
+
+    # Criterion 5b: Check false block for side effects
+    false_block = cfg.blocks.get(false_block_id)
+    if false_block and false_block.instructions:
+        for instr in false_block.instructions:
+            mnem = resolver.get_mnemonic(instr.opcode)
+            if mnem in {"XCALL", "CALL", "RET"}:
+                return None
+
+    # Criterion 2 & 3: Get expressions from each block and validate
+    true_exprs = format_block_expressions(ssa_func, true_block_id, formatter=formatter)
+    false_exprs = format_block_expressions(ssa_func, false_block_id, formatter=formatter)
+
+    # Filter out control flow (goto, etc.)
+    true_assignments = []
+    for expr in true_exprs:
+        text = expr.text.strip()
+        if text.startswith("goto ") or not text:
+            continue
+        true_assignments.append(text)
+
+    false_assignments = []
+    for expr in false_exprs:
+        text = expr.text.strip()
+        if text.startswith("goto ") or not text:
+            continue
+        false_assignments.append(text)
+
+    # Criterion 2: Each block must have exactly 1 assignment
+    if len(true_assignments) != 1 or len(false_assignments) != 1:
+        return None
+
+    true_stmt = true_assignments[0].rstrip(';')
+    false_stmt = false_assignments[0].rstrip(';')
+
+    # Parse assignments with regex: "variable = expression"
+    # Must handle complex variable names like "local_0", "gData[i]", etc.
+    # Pattern: capture variable name, then "=", then the rest (value)
+    assign_pattern = re.compile(r'^(\S+)\s*=\s*(.+)$')
+
+    true_match = assign_pattern.match(true_stmt)
+    false_match = assign_pattern.match(false_stmt)
+
+    if not true_match or not false_match:
+        return None
+
+    true_var, true_value = true_match.groups()
+    false_var, false_value = false_match.groups()
+
+    # Criterion 3: Both assignments must target the SAME variable
+    if true_var != false_var:
+        return None
+
+    # Additional safety check: values should not contain function calls
+    # (Some expressions might slip through bytecode check)
+    if '(' in true_value or '(' in false_value:
+        # Could be a function call - skip to be safe
+        # Exception: type casts like "(float)" or "(int)" are OK
+        # Simple heuristic: if there's a comma, it's likely a function call
+        if ',' in true_value or ',' in false_value:
+            return None
+        # Check for function call pattern: identifier followed by (
+        func_call_pattern = re.compile(r'\b[a-zA-Z_]\w*\s*\(')
+        if func_call_pattern.search(true_value) or func_call_pattern.search(false_value):
+            # Exception for casts: (type)value
+            cast_pattern = re.compile(r'^\(\w+\)\s*\S+$')
+            if not (cast_pattern.match(true_value.strip()) or cast_pattern.match(false_value.strip())):
+                return None
+
+    return TernaryInfo(
+        variable=true_var,
+        condition=condition_text,
+        true_value=true_value,
+        false_value=false_value
     )

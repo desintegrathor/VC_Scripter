@@ -16,7 +16,7 @@ from ...expr import ExpressionFormatter
 from ..analysis.condition import render_condition
 from .if_else import _detect_early_return_pattern
 
-from .models import ForLoopInfo
+from .models import ForLoopInfo, WhileLoopInfo, DoWhileLoopInfo
 
 
 def _condition_mentions_loop_var(
@@ -414,3 +414,316 @@ def _detect_for_loop(
         init_var=init_var,
         guard_block=guard_block
     )
+
+
+def _detect_while_loop(
+    loop: NaturalLoop,
+    cfg: CFG,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    global_map: Optional[Dict[int, str]] = None
+) -> Optional[WhileLoopInfo]:
+    """
+    Detect while-loop pattern in a natural loop (Ghidra-style).
+
+    Pattern:
+    - Header block has conditional jump (the loop condition)
+    - One branch goes to loop body
+    - Other branch goes to exit (outside loop)
+    - Body eventually jumps back to header (back edge)
+
+    CFG structure:
+        [header/condition] --false--> [exit]
+               |
+               v (true)
+           [body blocks]
+               |
+               v (back edge)
+        [header/condition]
+
+    This differs from for-loop:
+    - No clear initialization in predecessor
+    - No clear increment at back edge
+    - Just condition test at header
+
+    Args:
+        loop: Natural loop to analyze
+        cfg: Control flow graph
+        ssa_func: SSA function data
+        formatter: Expression formatter
+        resolver: Opcode resolver
+        start_to_block: Address to block ID mapping
+        global_map: Global variable name resolution
+
+    Returns:
+        WhileLoopInfo if pattern matches, None otherwise
+    """
+    header_block = cfg.blocks.get(loop.header)
+    if not header_block or not header_block.instructions:
+        return None
+
+    # Check if header ends with conditional jump
+    last_instr = header_block.instructions[-1]
+    if not resolver.is_conditional_jump(last_instr.opcode):
+        return None
+
+    # Get successors
+    if len(header_block.successors) != 2:
+        return None
+
+    # Determine which successor is exit (outside loop) and which is body (inside loop)
+    exit_block = None
+    body_entry = None
+
+    for succ in header_block.successors:
+        if succ not in loop.body:
+            exit_block = succ
+        else:
+            if succ != loop.header:  # Don't count self-loop
+                body_entry = succ
+
+    # If no clear exit block found, not a while pattern
+    if exit_block is None:
+        return None
+
+    # If no body entry (e.g., all successors outside loop), not a while pattern
+    if body_entry is None:
+        # Could be a do-while instead (body comes before condition)
+        return None
+
+    # Extract condition from header
+    condition_render = render_condition(
+        ssa_func,
+        loop.header,
+        formatter,
+        cfg,
+        resolver,
+        negate=None  # We'll determine proper polarity
+    )
+
+    condition_text = condition_render.text or ""
+    if not condition_text:
+        return None
+
+    # Determine condition polarity
+    # JZ: jump if zero (false) -> jump target is exit when condition is false
+    # JNZ: jump if not zero (true) -> jump target is exit when condition is true
+    mnemonic = resolver.get_mnemonic(last_instr.opcode)
+    jump_target = start_to_block.get(last_instr.arg1)
+
+    if jump_target == exit_block:
+        # Jump goes to exit
+        if mnemonic == "JZ":
+            # JZ to exit: continue when condition is TRUE
+            # Condition text is the "break" condition, so invert for "continue" condition
+            condition_text = _invert_condition_text(condition_text)
+        # JNZ to exit: continue when condition is FALSE - already correct
+    else:
+        # Jump goes to body (exit is fallthrough)
+        if mnemonic == "JNZ":
+            # JNZ to body: continue when condition is TRUE - already correct
+            pass
+        else:
+            # JZ to body: continue when condition is FALSE, invert
+            condition_text = _invert_condition_text(condition_text)
+
+    # Get all body blocks (all blocks in loop except header if it's just condition)
+    body_blocks = set(loop.body)
+    body_blocks.discard(loop.header)  # Header is condition, not body
+
+    return WhileLoopInfo(
+        condition=condition_text,
+        header_block=loop.header,
+        body_blocks=body_blocks,
+        exit_block=exit_block
+    )
+
+
+def _detect_do_while_loop(
+    loop: NaturalLoop,
+    cfg: CFG,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    global_map: Optional[Dict[int, str]] = None
+) -> Optional[DoWhileLoopInfo]:
+    """
+    Detect do-while loop pattern in a natural loop (Ghidra-style).
+
+    Pattern:
+    - Body executes at least once before condition check
+    - Condition block at the END of the loop (has the back edge)
+    - Condition jumps back to body start on true, exits on false
+
+    CFG structure:
+        [body_start] <-- entry from outside loop
+            |
+            v
+        [body blocks]
+            |
+            v
+        [condition] --true--> [body_start] (back edge)
+            |
+            v (false)
+        [exit]
+
+    Key difference from while loop:
+    - Loop header is NOT the condition block
+    - Condition is at the back edge source, not header
+
+    Args:
+        loop: Natural loop to analyze
+        cfg: Control flow graph
+        ssa_func: SSA function data
+        formatter: Expression formatter
+        resolver: Opcode resolver
+        start_to_block: Address to block ID mapping
+        global_map: Global variable name resolution
+
+    Returns:
+        DoWhileLoopInfo if pattern matches, None otherwise
+    """
+    header_block = cfg.blocks.get(loop.header)
+    if not header_block or not header_block.instructions:
+        return None
+
+    # For do-while, header should NOT have conditional jump
+    # (or if it does, it's not the loop condition - it's inner control flow)
+    last_header_instr = header_block.instructions[-1]
+
+    # Find the back edge - the condition is at the source of the back edge
+    condition_block_id = None
+    for back_edge in loop.back_edges:
+        if back_edge.target == loop.header:
+            condition_block_id = back_edge.source
+            break
+
+    if condition_block_id is None:
+        return None
+
+    # Condition block must end with conditional jump
+    condition_block = cfg.blocks.get(condition_block_id)
+    if not condition_block or not condition_block.instructions:
+        return None
+
+    last_cond_instr = condition_block.instructions[-1]
+    if not resolver.is_conditional_jump(last_cond_instr.opcode):
+        # Not a conditional back edge - could be unconditional loop
+        return None
+
+    # Determine exit block (the false target of the condition)
+    exit_block = None
+    for succ in condition_block.successors:
+        if succ not in loop.body:
+            exit_block = succ
+            break
+
+    if exit_block is None:
+        # All successors are in loop body - unusual, might be nested loop
+        return None
+
+    # Verify the conditional jump structure
+    # One branch should go to header (back edge), other to exit
+    mnemonic = resolver.get_mnemonic(last_cond_instr.opcode)
+    jump_target = start_to_block.get(last_cond_instr.arg1)
+
+    # Extract condition
+    condition_render = render_condition(
+        ssa_func,
+        condition_block_id,
+        formatter,
+        cfg,
+        resolver,
+        negate=None
+    )
+
+    condition_text = condition_render.text or ""
+    if not condition_text:
+        return None
+
+    # Determine condition polarity for do-while
+    # We want: "do { body } while (condition)" where condition is TRUE to continue
+    if jump_target == loop.header:
+        # Jump goes back to header (continue loop)
+        if mnemonic == "JNZ":
+            # JNZ back to header: continue when TRUE - correct
+            pass
+        else:
+            # JZ back to header: continue when FALSE, invert
+            condition_text = _invert_condition_text(condition_text)
+    else:
+        # Jump goes to exit
+        if mnemonic == "JZ":
+            # JZ to exit: exit when FALSE, so continue when TRUE - correct
+            pass
+        else:
+            # JNZ to exit: exit when TRUE, so continue when FALSE - invert
+            condition_text = _invert_condition_text(condition_text)
+
+    # Body blocks are all loop blocks
+    body_blocks = set(loop.body)
+
+    return DoWhileLoopInfo(
+        condition=condition_text,
+        body_start_block=loop.header,
+        condition_block=condition_block_id,
+        body_blocks=body_blocks,
+        exit_block=exit_block
+    )
+
+
+def _detect_loop_type(
+    loop: NaturalLoop,
+    cfg: CFG,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int],
+    global_map: Optional[Dict[int, str]] = None
+) -> Optional[object]:
+    """
+    Detect the type of loop pattern and return the appropriate info object.
+
+    Priority order (most specific to least specific):
+    1. For-loop: has init, condition at header, increment at back edge
+    2. While-loop: condition at header, no clear init/increment
+    3. Do-while loop: condition at back edge, body executes first
+
+    Args:
+        loop: Natural loop to analyze
+        cfg: Control flow graph
+        ssa_func: SSA function data
+        formatter: Expression formatter
+        resolver: Opcode resolver
+        start_to_block: Address to block ID mapping
+        global_map: Global variable name resolution
+
+    Returns:
+        ForLoopInfo, WhileLoopInfo, or DoWhileLoopInfo if a pattern matches,
+        None if no loop pattern detected
+    """
+    # Try for-loop first (most specific pattern)
+    for_loop = _detect_for_loop(
+        loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map
+    )
+    if for_loop:
+        return for_loop
+
+    # Try while-loop (condition at header)
+    while_loop = _detect_while_loop(
+        loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map
+    )
+    if while_loop:
+        return while_loop
+
+    # Try do-while loop (condition at back edge)
+    do_while_loop = _detect_do_while_loop(
+        loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map
+    )
+    if do_while_loop:
+        return do_while_loop
+
+    return None

@@ -15,7 +15,8 @@ from dataclasses import dataclass
 from vcdecomp.core.ir.structure.patterns.if_else import (
     _detect_early_return_pattern,
     _detect_short_circuit_pattern,
-    _detect_if_else_pattern
+    _detect_if_else_pattern,
+    _detect_ternary_pattern
 )
 
 from vcdecomp.core.ir.structure.patterns.switch_case import (
@@ -32,7 +33,8 @@ from vcdecomp.core.ir.structure.patterns.models import (
     SwitchPattern,
     IfElsePattern,
     CompoundCondition,
-    ForLoopInfo
+    ForLoopInfo,
+    TernaryInfo
 )
 
 
@@ -124,6 +126,8 @@ class MockOpcodeResolver:
             'RET': 0x10,
             'EQU': 0x20,
             'IADD': 0x30,
+            'XCALL': 0x40,  # External function call
+            'CALL': 0x41,   # Internal function call
         }
 
     def is_conditional_jump(self, opcode: int) -> bool:
@@ -512,6 +516,158 @@ class TestDetectIfElsePattern(unittest.TestCase):
 
 
 # ============================================================================
+# Tests for ternary pattern detection
+# ============================================================================
+
+class TestDetectTernaryPattern(unittest.TestCase):
+    """Test _detect_ternary_pattern function"""
+
+    def setUp(self):
+        self.resolver = MockOpcodeResolver()
+
+    def test_ternary_pattern_basic(self):
+        """Test that TernaryInfo can be constructed correctly"""
+        # Basic test of the TernaryInfo dataclass
+        ternary = TernaryInfo(
+            variable="result",
+            condition="x > 0",
+            true_value="1",
+            false_value="0"
+        )
+
+        self.assertEqual(ternary.variable, "result")
+        self.assertEqual(ternary.condition, "x > 0")
+        self.assertEqual(ternary.true_value, "1")
+        self.assertEqual(ternary.false_value, "0")
+
+    def test_ternary_no_merge_point(self):
+        """Test that ternary is NOT detected when merge_block is None"""
+        # Create if/else pattern without merge point
+        if_pattern = IfElsePattern(
+            header_block=0,
+            true_block=1,
+            false_block=2,
+            merge_block=None,  # No merge - branches don't rejoin
+            true_body={1},
+            false_body={2}
+        )
+
+        # Create minimal CFG
+        block0 = MockBasicBlock(0, 100, successors=[1, 2], instructions=[
+            MockInstruction(100, self.resolver.opcodes['JZ'], arg1=200)
+        ])
+        block1 = MockBasicBlock(1, 101, successors=[], instructions=[])
+        block2 = MockBasicBlock(2, 200, successors=[], instructions=[])
+        cfg = MockCFG(blocks={0: block0, 1: block1, 2: block2})
+
+        # Mock SSA and formatter
+        ssa_func = MockSSAFunction(cfg=cfg, instructions={0: [], 1: [], 2: []})
+        formatter = MockExpressionFormatter()
+
+        result = _detect_ternary_pattern(
+            if_pattern, ssa_func, formatter, cfg, self.resolver, "x > 0"
+        )
+
+        # Should NOT detect ternary (no merge block)
+        self.assertIsNone(result)
+
+    def test_ternary_multiple_blocks_in_branch(self):
+        """Test that ternary is NOT detected when branch has multiple blocks"""
+        # Create if/else pattern with multiple blocks in true branch
+        if_pattern = IfElsePattern(
+            header_block=0,
+            true_block=1,
+            false_block=3,
+            merge_block=4,
+            true_body={1, 2},  # Multiple blocks - not eligible
+            false_body={3}
+        )
+
+        block0 = MockBasicBlock(0, 100, successors=[1, 3], instructions=[
+            MockInstruction(100, self.resolver.opcodes['JZ'], arg1=300)
+        ])
+        block1 = MockBasicBlock(1, 101, successors=[2], instructions=[])
+        block2 = MockBasicBlock(2, 200, successors=[4], instructions=[])
+        block3 = MockBasicBlock(3, 300, successors=[4], instructions=[])
+        block4 = MockBasicBlock(4, 400, instructions=[])
+        cfg = MockCFG(blocks={0: block0, 1: block1, 2: block2, 3: block3, 4: block4})
+
+        ssa_func = MockSSAFunction(cfg=cfg, instructions={0: [], 1: [], 2: [], 3: [], 4: []})
+        formatter = MockExpressionFormatter()
+
+        result = _detect_ternary_pattern(
+            if_pattern, ssa_func, formatter, cfg, self.resolver, "x > 0"
+        )
+
+        # Should NOT detect ternary (multiple blocks in true branch)
+        self.assertIsNone(result)
+
+    def test_ternary_no_false_body(self):
+        """Test that ternary is NOT detected when false_body is empty"""
+        # Create if pattern without else branch
+        if_pattern = IfElsePattern(
+            header_block=0,
+            true_block=1,
+            false_block=2,
+            merge_block=2,
+            true_body={1},
+            false_body=set()  # Empty false body
+        )
+
+        block0 = MockBasicBlock(0, 100, successors=[1, 2], instructions=[
+            MockInstruction(100, self.resolver.opcodes['JZ'], arg1=200)
+        ])
+        block1 = MockBasicBlock(1, 101, successors=[2], instructions=[])
+        block2 = MockBasicBlock(2, 200, instructions=[])
+        cfg = MockCFG(blocks={0: block0, 1: block1, 2: block2})
+
+        ssa_func = MockSSAFunction(cfg=cfg, instructions={0: [], 1: [], 2: []})
+        formatter = MockExpressionFormatter()
+
+        result = _detect_ternary_pattern(
+            if_pattern, ssa_func, formatter, cfg, self.resolver, "x > 0"
+        )
+
+        # Should NOT detect ternary (no false body)
+        self.assertIsNone(result)
+
+    def test_ternary_with_xcall_rejected(self):
+        """Test that ternary is NOT detected when branch has XCALL"""
+        if_pattern = IfElsePattern(
+            header_block=0,
+            true_block=1,
+            false_block=2,
+            merge_block=3,
+            true_body={1},
+            false_body={2}
+        )
+
+        # Block 1 has XCALL instruction - side effect!
+        block0 = MockBasicBlock(0, 100, successors=[1, 2], instructions=[
+            MockInstruction(100, self.resolver.opcodes['JZ'], arg1=200)
+        ])
+        block1 = MockBasicBlock(1, 101, successors=[3], instructions=[
+            MockInstruction(101, self.resolver.opcodes['XCALL'], arg1=0),  # Side effect!
+            MockInstruction(102, self.resolver.opcodes['JMP'], arg1=300)
+        ])
+        block2 = MockBasicBlock(2, 200, successors=[3], instructions=[
+            MockInstruction(200, self.resolver.opcodes['JMP'], arg1=300)
+        ])
+        block3 = MockBasicBlock(3, 300, instructions=[])
+        cfg = MockCFG(blocks={0: block0, 1: block1, 2: block2, 3: block3})
+
+        ssa_func = MockSSAFunction(cfg=cfg, instructions={0: [], 1: [], 2: [], 3: []})
+        formatter = MockExpressionFormatter()
+
+        result = _detect_ternary_pattern(
+            if_pattern, ssa_func, formatter, cfg, self.resolver, "x > 0"
+        )
+
+        # Should NOT detect ternary (block has XCALL)
+        self.assertIsNone(result)
+
+
+# ============================================================================
 # Tests for switch_case.py
 # ============================================================================
 
@@ -815,6 +971,7 @@ class TestPatternImports(unittest.TestCase):
         self.assertTrue(hasattr(if_else, '_detect_early_return_pattern'))
         self.assertTrue(hasattr(if_else, '_detect_short_circuit_pattern'))
         self.assertTrue(hasattr(if_else, '_detect_if_else_pattern'))
+        self.assertTrue(hasattr(if_else, '_detect_ternary_pattern'))
 
     def test_import_switch_case_module(self):
         """Test importing switch_case module"""
@@ -833,14 +990,18 @@ class TestPatternImports(unittest.TestCase):
             _detect_early_return_pattern,
             _detect_short_circuit_pattern,
             _detect_if_else_pattern,
+            _detect_ternary_pattern,
             _detect_switch_patterns,
-            _detect_for_loop
+            _detect_for_loop,
+            TernaryInfo
         )
         self.assertIsNotNone(_detect_early_return_pattern)
         self.assertIsNotNone(_detect_short_circuit_pattern)
         self.assertIsNotNone(_detect_if_else_pattern)
+        self.assertIsNotNone(_detect_ternary_pattern)
         self.assertIsNotNone(_detect_switch_patterns)
         self.assertIsNotNone(_detect_for_loop)
+        self.assertIsNotNone(TernaryInfo)
 
 
 if __name__ == '__main__':

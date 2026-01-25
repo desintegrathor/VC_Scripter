@@ -237,6 +237,10 @@ def _find_case_body_blocks(
     This function performs breadth-first traversal from the case entry block,
     stopping at various boundaries to prevent code leakage between cases.
 
+    IMPROVED (Ghidra-style): Convergence detection now distinguishes between:
+    - If/else merges WITHIN a case (should NOT stop - all preds from same case)
+    - Switch exit convergence (SHOULD stop - preds from different cases or stop_blocks)
+
     Args:
         cfg: Control flow graph
         case_entry: Entry block of the case
@@ -273,20 +277,39 @@ def _find_case_body_blocks(
         if not block:
             continue
 
-        # PHASE 1.1 FIX: Check for convergence points
-        # A convergence point is where multiple cases' control flow merges.
-        # These are typically the switch exit block or post-switch code.
-        # If a block has multiple predecessors from different cases, stop.
+        # IMPROVED CONVERGENCE DETECTION (Ghidra-style):
+        # Only stop at true switch convergence points, NOT at if/else merges within a case.
+        #
+        # Key insight: If/else merges within a case have ALL predecessors from the same
+        # case body (blocks we've already visited). Switch exit convergence has predecessors
+        # from DIFFERENT cases (stop_blocks) or external blocks.
+        #
+        # Algorithm:
+        # 1. Count predecessors that are in body_blocks (same case)
+        # 2. Count predecessors that are in stop_blocks (different cases)
+        # 3. Count other predecessors (external blocks)
+        # 4. Only stop if we have predecessors from DIFFERENT cases (stop_blocks)
+        #    or multiple external predecessors
         if block_id != case_entry:
             predecessors = getattr(block, 'predecessors', [])
-            if predecessors:
-                preds_in_body = sum(1 for p in predecessors if p in body_blocks)
-                preds_outside = len(predecessors) - preds_in_body
-                # If this block has predecessors from outside our body traversal,
-                # it might be a convergence point
-                if preds_outside >= convergence_threshold and len(predecessors) >= convergence_threshold:
-                    # This is likely a convergence point - don't include it
+            if predecessors and len(predecessors) >= convergence_threshold:
+                preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
+                preds_from_other_cases = sum(1 for p in predecessors if p in effective_stop)
+                preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
+
+                # CRITICAL FIX: Only stop if there are predecessors from other cases/stop_blocks
+                # OR if there are multiple external predecessors (not from our case)
+                # This allows if/else merges within a case to pass through
+                if preds_from_other_cases > 0:
+                    # This block has predecessors from other switch cases - it's the switch exit
                     continue
+
+                if preds_external >= convergence_threshold and preds_in_body == 0:
+                    # All predecessors are external (not from our case body) - likely switch exit
+                    continue
+
+                # If all predecessors are from body_blocks/visited, this is an if/else merge
+                # within our case - DON'T stop, include this block in the case body
 
         visited.add(block_id)
         body_blocks.add(block_id)
@@ -297,7 +320,7 @@ def _find_case_body_blocks(
             if resolver.is_return(last_instr.opcode):
                 continue
 
-            # PHASE 1.1 FIX: Check for "break blocks"
+            # Check for "break blocks"
             # A break block is a single-instruction JMP to the exit block.
             # We include it in the body but don't follow its successors.
             mnem = resolver.get_mnemonic(last_instr.opcode)

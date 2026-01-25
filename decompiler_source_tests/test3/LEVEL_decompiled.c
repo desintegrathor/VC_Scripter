@@ -26,18 +26,6 @@ dword g_save[2] = {0};
 dword g_music[2] = {0};
 float gStartMusicTime = 0.0f;
 
-void _init(s_SC_L_info *info) {
-    int j;
-    int side;
-    int side2;
-    int side3;
-    int side4;
-    int side5;
-    int sideB;
-
-    return;
-}
-
 void func_0292(void) {
     int local_0;  // Auto-generated
     int local_1;  // Auto-generated
@@ -56,9 +44,8 @@ void func_0292(void) {
     local_0 = 0;
     // Loop header - Block 2 @312
     for (i = 0; i < 16; i = i + 1) {
-        t321_ret = SC_P_GetBySideGroupMember(1, 9, i);
         local_1 = SC_P_GetBySideGroupMember(1, 9, i);
-        if (ptr && t332_ret = SC_P_IsReady(ptr)) {
+        if (ptr && SC_P_IsReady(ptr)) {
             SC_P_SetActive(ptr, FALSE);
             SC_P_SetPos(ptr, &vec);
         }
@@ -88,7 +75,6 @@ void func_0355(void) {
         }
         // Loop header - Block 13 @374
         for (i = 0; i < 16; i = i + 1) {
-            t383_ret = SC_P_GetBySideGroupMember(1, ptr, i);
             local_2 = SC_P_GetBySideGroupMember(1, ptr, i);
             if (obj) {
                 SC_P_SetActive(obj, TRUE);
@@ -100,7 +86,6 @@ void func_0355(void) {
     local_1 = 0;
     // Loop header - Block 19 @417
     for (ptr1 = 0; ptr1 < 16; ptr1 = ptr1 + 1) {
-        t426_ret = SC_P_GetBySideGroupMember(3, 0, ptr1);
         local_2 = SC_P_GetBySideGroupMember(3, 0, ptr1);
         if (obj) {
             SC_P_SetActive(obj, TRUE);
@@ -112,18 +97,17 @@ void func_0355(void) {
 }
 
 dword func_0448(int param_0) {
-    t453_ret = SC_P_GetBySideGroupMember(2, 0, 1);
     return SC_P_GetBySideGroupMember(2, 0, 1);
 }
 
 void func_0511(int param_0, int param_1) {
+    int g_will_pos;  // Auto-generated
     int local_6;  // Auto-generated
 
     c_Vector3 vec;
     dword local_3[2];
     float local_5;
     float ptr2;
-    int g_will_pos;
     int k;
     int local_0;
     int ptr;
@@ -135,7 +119,6 @@ void func_0511(int param_0, int param_1) {
     local_6 = 0;
     // Loop header - Block 32 @527
     for (ptr = 0; ptr < 4; ptr = ptr + 1) {
-        t539_ret = SC_2VectorsDist(&vec, &g_will_pos[ptr]);
         local_5 = SC_2VectorsDist(&vec, &g_will_pos[ptr]);
         if (ptr2 > tmp5) {
             local_3[0].status = tmp8;
@@ -155,6 +138,7 @@ void func_0511(int param_0, int param_1) {
 }
 
 void func_0612(int param_0, float param_1) {
+    int g_will_pos;  // Auto-generated
     int local_0;  // Auto-generated
     int local_1;  // Auto-generated
 
@@ -167,7 +151,6 @@ void func_0612(int param_0, float param_1) {
     int data_257;
     int data_257_v1;
     int data_258;
-    int g_will_pos;
     int i;
     int j;
     int k;
@@ -188,46 +171,17 @@ void func_0612(int param_0, float param_1) {
     switch (g_pilot_phase) {
     case 0:
         t625_ret = SC_PC_GetPos(&vec);
-        // Loop header - Block 41 @633
-        for (i = 0; i < 4; i = i + 1) {
-            if (tmp6) {
-            } else {
-                if (t654_ret = SC_IsNear2D(&g_will_pos[i], &vec, 80.0f)) {
-                    g_vill_visited[i] = 1;
-                } else {
-                    local_0 = i + 1;
-                }
-            }
-            local_0 = i + 1;
-        }
-        local_1 = 0;
-        // Loop header - Block 48 @683
-        for (j = 0; j < 3; j = j + 1) {
-            if (tmp17) {
-                local_1 = ptr1 + 1;
-            } else {
-                local_0 = j + 1;
-            }
-            local_0 = j + 1;
-        }
-        if (ptr2 > 1 && tmp22) {
-            g_pilot_phase = 1;
-            t729_ret = frnd(10.0f);
-            g_pilot_timer = 10.0f + frnd(10.0f);
-        }
+        local_0 = 0;
         break;
     case 1:
         if (!g_pilot_timer <= 0.0f) break;
         g_pilot_phase = 2;
         t759_ret = SC_PC_Get();
         func_0511(SC_PC_Get(), &local_2);
-        t767_ret = rand();
         g_pilot_vill_nr = tmp35;
         func_0448();
         SC_P_ScriptMessage(local_12, 0, g_pilot_vill_nr);
-        t790_ret = frnd(30.0f);
         g_pilot_timer = 30.0f + frnd(30.0f);
-        t804_ret = rand();
         SC_SpeechRadio2(3463 + 2 * g_pilot_vill_nr + rand() % 2, 0);
         func_0448();
         SC_HUD_RadarShowPlayer(local_12, -16711936);
@@ -236,7 +190,6 @@ void func_0612(int param_0, float param_1) {
         g_pilot_timer -= param_0;
         if (g_pilot_timer < 0.0f) {
             g_pilot_phase = 1;
-            t843_ret = frnd(10.0f);
             g_pilot_timer = 10.0f + frnd(10.0f);
             g_pilot_vill_nr = 255;
             func_0448();
@@ -245,8 +198,7 @@ void func_0612(int param_0, float param_1) {
         } else {
             t870_ret = SC_PC_GetPos(&vec);
             func_0448(SC_PC_GetPos(&vec));
-            SC_P_GetPos(local_12, &vec2);
-            if (!t886_ret = SC_IsNear2D(&vec, &vec2, 50.0f)) break;
+            if (!SC_IsNear2D(&vec, &vec2, 50.0f)) break;
             g_pilot_phase = 4;
             g_pilot_timer = 0;
             SC_SetSideAlly(1, 2, -1.0f);
@@ -254,12 +206,11 @@ void func_0612(int param_0, float param_1) {
         }
         break;
     case 4:
-        if (t916_ret = SC_ggi(SGI_LEVELPHASE)) break;
+        if (SC_ggi(SGI_LEVELPHASE)) break;
         if (!g_pilot_timer <= 0.0f) break;
         g_pilot_timer = 1.5f;
         func_0448();
         t944_ret = SC_PC_Get();
-        t947_ret = SC_P_GetDistance(tmp70, SC_PC_Get());
         local_10 = SC_P_GetDistance(tmp70, SC_PC_Get());
         if (ptr4 > 15.0f) {
             t960_ret = SC_PC_GetPos(&vec2);
@@ -275,6 +226,31 @@ void func_0612(int param_0, float param_1) {
         break;
         break;
     }
+    // Loop header - Block 41 @633
+    for (i = 0; i < 4; i = i + 1) {
+        if (tmp6) {
+        } else {
+            if (SC_IsNear2D(&g_will_pos[i], &vec, 80.0f)) {
+                g_vill_visited[i] = 1;
+            } else {
+                local_0 = i + 1;
+            }
+        }
+    }
+    local_1 = 0;
+    local_0 = 0;
+    // Loop header - Block 48 @683
+    for (j = 0; j < 3; j = j + 1) {
+        if (tmp17) {
+            local_1 = ptr1 + 1;
+        } else {
+            local_0 = j + 1;
+        }
+    }
+    if (ptr2 > 1 && tmp22) {
+        g_pilot_phase = 1;
+        g_pilot_timer = 10.0f + frnd(10.0f);
+    }
     return;
 }
 
@@ -289,7 +265,6 @@ void func_0994(int param_0, int param_1) {
     void* local_0;
 
     g_trashes_enabled = param_1;
-    t1003_ret = SC_NOD_Get(0, "maj_uh-1d_vreck");
     local_0 = SC_NOD_Get(0, "maj_uh-1d_vreck");
     if (local_0) {
         if (param_0) {
@@ -308,7 +283,7 @@ void func_1021(void) {
     local_256 = 64;
     SC_sgi(SGI_DEBR_01, 0);
     SC_sgi(SGI_REWARD_PILOT, 1);
-    if (t1040_ret = SC_MP_EnumPlayers(&enum_pl, &local_256, 1) && ptr > 0) {
+    if (SC_MP_EnumPlayers(&enum_pl, &local_256, 1) && ptr > 0) {
         SC_sgi(SGI_DEBR_01, -1);
         SC_sgi(SGI_REWARD_PILOT, 0);
     }
@@ -316,6 +291,8 @@ void func_1021(void) {
 }
 
 int ScriptMain(s_SC_L_info *info) {
+    int g_save;  // Auto-generated
+    int g_will_pos;  // Auto-generated
     int local_20;  // Auto-generated
     int x;  // Auto-generated
     int y;  // Auto-generated
@@ -333,9 +310,6 @@ int ScriptMain(s_SC_L_info *info) {
     int data_264;
     int data_266;
     int data_268;
-    int g_music;
-    int g_save;
-    int g_will_pos;
     int i;
     int j;
     int k;
@@ -364,13 +338,14 @@ int ScriptMain(s_SC_L_info *info) {
     int ptr19;
     int ptr2;
     int ptr20;
+    int ptr21;
     int ptr22;
     int ptr25;
     int ptr26;
     int ptr27;
     int ptr4;
     int ptr5;
-    int ptr8;
+    int ptr7;
     int ptr9;
     int side;
     int side2;
@@ -399,26 +374,43 @@ int ScriptMain(s_SC_L_info *info) {
             SC_MissionFailed();
             return TRUE;
         }
-        &param_0.next_exe_time = 0.2f;
-        if (g_showinfo_timer < 11.0f) {
-            local_0 = g_showinfo_timer;
-            g_showinfo_timer += info->elapsed_time;
-            if (local_0 < 4.0f && g_showinfo_timer >= 4.0f) {
-                local_63 = 0;
-                local_63[0].y = 3490;
-                local_63[0].z = 3491;
-                SC_ShowMovieInfo(&local_63);  // 3490: "17.12. 1967 8:00" | 3491: "Ricefields around Khe Bana river"
-            }
-            if (local_0 < 10.5f && g_showinfo_timer >= 10.5f) {
-                SC_ShowMovieInfo(0);
+        break;
+    case 1:
+        if (local_88 == 20) {
+            SC_sgi(SGI_LEVELPHASE, 5);
+            SC_RadioBatch_Begin();
+            local_0 = 0;
+            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+            SC_P_Speech2(ptr15, 3454, &local_0);
+            local_0 += 1.3f;
+            SC_SpeechRadio2(3455, &local_0);
+            local_0 += 0.5f;
+            SC_P_Speech2(ptr15, 3456, &local_0);
+            local_0 += 0.7f;
+            SC_SpeechRadio2(3461, &local_0);
+            local_0 += 0.5f;
+            SC_P_SpeechMes2(ptr15, 3457, &local_0, 11);
+            gPilotCommTime = local_0 + 3.0f;
+            &param_0.next_exe_time = 0.1f;
+            SC_RadioBatch_End();
+        }
+        break;
+    case 2:
+        if (local_88 == 11) {
+            SC_message(&tmp373);
+            if (gPilotCommTime > 3.0f) {
+                gPilotCommTime = 3.0f;
             }
         }
         break;
-    case 1:
-        break;
-    case 2:
-        break;
     case 4:
+        switch (info->param1) {
+        case 10:
+            func_0994(1);
+            break;
+        case 667:
+            break;
+        }
         break;
     case 3:
         break;
@@ -433,7 +425,6 @@ int ScriptMain(s_SC_L_info *info) {
         gStartMusicTime = 0.2f;
         break;
     case 11:
-        t2941_ret = SC_ggi(SGI_LEVPILOT_JUSTLOADEDVALUE);
         SC_sgi(SGI_LEVPILOT_JUSTLOADEDVALUE, SC_ggi(SGI_LEVPILOT_JUSTLOADEDVALUE) + 1);
         func_0994(g_trashes_enabled);
         break;
@@ -445,6 +436,20 @@ int ScriptMain(s_SC_L_info *info) {
             &param_0.param3 = 1;
         }
         break;
+    }
+    &param_0.next_exe_time = 0.2f;
+    if (g_showinfo_timer < 11.0f) {
+        local_0 = g_showinfo_timer;
+        g_showinfo_timer += info->elapsed_time;
+        if (local_0 < 4.0f && g_showinfo_timer >= 4.0f) {
+            local_63 = 0;
+            local_63[0].y = 3490;
+            local_63[0].z = 3491;
+            SC_ShowMovieInfo(&local_63);  // 3490: "17.12. 1967 8:00" | 3491: "Ricefields around Khe Bana river"
+        }
+        if (local_0 < 10.5f && g_showinfo_timer >= 10.5f) {
+            SC_ShowMovieInfo(0);
+        }
     }
     if (local_88 == 0) {
         local_4.MaxHideOutsStatus = 32;
@@ -470,13 +475,11 @@ int ScriptMain(s_SC_L_info *info) {
         local_20 = 0;
     } else {
         if (local_88 == 1) {
-            t1618_ret = SC_ggi(SGI_LEVELPHASE);
             local_20 = SC_ggi(SGI_LEVELPHASE);
             if (g_save[0]) {
             } else {
-                t1635_ret = SC_P_GetBySideGroupMember(0, 0, 0);
                 local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                if (ptr15 && t1646_ret = SC_P_IsReady(ptr15)) {
+                if (ptr15 && SC_P_IsReady(ptr15)) {
                     g_save[0] = 1;
                     local_80.savename_id = 9136;
                     local_80.description_id = 9137;
@@ -506,13 +509,10 @@ int ScriptMain(s_SC_L_info *info) {
                     g_dialog = 1;
                 } else {
                     if (local_90 == 1) {
-                        if (t1785_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
+                        if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
                         } else {
-                            t1797_ret = SC_P_GetBySideGroupMember(0, 0, 2);
                             local_24 = SC_P_GetBySideGroupMember(0, 0, 2);
-                            t1808_ret = SC_P_GetBySideGroupMember(0, 0, 5);
                             local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
-                            t1819_ret = SC_P_GetBySideGroupMember(0, 0, 4);
                             local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
                             local_0 = 3.0f;
                             SC_P_Speech2(ptr17, 3420, &local_0);
@@ -522,9 +522,8 @@ int ScriptMain(s_SC_L_info *info) {
                         }
                     } else {
                         if (local_90 == 2) {
-                            if (t1856_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
+                            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
                             } else {
-                                t1868_ret = SC_P_GetBySideGroupMember(0, 2, 1);
                                 local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
                                 local_0 = 1.0f;
                                 SC_P_Speech2(ptr20, 3422, &local_0);
@@ -563,7 +562,7 @@ int ScriptMain(s_SC_L_info *info) {
                             }
                         } else {
                             if (local_90 == 3) {
-                                if (t2061_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
+                                if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
                                 } else {
                                     local_0 = 0;
                                     SC_SpeechRadio2(3440, &local_0);
@@ -584,19 +583,17 @@ int ScriptMain(s_SC_L_info *info) {
                                 }
                             } else {
                                 if (local_90 == 4) {
-                                    if (t2155_ret = SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
+                                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
                                     } else {
                                         g_dialog = 5;
-                                        t2171_ret = SC_P_GetBySideGroupMember(0, 2, 1);
                                         local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
-                                        t2182_ret = SC_P_GetBySideGroupMember(0, 0, 0);
                                         local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
                                         local_0 = 0;
-                                        SC_P_Speech2(ptr20, 3447, &local_0);
+                                        SC_P_Speech2(ptr21, 3447, &local_0);
                                         local_0 += 0.3f;
                                         SC_P_Speech2(ptr15, 3448, &local_0);
                                         local_0 += 0.6f;
-                                        SC_P_Speech2(ptr20, 3449, &local_0);
+                                        SC_P_Speech2(ptr21, 3449, &local_0);
                                         local_0 += 0.3f;
                                         local_0 - 1.0f = tmp205;
                                         SC_P_Speech2(ptr15, 3450, &local_0);
@@ -629,13 +626,11 @@ int ScriptMain(s_SC_L_info *info) {
                 } else {
                     if (local_89 == 2) {
                         func_0612(info->elapsed_time);
-                        t2311_ret = SC_P_GetBySideGroupMember(0, 0, 0);
                         local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
                         if (ptr && ptr15) {
-                            if (t2325_ret = SC_P_GetActive(ptr)) {
-                                if (t2333_ret = SC_P_IsReady(ptr)) {
-                                    if (t2341_ret = SC_P_IsReady(ptr15)) {
-                                        t2350_ret = SC_P_GetDistance(ptr, ptr15);
+                            if (SC_P_GetActive(ptr)) {
+                                if (SC_P_IsReady(ptr)) {
+                                    if (SC_P_IsReady(ptr15)) {
                                         local_1 = SC_P_GetDistance(ptr, ptr15);
                                         if (ptr25 < 10.0f) {
                                             SC_sgi(SGI_LEVELPHASE, 3);
@@ -677,7 +672,7 @@ int ScriptMain(s_SC_L_info *info) {
                                         if (local_89 == 7) {
                                             local_20 = 2;
                                             g_final_enter_timer += info->elapsed_time;
-                                            if (t2622_ret = SC_P_IsInHeli(ptr)) {
+                                            if (SC_P_IsInHeli(ptr)) {
                                                 local_20 = ptr5 - 1;
                                             } else {
                                                 if (g_final_enter_timer > 30.0f) {
@@ -688,9 +683,8 @@ int ScriptMain(s_SC_L_info *info) {
                                                     &param_0.next_exe_time = 4.0f;
                                                 }
                                             }
-                                            t2664_ret = SC_P_GetBySideGroupMember(0, 0, 0);
                                             local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                                            if (t2673_ret = SC_P_IsInHeli(ptr15)) {
+                                            if (SC_P_IsInHeli(ptr15)) {
                                                 local_20 = ptr5 - 1;
                                             }
                                             if (ptr5 == 0) {
@@ -773,17 +767,17 @@ int ScriptMain(s_SC_L_info *info) {
     }
     local_20 = 0;
     // Loop header - Block 117 @1506
-    for (ptr5 = 0; ptr5 < 10; ptr5 = ptr5 + 1) {
-        SC_Ai_SetPlFollow(1, ptr5, 0, &local_43, &local_63, &local_63, 4);
-        local_20 = ptr5 + 1;
+    for (ptr7 = 0; ptr7 < 10; ptr7 = ptr7 + 1) {
+        SC_Ai_SetPlFollow(1, ptr7, 0, &local_43, &local_63, &local_63, 4);
+        local_20 = ptr7 + 1;
         continue;  // back to loop header @1506
     }
     local_20 = 0;
     // Loop header - Block 120 @1532
-    for (ptr8 = 0; ptr8 < 4; ptr8 = ptr8 + 1) {
-        t1544_ret = sprintf(local_67, "WP_will%d", ptr8 + 1);
-        t1556_ret = SC_GetWp(local_67, &g_will_pos[ptr8]);
-        local_20 = ptr8 + 1;
+    for (ptr5 = 0; ptr5 < 4; ptr5 = ptr5 + 1) {
+        t1544_ret = sprintf(local_67, "WP_will%d", ptr5 + 1);
+        t1556_ret = SC_GetWp(local_67, &g_will_pos[ptr5]);
+        local_20 = ptr5 + 1;
         continue;  // back to loop header @1532
     }
     SC_sgi(SGI_LEVELPHASE, 0);
@@ -799,7 +793,6 @@ int ScriptMain(s_SC_L_info *info) {
     goto block_227; // @2736
     // Loop header - Block 199 @2472
     for (ptr9 = 0; ptr9 < 4; ptr9 = ptr9 + 1) {
-        t2484_ret = SC_2VectorsDist(&vec, &g_will_pos[ptr9]);
         if (SC_2VectorsDist(&vec, &g_will_pos[ptr9]) < 40.0f) {
             SC_sgi(SGI_LEVELPHASE, 6);
             SC_sgi(SGI_LEVPILOT_EVACVILLID, ptr9);
@@ -807,7 +800,6 @@ int ScriptMain(s_SC_L_info *info) {
             vec2.x = tmp274 - tmp275;
             tmp279 - vec.y = tmp283;
             vec2.z = 0.0f;
-            t2542_ret = SC_VectorLen(&vec2);
             local_0 = SC_VectorLen(&vec2) / 10.0f;
             vec2.x /= local_0;
             vec2.y / local_0 /= local_0;
@@ -815,37 +807,6 @@ int ScriptMain(s_SC_L_info *info) {
             t2576_ret = SC_Item_Create2(147, &vec, &vec2);
         } else {
             local_20 = ptr9 + 1;
-        }
-    }
-    if (local_88 == 20) {
-        SC_sgi(SGI_LEVELPHASE, 5);
-        SC_RadioBatch_Begin();
-        local_0 = 0;
-        t2766_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-        local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-        SC_P_Speech2(ptr15, 3454, &local_0);
-        local_0 += 1.3f;
-        SC_SpeechRadio2(3455, &local_0);
-        local_0 += 0.5f;
-        SC_P_Speech2(ptr15, 3456, &local_0);
-        local_0 += 0.7f;
-        SC_SpeechRadio2(3461, &local_0);
-        local_0 += 0.5f;
-        SC_P_SpeechMes2(ptr15, 3457, &local_0, 11);
-        gPilotCommTime = local_0 + 3.0f;
-        &param_0.next_exe_time = 0.1f;
-        SC_RadioBatch_End();
-    }
-    if (local_88 == 11) {
-        SC_message(&tmp373);
-        if (gPilotCommTime > 3.0f) {
-            gPilotCommTime = 3.0f;
-        }
-    }
-    if (local_88 == 10) {
-        func_0994(1);
-    } else {
-        if (local_88 == 667) {
         }
     }
     return 0;  // FIX (06-05): Synthesized return value
