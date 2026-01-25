@@ -25,8 +25,21 @@ This is a **one-time-use tool** for reconstructing a finite set of Vietcong game
 5. Structural patterns (loop counters, array indices)
 
 **Inspiration from Ghidra decompiler:**
-Look often into this repository to find how a state of the art decompiler works. Take what you can from it.
-C:\Users\flori\Documents\GitHub\ghidra
+Look often into the Ghidra decompiler source to find how a state-of-the-art decompiler works. Take what you can from it.
+
+**Local copy (for quick reference):** `ghidra-decompiler-src/` - Contains the C++ decompiler core (~7.3 MB, 236 files)
+
+**Key files for control flow analysis:**
+| File | Purpose |
+|------|---------|
+| `block.hh/cc` | CFG data structures |
+| `blockaction.hh/cc` | Loop detection, DAG-based structuring |
+| `flow.hh/cc` | Control flow generation from bytecode |
+| `jumptable.hh/cc` | Switch/case jump table recovery |
+| `heritage.hh/cc` | SSA form generation |
+| `printc.hh/cc` | C code emission |
+
+**Full Ghidra repository:** `C:\Users\flori\Documents\GitHub\ghidra`
 
 ## Essential Commands
 

@@ -12,6 +12,8 @@
 !requirements.txt
 !pyproject.toml
 !setup.py
+!ghidra-decompiler-src/
+!ghidra-decompiler-src/**
 
 # Always ignore these (even if inside vcdecomp)
 __pycache__/
