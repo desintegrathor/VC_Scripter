@@ -284,6 +284,18 @@ Příklady:
         default=False,
         help='Use Ghidra-style hierarchical collapse algorithm (experimental)'
     )
+    p_structure.add_argument(
+        '--no-simplify',
+        action='store_true',
+        default=False,
+        help='Disable expression simplification (constant folding, algebraic identities)'
+    )
+    p_structure.add_argument(
+        '--debug-simplify',
+        action='store_true',
+        default=False,
+        help='Enable debug output for simplification rules'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -495,6 +507,11 @@ def cmd_structure(args):
     set_debug_enabled(debug_mode)
 
     scr = SCRFile.load(args.file, variant=args.variant)
+
+    # Set simplification flags
+    scr.enable_simplify = not getattr(args, 'no_simplify', False)
+    scr.debug_simplify = getattr(args, 'debug_simplify', False)
+
     disasm = Disassembler(scr)
 
     # Use RET-based function detection to prevent unreachable code

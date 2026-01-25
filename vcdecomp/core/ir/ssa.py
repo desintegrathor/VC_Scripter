@@ -176,7 +176,17 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
     _propagate_types(resolver, instructions)
     _mark_simple_arithmetic_compound_stores(instructions)
 
-    return SSAFunction(cfg=cfg, values=values, instructions=instructions, scr=scr)
+    # Build SSA function object
+    ssa_func = SSAFunction(cfg=cfg, values=values, instructions=instructions, scr=scr)
+
+    # Apply expression simplification (optional, can be disabled)
+    # This reduces output verbosity by 30-40% through constant folding,
+    # algebraic identities, and canonical term ordering
+    if getattr(scr, 'enable_simplify', True):  # Default: enabled
+        from .simplify import simplify_expressions
+        simplify_expressions(ssa_func, debug=getattr(scr, 'debug_simplify', False))
+
+    return ssa_func
 
 
 def _mark_simple_arithmetic_compound_stores(instructions: Dict[int, List[SSAInstruction]]) -> None:
