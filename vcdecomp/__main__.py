@@ -296,6 +296,18 @@ Příklady:
         default=False,
         help='Enable debug output for simplification rules'
     )
+    p_structure.add_argument(
+        '--no-array-detection',
+        action='store_true',
+        default=False,
+        help='Disable array detection (LoadGuard system)'
+    )
+    p_structure.add_argument(
+        '--debug-array-detection',
+        action='store_true',
+        default=False,
+        help='Enable debug output for array detection'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -511,6 +523,10 @@ def cmd_structure(args):
     # Set simplification flags
     scr.enable_simplify = not getattr(args, 'no_simplify', False)
     scr.debug_simplify = getattr(args, 'debug_simplify', False)
+
+    # Set array detection flags
+    scr.enable_array_detection = not getattr(args, 'no_array_detection', False)
+    scr.debug_array_detection = getattr(args, 'debug_array_detection', False)
 
     disasm = Disassembler(scr)
 

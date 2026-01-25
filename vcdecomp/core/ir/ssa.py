@@ -51,6 +51,7 @@ class SSAInstruction:
     inputs: List[SSAValue]
     outputs: List[SSAValue]
     instruction: Optional[LiftedInstruction] = None
+    metadata: Dict = field(default_factory=dict)  # Metadata for optimizations (array access, etc.)
 
 
 @dataclass
@@ -185,6 +186,16 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
     if getattr(scr, 'enable_simplify', True):  # Default: enabled
         from .simplify import simplify_expressions
         simplify_expressions(ssa_func, debug=getattr(scr, 'debug_simplify', False))
+
+    # Apply LoadGuard array detection (optional, can be disabled)
+    # This improves array recognition by detecting indexed access patterns:
+    # base + (index * elem_size) → array[index]
+    if getattr(scr, 'enable_array_detection', True):  # Default: enabled
+        from .load_guard import discover_arrays
+        load_guard = discover_arrays(ssa_func)
+        if getattr(scr, 'debug_array_detection', False):
+            stats = load_guard.get_statistics()
+            logger.info(f"LoadGuard: {stats}")
 
     return ssa_func
 
