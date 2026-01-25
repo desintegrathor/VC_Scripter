@@ -33,43 +33,46 @@ C:\Users\flori\Documents\GitHub\ghidra
 ### Running the Decompiler
 ```bash
 # Decompile a script (default: clean output with best quality SSA)
-python -m vcdecomp structure script.scr > output.c
+py -3 -m vcdecomp structure script.scr > output.c
+
+# Decompile with Ghidra-style collapse algorithm (experimental)
+py -3 -m vcdecomp structure --use-collapse script.scr > output.c
 
 # Decompile with DEBUG output (for development/debugging)
-python -m vcdecomp structure --debug script.scr > output.c 2>debug.log
+py -3 -m vcdecomp structure --debug script.scr > output.c 2>debug.log
 
 # Decompile with legacy SSA (faster but lower quality)
-python -m vcdecomp structure --legacy-ssa script.scr > output.c
+py -3 -m vcdecomp structure --legacy-ssa script.scr > output.c
 
 # Show script info
-python -m vcdecomp info script.scr
+py -3 -m vcdecomp info script.scr
 
 # Disassemble to readable assembly
-python -m vcdecomp disasm script.scr > output.asm
+py -3 -m vcdecomp disasm script.scr > output.asm
 
 # Launch GUI
-python -m vcdecomp gui [script.scr]
+py -3 -m vcdecomp gui [script.scr]
 
 # Export global variable symbols
-python -m vcdecomp symbols script.scr -o output.json -f json
+py -3 -m vcdecomp symbols script.scr -o output.json -f json
 
 # Aggregate external function signatures from multiple .scr files
-python -m vcdecomp xfn-aggregate scripts/ --format summary
-python -m vcdecomp xfn-aggregate scripts/ --format sdk -o functions.json
+py -3 -m vcdecomp xfn-aggregate scripts/ --format summary
+py -3 -m vcdecomp xfn-aggregate scripts/ --format sdk -o functions.json
 ```
 
 ### Validation System (Recompilation Testing)
 ```bash
 # Validate single file by recompiling and comparing bytecode
-python -m vcdecomp validate original.scr decompiled.c
-python -m vcdecomp validate original.scr decompiled.c --report-file report.html
+py -3 -m vcdecomp validate original.scr decompiled.c
+py -3 -m vcdecomp validate original.scr decompiled.c --report-file report.html
 
 # Batch validation with parallelization
-python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --jobs 8
+py -3 -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --jobs 8
 
 # Regression testing - save baseline and detect changes
-python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --save-baseline
-python -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --regression --report-file regression.json
+py -3 -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --save-baseline
+py -3 -m vcdecomp validate-batch --input-dir decompiled/ --original-dir scripts/ --regression --report-file regression.json
 ```
 
 ### Running Tests
@@ -79,6 +82,9 @@ py -3 -m pytest vcdecomp/tests/ -v
 
 # Run specific test suite
 py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v
+
+# Run a single test
+py -3 -m pytest vcdecomp/tests/test_structure_patterns.py::TestDetectForLoop::test_simple_for_loop -v
 
 # Run with coverage
 py -3 -m pytest vcdecomp/tests/ --cov=vcdecomp.core.ir.structure
@@ -95,19 +101,13 @@ The original SCMP compiler toolchain is in `original-resources/compiler/`. Due t
 py -3 compile_simple.py
 
 # This compiles: original-resources/compiler/tt.c
-# Output: original-resources/compiler/tt.scr (60KB)
-# Takes: ~2-3 seconds
+# Output: original-resources/compiler/tt.scr
 ```
 
 **To compile other files:**
 1. Copy your `.c` file to `original-resources/compiler/`
-2. Edit `compile.bat` to reference your file:
-   ```batch
-   "%~dp0scmp" "your_file.c" "your_file.scr" "your_file.h"
-   ```
+2. Edit `compile.bat` to reference your file
 3. Run: `py -3 compile_simple.py`
-
-**Alternative (manual):** Double-click `compile.bat` in Windows Explorer
 
 **See:** [COMPILING.md](COMPILING.md) for detailed documentation
 
@@ -121,7 +121,7 @@ py -3 compile_simple.py
 ### Decompilation Pipeline
 The decompilation process follows these stages:
 
-1. **Parsing** (`vcdecomp/parsing/`) - Parse `.scr` file format
+1. **Parsing** (`vcdecomp/core/loader/`) - Parse `.scr` file format
    - Header, data segment, code segment, XFN table
    - 12-byte instructions: opcode + 2 arguments
 
@@ -130,7 +130,7 @@ The decompilation process follows these stages:
    - Runtime vs compiler opcode variants
 
 3. **IR Construction** (`vcdecomp/core/ir/`)
-   - **CFG** (`cfg.py`) - Control flow graph construction
+   - **CFG** (`cfg.py`) - Control flow graph construction with natural loop detection
    - **Stack Lifting** (`stack_lifter.py`) - Stack simulation, value tracking
    - **SSA** (`ssa.py`) - Static single assignment form with phi nodes
 
@@ -141,33 +141,46 @@ The decompilation process follows these stages:
 5. **Structure Analysis** (`vcdecomp/core/ir/structure/`)
    - **patterns/** - Detect if/else, switch/case, loops
    - **analysis/** - CFG analysis, condition extraction, value tracing
+   - **blocks/** - Hierarchical block structure (Ghidra-style)
+   - **collapse/** - Iterative structure collapse engine
    - **emit/** - Code generation and formatting
 
 6. **Validation** (`vcdecomp/validation/`)
    - Recompile decompiled code and compare bytecode
    - Bytecode difference categorization (semantic vs non-semantic)
-   - Regression testing with baselines
 
-### Structure Module (Recently Refactored)
-The `vcdecomp/core/ir/structure/` package was refactored from 3,250 lines into 17 focused modules:
+### Structure Module Architecture
 
+The `vcdecomp/core/ir/structure/` package has two code generation paths:
+
+**Flat Mode (Default)** - Pattern-based detection with linear block iteration:
 ```
 structure/
-├── orchestrator.py          # Main entry points
+├── orchestrator.py          # Main entry points, coordinates both modes
 ├── patterns/                # Pattern detection
 │   ├── if_else.py          # If/else, early return, short-circuit
 │   ├── switch_case.py      # Switch/case detection
 │   └── loops.py            # For-loop detection
 ├── analysis/               # Control flow analysis
-│   ├── flow.py            # CFG traversal and analysis
+│   ├── flow.py            # CFG traversal, natural loop detection
 │   ├── condition.py       # Condition extraction
 │   ├── value_trace.py     # Value tracing through CFG
 │   └── variables.py       # Variable collection
-├── emit/                   # Code generation
-│   ├── block_formatter.py # Block-level formatting
-│   └── code_emitter.py    # Final code rendering
-└── utils/                  # Utilities
-    └── helpers.py         # Helper functions
+└── emit/
+    ├── block_formatter.py # Block-level formatting
+    └── code_emitter.py    # Final code rendering
+```
+
+**Collapse Mode** (`--use-collapse`) - Ghidra-style hierarchical block collapse:
+```
+structure/
+├── blocks/
+│   └── hierarchy.py       # BlockGraph, StructuredBlock types
+├── collapse/
+│   ├── engine.py         # CollapseStructure iterative algorithm
+│   └── rules.py          # Collapse rules (BlockCat, ProperIf, etc.)
+└── emit/
+    └── hierarchical_emitter.py  # Emits from collapsed hierarchy
 ```
 
 ## Key Technical Details
@@ -200,21 +213,12 @@ Function prototypes are in `original-resources/h/sc_global.h`.
 ## Important Constraints
 
 ### Compilation & Validation
-- **Compiler usage:** Use `py -3 compile_simple.py` to compile scripts (see compilation section above)
+- **Compiler usage:** Use `py -3 compile_simple.py` to compile scripts
 - **WSL limitation:** Cannot invoke Windows .exe files directly with arguments - use the Python wrapper
 - **ALWAYS test decompiled output** by recompiling with the original compiler (SCMP.exe)
 - Use `validate` command to compare bytecode differences
 - Focus on reducing **semantic differences** (different behavior)
-- **Non-semantic differences** (different bytecode, same behavior) are acceptable:
-  - Register allocation changes
-  - Instruction ordering (if equivalent)
-  - Constant representation differences
-
-### Code Quality
-- Tests have 100% coverage on core modules - maintain this
-- Use type hints (currently 87% coverage)
-- Average module size: ~229 lines (was 3,250 before refactoring)
-- Zero circular dependencies in structure package
+- **Non-semantic differences** (different bytecode, same behavior) are acceptable
 
 ### Pattern Detection Accuracy
 When modifying control flow reconstruction:
@@ -222,52 +226,24 @@ When modifying control flow reconstruction:
 2. Verify switch/case jump tables are correctly identified
 3. Ensure for-loop patterns (init, condition, increment) are detected
 4. Check early return patterns don't break if/else chains
+5. Run: `py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v`
+6. Validate: `py -3 -m vcdecomp validate original.scr decompiled.c`
 
 ## Output Verbosity
-
-The `structure` command produces **clean output by default** with the best quality SSA analysis.
 
 | Flag | Description | Use Case |
 |------|-------------|----------|
 | (none) | Clean output, best SSA | **Default - recommended for recompilation** |
+| `--use-collapse` | Ghidra-style hierarchical collapse | Better nested control flow handling |
 | `--debug` / `-d` | Enable DEBUG to stderr | Debugging decompiler issues |
-| `--verbose` / `-v` | Same as --debug | Future: extended diagnostics |
 | `--legacy-ssa` | Use old SSA algorithm | Faster, but lower quality output |
-
-### Quick Examples
-```bash
-# Default: clean output with best quality (RECOMMENDED)
-py -3 -m vcdecomp structure script.scr > output.c
-
-# Debug output for development
-py -3 -m vcdecomp structure --debug script.scr > output.c 2>debug.log
-
-# Legacy mode (faster but lower quality)
-py -3 -m vcdecomp structure --legacy-ssa script.scr > output.c
-```
 
 ### Understanding Debug Output
 When `--debug` is enabled, DEBUG lines (written to stderr) show internal analysis:
 - `DEBUG: Entry point = 9054` - Entry point identification
 - `DEBUG FieldTracker: ...` - Struct field detection
-- `DEBUG PNT: SUCCESS ...` - Pointer-to-field pattern recognition
 - `DEBUG SWITCH: ...` - Switch/case detection analysis
-- `DEBUG Propagate: ...` - Type propagation iterations
-
-### Batch Processing
-```bash
-# Batch decompile all .scr files (default is already clean)
-for f in *.scr; do
-    py -3 -m vcdecomp structure "$f" > "${f%.scr}.c"
-done
-```
-
-```powershell
-# PowerShell batch
-Get-ChildItem *.scr | ForEach-Object {
-    py -3 -m vcdecomp structure $_.Name > "$($_.BaseName).c"
-}
-```
+- `DEBUG COLLAPSE: ...` - Hierarchical collapse iterations
 
 ## Common Development Tasks
 
@@ -281,17 +257,16 @@ Get-ChildItem *.scr | ForEach-Object {
 1. Modify pattern detection in `vcdecomp/core/ir/structure/patterns/`
 2. Update CFG analysis in `vcdecomp/core/ir/structure/analysis/`
 3. Test with known scripts in `decompiler_source_tests/`
-4. Run regression tests: `py -3 -m pytest vcdecomp/tests/test_regression_baseline.py`
-5. Validate output compiles correctly: `py -3 -m vcdecomp validate original.scr decompiled.c`
+4. Run: `py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v`
 
-### Adding New External Function Signatures
-1. Update `original-resources/h/sc_global.h` or relevant header
-2. Rebuild header database: `vcdecomp/core/headers/database.py`
-3. Test function call detection in decompiled output
+### Adding Collapse Rules (Ghidra-style)
+1. Add rule class in `vcdecomp/core/ir/structure/collapse/rules.py`
+2. Implement `matches()` and `apply()` methods
+3. Register in `DEFAULT_RULES` list
+4. Test with `vcdecomp/tests/test_collapse_rules.py`
 
 ## Test Data
 
-### Test Scripts
 - `decompiler_source_tests/` - Original C source + compiled .scr files for validation:
   - `test1/tt.c` - General test file used by `compile_simple.py`
   - `test2/tdm.c` - Team deathmatch script
@@ -304,6 +279,7 @@ Get-ChildItem *.scr | ForEach-Object {
 - `docs/decompilation_guide.md` - Decompilation workflow
 - `docs/structure_refactoring.md` - Structure module architecture
 - `docs/Scripting_SDK.txt` - Official Vietcong SDK (380KB, definitive reference)
+- `vcdecomp/core/ir/structure/README.md` - Detailed structure package docs
 
 ### Technical Analysis
 - `docs/SCC_TECHNICAL_ANALYSIS.md` - Compiler analysis
@@ -316,11 +292,10 @@ Get-ChildItem *.scr | ForEach-Object {
 2. **Global variable detection is heuristic** - Verify `GADR data[X]` references manually
 3. **Type inference is incomplete** - Some variables remain `dword` (unknown type)
 4. **Macro expansion** - Original macros are lost (preprocessor expanded them)
-5. **Optimization artifacts** - Original compiler generates redundant code
+5. **Loop body detection** - Natural loops may have incomplete body sets for complex CFGs
 
 ## Git Workflow
 
 - Main branch: `main`
-- Recent major work: Validation subsystem, structure refactoring
+- Recent major work: Validation subsystem, structure refactoring, collapse mode
 - Auto-Claude tasks stored in `.auto-claude/worktrees/` (can ignore)
-- Don't commit `__pycache__/` or `.pyc` files (already in `.gitignore`)
