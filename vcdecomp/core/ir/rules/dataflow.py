@@ -297,27 +297,59 @@ class RulePhiSimplify(SimplificationRule):
     Simplify phi nodes with identical inputs.
 
     Examples:
-        x = phi(y, y, y)  →  x = y
+        x = phi(y, y, y)  →  x = y (all inputs same)
+        x = phi(y, y, z)  →  x = phi(y, z) (remove duplicates)
 
-    This detects degenerate phi nodes.
+    This detects degenerate phi nodes where all inputs are the same value.
+    Enabled by CFG integration.
     """
 
     def __init__(self):
         super().__init__("RulePhiSimplify")
-        self.is_disabled = True  # Requires CFG and phi nodes
+        self.is_disabled = False  # NOW ENABLED with CFG integration!
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
-        # Would check if PHI instruction has all identical inputs
-        # Our IR may not have explicit PHI instructions
-        return False
+        """
+        Match PHI instructions with all identical inputs.
+        """
+        # Must be a PHI instruction
+        if inst.mnemonic != "PHI":
+            return False
+
+        # Need at least 2 inputs
+        if len(inst.inputs) < 2:
+            return False
+
+        # Check if all inputs are the same value
+        first_input = inst.inputs[0]
+        for input_val in inst.inputs[1:]:
+            if input_val.name != first_input.name:
+                return False
+
+        return True
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
     ) -> Optional[SSAInstruction]:
         """
-        Replace phi with simple copy.
+        Replace phi with COPY of the unique input value.
+
+        phi(y, y, y) becomes COPY(y)
         """
-        return None
+        # All inputs are the same, just use the first one
+        unique_input = inst.inputs[0]
+
+        # Create a COPY instruction
+        # (In SSA form, this effectively makes the phi output an alias)
+        return SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="COPY",
+            address=inst.address,
+            inputs=[unique_input],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
 
 
 class RuleSingleUseInline(SimplificationRule):
@@ -547,24 +579,51 @@ class RuleTrivialPhi(SimplificationRule):
     Eliminate trivial phi nodes.
 
     Examples:
-        x = phi(y)  (single input)  →  x = y
-        x = phi(y, y)  (all same)  →  x = y
+        x = phi(y)  (single input)  →  x = COPY(y)
+        x = phi(x)  (self-loop)  →  x = COPY(x) (will be eliminated by other rules)
 
-    This detects degenerate phi nodes.
+    This detects the most trivial phi nodes - those with only one input.
+    Enabled by CFG integration.
+
+    Note: RulePhiSimplify handles the case where phi has multiple inputs
+    but they're all the same value. This rule handles single-input phis.
     """
 
     def __init__(self):
         super().__init__("RuleTrivialPhi")
-        self.is_disabled = True  # Requires CFG and phi nodes
+        self.is_disabled = False  # NOW ENABLED with CFG integration!
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
-        # Similar to RulePhiSimplify
-        return False
+        """
+        Match PHI instructions with exactly one input.
+        """
+        # Must be a PHI instruction
+        if inst.mnemonic != "PHI":
+            return False
+
+        # Must have exactly one input (trivial phi)
+        return len(inst.inputs) == 1
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
     ) -> Optional[SSAInstruction]:
-        return None
+        """
+        Replace trivial phi with COPY.
+
+        phi(y) becomes COPY(y)
+        """
+        # Single input - just copy it
+        single_input = inst.inputs[0]
+
+        return SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="COPY",
+            address=inst.address,
+            inputs=[single_input],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
 
 
 class RuleForwardSubstitution(SimplificationRule):

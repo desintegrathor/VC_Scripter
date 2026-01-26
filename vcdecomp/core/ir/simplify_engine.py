@@ -21,6 +21,7 @@ from typing import Dict, List, Optional, Union
 from .rules import SimplificationRule, ALL_RULES
 from .ssa import SSAFunction, SSAInstruction
 from .use_def import UseDefChain
+from .cfg_integration import CFGIntegration
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,12 @@ class SimplificationEngine:
         if self.debug:
             logger.debug("Building use-def chains...")
         ssa_func.use_def_chains = UseDefChain(ssa_func, debug=self.debug)
+
+        # Build CFG integration for loop and control flow analysis
+        # Rules can access via ssa_func.cfg_integration
+        if self.debug:
+            logger.debug("Building CFG integration...")
+        ssa_func.cfg_integration = CFGIntegration(ssa_func, debug=self.debug)
 
         for iteration in range(self.max_iterations):
             changes_this_iteration = 0

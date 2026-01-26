@@ -1,8 +1,8 @@
 # Rule Enablement Roadmap
 
 **Date**: 2026-01-26
-**Current Status**: 72/103 rules enabled (70%)
-**Goal**: Enable remaining 31 disabled rules through infrastructure investments
+**Current Status**: 74/103 rules enabled (72%)
+**Goal**: Enable remaining 29 disabled rules through infrastructure investments
 
 ---
 
@@ -75,11 +75,40 @@
 **Rule not enabled** (1/4 - beyond current scope):
 4. ❌ **RuleCollectTerms** - Requires expression tree manipulation (not just multi-instruction)
 
+### ✅ Phase 1D Complete: CFG Integration + 2 Phi Simplification Rules
+
+**Infrastructure implemented**: CFG integration for control flow analysis
+- Created: `vcdecomp/core/ir/cfg_integration.py` (275 lines, fully documented)
+- Integrated into: `vcdecomp/core/ir/simplify_engine.py`
+- Features:
+  - Links SSA instructions with CFG basic blocks
+  - Natural loop detection and analysis
+  - Loop header identification
+  - Loop-invariant value detection
+  - Phi node queries at block boundaries
+  - Dominator tree queries
+
+**Rules enabled** (2/14 from Priority 3):
+1. ✅ **RulePhiSimplify** - Simplify phi nodes with identical inputs
+   - Pattern: `phi(y, y, y) → COPY(y)`
+   - Status: Fully functional with CFG integration
+   - File: `vcdecomp/core/ir/rules/dataflow.py:295`
+
+2. ✅ **RuleTrivialPhi** - Eliminate trivial phi nodes
+   - Pattern: `phi(y) → COPY(y)` (single input)
+   - Status: Fully functional with CFG integration
+   - File: `vcdecomp/core/ir/rules/dataflow.py:545`
+
+**Rules not yet enabled** (12/14 - require additional implementation):
+- 8 loop optimization rules (induction vars, loop invariant, strength reduction, etc.)
+- 4 pattern detection rules (abs, min/max, sign magnitude, select)
+- These require more complex loop analysis beyond basic CFG integration
+
 **Current totals**:
 - Total rules: 103
-- Enabled: 72 (70%)
-- Disabled: 31 (30%)
-- **Progress today**: +5 rules total (2 data flow + 3 boolean/comparison)
+- Enabled: 74 (72%)
+- Disabled: 29 (28%)
+- **Progress today**: +7 rules total (2 data flow + 3 boolean/comparison + 2 phi simplification)
 
 ---
 
@@ -444,7 +473,7 @@ If full infrastructure is too much work, focus on highest ROI:
 
 ---
 
-**Status**: 72/103 rules enabled (70%)
-**Progress today**: +5 rules (RuleCompareZero, RuleCopyPropagation, RuleConstantPropagation, RuleNotDistribute, RuleDemorganLaws, RuleIntLessEqual)
-**Path to 95%**: Implement CFG integration (13 rules) + Type system (7 rules)
+**Status**: 74/103 rules enabled (72%)
+**Progress today**: +7 rules (RuleCompareZero, RuleCopyPropagation, RuleConstantPropagation, RuleNotDistribute, RuleDemorganLaws, RuleIntLessEqual, RulePhiSimplify, RuleTrivialPhi)
+**Path to 95%**: Complete CFG-dependent rules (12 remaining) + Type system (7 rules)
 **Estimated remaining effort**: 1-2 weeks for 95% coverage
