@@ -1,14 +1,14 @@
 # Simplification Rules Summary
 
-This document provides an overview of all 60 SSA-level transformation rules implemented in the decompiler.
+This document provides an overview of all 70 SSA-level transformation rules implemented in the decompiler.
 
 ## Overview
 
-- **Total Rules**: 60 (Phase 2 target: 60) ✅
+- **Total Rules**: 70 (Phase 3 target: 70) ✅
 - **Ghidra Reference**: 136 rules
-- **Coverage**: ~44% of Ghidra's rule set
-- **Organization**: 8 rule categories
-- **Enabled**: 53 rules (7 disabled by default)
+- **Coverage**: ~51% of Ghidra's rule set
+- **Organization**: 10 rule categories
+- **Enabled**: 57 rules (13 disabled by default)
 
 ## Rule Categories
 
@@ -122,6 +122,22 @@ Rules for simplifying type conversions, casts, and extensions.
 | RuleNarrowingRedundant | `char(int(c)) → c` | Eliminate redundant narrowing |
 | RuleTypeCoercion | Mixed-type expr | Optimize mixed-type expressions (disabled) |
 
+### 9. Pointer & Array (10 rules)
+Rules for simplifying pointer arithmetic and array access patterns.
+
+| Rule | Transformation | Description |
+|------|----------------|-------------|
+| RulePtrAddChain | `(ptr + 4) + 8 → ptr + 12` | Chain consecutive pointer additions |
+| RulePtrSubNormalize | `ptr - (-4) → ptr + 4` | Normalize negative subtraction |
+| RulePtrArithIdentity | `ptr + 0 → ptr` | Eliminate identity operations |
+| RuleArrayBounds | `base + (i * size)` | Constant fold array index calculation |
+| RulePtrNullCheck | `ptr == 0 → !ptr` | Optimize null checks (disabled - needs type info) |
+| RulePtrCompare | `(ptr+4) < (ptr+8) → 4 < 8` | Simplify pointer comparisons (disabled - needs alias analysis) |
+| RulePtrDiff | `(ptr1-ptr2)/4 → count` | Detect element count patterns (disabled - needs type info) |
+| RuleArrayBase | `&arr[0] → arr` | Simplify array base address (disabled - needs ADDR opcode) |
+| RuleStructOffset | `ptr + 12 → ptr->field` | Detect struct field access (disabled - needs struct types) |
+| RulePtrIndex | `*(ptr+4) → ptr[1]` | Convert to array notation (disabled - presentation-only) |
+
 ## Rule Application Strategy
 
 ### Fixed-Point Iteration
@@ -143,6 +159,7 @@ Rules are applied in phases to maximize effectiveness:
 6. **Comparison** - Simplify comparison operations
 7. **Boolean Logic** - Simplify logical operations
 8. **Type Conversions** - Eliminate unnecessary casts
+9. **Pointer & Array** - Simplify pointer arithmetic and array access
 
 ### Emergent Simplification
 One rule can enable another through iteration:
@@ -190,13 +207,14 @@ vcdecomp/core/ir/
 
 | Metric | VC-Decompiler | Ghidra |
 |--------|---------------|--------|
-| Total Rules | 60 | 136 |
-| Coverage | ~44% | 100% |
-| Rule Categories | 8 | 15+ |
+| Total Rules | 70 | 136 |
+| Coverage | ~51% | 100% |
+| Rule Categories | 10 | 15+ |
 | Fixed-Point Engine | ✓ | ✓ |
 | Modular Organization | ✓ | ✓ |
 | Power-of-2 Optimizations | ✓ | ✓ |
 | Type Inference Rules | 15 | 25+ |
+| Pointer/Array Rules | 10 | 15+ |
 
 ## Future Enhancements
 

@@ -89,6 +89,18 @@ from .typeconv import (
     RuleNarrowingRedundant,
     RuleTypeCoercion,
 )
+from .pointer import (
+    RulePtrAddChain,
+    RulePtrSubNormalize,
+    RulePtrArithIdentity,
+    RulePtrNullCheck,
+    RulePtrCompare,
+    RulePtrDiff,
+    RuleArrayBase,
+    RuleStructOffset,
+    RuleArrayBounds,
+    RulePtrIndex,
+)
 
 # Registry of all available rules
 ALL_RULES = [
@@ -171,6 +183,18 @@ ALL_RULES = [
     RuleSignExtendDetect(),
     RuleNarrowingRedundant(),
     RuleTypeCoercion(),
+
+    # Phase 11: Pointer & Array rules (Phase 3)
+    RulePtrAddChain(),
+    RulePtrSubNormalize(),
+    RulePtrArithIdentity(),
+    RulePtrNullCheck(),
+    RulePtrCompare(),
+    RulePtrDiff(),
+    RuleArrayBase(),
+    RuleStructOffset(),
+    RuleArrayBounds(),
+    RulePtrIndex(),
 ]
 
 # Rule groups for selective application
@@ -183,6 +207,7 @@ RULE_GROUPS = {
     "comparison": [RuleEqualitySelf, RuleLessEqualSelf, RuleNotEqual, RuleCompareZero, RuleLessEqual, RuleIntLessEqual, RuleBxor2NotEqual],
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
     "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext, RuleBoolZext, RuleZextEliminate, RulePromoteTypes, RuleCastPropagation, RuleIntegralPromotion, RuleFloatIntRoundtrip, RuleConstantCast, RuleSignExtendDetect, RuleNarrowingRedundant, RuleTypeCoercion],
+    "pointer": [RulePtrAddChain, RulePtrSubNormalize, RulePtrArithIdentity, RulePtrNullCheck, RulePtrCompare, RulePtrDiff, RuleArrayBase, RuleStructOffset, RuleArrayBounds, RulePtrIndex],
 }
 
 __all__ = [
@@ -258,6 +283,28 @@ __all__ = [
     "RuleCastConstant",
     "RuleSextChain",
     "RuleTruncateZext",
+    "RuleBoolZext",
+    "RuleZextEliminate",
+    "RulePromoteTypes",
+    "RuleCastPropagation",
+    "RuleIntegralPromotion",
+    "RuleFloatIntRoundtrip",
+    "RuleConstantCast",
+    "RuleSignExtendDetect",
+    "RuleNarrowingRedundant",
+    "RuleTypeCoercion",
+
+    # Pointer & Array rules
+    "RulePtrAddChain",
+    "RulePtrSubNormalize",
+    "RulePtrArithIdentity",
+    "RulePtrNullCheck",
+    "RulePtrCompare",
+    "RulePtrDiff",
+    "RuleArrayBase",
+    "RuleStructOffset",
+    "RuleArrayBounds",
+    "RulePtrIndex",
 
     # Registry
     "ALL_RULES",
