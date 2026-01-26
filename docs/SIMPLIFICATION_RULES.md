@@ -1,14 +1,14 @@
 # Simplification Rules Summary
 
-This document provides an overview of all 70 SSA-level transformation rules implemented in the decompiler.
+This document provides an overview of all 80 SSA-level transformation rules implemented in the decompiler.
 
 ## Overview
 
-- **Total Rules**: 70 (Phase 3 target: 70) ✅
+- **Total Rules**: 80 (Phase 4 target: 80) ✅
 - **Ghidra Reference**: 136 rules
-- **Coverage**: ~51% of Ghidra's rule set
-- **Organization**: 10 rule categories
-- **Enabled**: 57 rules (13 disabled by default)
+- **Coverage**: ~59% of Ghidra's rule set
+- **Organization**: 11 rule categories
+- **Enabled**: 61 rules (19 disabled by default)
 
 ## Rule Categories
 
@@ -138,6 +138,22 @@ Rules for simplifying pointer arithmetic and array access patterns.
 | RuleStructOffset | `ptr + 12 → ptr->field` | Detect struct field access (disabled - needs struct types) |
 | RulePtrIndex | `*(ptr+4) → ptr[1]` | Convert to array notation (disabled - presentation-only) |
 
+### 10. Advanced Patterns (10 rules)
+Rules for detecting and optimizing high-level programming patterns.
+
+| Rule | Transformation | Description |
+|------|----------------|-------------|
+| RuleConditionInvert | `!(a < b) → a >= b` | Invert comparisons to reduce negation |
+| RuleBoolNormalize | `x != 0 → x`, `x == 0 → !x` | Normalize boolean comparisons |
+| RuleConditionMerge | `x && x → x` | Merge duplicate conditions |
+| RuleBitfieldExtract | `(x >> s) & m → EXTRACT` | Detect bitfield extraction patterns |
+| RuleDemorganLaws | `!(a && b) → !a \|\| !b` | Apply De Morgan's laws (disabled - needs expression tree) |
+| RuleAbsoluteValue | `(x < 0) ? -x : x → abs(x)` | Detect abs() patterns (disabled - needs CFG analysis) |
+| RuleMinMaxPatterns | `(a < b) ? a : b → min(a,b)` | Detect min/max patterns (disabled - needs CFG analysis) |
+| RuleSignMagnitude | Sign/magnitude patterns | Optimize sign-magnitude conversions (disabled - needs CFG) |
+| RuleRangeCheck | `(x >= a) && (x <= b)` | Optimize range checking (disabled - needs boolean analysis) |
+| RuleSelectPattern | `cond ? a : a → a` | Simplify ternary patterns (disabled - needs CFG analysis) |
+
 ## Rule Application Strategy
 
 ### Fixed-Point Iteration
@@ -160,6 +176,7 @@ Rules are applied in phases to maximize effectiveness:
 7. **Boolean Logic** - Simplify logical operations
 8. **Type Conversions** - Eliminate unnecessary casts
 9. **Pointer & Array** - Simplify pointer arithmetic and array access
+10. **Advanced Patterns** - Detect and optimize high-level programming patterns
 
 ### Emergent Simplification
 One rule can enable another through iteration:
@@ -207,14 +224,15 @@ vcdecomp/core/ir/
 
 | Metric | VC-Decompiler | Ghidra |
 |--------|---------------|--------|
-| Total Rules | 70 | 136 |
-| Coverage | ~51% | 100% |
-| Rule Categories | 10 | 15+ |
+| Total Rules | 80 | 136 |
+| Coverage | ~59% | 100% |
+| Rule Categories | 11 | 15+ |
 | Fixed-Point Engine | ✓ | ✓ |
 | Modular Organization | ✓ | ✓ |
 | Power-of-2 Optimizations | ✓ | ✓ |
 | Type Inference Rules | 15 | 25+ |
 | Pointer/Array Rules | 10 | 15+ |
+| Pattern Recognition Rules | 10 | 20+ |
 
 ## Future Enhancements
 

@@ -101,6 +101,18 @@ from .pointer import (
     RuleArrayBounds,
     RulePtrIndex,
 )
+from .patterns import (
+    RuleConditionInvert,
+    RuleDemorganLaws,
+    RuleAbsoluteValue,
+    RuleMinMaxPatterns,
+    RuleBitfieldExtract,
+    RuleSignMagnitude,
+    RuleRangeCheck,
+    RuleBoolNormalize,
+    RuleConditionMerge,
+    RuleSelectPattern,
+)
 
 # Registry of all available rules
 ALL_RULES = [
@@ -195,6 +207,18 @@ ALL_RULES = [
     RuleStructOffset(),
     RuleArrayBounds(),
     RulePtrIndex(),
+
+    # Phase 12: Advanced patterns (Phase 4)
+    RuleConditionInvert(),
+    RuleDemorganLaws(),
+    RuleAbsoluteValue(),
+    RuleMinMaxPatterns(),
+    RuleBitfieldExtract(),
+    RuleSignMagnitude(),
+    RuleRangeCheck(),
+    RuleBoolNormalize(),
+    RuleConditionMerge(),
+    RuleSelectPattern(),
 ]
 
 # Rule groups for selective application
@@ -208,6 +232,7 @@ RULE_GROUPS = {
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
     "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext, RuleBoolZext, RuleZextEliminate, RulePromoteTypes, RuleCastPropagation, RuleIntegralPromotion, RuleFloatIntRoundtrip, RuleConstantCast, RuleSignExtendDetect, RuleNarrowingRedundant, RuleTypeCoercion],
     "pointer": [RulePtrAddChain, RulePtrSubNormalize, RulePtrArithIdentity, RulePtrNullCheck, RulePtrCompare, RulePtrDiff, RuleArrayBase, RuleStructOffset, RuleArrayBounds, RulePtrIndex],
+    "patterns": [RuleConditionInvert, RuleDemorganLaws, RuleAbsoluteValue, RuleMinMaxPatterns, RuleBitfieldExtract, RuleSignMagnitude, RuleRangeCheck, RuleBoolNormalize, RuleConditionMerge, RuleSelectPattern],
 }
 
 __all__ = [
@@ -305,6 +330,18 @@ __all__ = [
     "RuleStructOffset",
     "RuleArrayBounds",
     "RulePtrIndex",
+
+    # Advanced pattern rules
+    "RuleConditionInvert",
+    "RuleDemorganLaws",
+    "RuleAbsoluteValue",
+    "RuleMinMaxPatterns",
+    "RuleBitfieldExtract",
+    "RuleSignMagnitude",
+    "RuleRangeCheck",
+    "RuleBoolNormalize",
+    "RuleConditionMerge",
+    "RuleSelectPattern",
 
     # Registry
     "ALL_RULES",
