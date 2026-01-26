@@ -26,12 +26,30 @@ from .bitwise import (
     RuleAndMask,
     RuleOrMask,
     RuleXorCancel,
+    RuleShiftByZero,
+    RuleDoubleShift,
 )
 from .arithmetic import (
     RuleConstantFold,
     RuleDoubleAdd,
     RuleDoubleSub,
     RuleNegateIdentity,
+    RuleSubIdentity,
+    RuleDivIdentity,
+    RuleMulByPowerOf2,
+    RuleDivByPowerOf2,
+    RuleModByPowerOf2,
+)
+from .comparison import (
+    RuleEqualitySelf,
+    RuleLessEqualSelf,
+    RuleCompareConstants,
+)
+from .boolean import (
+    RuleBooleanAnd,
+    RuleBooleanOr,
+    RuleBooleanNot,
+    RuleBooleanDedup,
 )
 
 # Registry of all available rules
@@ -41,33 +59,53 @@ ALL_RULES = [
 
     # Phase 2: Constant folding
     RuleConstantFold(),
+    RuleCompareConstants(),
 
     # Phase 3: Identity rules
     RuleAndIdentity(),
     RuleOrIdentity(),
     RuleAddIdentity(),
     RuleMulIdentity(),
+    RuleSubIdentity(),
+    RuleDivIdentity(),
 
     # Phase 4: Nested operation simplification
     RuleAndMask(),
     RuleOrMask(),
 
-    # Phase 5: XOR simplification
+    # Phase 5: XOR and shift simplification
     RuleXorCancel(),
+    RuleShiftByZero(),
+    RuleDoubleShift(),
 
-    # Phase 6: Arithmetic chaining
+    # Phase 6: Arithmetic chaining and optimization
     RuleDoubleAdd(),
     RuleDoubleSub(),
     RuleNegateIdentity(),
+    RuleMulByPowerOf2(),
+    RuleDivByPowerOf2(),
+    RuleModByPowerOf2(),
+
+    # Phase 7: Comparison simplification
+    RuleEqualitySelf(),
+    RuleLessEqualSelf(),
+
+    # Phase 8: Boolean logic
+    RuleBooleanAnd(),
+    RuleBooleanOr(),
+    RuleBooleanNot(),
+    RuleBooleanDedup(),
 ]
 
 # Rule groups for selective application
 RULE_GROUPS = {
     "canonical": [RuleTermOrder],
-    "fold": [RuleConstantFold],
-    "identity": [RuleAndIdentity, RuleOrIdentity, RuleAddIdentity, RuleMulIdentity],
-    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel],
-    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity],
+    "fold": [RuleConstantFold, RuleCompareConstants],
+    "identity": [RuleAndIdentity, RuleOrIdentity, RuleAddIdentity, RuleMulIdentity, RuleSubIdentity, RuleDivIdentity],
+    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift],
+    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2],
+    "comparison": [RuleEqualitySelf, RuleLessEqualSelf],
+    "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
 }
 
 __all__ = [
@@ -78,19 +116,43 @@ __all__ = [
     "create_constant_value",
     "is_commutative",
 
-    # Rules
+    # Identity rules
     "RuleTermOrder",
-    "RuleConstantFold",
     "RuleAndIdentity",
     "RuleOrIdentity",
     "RuleAddIdentity",
     "RuleMulIdentity",
+    "RuleSubIdentity",
+    "RuleDivIdentity",
+
+    # Folding rules
+    "RuleConstantFold",
+    "RuleCompareConstants",
+
+    # Bitwise rules
     "RuleAndMask",
     "RuleOrMask",
     "RuleXorCancel",
+    "RuleShiftByZero",
+    "RuleDoubleShift",
+
+    # Arithmetic rules
     "RuleDoubleAdd",
     "RuleDoubleSub",
     "RuleNegateIdentity",
+    "RuleMulByPowerOf2",
+    "RuleDivByPowerOf2",
+    "RuleModByPowerOf2",
+
+    # Comparison rules
+    "RuleEqualitySelf",
+    "RuleLessEqualSelf",
+
+    # Boolean rules
+    "RuleBooleanAnd",
+    "RuleBooleanOr",
+    "RuleBooleanNot",
+    "RuleBooleanDedup",
 
     # Registry
     "ALL_RULES",

@@ -222,3 +222,120 @@ class RuleXorCancel(SimplificationRule):
             return new_inst
 
         return None
+
+
+class RuleShiftByZero(SimplificationRule):
+    """
+    Simplify shifts by zero.
+
+    Examples:
+        x << 0 → x
+        x >> 0 → x
+    """
+
+    def __init__(self):
+        super().__init__("RuleShiftByZero")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("LS", "RS", "SHL", "SHR"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Shift amount (right operand) must be 0
+        right = inst.inputs[1]
+        if not is_constant(right):
+            return False
+
+        shift_amount = get_constant_value(right, ssa_func)
+        return shift_amount == 0
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left = inst.inputs[0]
+
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="COPY",
+            address=inst.address,
+            inputs=[left],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleShiftByZero: x {inst.mnemonic} 0 → x")
+        return new_inst
+
+
+class RuleDoubleShift(SimplificationRule):
+    """
+    Combine consecutive shifts in the same direction.
+
+    Examples:
+        (x << 2) << 3 → x << 5
+        (x >> 1) >> 2 → x >> 3
+    """
+
+    def __init__(self):
+        super().__init__("RuleDoubleShift")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("LS", "RS", "SHL", "SHR"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        left, right = inst.inputs
+
+        # Right must be constant
+        if not is_constant(right):
+            return False
+
+        # Left must be result of same shift operation
+        if not left.producer_inst:
+            return False
+        if left.producer_inst.mnemonic != inst.mnemonic:
+            return False
+        if len(left.producer_inst.inputs) != 2:
+            return False
+
+        # Inner shift's amount must also be constant
+        inner_right = left.producer_inst.inputs[1]
+        return is_constant(inner_right)
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+        inner_shift = left.producer_inst
+
+        # Get shift amounts
+        outer_amount = get_constant_value(right, ssa_func)
+        inner_amount = get_constant_value(inner_shift.inputs[1], ssa_func)
+
+        if outer_amount is None or inner_amount is None:
+            return None
+
+        # Combine shift amounts (mask to 5 bits for safety)
+        combined_amount = (inner_amount + outer_amount) & 0x1F
+
+        # Create new instruction: x << combined_amount
+        combined_const = create_constant_value(
+            combined_amount, inst.outputs[0].value_type, ssa_func
+        )
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=inst.mnemonic,
+            address=inst.address,
+            inputs=[inner_shift.inputs[0], combined_const],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(
+            f"RuleDoubleShift: (x {inst.mnemonic} {inner_amount}) {inst.mnemonic} {outer_amount} → x {inst.mnemonic} {combined_amount}"
+        )
+        return new_inst

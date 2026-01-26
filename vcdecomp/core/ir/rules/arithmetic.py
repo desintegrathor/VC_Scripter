@@ -329,3 +329,301 @@ class RuleNegateIdentity(SimplificationRule):
         self.apply_count += 1
         logger.debug(f"RuleNegateIdentity: -(-x) → x")
         return new_inst
+
+
+class RuleSubIdentity(SimplificationRule):
+    """
+    Simplify subtraction with identity values.
+
+    Examples:
+        x - 0 → x
+        x - x → 0
+    """
+
+    def __init__(self):
+        super().__init__("RuleSubIdentity")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("SUB", "FSUB", "DSUB"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+        return True
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Check for x - 0 → x
+        right_val = get_constant_value(right, ssa_func)
+        if right_val == 0:
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="COPY",
+                address=inst.address,
+                inputs=[left],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+            self.apply_count += 1
+            logger.debug(f"RuleSubIdentity: x - 0 → x")
+            return new_inst
+
+        # Check for x - x → 0
+        if left.name == right.name:
+            const_zero = create_constant_value(0, inst.outputs[0].value_type, ssa_func)
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="CONST",
+                address=inst.address,
+                inputs=[const_zero],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+            self.apply_count += 1
+            logger.debug(f"RuleSubIdentity: x - x → 0")
+            return new_inst
+
+        return None
+
+
+class RuleDivIdentity(SimplificationRule):
+    """
+    Simplify division with identity values.
+
+    Examples:
+        x / 1 → x
+    """
+
+    def __init__(self):
+        super().__init__("RuleDivIdentity")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("DIV", "IDIV", "FDIV", "DDIV"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+        return True
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Check for x / 1 → x
+        right_val = get_constant_value(right, ssa_func)
+        if right_val == 1:
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="COPY",
+                address=inst.address,
+                inputs=[left],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+            self.apply_count += 1
+            logger.debug(f"RuleDivIdentity: x / 1 → x")
+            return new_inst
+
+        return None
+
+
+class RuleMulByPowerOf2(SimplificationRule):
+    """
+    Convert multiplication by power of 2 to left shift.
+
+    Examples:
+        x * 2 → x << 1
+        x * 4 → x << 2
+        x * 8 → x << 3
+
+    Only applies when beneficial (shift is usually faster/clearer for indexing).
+    """
+
+    def __init__(self):
+        super().__init__("RuleMulByPowerOf2")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "MUL":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Right operand must be a power of 2 constant
+        right = inst.inputs[1]
+        if not is_constant(right):
+            return False
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None or right_val <= 0:
+            return False
+
+        # Import helper from base
+        from .base import is_power_of_two
+
+        return is_power_of_two(right_val)
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None:
+            return None
+
+        # Get shift amount
+        from .base import log2_of_power_of_two
+
+        shift_amount = log2_of_power_of_two(right_val)
+        if shift_amount is None:
+            return None
+
+        # Create shift instruction: x << shift_amount
+        shift_const = create_constant_value(
+            shift_amount, inst.outputs[0].value_type, ssa_func
+        )
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="LS",  # Left shift
+            address=inst.address,
+            inputs=[left, shift_const],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleMulByPowerOf2: x * {right_val} → x << {shift_amount}")
+        return new_inst
+
+
+class RuleDivByPowerOf2(SimplificationRule):
+    """
+    Convert unsigned division by power of 2 to right shift.
+
+    Examples:
+        x / 2 → x >> 1
+        x / 4 → x >> 2
+        x / 8 → x >> 3
+
+    Note: Only safe for unsigned division. Signed division requires arithmetic shift.
+    """
+
+    def __init__(self):
+        super().__init__("RuleDivByPowerOf2")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Only for unsigned division (DIV, not IDIV)
+        if inst.mnemonic != "DIV":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Right operand must be a power of 2 constant
+        right = inst.inputs[1]
+        if not is_constant(right):
+            return False
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None or right_val <= 0:
+            return False
+
+        from .base import is_power_of_two
+
+        return is_power_of_two(right_val)
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None:
+            return None
+
+        # Get shift amount
+        from .base import log2_of_power_of_two
+
+        shift_amount = log2_of_power_of_two(right_val)
+        if shift_amount is None:
+            return None
+
+        # Create shift instruction: x >> shift_amount
+        shift_const = create_constant_value(
+            shift_amount, inst.outputs[0].value_type, ssa_func
+        )
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="RS",  # Right shift
+            address=inst.address,
+            inputs=[left, shift_const],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleDivByPowerOf2: x / {right_val} → x >> {shift_amount}")
+        return new_inst
+
+
+class RuleModByPowerOf2(SimplificationRule):
+    """
+    Convert modulo by power of 2 to bitwise AND.
+
+    Examples:
+        x % 2 → x & 1
+        x % 4 → x & 3
+        x % 8 → x & 7
+
+    This optimization: x % (2^n) = x & (2^n - 1)
+    """
+
+    def __init__(self):
+        super().__init__("RuleModByPowerOf2")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "MOD":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Right operand must be a power of 2 constant
+        right = inst.inputs[1]
+        if not is_constant(right):
+            return False
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None or right_val <= 0:
+            return False
+
+        from .base import is_power_of_two
+
+        return is_power_of_two(right_val)
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        right_val = get_constant_value(right, ssa_func)
+        if right_val is None:
+            return None
+
+        # Compute mask: 2^n - 1
+        mask = right_val - 1
+
+        # Create AND instruction: x & mask
+        mask_const = create_constant_value(mask, inst.outputs[0].value_type, ssa_func)
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="BA",  # Bitwise AND
+            address=inst.address,
+            inputs=[left, mask_const],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleModByPowerOf2: x % {right_val} → x & 0x{mask:x}")
+        return new_inst
