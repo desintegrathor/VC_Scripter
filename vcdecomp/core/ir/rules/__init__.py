@@ -126,6 +126,20 @@ from .loops import (
     RuleLoopRotate,
     RuleLoopFusion,
 )
+from .dataflow import (
+    RuleCopyPropagation,
+    RuleConstantPropagation,
+    RuleDeadValue,
+    RuleIdentityCopy,
+    RulePhiSimplify,
+    RuleSingleUseInline,
+    RuleRedundantCopy,
+    RuleCopyChain,
+    RuleValueNumbering,
+    RuleUnusedResult,
+    RuleTrivialPhi,
+    RuleForwardSubstitution,
+)
 
 # Registry of all available rules
 ALL_RULES = [
@@ -245,6 +259,20 @@ ALL_RULES = [
     RuleLoopElimination(),
     RuleLoopRotate(),
     RuleLoopFusion(),
+
+    # Phase 14: Data flow & copy propagation (Phase 6)
+    RuleCopyPropagation(),
+    RuleConstantPropagation(),
+    RuleDeadValue(),
+    RuleIdentityCopy(),
+    RulePhiSimplify(),
+    RuleSingleUseInline(),
+    RuleRedundantCopy(),
+    RuleCopyChain(),
+    RuleValueNumbering(),
+    RuleUnusedResult(),
+    RuleTrivialPhi(),
+    RuleForwardSubstitution(),
 ]
 
 # Rule groups for selective application
@@ -260,6 +288,7 @@ RULE_GROUPS = {
     "pointer": [RulePtrAddChain, RulePtrSubNormalize, RulePtrArithIdentity, RulePtrNullCheck, RulePtrCompare, RulePtrDiff, RuleArrayBase, RuleStructOffset, RuleArrayBounds, RulePtrIndex],
     "patterns": [RuleConditionInvert, RuleDemorganLaws, RuleAbsoluteValue, RuleMinMaxPatterns, RuleBitfieldExtract, RuleSignMagnitude, RuleRangeCheck, RuleBoolNormalize, RuleConditionMerge, RuleSelectPattern],
     "loops": [RuleLoopIncrementSimplify, RuleLoopCounterNormalize, RuleLoopBoundConstant, RuleInductionSimplify, RuleLoopInvariantDetect, RuleLoopStrength, RuleLoopUnswitch, RuleCountedLoop, RuleLoopElimination, RuleLoopRotate, RuleLoopFusion],
+    "dataflow": [RuleCopyPropagation, RuleConstantPropagation, RuleDeadValue, RuleIdentityCopy, RulePhiSimplify, RuleSingleUseInline, RuleRedundantCopy, RuleCopyChain, RuleValueNumbering, RuleUnusedResult, RuleTrivialPhi, RuleForwardSubstitution],
 }
 
 __all__ = [
@@ -382,6 +411,20 @@ __all__ = [
     "RuleLoopElimination",
     "RuleLoopRotate",
     "RuleLoopFusion",
+
+    # Data flow optimization rules
+    "RuleCopyPropagation",
+    "RuleConstantPropagation",
+    "RuleDeadValue",
+    "RuleIdentityCopy",
+    "RulePhiSimplify",
+    "RuleSingleUseInline",
+    "RuleRedundantCopy",
+    "RuleCopyChain",
+    "RuleValueNumbering",
+    "RuleUnusedResult",
+    "RuleTrivialPhi",
+    "RuleForwardSubstitution",
 
     # Registry
     "ALL_RULES",
