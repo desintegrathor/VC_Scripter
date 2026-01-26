@@ -51,6 +51,16 @@ from .boolean import (
     RuleBooleanNot,
     RuleBooleanDedup,
 )
+from .advanced_arithmetic import (
+    RuleCancelAddSub,
+    RuleAbsorbNegation,
+    RuleStrengthReduction,
+)
+from .typeconv import (
+    RuleCastChain,
+    RuleCastIdentity,
+    RuleCastConstant,
+)
 
 # Registry of all available rules
 ALL_RULES = [
@@ -95,17 +105,28 @@ ALL_RULES = [
     RuleBooleanOr(),
     RuleBooleanNot(),
     RuleBooleanDedup(),
+
+    # Phase 9: Advanced arithmetic
+    RuleCancelAddSub(),
+    RuleAbsorbNegation(),
+    RuleStrengthReduction(),
+
+    # Phase 10: Type conversions
+    RuleCastChain(),
+    RuleCastIdentity(),
+    RuleCastConstant(),
 ]
 
 # Rule groups for selective application
 RULE_GROUPS = {
     "canonical": [RuleTermOrder],
-    "fold": [RuleConstantFold, RuleCompareConstants],
+    "fold": [RuleConstantFold, RuleCompareConstants, RuleCastConstant],
     "identity": [RuleAndIdentity, RuleOrIdentity, RuleAddIdentity, RuleMulIdentity, RuleSubIdentity, RuleDivIdentity],
     "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift],
-    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2],
+    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction],
     "comparison": [RuleEqualitySelf, RuleLessEqualSelf],
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
+    "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant],
 }
 
 __all__ = [
@@ -153,6 +174,16 @@ __all__ = [
     "RuleBooleanOr",
     "RuleBooleanNot",
     "RuleBooleanDedup",
+
+    # Advanced arithmetic rules
+    "RuleCancelAddSub",
+    "RuleAbsorbNegation",
+    "RuleStrengthReduction",
+
+    # Type conversion rules
+    "RuleCastChain",
+    "RuleCastIdentity",
+    "RuleCastConstant",
 
     # Registry
     "ALL_RULES",

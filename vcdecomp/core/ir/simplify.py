@@ -49,6 +49,14 @@ from .rules import (
     RuleBooleanOr,
     RuleBooleanNot,
     RuleBooleanDedup,
+    # Advanced arithmetic
+    RuleCancelAddSub,
+    RuleAbsorbNegation,
+    RuleStrengthReduction,
+    # Type conversion
+    RuleCastChain,
+    RuleCastIdentity,
+    RuleCastConstant,
     # Registry
     ALL_RULES,
     RULE_GROUPS,
@@ -101,6 +109,14 @@ __all__ = [
     "RuleBooleanOr",
     "RuleBooleanNot",
     "RuleBooleanDedup",
+    # Advanced arithmetic
+    "RuleCancelAddSub",
+    "RuleAbsorbNegation",
+    "RuleStrengthReduction",
+    # Type conversion
+    "RuleCastChain",
+    "RuleCastIdentity",
+    "RuleCastConstant",
     # Registry
     "ALL_RULES",
     "DEFAULT_RULES",
