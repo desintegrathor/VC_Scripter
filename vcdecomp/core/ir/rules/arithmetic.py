@@ -715,3 +715,151 @@ class RuleModOne(SimplificationRule):
         self.apply_count += 1
         logger.debug(f"RuleModOne: x % 1 → 0")
         return new_inst
+
+
+class RuleMulDistribute(SimplificationRule):
+    """
+    Factor common terms from addition (distributive property in reverse).
+
+    Examples:
+        x * a + x * b → x * (a + b)
+        x * 2 + x * 3 → x * 5
+
+    This is useful for loop index calculations and array access patterns.
+    """
+
+    def __init__(self):
+        super().__init__("RuleMulDistribute")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Must be addition
+        if inst.mnemonic != "ADD":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        left, right = inst.inputs
+
+        # Both operands must be multiplications
+        if not left.producer_inst or not right.producer_inst:
+            return False
+
+        left_mul = left.producer_inst
+        right_mul = right.producer_inst
+
+        if left_mul.mnemonic != "MUL" or right_mul.mnemonic != "MUL":
+            return False
+
+        if len(left_mul.inputs) != 2 or len(right_mul.inputs) != 2:
+            return False
+
+        # Check if they share a common factor
+        # Pattern: x * a + x * b
+        left_ops = set([left_mul.inputs[0].name, left_mul.inputs[1].name])
+        right_ops = set([right_mul.inputs[0].name, right_mul.inputs[1].name])
+
+        common = left_ops & right_ops
+        return len(common) == 1
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left_mul = inst.inputs[0].producer_inst
+        right_mul = inst.inputs[1].producer_inst
+
+        # Find the common factor and the unique multipliers
+        left_ops = {left_mul.inputs[0].name: left_mul.inputs[0],
+                    left_mul.inputs[1].name: left_mul.inputs[1]}
+        right_ops = {right_mul.inputs[0].name: right_mul.inputs[0],
+                     right_mul.inputs[1].name: right_mul.inputs[1]}
+
+        common_names = set(left_ops.keys()) & set(right_ops.keys())
+        if len(common_names) != 1:
+            return None
+
+        common_name = list(common_names)[0]
+        common_factor = left_ops[common_name]
+
+        # Get the unique multipliers
+        left_multiplier = [v for k, v in left_ops.items() if k != common_name][0]
+        right_multiplier = [v for k, v in right_ops.items() if k != common_name][0]
+
+        # Check if both multipliers are constants (easiest case)
+        left_const = get_constant_value(left_multiplier, ssa_func)
+        right_const = get_constant_value(right_multiplier, ssa_func)
+
+        if left_const is not None and right_const is not None:
+            # x * a + x * b → x * (a + b)
+            combined_multiplier = (left_const + right_const) & 0xFFFFFFFF
+
+            # Create new multiplication: x * (a + b)
+            combined_const = create_constant_value(
+                combined_multiplier, inst.outputs[0].value_type, ssa_func
+            )
+
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="MUL",
+                address=inst.address,
+                inputs=[common_factor, combined_const],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+
+            self.apply_count += 1
+            logger.debug(f"RuleMulDistribute: x*{left_const} + x*{right_const} → x*{combined_multiplier}")
+            return new_inst
+
+        # For non-constant multipliers, we'd need to create an ADD instruction
+        # This requires multi-instruction transformation
+        return None
+
+
+class RuleCollectTerms(SimplificationRule):
+    """
+    Reorganize addition trees to collect like terms and enable CSE.
+
+    Examples:
+        a + b + c + d → canonical order for better matching
+        (x + 2) + (x + 3) → enables RuleDoubleAdd
+        x + y + x → 2*x + y (with term collection)
+
+    This is a complex rule that establishes canonical form for addition chains.
+    """
+
+    def __init__(self):
+        super().__init__("RuleCollectTerms")
+        self.is_disabled = True  # Complex - needs careful implementation
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Must be addition
+        if inst.mnemonic != "ADD":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # At least one operand should be another ADD
+        left, right = inst.inputs
+        has_nested_add = False
+
+        if left.producer_inst and left.producer_inst.mnemonic == "ADD":
+            has_nested_add = True
+        if right.producer_inst and right.producer_inst.mnemonic == "ADD":
+            has_nested_add = True
+
+        return has_nested_add
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # This is a complex transformation that requires:
+        # 1. Flattening the addition tree
+        # 2. Collecting like terms
+        # 3. Sorting terms into canonical order
+        # 4. Rebuilding the tree
+
+        # This requires multi-instruction transformation and is beyond
+        # the scope of single-instruction rules
+
+        # For now, leave as placeholder
+        return None

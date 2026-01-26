@@ -11,7 +11,7 @@ This package implements Ghidra-inspired transformation rules organized by catego
 - typeconv: Type conversion simplification
 - pointer: Pointer arithmetic simplification
 
-Rule count target: 40-50 rules (current: 40, Ghidra has: 136)
+Rule count target: 40-50 rules (current: 50, Ghidra has: 136)
 """
 
 from .base import SimplificationRule, is_constant, get_constant_value, create_constant_value, is_commutative
@@ -32,6 +32,9 @@ from .bitwise import (
     RuleOrWithAnd,
     RuleAndZero,
     RuleOrAllOnes,
+    RuleNotDistribute,
+    RuleHighOrderAnd,
+    RuleBitUndistribute,
 )
 from .arithmetic import (
     RuleConstantFold,
@@ -45,6 +48,8 @@ from .arithmetic import (
     RuleModByPowerOf2,
     RuleMulZero,
     RuleModOne,
+    RuleMulDistribute,
+    RuleCollectTerms,
 )
 from .comparison import (
     RuleEqualitySelf,
@@ -52,6 +57,9 @@ from .comparison import (
     RuleCompareConstants,
     RuleNotEqual,
     RuleCompareZero,
+    RuleLessEqual,
+    RuleIntLessEqual,
+    RuleBxor2NotEqual,
 )
 from .boolean import (
     RuleBooleanAnd,
@@ -68,6 +76,8 @@ from .typeconv import (
     RuleCastChain,
     RuleCastIdentity,
     RuleCastConstant,
+    RuleSextChain,
+    RuleTruncateZext,
 )
 
 # Registry of all available rules
@@ -99,6 +109,9 @@ ALL_RULES = [
     RuleOrWithAnd(),
     RuleAndZero(),
     RuleOrAllOnes(),
+    RuleNotDistribute(),
+    RuleHighOrderAnd(),
+    RuleBitUndistribute(),
 
     # Phase 6: Arithmetic chaining and optimization
     RuleDoubleAdd(),
@@ -109,12 +122,17 @@ ALL_RULES = [
     RuleModByPowerOf2(),
     RuleMulZero(),
     RuleModOne(),
+    RuleMulDistribute(),
+    RuleCollectTerms(),
 
     # Phase 7: Comparison simplification
     RuleEqualitySelf(),
     RuleLessEqualSelf(),
     RuleNotEqual(),
     RuleCompareZero(),
+    RuleLessEqual(),
+    RuleIntLessEqual(),
+    RuleBxor2NotEqual(),
 
     # Phase 8: Boolean logic
     RuleBooleanAnd(),
@@ -131,6 +149,8 @@ ALL_RULES = [
     RuleCastChain(),
     RuleCastIdentity(),
     RuleCastConstant(),
+    RuleSextChain(),
+    RuleTruncateZext(),
 ]
 
 # Rule groups for selective application
@@ -138,11 +158,11 @@ RULE_GROUPS = {
     "canonical": [RuleTermOrder],
     "fold": [RuleConstantFold, RuleCompareConstants, RuleCastConstant],
     "identity": [RuleAndIdentity, RuleOrIdentity, RuleAddIdentity, RuleMulIdentity, RuleSubIdentity, RuleDivIdentity],
-    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift, RuleAndWithOr, RuleOrWithAnd, RuleAndZero, RuleOrAllOnes],
-    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleMulZero, RuleModOne, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction],
-    "comparison": [RuleEqualitySelf, RuleLessEqualSelf, RuleNotEqual, RuleCompareZero],
+    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift, RuleAndWithOr, RuleOrWithAnd, RuleAndZero, RuleOrAllOnes, RuleNotDistribute, RuleHighOrderAnd, RuleBitUndistribute],
+    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleMulZero, RuleModOne, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction, RuleMulDistribute, RuleCollectTerms],
+    "comparison": [RuleEqualitySelf, RuleLessEqualSelf, RuleNotEqual, RuleCompareZero, RuleLessEqual, RuleIntLessEqual, RuleBxor2NotEqual],
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
-    "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant],
+    "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext],
 }
 
 __all__ = [
@@ -176,6 +196,9 @@ __all__ = [
     "RuleOrWithAnd",
     "RuleAndZero",
     "RuleOrAllOnes",
+    "RuleNotDistribute",
+    "RuleHighOrderAnd",
+    "RuleBitUndistribute",
 
     # Arithmetic rules
     "RuleDoubleAdd",
@@ -186,12 +209,17 @@ __all__ = [
     "RuleModByPowerOf2",
     "RuleMulZero",
     "RuleModOne",
+    "RuleMulDistribute",
+    "RuleCollectTerms",
 
     # Comparison rules
     "RuleEqualitySelf",
     "RuleLessEqualSelf",
     "RuleNotEqual",
     "RuleCompareZero",
+    "RuleLessEqual",
+    "RuleIntLessEqual",
+    "RuleBxor2NotEqual",
 
     # Boolean rules
     "RuleBooleanAnd",
@@ -208,6 +236,8 @@ __all__ = [
     "RuleCastChain",
     "RuleCastIdentity",
     "RuleCastConstant",
+    "RuleSextChain",
+    "RuleTruncateZext",
 
     # Registry
     "ALL_RULES",

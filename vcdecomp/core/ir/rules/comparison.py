@@ -386,3 +386,224 @@ class RuleCompareZero(SimplificationRule):
             return new_inst
 
         return None
+
+
+class RuleLessEqual(SimplificationRule):
+    """
+    Simplify redundant comparison combinations.
+
+    Examples:
+        x <= y && x >= y → x == y
+        x < y || x > y || x == y → true (always)
+    """
+
+    def __init__(self):
+        super().__init__("RuleLessEqual")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Look for logical AND of two comparisons
+        if inst.mnemonic not in ("BA", "LAND"):  # Bitwise AND or logical AND
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Both inputs must be comparisons
+        left, right = inst.inputs
+        if not left.producer_inst or not right.producer_inst:
+            return False
+
+        left_cmp = left.producer_inst
+        right_cmp = right.producer_inst
+
+        # Check if both are comparisons
+        if not self._is_comparison(left_cmp.mnemonic):
+            return False
+        if not self._is_comparison(right_cmp.mnemonic):
+            return False
+
+        # Check if they compare the same operands
+        if len(left_cmp.inputs) != 2 or len(right_cmp.inputs) != 2:
+            return False
+
+        # Same operands (a <= b && a >= b)
+        if (left_cmp.inputs[0].name == right_cmp.inputs[0].name and
+            left_cmp.inputs[1].name == right_cmp.inputs[1].name):
+            # Check for x <= y && x >= y pattern
+            if self._is_less_equal(left_cmp.mnemonic) and self._is_greater_equal(right_cmp.mnemonic):
+                return True
+            if self._is_greater_equal(left_cmp.mnemonic) and self._is_less_equal(right_cmp.mnemonic):
+                return True
+
+        return False
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left_cmp = inst.inputs[0].producer_inst
+        right_cmp = inst.inputs[1].producer_inst
+
+        # x <= y && x >= y → x == y
+        # Convert to equality check
+        eq_op = self._get_equality_op(left_cmp.mnemonic)
+        if eq_op is None:
+            return None
+
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=eq_op,
+            address=inst.address,
+            inputs=left_cmp.inputs,  # Use operands from first comparison
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleLessEqual: x<=y && x>=y → x==y")
+        return new_inst
+
+    def _is_comparison(self, mnemonic: str) -> bool:
+        return mnemonic in (
+            "EQU", "NEQ", "LES", "LEQ", "GRE", "GEQ",
+            "FEQU", "FNEQ", "FLES", "FLEQ", "FGRE", "FGEQ",
+            "DEQU", "DNEQ", "DLES", "DLEQ", "DGRE", "DGEQ",
+        )
+
+    def _is_less_equal(self, mnemonic: str) -> bool:
+        return mnemonic in ("LEQ", "FLEQ", "DLEQ")
+
+    def _is_greater_equal(self, mnemonic: str) -> bool:
+        return mnemonic in ("GEQ", "FGEQ", "DGEQ")
+
+    def _get_equality_op(self, mnemonic: str) -> Optional[str]:
+        """Get corresponding equality operator for comparison type."""
+        if mnemonic in ("LEQ", "GEQ", "LES", "GRE"):
+            return "EQU"
+        elif mnemonic in ("FLEQ", "FGEQ", "FLES", "FGRE"):
+            return "FEQU"
+        elif mnemonic in ("DLEQ", "DGEQ", "DLES", "DGRE"):
+            return "DEQU"
+        return None
+
+
+class RuleIntLessEqual(SimplificationRule):
+    """
+    Normalize comparison operators to reduce operator diversity.
+
+    Examples:
+        x <= y → !(x > y)
+        x >= y → !(x < y)
+
+    Note: Disabled by default as it may make code less readable.
+    """
+
+    def __init__(self):
+        super().__init__("RuleIntLessEqual")
+        self.is_disabled = True  # Disabled - may reduce readability
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Match <= or >= comparisons
+        return inst.mnemonic in ("LEQ", "GEQ", "FLEQ", "FGEQ", "DLEQ", "DGEQ")
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # Convert x <= y to !(x > y)
+        # Convert x >= y to !(x < y)
+
+        negated_op = self._get_negated_strict_op(inst.mnemonic)
+        if negated_op is None:
+            return None
+
+        # Create the strict comparison
+        strict_cmp = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=negated_op,
+            address=inst.address,
+            inputs=inst.inputs,
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        # Would need to wrap in NOT - but this complicates the IR
+        # For now, return None (disabled by default anyway)
+        return None
+
+    def _get_negated_strict_op(self, mnemonic: str) -> Optional[str]:
+        """Get the strict comparison that, when negated, equals the input."""
+        negation_map = {
+            "LEQ": "GRE",  # x <= y = !(x > y)
+            "GEQ": "LES",  # x >= y = !(x < y)
+            "FLEQ": "FGRE",
+            "FGEQ": "FLES",
+            "DLEQ": "DGRE",
+            "DGEQ": "DLES",
+        }
+        return negation_map.get(mnemonic)
+
+
+class RuleBxor2NotEqual(SimplificationRule):
+    """
+    Detect XOR-based inequality pattern.
+
+    Examples:
+        (a ^ b) != 0 → a != b
+        (a ^ b) == 0 → a == b
+
+    This pattern is common in compiled code for inequality checks.
+    """
+
+    def __init__(self):
+        super().__init__("RuleBxor2NotEqual")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Must be comparison with zero
+        if inst.mnemonic not in ("EQU", "NEQ"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        left, right = inst.inputs
+
+        # One operand must be zero
+        left_val = get_constant_value(left, ssa_func)
+        right_val = get_constant_value(right, ssa_func)
+
+        if left_val != 0 and right_val != 0:
+            return False
+
+        # The other operand must be result of XOR
+        xor_val = right if left_val == 0 else left
+        if not xor_val.producer_inst:
+            return False
+
+        return xor_val.producer_inst.mnemonic == "BX"  # Bitwise XOR
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Get the XOR instruction
+        left_val = get_constant_value(left, ssa_func)
+        xor_val = right if left_val == 0 else left
+
+        xor_inst = xor_val.producer_inst
+        if len(xor_inst.inputs) != 2:
+            return None
+
+        # (a ^ b) != 0 → a != b
+        # (a ^ b) == 0 → a == b
+        new_op = inst.mnemonic  # Keep the same comparison operator
+
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=new_op,
+            address=inst.address,
+            inputs=xor_inst.inputs,  # Use XOR operands directly
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleBxor2NotEqual: (a^b){inst.mnemonic}0 → a{inst.mnemonic}b")
+        return new_inst

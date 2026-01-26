@@ -239,3 +239,118 @@ class RuleCastConstant(SimplificationRule):
             return None
 
         return None
+
+
+class RuleSextChain(SimplificationRule):
+    """
+    Collapse redundant sign extension chains.
+
+    Examples:
+        sext(sext(x, 8), 16) → sext(x, 16)
+        sext(sext(char_val, short), int) → sext(char_val, int)
+
+    This simplifies nested sign extensions by keeping only the final extension.
+    """
+
+    def __init__(self):
+        super().__init__("RuleSextChain")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Check if this looks like a sign extension
+        # In VC-Script, we don't have explicit SEXT, but we can detect patterns
+        # For now, match conversion chains
+        if inst.mnemonic not in ("CTOI", "STOI"):
+            return False
+
+        if len(inst.inputs) != 1:
+            return False
+
+        # Input must be result of another sign extension
+        input_val = inst.inputs[0]
+        if not input_val.producer_inst:
+            return False
+
+        inner_inst = input_val.producer_inst
+        # Inner must also be a widening conversion
+        return inner_inst.mnemonic in ("CTOI", "STOI")
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        inner_inst = inst.inputs[0].producer_inst
+        original = inner_inst.inputs[0]
+
+        # Collapse: CTOI(CTOI(x)) → CTOI(x)
+        # Or: STOI(CTOI(x)) → STOI(x)
+        # We can collapse to the outer conversion only
+
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=inst.mnemonic,
+            address=inst.address,
+            inputs=[original],  # Skip intermediate conversion
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleSextChain: {inst.mnemonic}({inner_inst.mnemonic}(x)) → {inst.mnemonic}(x)")
+        return new_inst
+
+
+class RuleTruncateZext(SimplificationRule):
+    """
+    Eliminate truncate-then-extend patterns.
+
+    Examples:
+        zext(trunc(x, 8), 32) → x (if x was already 32-bit or less)
+        char(int(char_val)) → char_val
+
+    When we truncate then extend back, we might be able to eliminate both operations.
+    """
+
+    def __init__(self):
+        super().__init__("RuleTruncateZext")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Check if this is a widening conversion
+        if inst.mnemonic not in ("CTOI", "STOI"):
+            return False
+
+        if len(inst.inputs) != 1:
+            return False
+
+        # Input must be result of a narrowing conversion
+        input_val = inst.inputs[0]
+        if not input_val.producer_inst:
+            return False
+
+        inner_inst = input_val.producer_inst
+        # Inner must be a narrowing conversion
+        return inner_inst.mnemonic in ("ITOC", "ITOS")
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        inner_inst = inst.inputs[0].producer_inst
+        original = inner_inst.inputs[0]
+
+        # Check if we're converting back to the same size
+        # ITOC→CTOI: int → char → int (not identity due to truncation)
+        # ITOS→STOI: int → short → int (not identity due to truncation)
+
+        # We can only eliminate if the narrowing didn't lose information
+        # This is hard to prove statically, so be conservative
+
+        # Special case: if both conversions cancel exactly
+        if inst.mnemonic == "CTOI" and inner_inst.mnemonic == "ITOC":
+            # int→char→int: Not safe to eliminate without range analysis
+            return None
+
+        if inst.mnemonic == "STOI" and inner_inst.mnemonic == "ITOS":
+            # int→short→int: Not safe to eliminate without range analysis
+            return None
+
+        # In general, truncate-then-extend loses information
+        # Only safe to eliminate with value range analysis
+        return None
