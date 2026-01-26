@@ -1,8 +1,8 @@
 # Rule Enablement Roadmap
 
 **Date**: 2026-01-26
-**Current Status**: 69/103 rules enabled (67% - up from 67 previously)
-**Goal**: Enable remaining 34 disabled rules through infrastructure investments
+**Current Status**: 72/103 rules enabled (70%)
+**Goal**: Enable remaining 31 disabled rules through infrastructure investments
 
 ---
 
@@ -48,11 +48,38 @@
 6. ❌ **RuleForwardSubstitution** - Redundant with rules 1+2 (iterative application)
 7. ❌ **RuleValueNumbering** - Requires separate value numbering infrastructure
 
+### ✅ Phase 1C Complete: Intermediate Value Creation + 3 Boolean/Comparison Rules
+
+**Infrastructure implemented**: Multi-instruction transformation support
+- Modified: `vcdecomp/core/ir/simplify_engine.py` - Supports List[SSAInstruction] returns
+- Modified: `vcdecomp/core/ir/rules/base.py` - Updated SimplificationRule.apply() signature
+- Added: `create_intermediate_value()` helper function
+- Feature: Rules can now create intermediate instructions (e.g., NOT operations for De Morgan)
+
+**Rules enabled** (3/4 from Priority 2):
+1. ✅ **RuleNotDistribute** - De Morgan's laws for bitwise (`~(a&b) → ~a|~b`)
+   - Pattern: Distributes NOT over bitwise AND/OR
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/bitwise.py:577`
+
+2. ✅ **RuleDemorganLaws** - De Morgan's laws for boolean (`!(a&&b) → !a||!b`)
+   - Pattern: Distributes NOT over logical AND/OR
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/patterns.py:94`
+
+3. ✅ **RuleIntLessEqual** - Normalize comparisons (`x<=y → !(x>y)`)
+   - Pattern: Converts <= and >= to strict comparisons with NOT
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/comparison.py:488`
+
+**Rule not enabled** (1/4 - beyond current scope):
+4. ❌ **RuleCollectTerms** - Requires expression tree manipulation (not just multi-instruction)
+
 **Current totals**:
 - Total rules: 103
-- Enabled: 69 (67%)
-- Disabled: 34 (33%)
-- **Progress today**: +2 rules (RuleCopyPropagation, RuleConstantPropagation)
+- Enabled: 72 (70%)
+- Disabled: 31 (30%)
+- **Progress today**: +5 rules total (2 data flow + 3 boolean/comparison)
 
 ---
 
@@ -417,7 +444,7 @@ If full infrastructure is too much work, focus on highest ROI:
 
 ---
 
-**Status**: 67/103 rules enabled (65%)
-**Progress today**: +1 rule (RuleCompareZero)
-**Path to 95%**: Implement use-def chains + CFG integration
-**Estimated total effort**: 2-3 weeks for full enablement
+**Status**: 72/103 rules enabled (70%)
+**Progress today**: +5 rules (RuleCompareZero, RuleCopyPropagation, RuleConstantPropagation, RuleNotDistribute, RuleDemorganLaws, RuleIntLessEqual)
+**Path to 95%**: Implement CFG integration (13 rules) + Type system (7 rules)
+**Estimated remaining effort**: 1-2 weeks for 95% coverage

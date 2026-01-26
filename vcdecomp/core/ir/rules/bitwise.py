@@ -8,15 +8,16 @@ This module implements rules for simplifying bitwise operations:
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List, Union
 
 from .base import (
     SimplificationRule,
     is_constant,
     get_constant_value,
     create_constant_value,
+    create_intermediate_value,
 )
-from ..ssa import SSAFunction, SSAInstruction
+from ..ssa import SSAFunction, SSAInstruction, SSAValue
 
 logger = logging.getLogger(__name__)
 
@@ -576,18 +577,21 @@ class RuleOrAllOnes(SimplificationRule):
 
 class RuleNotDistribute(SimplificationRule):
     """
-    Apply DeMorgan's laws to distribute NOT over AND/OR.
+    Apply DeMorgan's laws to distribute NOT over AND/OR (bitwise).
 
     Examples:
         ~(a & b) → ~a | ~b
         ~(a | b) → ~a & ~b
 
-    Note: Disabled by default as it may increase expression complexity.
+    This uses multi-instruction transformation to create intermediate NOT operations.
+
+    Note: May increase expression complexity in some cases, but can enable
+    further optimizations through bit manipulation analysis.
     """
 
     def __init__(self):
         super().__init__("RuleNotDistribute")
-        self.is_disabled = True  # May increase complexity
+        self.is_disabled = False  # NOW ENABLED with multi-instruction support!
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
         # Must be a NOT operation
@@ -601,26 +605,70 @@ class RuleNotDistribute(SimplificationRule):
         if not input_val.producer_inst:
             return False
 
-        return input_val.producer_inst.mnemonic in ("BA", "BO")
+        prod_inst = input_val.producer_inst
+        if prod_inst.mnemonic not in ("BA", "BO"):  # Bitwise AND/OR
+            return False
+
+        # Must have exactly 2 inputs
+        if len(prod_inst.inputs) != 2:
+            return False
+
+        return True
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
-    ) -> Optional[SSAInstruction]:
+    ) -> Union[SSAInstruction, List[SSAInstruction], None]:
+        """
+        Apply DeMorgan's law using multi-instruction transformation.
+
+        Transformation:
+        1. Create NOT_A = NOT(a)
+        2. Create NOT_B = NOT(b)
+        3. Replace NOT(a AND b) with NOT_A OR NOT_B
+        """
         inner_inst = inst.inputs[0].producer_inst
 
-        if len(inner_inst.inputs) != 2:
-            return None
+        # Get operands
+        a = inner_inst.inputs[0]
+        b = inner_inst.inputs[1]
 
-        # Apply DeMorgan's law
-        # ~(a & b) → ~a | ~b
-        # ~(a | b) → ~a & ~b
-
+        # Determine new operation (flip AND ↔ OR)
         new_op = "BO" if inner_inst.mnemonic == "BA" else "BA"
 
-        # Would need to create NOT instructions for each operand
-        # This requires creating intermediate values, which complicates implementation
-        # For now, return None (disabled by default anyway)
-        return None
+        # Create intermediate values for ~a and ~b
+        not_a_val = create_intermediate_value("not_a", a.value_type, ssa_func)
+        not_b_val = create_intermediate_value("not_b", b.value_type, ssa_func)
+
+        # Create intermediate instructions
+        not_a_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="BN",  # Bitwise NOT
+            address=inst.address - 2,  # Pseudo-address before target
+            inputs=[a],
+            outputs=[not_a_val],
+        )
+
+        not_b_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="BN",  # Bitwise NOT
+            address=inst.address - 1,  # Pseudo-address before target
+            inputs=[b],
+            outputs=[not_b_val],
+        )
+
+        # Create replacement instruction: NOT_A op NOT_B
+        replacement_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=new_op,
+            address=inst.address,
+            inputs=[not_a_val, not_b_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Return list: [NOT_A, NOT_B, NOT_A op NOT_B]
+        return [not_a_inst, not_b_inst, replacement_inst]
 
 
 class RuleHighOrderAnd(SimplificationRule):

@@ -18,15 +18,16 @@ Phase 4 rules (10 rules):
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List, Union
 
 from .base import (
     SimplificationRule,
     is_constant,
     get_constant_value,
     create_constant_value,
+    create_intermediate_value,
 )
-from ..ssa import SSAFunction, SSAInstruction
+from ..ssa import SSAFunction, SSAInstruction, SSAValue
 
 logger = logging.getLogger(__name__)
 
@@ -93,22 +94,23 @@ class RuleConditionInvert(SimplificationRule):
 
 class RuleDemorganLaws(SimplificationRule):
     """
-    Apply De Morgan's laws to simplify boolean expressions.
+    Apply De Morgan's laws to simplify boolean/logical expressions.
 
     Examples:
         !(a && b) → !a || !b
         !(a || b) → !a && !b
 
-    This can expose further optimization opportunities.
+    This uses multi-instruction transformation to create intermediate NOT operations.
+    Can expose further optimization opportunities in boolean logic.
     """
 
     def __init__(self):
         super().__init__("RuleDemorganLaws")
-        self.is_disabled = True  # Complex: requires boolean expression tree
+        self.is_disabled = False  # NOW ENABLED with multi-instruction support!
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
-        # Look for NOT of AND/OR
-        if inst.mnemonic != "NOT":
+        # Look for NOT/BN (boolean/bitwise NOT) of AND/OR
+        if inst.mnemonic not in ("NOT", "BN", "LN"):  # Logical NOT, Bitwise NOT
             return False
         if len(inst.inputs) != 1:
             return False
@@ -117,17 +119,80 @@ class RuleDemorganLaws(SimplificationRule):
         if not input_val.producer_inst:
             return False
 
-        return input_val.producer_inst.mnemonic in ("AND", "OR", "BA", "BO")
+        prod_inst = input_val.producer_inst
+
+        # Check for AND/OR operations (both logical and bitwise)
+        if prod_inst.mnemonic not in ("AND", "OR", "BA", "BO"):
+            return False
+
+        # Must have exactly 2 inputs
+        if len(prod_inst.inputs) != 2:
+            return False
+
+        return True
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
-    ) -> Optional[SSAInstruction]:
+    ) -> Union[SSAInstruction, List[SSAInstruction], None]:
         """
-        Apply De Morgan's laws.
-        Note: This is disabled because it requires creating new NOT instructions
-        for each operand, which is complex in SSA form.
+        Apply De Morgan's law using multi-instruction transformation.
+
+        Transformation:
+        1. Create NOT_A = NOT(a)
+        2. Create NOT_B = NOT(b)
+        3. Replace NOT(a AND b) with NOT_A OR NOT_B
         """
-        return None
+        inner_inst = inst.inputs[0].producer_inst
+
+        # Get operands
+        a = inner_inst.inputs[0]
+        b = inner_inst.inputs[1]
+
+        # Determine NOT mnemonic to use (preserve logical vs bitwise)
+        not_mnemonic = inst.mnemonic
+
+        # Determine new operation (flip AND ↔ OR)
+        if inner_inst.mnemonic in ("AND", "BA"):
+            # NOT(a AND b) → NOT(a) OR NOT(b)
+            new_op = "OR" if inner_inst.mnemonic == "AND" else "BO"
+        else:
+            # NOT(a OR b) → NOT(a) AND NOT(b)
+            new_op = "AND" if inner_inst.mnemonic == "OR" else "BA"
+
+        # Create intermediate values for NOT(a) and NOT(b)
+        not_a_val = create_intermediate_value("not_a", a.value_type, ssa_func)
+        not_b_val = create_intermediate_value("not_b", b.value_type, ssa_func)
+
+        # Create intermediate instructions
+        not_a_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=not_mnemonic,
+            address=inst.address - 2,  # Pseudo-address before target
+            inputs=[a],
+            outputs=[not_a_val],
+        )
+
+        not_b_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=not_mnemonic,
+            address=inst.address - 1,  # Pseudo-address before target
+            inputs=[b],
+            outputs=[not_b_val],
+        )
+
+        # Create replacement instruction: NOT_A op NOT_B
+        replacement_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=new_op,
+            address=inst.address,
+            inputs=[not_a_val, not_b_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Return list: [NOT_A, NOT_B, NOT_A op NOT_B]
+        return [not_a_inst, not_b_inst, replacement_inst]
 
 
 class RuleAbsoluteValue(SimplificationRule):

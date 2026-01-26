@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from .rules import SimplificationRule, ALL_RULES
 from .ssa import SSAFunction, SSAInstruction
@@ -194,18 +194,60 @@ class SimplificationEngine:
 
                     # Check if rule matches
                     if rule.matches(inst, ssa_func):
-                        new_inst = rule.apply(inst, ssa_func)
+                        result = rule.apply(inst, ssa_func)
 
-                        if new_inst is not None:
-                            # Replace instruction in place
-                            block_insts[inst_idx] = new_inst
-                            changes += 1
-                            made_change = True
+                        if result is not None:
+                            # Handle different return types
+                            if isinstance(result, list):
+                                # Multi-instruction transformation
+                                # Insert first N-1 instructions before target
+                                # Replace target with last instruction
+                                if len(result) == 0:
+                                    # Empty list treated as None
+                                    continue
+                                elif len(result) == 1:
+                                    # Single instruction in list - same as direct return
+                                    block_insts[inst_idx] = result[0]
+                                else:
+                                    # Multiple instructions
+                                    # Insert intermediate instructions before target
+                                    intermediate_insts = result[:-1]
+                                    replacement_inst = result[-1]
 
-                            if self.debug:
-                                logger.debug(
-                                    f"    {rule.name}: Transformed instruction at {inst.address}"
-                                )
+                                    # Update producer_inst links for intermediate values
+                                    for intermediate_inst in intermediate_insts:
+                                        for output_val in intermediate_inst.outputs:
+                                            output_val.producer_inst = intermediate_inst
+
+                                    # Update producer_inst links for replacement
+                                    for output_val in replacement_inst.outputs:
+                                        output_val.producer_inst = replacement_inst
+
+                                    # Insert intermediate instructions before current position
+                                    for i, intermediate_inst in enumerate(intermediate_insts):
+                                        block_insts.insert(inst_idx + i, intermediate_inst)
+
+                                    # Replace target instruction (now at inst_idx + len(intermediate_insts))
+                                    block_insts[inst_idx + len(intermediate_insts)] = replacement_inst
+
+                                changes += 1
+                                made_change = True
+
+                                if self.debug:
+                                    logger.debug(
+                                        f"    {rule.name}: Transformed instruction at {inst.address} "
+                                        f"(generated {len(result)} instructions)"
+                                    )
+                            else:
+                                # Single instruction replacement (original behavior)
+                                block_insts[inst_idx] = result
+                                changes += 1
+                                made_change = True
+
+                                if self.debug:
+                                    logger.debug(
+                                        f"    {rule.name}: Transformed instruction at {inst.address}"
+                                    )
 
                             # After transformation, break and restart scan
                             # (new instruction might enable other transformations)
