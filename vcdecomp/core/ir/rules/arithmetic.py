@@ -627,3 +627,91 @@ class RuleModByPowerOf2(SimplificationRule):
         self.apply_count += 1
         logger.debug(f"RuleModByPowerOf2: x % {right_val} → x & 0x{mask:x}")
         return new_inst
+
+
+class RuleMulZero(SimplificationRule):
+    """
+    Simplify multiplication by zero.
+
+    Examples:
+        x * 0 → 0
+        0 * x → 0
+    """
+
+    def __init__(self):
+        super().__init__("RuleMulZero")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("MUL", "FMUL", "DMUL"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Either operand can be zero
+        left, right = inst.inputs
+        left_val = get_constant_value(left, ssa_func)
+        right_val = get_constant_value(right, ssa_func)
+
+        return left_val == 0 or right_val == 0
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # x * 0 → 0
+        const_zero = create_constant_value(0, inst.outputs[0].value_type, ssa_func)
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="CONST",
+            address=inst.address,
+            inputs=[const_zero],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleMulZero: x * 0 → 0")
+        return new_inst
+
+
+class RuleModOne(SimplificationRule):
+    """
+    Simplify modulo by one.
+
+    Examples:
+        x % 1 → 0 (anything mod 1 is always 0)
+    """
+
+    def __init__(self):
+        super().__init__("RuleModOne")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "MOD":
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Right operand must be 1
+        right = inst.inputs[1]
+        if not is_constant(right):
+            return False
+
+        right_val = get_constant_value(right, ssa_func)
+        return right_val == 1
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # x % 1 → 0
+        const_zero = create_constant_value(0, inst.outputs[0].value_type, ssa_func)
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="CONST",
+            address=inst.address,
+            inputs=[const_zero],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleModOne: x % 1 → 0")
+        return new_inst

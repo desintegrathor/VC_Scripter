@@ -339,3 +339,236 @@ class RuleDoubleShift(SimplificationRule):
             f"RuleDoubleShift: (x {inst.mnemonic} {inner_amount}) {inst.mnemonic} {outer_amount} → x {inst.mnemonic} {combined_amount}"
         )
         return new_inst
+
+
+class RuleAndWithOr(SimplificationRule):
+    """
+    Simplify AND of OR operations when one term is common.
+
+    Examples:
+        (x | y) & x → x
+        x & (x | y) → x
+
+    This is absorption law: x & (x | y) = x
+    """
+
+    def __init__(self):
+        super().__init__("RuleAndWithOr")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "BA":  # Bitwise AND
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        left, right = inst.inputs
+
+        # Check if either operand is an OR operation
+        left_is_or = left.producer_inst and left.producer_inst.mnemonic == "BO"
+        right_is_or = right.producer_inst and right.producer_inst.mnemonic == "BO"
+
+        return left_is_or or right_is_or
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Case 1: (x | y) & x → x
+        if left.producer_inst and left.producer_inst.mnemonic == "BO":
+            or_op = left.producer_inst
+            or_left, or_right = or_op.inputs
+
+            if or_left.name == right.name or or_right.name == right.name:
+                new_inst = SSAInstruction(
+                    block_id=inst.block_id,
+                    mnemonic="COPY",
+                    address=inst.address,
+                    inputs=[right],
+                    outputs=inst.outputs,
+                    instruction=inst.instruction,
+                )
+                self.apply_count += 1
+                logger.debug(f"RuleAndWithOr: (x | y) & x → x")
+                return new_inst
+
+        # Case 2: x & (x | y) → x
+        if right.producer_inst and right.producer_inst.mnemonic == "BO":
+            or_op = right.producer_inst
+            or_left, or_right = or_op.inputs
+
+            if or_left.name == left.name or or_right.name == left.name:
+                new_inst = SSAInstruction(
+                    block_id=inst.block_id,
+                    mnemonic="COPY",
+                    address=inst.address,
+                    inputs=[left],
+                    outputs=inst.outputs,
+                    instruction=inst.instruction,
+                )
+                self.apply_count += 1
+                logger.debug(f"RuleAndWithOr: x & (x | y) → x")
+                return new_inst
+
+        return None
+
+
+class RuleOrWithAnd(SimplificationRule):
+    """
+    Simplify OR of AND operations when one term is common.
+
+    Examples:
+        (x & y) | x → x
+        x | (x & y) → x
+
+    This is absorption law: x | (x & y) = x
+    """
+
+    def __init__(self):
+        super().__init__("RuleOrWithAnd")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "BO":  # Bitwise OR
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        left, right = inst.inputs
+
+        # Check if either operand is an AND operation
+        left_is_and = left.producer_inst and left.producer_inst.mnemonic == "BA"
+        right_is_and = right.producer_inst and right.producer_inst.mnemonic == "BA"
+
+        return left_is_and or right_is_and
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Case 1: (x & y) | x → x
+        if left.producer_inst and left.producer_inst.mnemonic == "BA":
+            and_op = left.producer_inst
+            and_left, and_right = and_op.inputs
+
+            if and_left.name == right.name or and_right.name == right.name:
+                new_inst = SSAInstruction(
+                    block_id=inst.block_id,
+                    mnemonic="COPY",
+                    address=inst.address,
+                    inputs=[right],
+                    outputs=inst.outputs,
+                    instruction=inst.instruction,
+                )
+                self.apply_count += 1
+                logger.debug(f"RuleOrWithAnd: (x & y) | x → x")
+                return new_inst
+
+        # Case 2: x | (x & y) → x
+        if right.producer_inst and right.producer_inst.mnemonic == "BA":
+            and_op = right.producer_inst
+            and_left, and_right = and_op.inputs
+
+            if and_left.name == left.name or and_right.name == left.name:
+                new_inst = SSAInstruction(
+                    block_id=inst.block_id,
+                    mnemonic="COPY",
+                    address=inst.address,
+                    inputs=[left],
+                    outputs=inst.outputs,
+                    instruction=inst.instruction,
+                )
+                self.apply_count += 1
+                logger.debug(f"RuleOrWithAnd: x | (x & y) → x")
+                return new_inst
+
+        return None
+
+
+class RuleAndZero(SimplificationRule):
+    """
+    Simplify AND with zero.
+
+    Examples:
+        x & 0 → 0
+        0 & x → 0
+    """
+
+    def __init__(self):
+        super().__init__("RuleAndZero")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "BA":  # Bitwise AND
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Either operand can be zero
+        left, right = inst.inputs
+        left_val = get_constant_value(left, ssa_func)
+        right_val = get_constant_value(right, ssa_func)
+
+        return left_val == 0 or right_val == 0
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # x & 0 → 0
+        const_zero = create_constant_value(0, inst.outputs[0].value_type, ssa_func)
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="CONST",
+            address=inst.address,
+            inputs=[const_zero],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleAndZero: x & 0 → 0")
+        return new_inst
+
+
+class RuleOrAllOnes(SimplificationRule):
+    """
+    Simplify OR with all bits set.
+
+    Examples:
+        x | 0xFFFFFFFF → 0xFFFFFFFF
+        x | -1 → -1
+    """
+
+    def __init__(self):
+        super().__init__("RuleOrAllOnes")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic != "BO":  # Bitwise OR
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # Check if either operand is all bits set
+        left, right = inst.inputs
+        left_val = get_constant_value(left, ssa_func)
+        right_val = get_constant_value(right, ssa_func)
+
+        # Check for 0xFFFFFFFF or -1
+        return left_val == 0xFFFFFFFF or left_val == -1 or right_val == 0xFFFFFFFF or right_val == -1
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # x | 0xFFFFFFFF → 0xFFFFFFFF
+        const_all = create_constant_value(0xFFFFFFFF, inst.outputs[0].value_type, ssa_func)
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic="CONST",
+            address=inst.address,
+            inputs=[const_all],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleOrAllOnes: x | 0xFFFFFFFF → 0xFFFFFFFF")
+        return new_inst

@@ -235,3 +235,154 @@ class RuleCompareConstants(SimplificationRule):
             return 1 if left >= right else 0
 
         return None
+
+
+class RuleNotEqual(SimplificationRule):
+    """
+    Simplify negated equality comparisons.
+
+    Examples:
+        !(x == y) → x != y
+        !(x != y) → x == y
+        !(x < y) → x >= y
+    """
+
+    def __init__(self):
+        super().__init__("RuleNotEqual")
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Check if this is a logical NOT
+        if inst.mnemonic not in ("BN", "NOT", "LNOT"):
+            return False
+        if len(inst.inputs) != 1:
+            return False
+
+        # Input must be result of a comparison
+        input_val = inst.inputs[0]
+        if not input_val.producer_inst:
+            return False
+
+        return input_val.producer_inst.mnemonic in (
+            "EQU", "NEQ", "LES", "LEQ", "GRE", "GEQ",
+            "FEQU", "FNEQ", "FLES", "FLEQ", "FGRE", "FGEQ",
+            "DEQU", "DNEQ", "DLES", "DLEQ", "DGRE", "DGEQ",
+        )
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        compare_inst = inst.inputs[0].producer_inst
+
+        # Get negated comparison
+        negated_op = self._negate_comparison(compare_inst.mnemonic)
+        if negated_op is None:
+            return None
+
+        # Create new comparison with negated operator
+        new_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=negated_op,
+            address=inst.address,
+            inputs=compare_inst.inputs,
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+        )
+
+        self.apply_count += 1
+        logger.debug(f"RuleNotEqual: !({compare_inst.mnemonic}) → {negated_op}")
+        return new_inst
+
+    def _negate_comparison(self, op: str) -> Optional[str]:
+        """Return the negated comparison operator."""
+        negation_map = {
+            # Integer comparisons
+            "EQU": "NEQ",
+            "NEQ": "EQU",
+            "LES": "GEQ",
+            "LEQ": "GRE",
+            "GRE": "LEQ",
+            "GEQ": "LES",
+            # Float comparisons
+            "FEQU": "FNEQ",
+            "FNEQ": "FEQU",
+            "FLES": "FGEQ",
+            "FLEQ": "FGRE",
+            "FGRE": "FLEQ",
+            "FGEQ": "FLES",
+            # Double comparisons
+            "DEQU": "DNEQ",
+            "DNEQ": "DEQU",
+            "DLES": "DGEQ",
+            "DLEQ": "DGRE",
+            "DGRE": "DLEQ",
+            "DGEQ": "DLES",
+        }
+        return negation_map.get(op)
+
+
+class RuleCompareZero(SimplificationRule):
+    """
+    Simplify comparisons with zero.
+
+    Examples:
+        x == 0 → !x (in boolean context)
+        x != 0 → x (in boolean context)
+
+    Note: Disabled by default as this is context-dependent.
+    """
+
+    def __init__(self):
+        super().__init__("RuleCompareZero")
+        self.is_disabled = True  # Context-dependent optimization
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        if inst.mnemonic not in ("EQU", "NEQ"):
+            return False
+        if len(inst.inputs) != 2:
+            return False
+
+        # One operand must be zero
+        left, right = inst.inputs
+        left_val = get_constant_value(left, ssa_func)
+        right_val = get_constant_value(right, ssa_func)
+
+        return left_val == 0 or right_val == 0
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        left, right = inst.inputs
+
+        # Determine which is the value and which is zero
+        left_val = get_constant_value(left, ssa_func)
+        value = right if left_val == 0 else left
+
+        # x != 0 → x (in boolean context)
+        if inst.mnemonic == "NEQ":
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="COPY",
+                address=inst.address,
+                inputs=[value],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+            self.apply_count += 1
+            logger.debug(f"RuleCompareZero: x != 0 → x")
+            return new_inst
+
+        # x == 0 → !x (in boolean context)
+        if inst.mnemonic == "EQU":
+            new_inst = SSAInstruction(
+                block_id=inst.block_id,
+                mnemonic="LNOT",
+                address=inst.address,
+                inputs=[value],
+                outputs=inst.outputs,
+                instruction=inst.instruction,
+            )
+            self.apply_count += 1
+            logger.debug(f"RuleCompareZero: x == 0 → !x")
+            return new_inst
+
+        return None

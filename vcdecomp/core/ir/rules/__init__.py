@@ -11,7 +11,7 @@ This package implements Ghidra-inspired transformation rules organized by catego
 - typeconv: Type conversion simplification
 - pointer: Pointer arithmetic simplification
 
-Rule count target: 40-50 rules (current: 8, Ghidra has: 136)
+Rule count target: 40-50 rules (current: 40, Ghidra has: 136)
 """
 
 from .base import SimplificationRule, is_constant, get_constant_value, create_constant_value, is_commutative
@@ -28,6 +28,10 @@ from .bitwise import (
     RuleXorCancel,
     RuleShiftByZero,
     RuleDoubleShift,
+    RuleAndWithOr,
+    RuleOrWithAnd,
+    RuleAndZero,
+    RuleOrAllOnes,
 )
 from .arithmetic import (
     RuleConstantFold,
@@ -39,11 +43,15 @@ from .arithmetic import (
     RuleMulByPowerOf2,
     RuleDivByPowerOf2,
     RuleModByPowerOf2,
+    RuleMulZero,
+    RuleModOne,
 )
 from .comparison import (
     RuleEqualitySelf,
     RuleLessEqualSelf,
     RuleCompareConstants,
+    RuleNotEqual,
+    RuleCompareZero,
 )
 from .boolean import (
     RuleBooleanAnd,
@@ -87,6 +95,10 @@ ALL_RULES = [
     RuleXorCancel(),
     RuleShiftByZero(),
     RuleDoubleShift(),
+    RuleAndWithOr(),
+    RuleOrWithAnd(),
+    RuleAndZero(),
+    RuleOrAllOnes(),
 
     # Phase 6: Arithmetic chaining and optimization
     RuleDoubleAdd(),
@@ -95,10 +107,14 @@ ALL_RULES = [
     RuleMulByPowerOf2(),
     RuleDivByPowerOf2(),
     RuleModByPowerOf2(),
+    RuleMulZero(),
+    RuleModOne(),
 
     # Phase 7: Comparison simplification
     RuleEqualitySelf(),
     RuleLessEqualSelf(),
+    RuleNotEqual(),
+    RuleCompareZero(),
 
     # Phase 8: Boolean logic
     RuleBooleanAnd(),
@@ -122,9 +138,9 @@ RULE_GROUPS = {
     "canonical": [RuleTermOrder],
     "fold": [RuleConstantFold, RuleCompareConstants, RuleCastConstant],
     "identity": [RuleAndIdentity, RuleOrIdentity, RuleAddIdentity, RuleMulIdentity, RuleSubIdentity, RuleDivIdentity],
-    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift],
-    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction],
-    "comparison": [RuleEqualitySelf, RuleLessEqualSelf],
+    "bitwise": [RuleAndMask, RuleOrMask, RuleXorCancel, RuleShiftByZero, RuleDoubleShift, RuleAndWithOr, RuleOrWithAnd, RuleAndZero, RuleOrAllOnes],
+    "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleMulZero, RuleModOne, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction],
+    "comparison": [RuleEqualitySelf, RuleLessEqualSelf, RuleNotEqual, RuleCompareZero],
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
     "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant],
 }
@@ -156,6 +172,10 @@ __all__ = [
     "RuleXorCancel",
     "RuleShiftByZero",
     "RuleDoubleShift",
+    "RuleAndWithOr",
+    "RuleOrWithAnd",
+    "RuleAndZero",
+    "RuleOrAllOnes",
 
     # Arithmetic rules
     "RuleDoubleAdd",
@@ -164,10 +184,14 @@ __all__ = [
     "RuleMulByPowerOf2",
     "RuleDivByPowerOf2",
     "RuleModByPowerOf2",
+    "RuleMulZero",
+    "RuleModOne",
 
     # Comparison rules
     "RuleEqualitySelf",
     "RuleLessEqualSelf",
+    "RuleNotEqual",
+    "RuleCompareZero",
 
     # Boolean rules
     "RuleBooleanAnd",
