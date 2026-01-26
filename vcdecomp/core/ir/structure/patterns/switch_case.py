@@ -1754,7 +1754,7 @@ def _detect_switch_patterns(
                 nested_headers=nested_switch_headers.copy() if nested_switch_headers else set(),
                 _internal_type=switch_type,
             )
-            debug_print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases")
+            debug_print(f"DEBUG SWITCH: Appending switch to switches list: {test_var} with {len(cases)} cases, all_blocks={sorted(all_blocks)}")
             switches.append(switch)
             processed_blocks.update(chain_blocks)
 

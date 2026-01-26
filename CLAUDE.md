@@ -45,11 +45,11 @@ Look often into the Ghidra decompiler source to find how a state-of-the-art deco
 
 ### Running the Decompiler
 ```bash
-# Decompile a script (default: clean output with best quality SSA)
+# Decompile a script (default: Ghidra-style collapse + incremental heritage SSA)
 py -3 -m vcdecomp structure script.scr > output.c
 
-# Decompile with Ghidra-style collapse algorithm (experimental)
-py -3 -m vcdecomp structure --use-collapse script.scr > output.c
+# Decompile with flat mode (disable collapse algorithm)
+py -3 -m vcdecomp structure --no-collapse script.scr > output.c
 
 # Decompile with DEBUG output (for development/debugging)
 py -3 -m vcdecomp structure --debug script.scr > output.c 2>debug.log
@@ -242,14 +242,79 @@ When modifying control flow reconstruction:
 5. Run: `py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v`
 6. Validate: `py -3 -m vcdecomp validate original.scr decompiled.c`
 
-## Output Verbosity
+## Command-Line Flags Reference
 
-| Flag | Description | Use Case |
-|------|-------------|----------|
-| (none) | Clean output, best SSA | **Default - recommended for recompilation** |
-| `--use-collapse` | Ghidra-style hierarchical collapse | Better nested control flow handling |
-| `--debug` / `-d` | Enable DEBUG to stderr | Debugging decompiler issues |
-| `--legacy-ssa` | Use old SSA algorithm | Faster, but lower quality output |
+### Global Flags (all commands)
+| Flag | Description |
+|------|-------------|
+| `--variant {auto,runtime,compiler}` | Opcode map selection (default: auto-detect) |
+| `--ignore-mp` | Ignore multiplayer-only functions (SC_MP_*); SP-only mode |
+
+### Structure Command Flags (`structure`)
+
+**Output Control:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--debug` / `-d` | Enable DEBUG output to stderr | Off |
+| `--verbose` / `-v` | Same as --debug (for future expansion) | Off |
+| `--dump-type-evidence [FILE]` | Dump type inference evidence as JSON (stdout with "-") | Off |
+
+**Algorithm Selection:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--no-collapse` | Disable Ghidra-style hierarchical collapse (use flat mode) | Off (collapse enabled) |
+| `--legacy-ssa` | Use legacy single-pass SSA (faster but lower quality) | Off (uses incremental heritage SSA) |
+
+**Feature Toggles (disable features):**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--no-simplify` | Disable expression simplification (constant folding, algebraic identities) | Enabled |
+| `--no-array-detection` | Disable array detection (LoadGuard system) | Enabled |
+| `--no-bidirectional-types` | Disable bidirectional type inference | Enabled |
+
+**Debug Output for Subsystems:**
+| Flag | Description |
+|------|-------------|
+| `--debug-simplify` | Debug output for simplification rules |
+| `--debug-array-detection` | Debug output for array detection |
+| `--debug-type-inference` | Debug output for type inference |
+
+### Validate Command Flags (`validate`)
+| Flag | Description |
+|------|-------------|
+| `--compiler-dir DIR` | Path to compiler directory (default: original-resources/compiler) |
+| `--output-format {text,json,html}` | Output format (auto-detect from --report-file) |
+| `--report-file FILE` | Save detailed report to file |
+| `--no-cache` | Disable validation cache |
+| `--no-color` | Disable colored output |
+
+### Validate-Batch Command Flags (`validate-batch`)
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--input-dir DIR` | Directory containing decompiled .c files | Required |
+| `--original-dir DIR` | Directory containing original .scr files | Required |
+| `--compiler-dir DIR` | Path to compiler directory | original-resources/compiler |
+| `--jobs N` | Number of parallel validation jobs | 4 |
+| `--report-file FILE` | Save batch summary report to JSON | - |
+| `--no-cache` | Disable validation cache | Off |
+| `--save-baseline` | Save current results as baseline for regression testing | - |
+| `--regression` | Compare results against baseline to detect regressions | - |
+| `--baseline-file FILE` | Path to baseline file | .validation-baseline.json |
+
+### XFN-Aggregate Command Flags (`xfn-aggregate`)
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-f/--format {summary,sdk,json}` | Output format | summary |
+| `-o/--output FILE` | Output file path (required for sdk/json) | - |
+| `--no-recursive` | Do not scan subdirectories | Recursive |
+| `--merge-sdk` | Merge with existing SDK functions.json | - |
+| `--sdk-path FILE` | Path to SDK functions.json | vcdecomp/sdk/data/functions.json |
+
+### Symbols Command Flags (`symbols`)
+| Flag | Description |
+|------|-------------|
+| `-o/--output FILE` | Output file path (required) |
+| `-f/--format {json,header,markdown}` | Export format (default: json) |
 
 ### Understanding Debug Output
 When `--debug` is enabled, DEBUG lines (written to stderr) show internal analysis:

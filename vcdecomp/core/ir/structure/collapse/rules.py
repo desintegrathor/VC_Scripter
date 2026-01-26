@@ -28,6 +28,8 @@ from ..blocks.hierarchy import (
     BlockIf,
     BlockWhileDo,
     BlockDoWhile,
+    BlockInfLoop,
+    BlockCondition,
     BlockSwitch,
     BlockGoto,
     BlockGraph,
@@ -126,6 +128,166 @@ class RuleBlockCat(CollapseRule):
 
         # Merge the blocks
         return graph.merge_blocks(block, successor)
+
+
+class RuleBlockOr(CollapseRule):
+    """
+    Collapse AND/OR boolean conditions (short-circuit evaluation).
+
+    Pattern (OR - ||):
+        cond1 --true--> target
+        cond1 --false--> cond2 --true--> target
+                         cond2 --false--> other
+
+    Pattern (AND - &&):
+        cond1 --false--> other
+        cond1 --true--> cond2 --false--> other
+                        cond2 --true--> target
+
+    Result:
+        BlockCondition(cond1, cond2, is_or=True/False)
+
+    Ghidra preconditions from ruleBlockOr():
+    - bl->sizeOut() == 2 (binary condition)
+    - One branch leads to another condition block
+    - Both conditions share a common target (short-circuit)
+    """
+
+    def __init__(self):
+        super().__init__("BlockOr")
+
+    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        if len(block.out_edges) != 2:
+            return False
+
+        # Check each branch for nested condition pattern
+        for i in range(2):
+            inner_block = block.out_edges[i].target
+
+            if inner_block == block or inner_block.is_collapsed:
+                continue
+
+            # Inner block must have single predecessor (this block)
+            if not inner_block.has_single_predecessor():
+                continue
+
+            # Inner block must also be a binary condition
+            if len(inner_block.out_edges) != 2:
+                continue
+
+            # Check if one of inner_block's targets == other branch of block
+            other_branch = block.out_edges[1-i].target
+
+            for j in range(2):
+                if inner_block.out_edges[j].target == other_branch:
+                    # Found short-circuit pattern!
+                    return True
+
+        return False
+
+    def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
+        # Find the nested condition pattern
+        inner_block = None
+        inner_idx = -1
+        outer_target = None
+        is_or = False
+
+        for i in range(2):
+            candidate = block.out_edges[i].target
+
+            if candidate == block or candidate.is_collapsed:
+                continue
+
+            if not candidate.has_single_predecessor():
+                continue
+
+            if len(candidate.out_edges) != 2:
+                continue
+
+            other_branch = block.out_edges[1-i].target
+
+            for j in range(2):
+                if candidate.out_edges[j].target == other_branch:
+                    inner_block = candidate
+                    inner_idx = i
+                    outer_target = other_branch
+
+                    # Determine if OR or AND:
+                    # OR: cond1 --true--> target, cond1 --false--> cond2
+                    #     So if outer_target is reached on true branch of block, it's OR
+                    # AND: cond1 --false--> other, cond1 --true--> cond2
+                    #     So if outer_target is reached on false branch of block, it's AND
+                    is_or = (i == 1)  # inner_block on false branch means OR pattern
+                    break
+
+            if inner_block is not None:
+                break
+
+        if inner_block is None:
+            return None
+
+        # Create combined condition block
+        cond_block = BlockCondition(
+            block_type=BlockType.CONDITION,
+            block_id=graph._allocate_block_id(),
+            first_condition=block,
+            second_condition=inner_block,
+            is_or=is_or,
+        )
+
+        # Update covered blocks
+        cond_block.covered_blocks = block.covered_blocks | inner_block.covered_blocks
+
+        # Set parent references
+        block.parent = cond_block
+        inner_block.parent = cond_block
+
+        # Redirect incoming edges to cond_block
+        for edge in block.in_edges:
+            if not edge.source.is_collapsed:
+                new_edge = BlockEdge(
+                    source=edge.source,
+                    target=cond_block,
+                    edge_type=edge.edge_type
+                )
+                cond_block.in_edges.append(new_edge)
+                for k, out_edge in enumerate(edge.source.out_edges):
+                    if out_edge.target == block:
+                        edge.source.out_edges[k] = new_edge
+
+        # Set outgoing edges - cond_block inherits inner_block's exits
+        # (except the one going to outer_target which is now part of the condition)
+        for edge in inner_block.out_edges:
+            if edge.target != outer_target:
+                new_edge = BlockEdge(
+                    source=cond_block,
+                    target=edge.target,
+                    edge_type=edge.edge_type
+                )
+                cond_block.out_edges.append(new_edge)
+                # Update target's in_edges
+                for k, in_edge in enumerate(edge.target.in_edges):
+                    if in_edge.source == inner_block:
+                        edge.target.in_edges[k] = new_edge
+
+        # Also add edge to outer_target (the shared target)
+        outer_edge = BlockEdge(source=cond_block, target=outer_target, edge_type=EdgeType.NORMAL)
+        cond_block.out_edges.append(outer_edge)
+
+        # Update outer_target's in_edges
+        outer_target.in_edges = [e for e in outer_target.in_edges if e.source not in (block, inner_block)]
+        outer_target.in_edges.append(outer_edge)
+
+        # Add to graph
+        graph.blocks[cond_block.block_id] = cond_block
+        if graph.entry_block == block:
+            graph.entry_block = cond_block
+
+        # Remove old blocks
+        graph.remove_block(block)
+        graph.remove_block(inner_block)
+
+        return cond_block
 
 
 class RuleBlockProperIf(CollapseRule):
@@ -573,12 +735,101 @@ class RuleBlockDoWhile(CollapseRule):
         return dowhile_block
 
 
+class RuleBlockInfLoop(CollapseRule):
+    """
+    Collapse infinite loop (while(1) or for(;;)).
+
+    Pattern:
+        bl --> bl  (single exit loops back to itself)
+
+    Result:
+        BlockInfLoop(bl)
+
+    Ghidra preconditions from ruleBlockInfLoop():
+    - bl->sizeOut() == 1 (single exit)
+    - !bl->isGotoOut(0) (exit is not unstructured)
+    - bl->getOut(0) == bl (block loops to itself)
+    """
+
+    def __init__(self):
+        super().__init__("BlockInfLoop")
+
+    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        # Block must have exactly one successor
+        if not block.has_single_successor():
+            return False
+
+        successor = block.get_single_successor()
+
+        # Must loop back to itself
+        if successor != block:
+            return False
+
+        # Edge must not be marked as goto/irreducible
+        for edge in block.out_edges:
+            if edge.target == block:
+                if edge.edge_type in (EdgeType.GOTO_EDGE, EdgeType.IRREDUCIBLE):
+                    return False
+
+        return True
+
+    def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
+        # Create infinite loop wrapping this block
+        inf_loop = BlockInfLoop(
+            block_type=BlockType.INF_LOOP,
+            block_id=graph._allocate_block_id(),
+            body_block=block,
+        )
+
+        # Update covered blocks
+        inf_loop.covered_blocks = set(block.covered_blocks)
+
+        # Set parent
+        block.parent = inf_loop
+
+        # Redirect incoming edges to inf_loop (skip self-loop)
+        for edge in block.in_edges:
+            if edge.source != block:  # Skip self-loop
+                new_edge = BlockEdge(
+                    source=edge.source,
+                    target=inf_loop,
+                    edge_type=edge.edge_type
+                )
+                inf_loop.in_edges.append(new_edge)
+                # Update source's out_edges
+                for i, out_edge in enumerate(edge.source.out_edges):
+                    if out_edge.target == block:
+                        edge.source.out_edges[i] = new_edge
+
+        # InfLoop has no outgoing edges (it's infinite)
+        # Break statements would need separate handling
+
+        # Add to graph, remove old block
+        graph.blocks[inf_loop.block_id] = inf_loop
+        if graph.entry_block == block:
+            graph.entry_block = inf_loop
+
+        graph.remove_block(block)
+
+        return inf_loop
+
+
 class RuleBlockSwitch(CollapseRule):
     """
     Collapse switch/case pattern.
 
     This rule uses pre-detected switch patterns from the pattern analysis.
     It creates a BlockSwitch from the detected pattern.
+
+    Ghidra approach: By the time this rule runs (LAST in rule order), case
+    bodies are already collapsed into BlockIf, BlockList, etc. So we just
+    collect the already-structured blocks from the graph - no recursive
+    collapse needed.
+
+    Preconditions (from Ghidra's ruleBlockSwitch):
+    - Each case block has sizeIn == 1 (only switch goes to it)
+    - Each case block has sizeOut <= 1 (at most one exit)
+    - If sizeOut == 1, exit must be the switch's exit block
     """
 
     def __init__(self):
@@ -589,53 +840,130 @@ class RuleBlockSwitch(CollapseRule):
         """Set the detected switch patterns."""
         self.switch_patterns = patterns
 
+    def _get_pattern(self, cfg_block_id: int):
+        """Get switch pattern for a CFG block ID."""
+        for pattern in self.switch_patterns:
+            if pattern.header_block == cfg_block_id:
+                return pattern
+        return None
+
+    def _find_case_entry_block(self, graph: BlockGraph, case_info) -> Optional[StructuredBlock]:
+        """
+        Find the entry block for a case in the current graph state.
+
+        Since blocks may have been collapsed, we look for the block that
+        covers the case's entry CFG block ID.
+        """
+        entry_cfg_id = case_info.block_id
+
+        # First try direct lookup
+        if entry_cfg_id in graph.cfg_to_struct:
+            block = graph.cfg_to_struct[entry_cfg_id]
+            if not block.is_collapsed:
+                return block
+
+        # Search through uncollapsed blocks for one that covers this CFG block
+        for struct_block in graph.get_uncollapsed_blocks():
+            if entry_cfg_id in struct_block.covered_blocks:
+                return struct_block
+
+        return None
+
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
-        # Check if this block is a switch header
+        """
+        Check if switch pattern matches.
+
+        Simplified approach: Just check that this is a detected switch header.
+        The switch rule runs LAST in the order, so other patterns have already
+        had a chance to collapse. We accept the switch as-is.
+        """
+        # Don't match if this is already a BlockSwitch
+        if isinstance(block, BlockSwitch):
+            return False
+
+        # Must be a switch header - only match on BlockBasic with the exact header block ID
         if not isinstance(block, BlockBasic):
             return False
 
-        for pattern in self.switch_patterns:
-            if pattern.header_block == block.original_block_id:
-                return True
+        cfg_block_id = block.original_block_id
+        pattern = self._get_pattern(cfg_block_id)
+        if pattern is None:
+            return False
 
-        return False
+        return True
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        # Find the matching pattern
-        pattern = None
-        for p in self.switch_patterns:
-            if p.header_block == block.original_block_id:
-                pattern = p
-                break
+        """
+        Apply switch collapse using already-structured case bodies from graph.
+        """
+        # Get the CFG block ID
+        cfg_block_id = None
+        if isinstance(block, BlockBasic):
+            cfg_block_id = block.original_block_id
+        elif hasattr(block, 'covered_blocks') and block.covered_blocks:
+            for covered_id in block.covered_blocks:
+                if self._get_pattern(covered_id):
+                    cfg_block_id = covered_id
+                    break
 
+        pattern = self._get_pattern(cfg_block_id)
         if pattern is None:
             return None
 
-        # Create cases
+        # Build cases using already-collapsed bodies from graph
         cases = []
+        block_ids_to_remove = set()  # Use block_id for hashability
+
         for case_info in pattern.cases:
-            case_block = None
-            # CaseInfo has block_id (entry point) and body_blocks (all blocks in case)
-            if case_info.block_id in graph.cfg_to_struct:
-                case_block = graph.cfg_to_struct[case_info.block_id]
+            # Find the (already collapsed) case body in the graph
+            case_body = self._find_case_entry_block(graph, case_info)
+
+            if case_body is not None and not case_body.is_collapsed and case_body != block:
+                block_ids_to_remove.add(case_body.block_id)
+
+                # Determine if case has break (exits to switch exit)
+                has_break = len(case_body.out_edges) > 0
+
+            else:
+                case_body = None
+                has_break = case_info.has_break
 
             cases.append(SwitchCase(
                 value=case_info.value,
-                body_block=case_block,
+                body_block=case_body,  # Already structured (BlockIf, BlockList, etc.)
                 is_default=False,
-                has_break=case_info.has_break,
+                has_break=has_break,
             ))
 
-        # Create default case
+        # Build default case
         default_case = None
         if pattern.default_body_blocks:
-            default_block_id = min(pattern.default_body_blocks)
-            if default_block_id in graph.cfg_to_struct:
-                default_case = SwitchCase(
-                    value=-1,
-                    body_block=graph.cfg_to_struct[default_block_id],
-                    is_default=True,
-                )
+            # Find default entry block
+            default_entry = min(pattern.default_body_blocks)
+            default_body = None
+
+            # Look for the block covering default entry
+            if default_entry in graph.cfg_to_struct:
+                default_body = graph.cfg_to_struct[default_entry]
+                if default_body.is_collapsed:
+                    default_body = None
+                elif default_body != block:
+                    block_ids_to_remove.add(default_body.block_id)
+            else:
+                # Search through uncollapsed blocks
+                for struct_block in graph.get_uncollapsed_blocks():
+                    if default_entry in struct_block.covered_blocks:
+                        default_body = struct_block
+                        if struct_block != block:
+                            block_ids_to_remove.add(struct_block.block_id)
+                        break
+
+            default_case = SwitchCase(
+                value=-1,
+                body_block=default_body,
+                is_default=True,
+                has_break=True,
+            )
 
         # Create switch block
         switch_block = BlockSwitch(
@@ -677,18 +1005,24 @@ class RuleBlockSwitch(CollapseRule):
                 )
                 switch_block.out_edges.append(exit_edge)
 
-        # Add switch_block
+                # Update exit block's in_edges
+                exit_block.in_edges = [
+                    e for e in exit_block.in_edges
+                    if e.source.is_collapsed or e.source == switch_block
+                ]
+                exit_block.in_edges.append(exit_edge)
+
+        # Add switch_block to graph
         graph.blocks[switch_block.block_id] = switch_block
         if graph.entry_block == block:
             graph.entry_block = switch_block
 
-        # Mark all switch blocks as collapsed
-        for cfg_block_id in pattern.all_blocks:
-            if cfg_block_id in graph.cfg_to_struct:
-                struct_block = graph.cfg_to_struct[cfg_block_id]
-                if struct_block != block:  # Don't remove header twice
-                    graph.remove_block(struct_block)
+        # Remove case body blocks from graph (they're now inside switch)
+        for block_id in block_ids_to_remove:
+            if block_id in graph.blocks:
+                graph.remove_block(graph.blocks[block_id])
 
+        # Remove header block
         graph.remove_block(block)
 
         return switch_block
@@ -774,13 +1108,177 @@ class RuleBlockGoto(CollapseRule):
         return goto_block
 
 
-# Default rule ordering (most specific to least specific)
-DEFAULT_RULES: List[CollapseRule] = [
-    RuleBlockSwitch(),   # Switch/case (uses pre-detected patterns)
-    RuleBlockWhileDo(),  # While loops
-    RuleBlockDoWhile(),  # Do-while loops
-    RuleBlockIfElse(),   # Full if-else
-    RuleBlockProperIf(), # If without else
-    RuleBlockCat(),      # Sequential blocks (most common, run last)
-    RuleBlockGoto(),     # Fallback for unstructured
+class RuleBlockIfNoExit(CollapseRule):
+    """
+    Collapse if-then where body has no exit (dead end/non-returning).
+
+    Pattern:
+        cond --true--> body (no exit / sizeOut == 0)
+        cond --false--> continue
+
+    Result:
+        BlockIf(cond, body, None)  # Body has no exit
+
+    Ghidra preconditions from ruleBlockIfNoExit():
+    - bl->sizeOut() == 2 (binary condition)
+    - One branch has sizeOut == 0 (no exit - dead end)
+    - Branch has single predecessor (condition block)
+    - Edge is not marked as goto
+
+    This is a SECONDARY rule - only tried when primary rules are stuck.
+    """
+
+    def __init__(self):
+        super().__init__("BlockIfNoExit")
+
+    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        if len(block.out_edges) != 2:
+            return False
+
+        for i in range(2):
+            clause = block.out_edges[i].target
+
+            if clause == block or clause.is_collapsed:
+                continue
+
+            # Clause has single predecessor (this block)
+            if not clause.has_single_predecessor():
+                continue
+
+            # Clause has NO exits (dead end)
+            if len(clause.out_edges) != 0:
+                continue
+
+            # Check edge is not goto
+            if block.out_edges[i].edge_type in (EdgeType.GOTO_EDGE, EdgeType.IRREDUCIBLE):
+                continue
+
+            return True
+
+        return False
+
+    def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
+        # Find the dead-end clause
+        dead_clause = None
+        dead_clause_idx = -1
+        continue_block = None
+
+        for i in range(2):
+            clause = block.out_edges[i].target
+
+            if clause == block or clause.is_collapsed:
+                continue
+
+            if clause.has_single_predecessor() and len(clause.out_edges) == 0:
+                dead_clause = clause
+                dead_clause_idx = i
+            else:
+                continue_block = clause
+
+        if dead_clause is None:
+            return None
+
+        # Determine if we need to negate condition
+        # If dead clause is on index 1 (false branch), negate condition
+        negate_condition = (dead_clause_idx == 1)
+
+        # Create if block
+        if_block = BlockIf(
+            block_type=BlockType.IF,
+            block_id=graph._allocate_block_id(),
+            condition_block=block,
+            true_block=dead_clause,
+            false_block=None,  # No else
+        )
+
+        # Update covered blocks
+        if_block.covered_blocks = block.covered_blocks | dead_clause.covered_blocks
+
+        # Set parent references
+        block.parent = if_block
+        dead_clause.parent = if_block
+
+        # Redirect incoming edges to if_block
+        for edge in block.in_edges:
+            if not edge.source.is_collapsed:
+                new_edge = BlockEdge(
+                    source=edge.source,
+                    target=if_block,
+                    edge_type=edge.edge_type
+                )
+                if_block.in_edges.append(new_edge)
+                for j, out_edge in enumerate(edge.source.out_edges):
+                    if out_edge.target == block:
+                        edge.source.out_edges[j] = new_edge
+
+        # If there's a continue block, create edge to it
+        if continue_block is not None:
+            merge_edge = BlockEdge(source=if_block, target=continue_block, edge_type=EdgeType.NORMAL)
+            if_block.out_edges.append(merge_edge)
+
+            # Update continue_block's in_edges
+            continue_block.in_edges = [e for e in continue_block.in_edges if e.source != block]
+            continue_block.in_edges.append(merge_edge)
+
+        # Add if_block, remove old blocks
+        graph.blocks[if_block.block_id] = if_block
+        if graph.entry_block == block:
+            graph.entry_block = if_block
+
+        graph.remove_block(block)
+        graph.remove_block(dead_clause)
+
+        return if_block
+
+
+class RuleCaseFallthru(CollapseRule):
+    """
+    Handle switch case fall-through patterns.
+
+    Detects when one case falls through to another and marks it.
+    This is a SECONDARY rule - only tried when primary rules are stuck.
+
+    Pattern:
+        case N: body --> case M: body  (no break, falls through)
+
+    Result:
+        Update SwitchCase to mark fall_through_to = M
+    """
+
+    def __init__(self):
+        super().__init__("CaseFallthru")
+
+    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        # This rule operates on switch blocks, not individual blocks
+        # For now, this is a placeholder - full implementation would
+        # require tracking which blocks are part of a switch and
+        # analyzing their flow relationships
+        return False
+
+    def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
+        # Placeholder for fall-through handling
+        return None
+
+
+# Primary rules (Ghidra order) - tried repeatedly until no changes
+# Following Ghidra's collapseInternal() rule order
+PRIMARY_RULES: List[CollapseRule] = [
+    RuleBlockGoto(),      # 1. Handle unstructured first
+    RuleBlockCat(),       # 2. Sequential merge
+    RuleBlockOr(),        # 3. AND/OR conditions
+    RuleBlockProperIf(),  # 4. If-then (no else)
+    RuleBlockIfElse(),    # 5. If-then-else
+    RuleBlockWhileDo(),   # 6. While loops
+    RuleBlockDoWhile(),   # 7. Do-while loops
+    RuleBlockInfLoop(),   # 8. Infinite loops
+    RuleBlockSwitch(),    # 9. Switch/case (LAST)
 ]
+
+# Secondary rules (lower priority, only when primary rules stuck)
+SECONDARY_RULES: List[CollapseRule] = [
+    RuleBlockIfNoExit(),  # 10. Non-exiting if bodies
+    RuleCaseFallthru(),   # 11. Switch fall-through
+]
+
+# Default rule ordering - for backwards compatibility
+DEFAULT_RULES: List[CollapseRule] = PRIMARY_RULES.copy()

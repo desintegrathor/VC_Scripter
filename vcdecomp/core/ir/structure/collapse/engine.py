@@ -16,10 +16,11 @@ from ..blocks.hierarchy import (
     BlockType,
     EdgeType,
     StructuredBlock,
+    BlockBasic,
     BlockGraph,
     BlockEdge,
 )
-from .rules import CollapseRule, DEFAULT_RULES, RuleBlockSwitch
+from .rules import CollapseRule, DEFAULT_RULES, PRIMARY_RULES, SECONDARY_RULES, RuleBlockSwitch
 from .trace_dag import TraceDAG
 
 if TYPE_CHECKING:
@@ -36,27 +37,59 @@ class CollapseStructure:
     a hierarchical block structure.
     """
 
-    def __init__(self, graph: BlockGraph, rules: Optional[List[CollapseRule]] = None):
+    def __init__(
+        self,
+        graph: BlockGraph,
+        rules: Optional[List[CollapseRule]] = None,
+        primary_rules: Optional[List[CollapseRule]] = None,
+        secondary_rules: Optional[List[CollapseRule]] = None,
+    ):
         """
         Initialize the collapse engine.
 
         Args:
             graph: The block graph to collapse
             rules: Optional list of collapse rules (uses DEFAULT_RULES if not provided)
+                   Deprecated in favor of primary_rules/secondary_rules
+            primary_rules: Primary rules tried repeatedly until no changes
+            secondary_rules: Secondary rules tried only when primary stuck
         """
         self.graph = graph
-        self.rules = rules or DEFAULT_RULES.copy()
+
+        # Support both old single-list and new two-phase rule systems
+        if primary_rules is not None:
+            self.primary_rules = primary_rules
+            self.secondary_rules = secondary_rules or []
+            self.rules = primary_rules  # For backwards compatibility
+        elif rules is not None:
+            self.rules = rules
+            self.primary_rules = rules
+            self.secondary_rules = []
+        else:
+            self.rules = DEFAULT_RULES.copy()
+            self.primary_rules = PRIMARY_RULES.copy()
+            self.secondary_rules = SECONDARY_RULES.copy()
 
         # Statistics
         self.iterations = 0
         self.rules_applied: Dict[str, int] = {}
         self.gotos_inserted = 0
 
+        # Switch header blocks - these are reserved and should not be collapsed by other rules
+        self.switch_header_cfg_ids: set = set()
+
     def set_switch_patterns(self, patterns):
         """Set switch patterns for the switch rule."""
-        for rule in self.rules:
-            if isinstance(rule, RuleBlockSwitch):
-                rule.set_patterns(patterns)
+        # Update both rules list and primary_rules list
+        for rule_list in [self.rules, self.primary_rules]:
+            for rule in rule_list:
+                if isinstance(rule, RuleBlockSwitch):
+                    rule.set_patterns(patterns)
+
+        # Track which CFG block IDs are switch headers
+        self.switch_header_cfg_ids = set()
+        for pattern in patterns:
+            self.switch_header_cfg_ids.add(pattern.header_block)
 
     def collapse_all(self) -> Optional[StructuredBlock]:
         """
@@ -119,35 +152,80 @@ class CollapseStructure:
 
     def _iterative_collapse(self):
         """
-        Iteratively apply collapse rules until no more patterns match.
+        Iteratively apply collapse rules using Ghidra-style two-phase iteration.
+
+        Phase 1 (Inner loop): Try primary rules repeatedly until no changes
+        Phase 2 (Outer loop): Try secondary rules when stuck, then retry primary
         """
         max_iterations = len(self.graph.blocks) * 10  # Safety limit
-        changed = True
 
-        while changed and self.iterations < max_iterations:
-            changed = False
-            self.iterations += 1
+        while self.iterations < max_iterations:
+            # Inner loop: Try primary rules until no changes
+            primary_changed = True
+            while primary_changed and self.iterations < max_iterations:
+                primary_changed = False
+                self.iterations += 1
 
-            # Get current uncollapsed blocks
-            blocks = self.graph.get_uncollapsed_blocks()
+                # Get current uncollapsed blocks
+                blocks = self.graph.get_uncollapsed_blocks()
 
-            # Try each rule on each block
-            for block in blocks:
-                if block.is_collapsed:
-                    continue
+                # Try each primary rule on each block
+                for block in blocks:
+                    if block.is_collapsed:
+                        continue
 
-                for rule in self.rules:
-                    if rule.matches(self.graph, block):
-                        result = rule.apply(self.graph, block)
-                        if result is not None:
-                            # Track statistics
-                            self.rules_applied[rule.name] = self.rules_applied.get(rule.name, 0) + 1
-                            changed = True
-                            logger.debug(f"Applied {rule.name} at block {block.block_id} -> {result.block_id}")
-                            break  # Restart from beginning after change
+                    # Check if this block is a switch header (should only be collapsed by switch rule)
+                    is_switch_header = False
+                    if isinstance(block, BlockBasic):
+                        if block.original_block_id in self.switch_header_cfg_ids:
+                            is_switch_header = True
 
-                if changed:
-                    break  # Restart outer loop
+                    for rule in self.primary_rules:
+                        # Skip non-switch rules for switch headers
+                        if is_switch_header and not isinstance(rule, RuleBlockSwitch):
+                            continue
+
+                        if rule.matches(self.graph, block):
+                            result = rule.apply(self.graph, block)
+                            if result is not None:
+                                # Track statistics
+                                self.rules_applied[rule.name] = self.rules_applied.get(rule.name, 0) + 1
+                                primary_changed = True
+                                logger.debug(f"Applied {rule.name} at block {block.block_id} -> {result.block_id}")
+                                break  # Restart from beginning after change
+
+                    if primary_changed:
+                        break  # Restart block iteration
+
+                # Check if fully collapsed
+                if self.graph.is_fully_collapsed():
+                    return
+
+            # Outer loop: Try secondary rules when primary stuck
+            secondary_changed = False
+
+            if self.secondary_rules:
+                blocks = self.graph.get_uncollapsed_blocks()
+
+                for block in blocks:
+                    if block.is_collapsed:
+                        continue
+
+                    for rule in self.secondary_rules:
+                        if rule.matches(self.graph, block):
+                            result = rule.apply(self.graph, block)
+                            if result is not None:
+                                self.rules_applied[rule.name] = self.rules_applied.get(rule.name, 0) + 1
+                                secondary_changed = True
+                                logger.debug(f"Applied secondary {rule.name} at block {block.block_id} -> {result.block_id}")
+                                break
+
+                    if secondary_changed:
+                        break
+
+            # If secondary rules made progress, restart primary iteration
+            if not secondary_changed:
+                break  # Neither primary nor secondary matched - done
 
             # Check if fully collapsed
             if self.graph.is_fully_collapsed():

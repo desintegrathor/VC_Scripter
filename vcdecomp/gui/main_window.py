@@ -28,6 +28,7 @@ from ..core.ir.structure import format_structured_function_named
 from .views import ValidationPanel
 from .views.error_analysis_view import ErrorAnalysisPanel
 from .dialogs import ValidationSettingsDialog
+from .workers import DecompilationWorker, DecompilationResult
 
 
 class SyntaxHighlighter(QSyntaxHighlighter):
@@ -186,6 +187,8 @@ class MainWindow(QMainWindow):
         self.disasm: Optional[Disassembler] = None
         self.variant: str = "auto"
         self.ssa_func = None
+        self.decompilation_worker: Optional[DecompilationWorker] = None
+        self._pending_filename: Optional[str] = None  # File being decompiled
         self.init_ui()
 
     def init_ui(self):
@@ -432,12 +435,54 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to load file:\n{e}")
 
     def load_file(self, filename: str):
-        """Load and parse SCR file"""
-        self.scr = SCRFile.load(filename, variant=self.variant)
-        self.disasm = Disassembler(self.scr)
-        self.ssa_func = build_ssa(self.scr)
+        """Load and parse SCR file asynchronously with progress feedback"""
+        # Cancel any existing decompilation
+        if self.decompilation_worker and self.decompilation_worker.isRunning():
+            self.decompilation_worker.cancel()
+            self.decompilation_worker.wait()
 
-        # Update views
+        self._pending_filename = filename
+
+        # Update window title to show loading state
+        self.setWindowTitle(f"VC Script Decompiler - Loading {Path(filename).name}...")
+
+        # Show initial progress in status bar
+        self.statusBar().showMessage("Loading file...")
+
+        # Clear views to indicate loading
+        self.decomp_view.setPlainText("// Decompiling...")
+
+        # Start background worker
+        self.decompilation_worker = DecompilationWorker(filename, self.variant)
+        self.decompilation_worker.progress.connect(self._on_decompilation_progress)
+        self.decompilation_worker.finished.connect(self._on_decompilation_finished)
+        self.decompilation_worker.start()
+
+    def _on_decompilation_progress(self, message: str, percentage: int):
+        """Handle progress updates from decompilation worker"""
+        self.statusBar().showMessage(f"{message} ({percentage}%)")
+
+    def _on_decompilation_finished(self, result):
+        """Handle decompilation completion"""
+        if isinstance(result, Exception):
+            error_msg = str(result)
+            if "cancelled" in error_msg.lower():
+                self.statusBar().showMessage("Decompilation cancelled")
+                self.decomp_view.setPlainText("// Decompilation cancelled")
+            else:
+                QMessageBox.critical(self, "Decompilation Error", f"Failed to decompile:\n{error_msg}")
+                self.statusBar().showMessage("Decompilation failed")
+                self.decomp_view.setPlainText(f"// Decompilation error: {error_msg}")
+            return
+
+        # Store results
+        self.scr = result.scr
+        self.disasm = result.disasm
+        self.ssa_func = result.ssa_func
+
+        filename = self._pending_filename
+
+        # Update views with results
         self.setWindowTitle(f"VC Script Decompiler - {Path(filename).name}")
 
         # Hex view
@@ -446,30 +491,8 @@ class MainWindow(QMainWindow):
         # Disassembly view
         self.disasm_view.set_disassembly(self.disasm.to_string())
 
-        # Decompilation view - use build_ssa_incremental for better quality
-        # (build_ssa_all_blocks has issues with cross-function PHI dependencies)
-        try:
-            ssa_func, heritage_metadata = build_ssa_incremental(self.scr, return_metadata=True)
-            # Use v2 boundary detection for more accurate function splitting
-            # (v1 sometimes combines multiple functions into one mega-function)
-            func_bounds = self.disasm.get_function_boundaries_v2()
-
-            decomp_lines = [f"// Structured decompilation of {Path(filename).name}"]
-            decomp_lines.append(f"// Functions: {len(func_bounds)}")
-            decomp_lines.append("")
-
-            for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-                text = format_structured_function_named(
-                    ssa_func, func_name, func_start, func_end,
-                    function_bounds=func_bounds,
-                    heritage_metadata=heritage_metadata
-                )
-                decomp_lines.append(text)
-                decomp_lines.append("")
-
-            self.decomp_view.setPlainText("\n".join(decomp_lines))
-        except Exception as e:
-            self.decomp_view.setPlainText(f"// Decompilation error: {e}")
+        # Decompilation view
+        self.decomp_view.setPlainText(result.decomp_text)
 
         # Info view
         self.info_view.setPlainText(self.scr.info())

@@ -26,6 +26,7 @@ from ..blocks.hierarchy import (
     BlockWhileDo,
     BlockDoWhile,
     BlockInfLoop,
+    BlockCondition,
     BlockSwitch,
     BlockGoto,
     BlockGraph,
@@ -97,6 +98,65 @@ class HierarchicalCodeEmitter:
             return ["    // No root block"]
 
         return self._emit_block(self.graph.root, indent)
+
+    def _collect_covered_blocks(self) -> Set[int]:
+        """
+        Collect all CFG block IDs that are covered by collapsed structures.
+
+        This walks the structured block tree and collects all original_block_id
+        values from BasicBlocks that are nested inside structures like switch
+        cases. These blocks should NOT be emitted as separate labeled blocks.
+
+        Returns:
+            Set of CFG block IDs covered by structures
+        """
+        covered = set()
+
+        def walk_block(block: StructuredBlock):
+            """Recursively collect covered blocks from a structure."""
+            if block is None:
+                return
+
+            # Add covered_blocks from the structure itself
+            if block.covered_blocks:
+                covered.update(block.covered_blocks)
+
+            # Handle specific block types
+            if isinstance(block, BlockBasic):
+                if block.original_block_id >= 0:
+                    covered.add(block.original_block_id)
+            elif isinstance(block, BlockList):
+                for comp in block.components:
+                    walk_block(comp)
+            elif isinstance(block, BlockIf):
+                walk_block(block.condition_block)
+                walk_block(block.true_block)
+                walk_block(block.false_block)
+            elif isinstance(block, BlockWhileDo):
+                walk_block(block.condition_block)
+                walk_block(block.body_block)
+            elif isinstance(block, BlockDoWhile):
+                walk_block(block.body_block)
+                walk_block(block.condition_block)
+            elif isinstance(block, BlockInfLoop):
+                walk_block(block.body_block)
+            elif isinstance(block, BlockCondition):
+                walk_block(block.first_condition)
+                walk_block(block.second_condition)
+            elif isinstance(block, BlockSwitch):
+                walk_block(block.header_block)
+                for case in block.cases:
+                    walk_block(case.body_block)
+                if block.default_case:
+                    walk_block(block.default_case.body_block)
+            elif isinstance(block, BlockGoto):
+                walk_block(block.wrapped_block)
+
+        # Walk from root
+        if self.graph.root is not None:
+            walk_block(self.graph.root)
+
+        return covered
 
     def emit_function(self, indent: str = "    ") -> List[str]:
         """
@@ -175,6 +235,10 @@ class HierarchicalCodeEmitter:
                 lines.append(f"{self.block_labels[block_id]}:")
                 lines.extend(self._emit_basic(block, indent))
 
+        # Collect all blocks covered by the collapsed structure (switch cases, etc.)
+        # These should NOT be emitted as separate labeled blocks
+        covered_by_structure = self._collect_covered_blocks()
+
         # Finally, emit any CFG blocks that weren't reached through the graph
         # (e.g., blocks removed during switch collapse)
         # Only iterate through blocks that belong to this function
@@ -185,6 +249,10 @@ class HierarchicalCodeEmitter:
 
         for block_id in func_blocks_sorted:
             if block_id in self.emitted_blocks or block_id in self._emitted_as_loop_body:
+                continue
+
+            # Skip blocks covered by collapsed structures (e.g., switch case bodies)
+            if block_id in covered_by_structure:
                 continue
 
             # Check if this block is part of a loop whose header was already emitted.
@@ -479,6 +547,8 @@ class HierarchicalCodeEmitter:
             return self._emit_do_while(block, indent)
         elif isinstance(block, BlockInfLoop):
             return self._emit_inf_loop(block, indent)
+        elif isinstance(block, BlockCondition):
+            return self._emit_condition(block, indent)
         elif isinstance(block, BlockSwitch):
             return self._emit_switch(block, indent)
         elif isinstance(block, BlockGoto):
@@ -539,7 +609,11 @@ class HierarchicalCodeEmitter:
         # Get condition
         condition = block.condition_expr
         if condition is None and block.condition_block is not None:
-            condition = self._extract_condition(block.condition_block)
+            # Check if condition_block is a combined condition (AND/OR)
+            if isinstance(block.condition_block, BlockCondition):
+                condition = self._extract_combined_condition(block.condition_block)
+            else:
+                condition = self._extract_condition(block.condition_block)
 
         if condition is None:
             condition = "/* condition */"
@@ -680,6 +754,60 @@ class HierarchicalCodeEmitter:
 
         return lines
 
+    def _emit_condition(self, block: BlockCondition, indent: str) -> List[str]:
+        """
+        Emit a combined boolean condition (AND/OR).
+
+        BlockCondition represents a short-circuit boolean expression like:
+            cond1 || cond2  or  cond1 && cond2
+
+        The actual condition rendering happens in the parent structure
+        (BlockIf, BlockWhileDo, etc.) that uses this condition. Here we
+        just emit any statements from the condition blocks themselves.
+        """
+        lines = []
+
+        # Emit statements from first condition block
+        if block.first_condition is not None:
+            lines.extend(self._emit_block(block.first_condition, indent))
+
+        # Emit statements from second condition block
+        if block.second_condition is not None:
+            lines.extend(self._emit_block(block.second_condition, indent))
+
+        return lines
+
+    def _extract_combined_condition(self, block: BlockCondition) -> str:
+        """
+        Extract the combined condition expression from a BlockCondition.
+
+        Returns a string like "cond1 || cond2" or "cond1 && cond2".
+        """
+        operator = " || " if block.is_or else " && "
+
+        # Get condition from first block
+        cond1 = None
+        if block.first_condition is not None:
+            cond1 = self._extract_condition(block.first_condition)
+
+        # Get condition from second block
+        cond2 = None
+        if block.second_condition is not None:
+            if isinstance(block.second_condition, BlockCondition):
+                # Recursive combined condition
+                cond2 = self._extract_combined_condition(block.second_condition)
+            else:
+                cond2 = self._extract_condition(block.second_condition)
+
+        if cond1 and cond2:
+            return f"({cond1}{operator}{cond2})"
+        elif cond1:
+            return cond1
+        elif cond2:
+            return cond2
+        else:
+            return "/* combined condition */"
+
     def _emit_switch(self, block: BlockSwitch, indent: str) -> List[str]:
         """Emit a switch-case structure."""
         lines = []
@@ -697,7 +825,8 @@ class HierarchicalCodeEmitter:
         for case in block.cases:
             lines.append(f"{indent}case {case.value}:")
             if case.body_block is not None:
-                lines.extend(self._emit_block(case.body_block, indent + "    "))
+                body_lines = self._emit_block(case.body_block, indent + "    ")
+                lines.extend(body_lines)
             if case.has_break:
                 lines.append(f"{indent}    break;")
 

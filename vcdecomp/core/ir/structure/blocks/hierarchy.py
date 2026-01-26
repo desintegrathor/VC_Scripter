@@ -279,6 +279,34 @@ class BlockInfLoop(StructuredBlock):
 
 
 @dataclass
+class BlockCondition(StructuredBlock):
+    """
+    Combined boolean condition (AND/OR short-circuit).
+
+    Structure for OR (||):
+        if (cond1 || cond2) --> first_condition --true--> target
+                               first_condition --false--> second_condition --true--> target
+                                                          second_condition --false--> other
+
+    Structure for AND (&&):
+        if (cond1 && cond2) --> first_condition --false--> other
+                               first_condition --true--> second_condition --false--> other
+                                                         second_condition --true--> target
+
+    Used during collapse to combine nested short-circuit conditions.
+    """
+    first_condition: Optional[StructuredBlock] = None
+    second_condition: Optional[StructuredBlock] = None
+    is_or: bool = False  # True for OR (||), False for AND (&&)
+
+    def __post_init__(self):
+        if self.first_condition:
+            self.covered_blocks.update(self.first_condition.covered_blocks)
+        if self.second_condition:
+            self.covered_blocks.update(self.second_condition.covered_blocks)
+
+
+@dataclass
 class SwitchCase:
     """A single case in a switch statement."""
     value: int
@@ -602,3 +630,4 @@ class BlockGraph:
             graph.entry_block = graph.cfg_to_struct[entry_block_id]
 
         return graph
+

@@ -279,10 +279,10 @@ Příklady:
         help='Dump type inference evidence as JSON (stdout with "-", or write to file)'
     )
     p_structure.add_argument(
-        '--use-collapse',
+        '--no-collapse',
         action='store_true',
         default=False,
-        help='Use Ghidra-style hierarchical collapse algorithm (experimental)'
+        help='Disable Ghidra-style hierarchical collapse algorithm (use flat mode instead)'
     )
     p_structure.add_argument(
         '--no-simplify',
@@ -893,9 +893,9 @@ def cmd_structure(args):
             return False
         return True
 
-    use_collapse = getattr(args, 'use_collapse', False)
-    if use_collapse and debug_mode:
-        print(f"// Using Ghidra-style collapse algorithm", file=sys.stderr)
+    use_collapse = not getattr(args, 'no_collapse', False)
+    if not use_collapse and debug_mode:
+        print(f"// Using flat mode (collapse disabled)", file=sys.stderr)
 
     for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
         text = format_structured_function_named(
