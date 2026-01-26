@@ -113,6 +113,19 @@ from .patterns import (
     RuleConditionMerge,
     RuleSelectPattern,
 )
+from .loops import (
+    RuleLoopIncrementSimplify,
+    RuleLoopCounterNormalize,
+    RuleLoopBoundConstant,
+    RuleInductionSimplify,
+    RuleLoopInvariantDetect,
+    RuleLoopStrength,
+    RuleLoopUnswitch,
+    RuleCountedLoop,
+    RuleLoopElimination,
+    RuleLoopRotate,
+    RuleLoopFusion,
+)
 
 # Registry of all available rules
 ALL_RULES = [
@@ -219,6 +232,19 @@ ALL_RULES = [
     RuleBoolNormalize(),
     RuleConditionMerge(),
     RuleSelectPattern(),
+
+    # Phase 13: Loop optimization (Phase 5)
+    RuleLoopIncrementSimplify(),
+    RuleLoopCounterNormalize(),
+    RuleLoopBoundConstant(),
+    RuleInductionSimplify(),
+    RuleLoopInvariantDetect(),
+    RuleLoopStrength(),
+    RuleLoopUnswitch(),
+    RuleCountedLoop(),
+    RuleLoopElimination(),
+    RuleLoopRotate(),
+    RuleLoopFusion(),
 ]
 
 # Rule groups for selective application
@@ -233,6 +259,7 @@ RULE_GROUPS = {
     "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext, RuleBoolZext, RuleZextEliminate, RulePromoteTypes, RuleCastPropagation, RuleIntegralPromotion, RuleFloatIntRoundtrip, RuleConstantCast, RuleSignExtendDetect, RuleNarrowingRedundant, RuleTypeCoercion],
     "pointer": [RulePtrAddChain, RulePtrSubNormalize, RulePtrArithIdentity, RulePtrNullCheck, RulePtrCompare, RulePtrDiff, RuleArrayBase, RuleStructOffset, RuleArrayBounds, RulePtrIndex],
     "patterns": [RuleConditionInvert, RuleDemorganLaws, RuleAbsoluteValue, RuleMinMaxPatterns, RuleBitfieldExtract, RuleSignMagnitude, RuleRangeCheck, RuleBoolNormalize, RuleConditionMerge, RuleSelectPattern],
+    "loops": [RuleLoopIncrementSimplify, RuleLoopCounterNormalize, RuleLoopBoundConstant, RuleInductionSimplify, RuleLoopInvariantDetect, RuleLoopStrength, RuleLoopUnswitch, RuleCountedLoop, RuleLoopElimination, RuleLoopRotate, RuleLoopFusion],
 }
 
 __all__ = [
@@ -342,6 +369,19 @@ __all__ = [
     "RuleBoolNormalize",
     "RuleConditionMerge",
     "RuleSelectPattern",
+
+    # Loop optimization rules
+    "RuleLoopIncrementSimplify",
+    "RuleLoopCounterNormalize",
+    "RuleLoopBoundConstant",
+    "RuleInductionSimplify",
+    "RuleLoopInvariantDetect",
+    "RuleLoopStrength",
+    "RuleLoopUnswitch",
+    "RuleCountedLoop",
+    "RuleLoopElimination",
+    "RuleLoopRotate",
+    "RuleLoopFusion",
 
     # Registry
     "ALL_RULES",

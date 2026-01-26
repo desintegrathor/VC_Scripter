@@ -1,14 +1,14 @@
 # Simplification Rules Summary
 
-This document provides an overview of all 80 SSA-level transformation rules implemented in the decompiler.
+This document provides an overview of all 91 SSA-level transformation rules implemented in the decompiler.
 
 ## Overview
 
-- **Total Rules**: 80 (Phase 4 target: 80) ✅
+- **Total Rules**: 91 (Phase 5 target exceeded: 91 vs 90) ✅
 - **Ghidra Reference**: 136 rules
-- **Coverage**: ~59% of Ghidra's rule set
-- **Organization**: 11 rule categories
-- **Enabled**: 61 rules (19 disabled by default)
+- **Coverage**: ~67% of Ghidra's rule set
+- **Organization**: 12 rule categories
+- **Enabled**: 64 rules (27 disabled by default)
 
 ## Rule Categories
 
@@ -154,6 +154,23 @@ Rules for detecting and optimizing high-level programming patterns.
 | RuleRangeCheck | `(x >= a) && (x <= b)` | Optimize range checking (disabled - needs boolean analysis) |
 | RuleSelectPattern | `cond ? a : a → a` | Simplify ternary patterns (disabled - needs CFG analysis) |
 
+### 11. Loop Optimization (11 rules)
+Rules for optimizing loop patterns and induction variables.
+
+| Rule | Transformation | Description |
+|------|----------------|-------------|
+| RuleLoopIncrementSimplify | `i = i + 1 + 0 → i = i + 1` | Simplify loop counter increments |
+| RuleLoopCounterNormalize | `i + (-1) → i - 1` | Normalize loop counter patterns |
+| RuleLoopBoundConstant | `i < (10 + 0) → i < 10` | Constant fold loop bounds |
+| RuleInductionSimplify | `j = i * 4 + base` | Simplify induction variables (disabled - needs loop analysis) |
+| RuleLoopInvariantDetect | `x = a + b` (invariant) | Detect loop-invariant expressions (disabled - needs CFG) |
+| RuleLoopStrength | `j = i * 4 → j += 4` | Strength reduction in loops (disabled - needs induction analysis) |
+| RuleLoopUnswitch | Hoist invariant conditions | Detect unswitchable conditions (disabled - needs CFG) |
+| RuleCountedLoop | Detect trip counts | Detect counted loop patterns (disabled - needs CFG) |
+| RuleLoopElimination | Dead loop removal | Dead loop elimination (disabled - needs CFG) |
+| RuleLoopRotate | Normalize loop forms | Normalize loop forms (disabled - needs CFG) |
+| RuleLoopFusion | Merge adjacent loops | Detect fusible loops (disabled - needs CFG+dependency analysis) |
+
 ## Rule Application Strategy
 
 ### Fixed-Point Iteration
@@ -177,6 +194,7 @@ Rules are applied in phases to maximize effectiveness:
 8. **Type Conversions** - Eliminate unnecessary casts
 9. **Pointer & Array** - Simplify pointer arithmetic and array access
 10. **Advanced Patterns** - Detect and optimize high-level programming patterns
+11. **Loop Optimization** - Normalize loop counters and detect loop patterns
 
 ### Emergent Simplification
 One rule can enable another through iteration:
@@ -224,15 +242,16 @@ vcdecomp/core/ir/
 
 | Metric | VC-Decompiler | Ghidra |
 |--------|---------------|--------|
-| Total Rules | 80 | 136 |
-| Coverage | ~59% | 100% |
-| Rule Categories | 11 | 15+ |
+| Total Rules | 91 | 136 |
+| Coverage | ~67% | 100% |
+| Rule Categories | 12 | 15+ |
 | Fixed-Point Engine | ✓ | ✓ |
 | Modular Organization | ✓ | ✓ |
 | Power-of-2 Optimizations | ✓ | ✓ |
 | Type Inference Rules | 15 | 25+ |
 | Pointer/Array Rules | 10 | 15+ |
 | Pattern Recognition Rules | 10 | 20+ |
+| Loop Optimization Rules | 11 | 15+ |
 
 ## Future Enhancements
 
