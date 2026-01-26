@@ -333,7 +333,7 @@ class RuleCompareZero(SimplificationRule):
 
     def __init__(self):
         super().__init__("RuleCompareZero")
-        self.is_disabled = True  # Context-dependent optimization
+        # Enabled: Simplifies x==0 to !x and x!=0 to x in boolean contexts
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
         if inst.mnemonic not in ("EQU", "NEQ"):
