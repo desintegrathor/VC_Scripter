@@ -78,6 +78,16 @@ from .typeconv import (
     RuleCastConstant,
     RuleSextChain,
     RuleTruncateZext,
+    RuleBoolZext,
+    RuleZextEliminate,
+    RulePromoteTypes,
+    RuleCastPropagation,
+    RuleIntegralPromotion,
+    RuleFloatIntRoundtrip,
+    RuleConstantCast,
+    RuleSignExtendDetect,
+    RuleNarrowingRedundant,
+    RuleTypeCoercion,
 )
 
 # Registry of all available rules
@@ -151,6 +161,16 @@ ALL_RULES = [
     RuleCastConstant(),
     RuleSextChain(),
     RuleTruncateZext(),
+    RuleBoolZext(),
+    RuleZextEliminate(),
+    RulePromoteTypes(),
+    RuleCastPropagation(),
+    RuleIntegralPromotion(),
+    RuleFloatIntRoundtrip(),
+    RuleConstantCast(),
+    RuleSignExtendDetect(),
+    RuleNarrowingRedundant(),
+    RuleTypeCoercion(),
 ]
 
 # Rule groups for selective application
@@ -162,7 +182,7 @@ RULE_GROUPS = {
     "arithmetic": [RuleDoubleAdd, RuleDoubleSub, RuleNegateIdentity, RuleMulByPowerOf2, RuleDivByPowerOf2, RuleModByPowerOf2, RuleMulZero, RuleModOne, RuleCancelAddSub, RuleAbsorbNegation, RuleStrengthReduction, RuleMulDistribute, RuleCollectTerms],
     "comparison": [RuleEqualitySelf, RuleLessEqualSelf, RuleNotEqual, RuleCompareZero, RuleLessEqual, RuleIntLessEqual, RuleBxor2NotEqual],
     "boolean": [RuleBooleanAnd, RuleBooleanOr, RuleBooleanNot, RuleBooleanDedup],
-    "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext],
+    "typeconv": [RuleCastChain, RuleCastIdentity, RuleCastConstant, RuleSextChain, RuleTruncateZext, RuleBoolZext, RuleZextEliminate, RulePromoteTypes, RuleCastPropagation, RuleIntegralPromotion, RuleFloatIntRoundtrip, RuleConstantCast, RuleSignExtendDetect, RuleNarrowingRedundant, RuleTypeCoercion],
 }
 
 __all__ = [

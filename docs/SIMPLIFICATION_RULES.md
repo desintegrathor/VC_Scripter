@@ -1,14 +1,14 @@
 # Simplification Rules Summary
 
-This document provides an overview of all 50 SSA-level transformation rules implemented in the decompiler.
+This document provides an overview of all 60 SSA-level transformation rules implemented in the decompiler.
 
 ## Overview
 
-- **Total Rules**: 50 (target: 40-50) ✅
+- **Total Rules**: 60 (Phase 2 target: 60) ✅
 - **Ghidra Reference**: 136 rules
-- **Coverage**: ~37% of Ghidra's rule set
+- **Coverage**: ~44% of Ghidra's rule set
 - **Organization**: 8 rule categories
-- **Enabled**: 46 rules (4 disabled by default)
+- **Enabled**: 53 rules (7 disabled by default)
 
 ## Rule Categories
 
@@ -101,16 +101,26 @@ Rules for simplifying boolean operations.
 | RuleBooleanNot | `!(!x) → x` | Double negation |
 | RuleBooleanDedup | `x && x → x`, `x \|\| x → x` | Remove duplicate operations |
 
-### 8. Type Conversions (5 rules)
-Rules for simplifying type conversions.
+### 8. Type Conversions (15 rules)
+Rules for simplifying type conversions, casts, and extensions.
 
 | Rule | Transformation | Description |
 |------|----------------|-------------|
 | RuleCastChain | `int→float→int → int` | Eliminate redundant cast chains |
 | RuleCastIdentity | `int→int → identity` | Remove identity casts |
-| RuleCastConstant | `int(5.7) → 5` | Handled by RuleConstantFold |
+| RuleCastConstant | `int(5.7) → 5` | Fold type conversions on constants |
 | RuleSextChain | `sext(sext(x)) → sext(x)` | Collapse sign extension chains |
 | RuleTruncateZext | `zext(trunc(x)) → x` | Eliminate trunc-then-extend |
+| RuleBoolZext | `int(x == y) → x == y` | Eliminate boolean→int conversions |
+| RuleZextEliminate | `int(int(x)) → int(x)` | Remove unnecessary zero extensions |
+| RulePromoteTypes | `char + char → int` | C integer promotion detection (disabled) |
+| RuleCastPropagation | Cast info flow | Propagate cast info through expressions |
+| RuleIntegralPromotion | Optimize promoted ops | Optimize promoted integral arithmetic (disabled) |
+| RuleFloatIntRoundtrip | `int(float(x)) → x` | Detect float→int→float roundtrips |
+| RuleConstantCast | `(int)X → info` | Propagate type info through constant casts |
+| RuleSignExtendDetect | Sign vs zero | Sign extension pattern detection (disabled) |
+| RuleNarrowingRedundant | `char(int(c)) → c` | Eliminate redundant narrowing |
+| RuleTypeCoercion | Mixed-type expr | Optimize mixed-type expressions (disabled) |
 
 ## Rule Application Strategy
 
@@ -180,21 +190,22 @@ vcdecomp/core/ir/
 
 | Metric | VC-Decompiler | Ghidra |
 |--------|---------------|--------|
-| Total Rules | 40 | 136 |
-| Coverage | ~30% | 100% |
+| Total Rules | 60 | 136 |
+| Coverage | ~44% | 100% |
 | Rule Categories | 8 | 15+ |
 | Fixed-Point Engine | ✓ | ✓ |
 | Modular Organization | ✓ | ✓ |
 | Power-of-2 Optimizations | ✓ | ✓ |
+| Type Inference Rules | 15 | 25+ |
 
 ## Future Enhancements
 
-Potential additions to reach 50 rules:
-1. **Pointer Arithmetic** - Array indexing optimizations
-2. **Range Analysis** - Value range-based simplifications
-3. **Sign Extension** - Detect and optimize sign extension patterns
-4. **Float Operations** - Floating-point specific optimizations
-5. **Bit Manipulation** - Advanced bit manipulation patterns
+Potential additions for Phase 3+ (70+ rules):
+1. **Pointer Arithmetic** (Phase 3) - Array indexing optimizations, pointer addition chains
+2. **Range Analysis** (Phase 4) - Value range-based simplifications
+3. **Float Operations** (Phase 4) - Floating-point specific optimizations
+4. **Bit Manipulation** (Phase 4) - Advanced bit manipulation patterns
+5. **Memory Access** (Phase 5) - Load/store optimization patterns
 
 ## References
 
@@ -206,5 +217,6 @@ Potential additions to reach 50 rules:
 ---
 
 **Last Updated**: 2026-01-26
-**Rule Count**: 50 (46 enabled, 4 disabled)
-**Status**: Phase 1.5 complete - Target exceeded ✓✓
+**Rule Count**: 60 (53 enabled, 7 disabled)
+**Status**: Phase 2 complete - Type & Extension Rules ✓✓✓
+**Next**: Phase 3 - Pointer & Array Rules (target: 70)
