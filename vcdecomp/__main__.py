@@ -296,6 +296,30 @@ Příklady:
         default=False,
         help='Enable debug output for simplification rules'
     )
+    p_structure.add_argument(
+        '--no-array-detection',
+        action='store_true',
+        default=False,
+        help='Disable array detection (LoadGuard system)'
+    )
+    p_structure.add_argument(
+        '--debug-array-detection',
+        action='store_true',
+        default=False,
+        help='Enable debug output for array detection'
+    )
+    p_structure.add_argument(
+        '--no-bidirectional-types',
+        action='store_true',
+        default=False,
+        help='Disable bidirectional type inference'
+    )
+    p_structure.add_argument(
+        '--debug-type-inference',
+        action='store_true',
+        default=False,
+        help='Enable debug output for type inference'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -511,6 +535,14 @@ def cmd_structure(args):
     # Set simplification flags
     scr.enable_simplify = not getattr(args, 'no_simplify', False)
     scr.debug_simplify = getattr(args, 'debug_simplify', False)
+
+    # Set array detection flags
+    scr.enable_array_detection = not getattr(args, 'no_array_detection', False)
+    scr.debug_array_detection = getattr(args, 'debug_array_detection', False)
+
+    # Set type inference flags
+    scr.enable_bidirectional_types = not getattr(args, 'no_bidirectional_types', False)
+    scr.debug_type_inference = getattr(args, 'debug_type_inference', False)
 
     disasm = Disassembler(scr)
 
