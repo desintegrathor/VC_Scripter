@@ -10,7 +10,7 @@ This module provides:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union, List
 
 from ...disasm import opcodes
 from ..ssa import SSAFunction, SSAInstruction, SSAValue
@@ -44,7 +44,7 @@ class SimplificationRule(ABC):
         pass
 
     @abstractmethod
-    def apply(self, inst: SSAInstruction, ssa_func: SSAFunction) -> Optional[SSAInstruction]:
+    def apply(self, inst: SSAInstruction, ssa_func: SSAFunction) -> Union[SSAInstruction, List[SSAInstruction], None]:
         """
         Apply the transformation.
 
@@ -53,7 +53,12 @@ class SimplificationRule(ABC):
             ssa_func: SSA function containing the instruction
 
         Returns:
-            New instruction if transformation succeeded, None otherwise.
+            - None: No transformation
+            - SSAInstruction: Single instruction replacement (most common)
+            - List[SSAInstruction]: Multi-instruction transformation
+              - First N-1 instructions inserted before target
+              - Last instruction replaces target
+              - Useful for rules that need intermediate values (e.g., De Morgan's laws)
         """
         pass
 
@@ -172,6 +177,42 @@ def create_constant_value(
     )
     ssa_func.values[name] = const_val
     return const_val
+
+
+def create_intermediate_value(
+    name_prefix: str,
+    value_type: opcodes.ResultType,
+    ssa_func: SSAFunction
+) -> SSAValue:
+    """
+    Create a new intermediate SSA value for multi-instruction transformations.
+
+    This generates a unique temporary value name to avoid conflicts.
+
+    Args:
+        name_prefix: Prefix for the value name (e.g., "not_temp")
+        value_type: Type of the value
+        ssa_func: SSA function to add value to
+
+    Returns:
+        SSA value for the intermediate result
+    """
+    # Generate unique name by appending counter
+    counter = 0
+    while True:
+        name = f"{name_prefix}_{counter}"
+        if name not in ssa_func.values:
+            break
+        counter += 1
+
+    # Create new intermediate value
+    intermediate_val = SSAValue(
+        name=name,
+        value_type=value_type,
+        producer=None,  # Will be set when instruction is created
+    )
+    ssa_func.values[name] = intermediate_val
+    return intermediate_val
 
 
 def is_commutative(mnemonic: str) -> bool:

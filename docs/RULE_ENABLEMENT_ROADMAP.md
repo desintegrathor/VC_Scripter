@@ -1,8 +1,8 @@
 # Rule Enablement Roadmap
 
 **Date**: 2026-01-26
-**Current Status**: 67/103 rules enabled (65% - up from 66 previously)
-**Goal**: Enable remaining 36 disabled rules through infrastructure investments
+**Current Status**: 74/103 rules enabled (72%)
+**Goal**: Enable remaining 29 disabled rules through infrastructure investments
 
 ---
 
@@ -16,10 +16,99 @@
 - Impact: Simplifies zero comparisons in boolean contexts
 - File: `vcdecomp/core/ir/rules/comparison.py:334`
 
+### ✅ Phase 1B Complete: Use-Def Chains Infrastructure + 2 Data Flow Rules
+
+**Infrastructure implemented**: UseDefChain class
+- File: `vcdecomp/core/ir/use_def.py` (370 lines, fully documented)
+- Integrated into: `vcdecomp/core/ir/simplify_engine.py`
+- Test suite: `vcdecomp/tests/test_use_def.py` (15 test cases, 480 lines)
+- Features:
+  - Efficient use-def chain tracking for all SSA values
+  - Single-use detection for inlining candidates
+  - Unused value detection for dead code elimination
+  - Copy instruction detection
+  - Constant value tracking
+  - Transitive use analysis
+
+**Rules enabled** (2/7 from Priority 1):
+1. ✅ **RuleCopyPropagation** - Replace uses of copies with original values
+   - Pattern: `x = y; z = x + 1 → z = y + 1`
+   - Status: Fully functional
+   - File: `vcdecomp/core/ir/rules/dataflow.py:36`
+
+2. ✅ **RuleConstantPropagation** - Propagate constants through assignments
+   - Pattern: `x = 5; y = x + 3 → y = 5 + 3 → y = 8`
+   - Status: Fully functional
+   - File: `vcdecomp/core/ir/rules/dataflow.py:69`
+
+**Rules analyzed but kept disabled** (5/7 - architectural limitations):
+3. ❌ **RuleDeadValue** - Cannot remove instructions (engine limitation)
+4. ❌ **RuleUnusedResult** - Same as RuleDeadValue
+5. ❌ **RuleSingleUseInline** - Requires expression tree transformation
+6. ❌ **RuleForwardSubstitution** - Redundant with rules 1+2 (iterative application)
+7. ❌ **RuleValueNumbering** - Requires separate value numbering infrastructure
+
+### ✅ Phase 1C Complete: Intermediate Value Creation + 3 Boolean/Comparison Rules
+
+**Infrastructure implemented**: Multi-instruction transformation support
+- Modified: `vcdecomp/core/ir/simplify_engine.py` - Supports List[SSAInstruction] returns
+- Modified: `vcdecomp/core/ir/rules/base.py` - Updated SimplificationRule.apply() signature
+- Added: `create_intermediate_value()` helper function
+- Feature: Rules can now create intermediate instructions (e.g., NOT operations for De Morgan)
+
+**Rules enabled** (3/4 from Priority 2):
+1. ✅ **RuleNotDistribute** - De Morgan's laws for bitwise (`~(a&b) → ~a|~b`)
+   - Pattern: Distributes NOT over bitwise AND/OR
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/bitwise.py:577`
+
+2. ✅ **RuleDemorganLaws** - De Morgan's laws for boolean (`!(a&&b) → !a||!b`)
+   - Pattern: Distributes NOT over logical AND/OR
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/patterns.py:94`
+
+3. ✅ **RuleIntLessEqual** - Normalize comparisons (`x<=y → !(x>y)`)
+   - Pattern: Converts <= and >= to strict comparisons with NOT
+   - Status: Fully functional with multi-instruction support
+   - File: `vcdecomp/core/ir/rules/comparison.py:488`
+
+**Rule not enabled** (1/4 - beyond current scope):
+4. ❌ **RuleCollectTerms** - Requires expression tree manipulation (not just multi-instruction)
+
+### ✅ Phase 1D Complete: CFG Integration + 2 Phi Simplification Rules
+
+**Infrastructure implemented**: CFG integration for control flow analysis
+- Created: `vcdecomp/core/ir/cfg_integration.py` (275 lines, fully documented)
+- Integrated into: `vcdecomp/core/ir/simplify_engine.py`
+- Features:
+  - Links SSA instructions with CFG basic blocks
+  - Natural loop detection and analysis
+  - Loop header identification
+  - Loop-invariant value detection
+  - Phi node queries at block boundaries
+  - Dominator tree queries
+
+**Rules enabled** (2/14 from Priority 3):
+1. ✅ **RulePhiSimplify** - Simplify phi nodes with identical inputs
+   - Pattern: `phi(y, y, y) → COPY(y)`
+   - Status: Fully functional with CFG integration
+   - File: `vcdecomp/core/ir/rules/dataflow.py:295`
+
+2. ✅ **RuleTrivialPhi** - Eliminate trivial phi nodes
+   - Pattern: `phi(y) → COPY(y)` (single input)
+   - Status: Fully functional with CFG integration
+   - File: `vcdecomp/core/ir/rules/dataflow.py:545`
+
+**Rules not yet enabled** (12/14 - require additional implementation):
+- 8 loop optimization rules (induction vars, loop invariant, strength reduction, etc.)
+- 4 pattern detection rules (abs, min/max, sign magnitude, select)
+- These require more complex loop analysis beyond basic CFG integration
+
 **Current totals**:
 - Total rules: 103
-- Enabled: 67 (65%)
-- Disabled: 36 (35%)
+- Enabled: 74 (72%)
+- Disabled: 29 (28%)
+- **Progress today**: +7 rules total (2 data flow + 3 boolean/comparison + 2 phi simplification)
 
 ---
 
@@ -384,7 +473,7 @@ If full infrastructure is too much work, focus on highest ROI:
 
 ---
 
-**Status**: 67/103 rules enabled (65%)
-**Progress today**: +1 rule (RuleCompareZero)
-**Path to 95%**: Implement use-def chains + CFG integration
-**Estimated total effort**: 2-3 weeks for full enablement
+**Status**: 74/103 rules enabled (72%)
+**Progress today**: +7 rules (RuleCompareZero, RuleCopyPropagation, RuleConstantPropagation, RuleNotDistribute, RuleDemorganLaws, RuleIntLessEqual, RulePhiSimplify, RuleTrivialPhi)
+**Path to 95%**: Complete CFG-dependent rules (12 remaining) + Type system (7 rules)
+**Estimated remaining effort**: 1-2 weeks for 95% coverage

@@ -9,15 +9,16 @@ This module implements rules for simplifying comparison operations:
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List, Union
 
 from .base import (
     SimplificationRule,
     is_constant,
     get_constant_value,
     create_constant_value,
+    create_intermediate_value,
 )
-from ..ssa import SSAFunction, SSAInstruction
+from ..ssa import SSAFunction, SSAInstruction, SSAValue
 
 logger = logging.getLogger(__name__)
 
@@ -493,12 +494,15 @@ class RuleIntLessEqual(SimplificationRule):
         x <= y → !(x > y)
         x >= y → !(x < y)
 
-    Note: Disabled by default as it may make code less readable.
+    This uses multi-instruction transformation to create the strict comparison
+    followed by NOT. Can simplify comparison logic in some cases.
+
+    Note: May reduce readability, but provides canonical form for analysis.
     """
 
     def __init__(self):
         super().__init__("RuleIntLessEqual")
-        self.is_disabled = True  # Disabled - may reduce readability
+        self.is_disabled = False  # NOW ENABLED with multi-instruction support!
 
     def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
         # Match <= or >= comparisons
@@ -506,27 +510,47 @@ class RuleIntLessEqual(SimplificationRule):
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
-    ) -> Optional[SSAInstruction]:
-        # Convert x <= y to !(x > y)
-        # Convert x >= y to !(x < y)
+    ) -> Union[SSAInstruction, List[SSAInstruction], None]:
+        """
+        Convert <= and >= to strict comparisons with NOT.
 
+        Transformation:
+        1. Create CMP = (x > y) for (x <= y)
+        2. Replace with NOT(CMP)
+        """
         negated_op = self._get_negated_strict_op(inst.mnemonic)
         if negated_op is None:
             return None
 
-        # Create the strict comparison
-        strict_cmp = SSAInstruction(
+        # Create intermediate value for strict comparison result
+        cmp_val = create_intermediate_value("strict_cmp", inst.outputs[0].value_type, ssa_func)
+
+        # Create strict comparison instruction
+        strict_cmp_inst = SSAInstruction(
             block_id=inst.block_id,
             mnemonic=negated_op,
-            address=inst.address,
+            address=inst.address - 1,  # Pseudo-address before target
             inputs=inst.inputs,
-            outputs=inst.outputs,
-            instruction=inst.instruction,
+            outputs=[cmp_val],
         )
 
-        # Would need to wrap in NOT - but this complicates the IR
-        # For now, return None (disabled by default anyway)
-        return None
+        # Determine NOT mnemonic based on type
+        # For comparisons, result is usually boolean, so use logical NOT
+        not_mnemonic = "LN"  # Logical NOT
+
+        # Create NOT instruction
+        not_inst = SSAInstruction(
+            block_id=inst.block_id,
+            mnemonic=not_mnemonic,
+            address=inst.address,
+            inputs=[cmp_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Return list: [STRICT_CMP, NOT(STRICT_CMP)]
+        return [strict_cmp_inst, not_inst]
 
     def _get_negated_strict_op(self, mnemonic: str) -> Optional[str]:
         """Get the strict comparison that, when negated, equals the input."""
