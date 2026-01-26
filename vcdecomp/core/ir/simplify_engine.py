@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 
 from .rules import SimplificationRule, ALL_RULES
 from .ssa import SSAFunction, SSAInstruction
+from .use_def import UseDefChain
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,12 @@ class SimplificationEngine:
             f"SimplificationEngine: Starting with {len(self.rules)} rules, max_iterations={self.max_iterations}"
         )
 
+        # Build use-def chains for data flow analysis
+        # Rules can access via ssa_func.use_def_chains
+        if self.debug:
+            logger.debug("Building use-def chains...")
+        ssa_func.use_def_chains = UseDefChain(ssa_func, debug=self.debug)
+
         for iteration in range(self.max_iterations):
             changes_this_iteration = 0
 
@@ -118,6 +125,13 @@ class SimplificationEngine:
 
             stats.total_changes += changes_this_iteration
             stats.iterations = iteration + 1
+
+            # Rebuild use-def chains if changes were made
+            # This ensures accurate analysis for next iteration
+            if changes_this_iteration > 0:
+                if self.debug:
+                    logger.debug(f"Rebuilding use-def chains after {changes_this_iteration} changes...")
+                ssa_func.use_def_chains = UseDefChain(ssa_func, debug=False)
 
             # Check convergence
             if changes_this_iteration == 0:

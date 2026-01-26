@@ -1,8 +1,8 @@
 # Rule Enablement Roadmap
 
 **Date**: 2026-01-26
-**Current Status**: 67/103 rules enabled (65% - up from 66 previously)
-**Goal**: Enable remaining 36 disabled rules through infrastructure investments
+**Current Status**: 69/103 rules enabled (67% - up from 67 previously)
+**Goal**: Enable remaining 34 disabled rules through infrastructure investments
 
 ---
 
@@ -16,10 +16,43 @@
 - Impact: Simplifies zero comparisons in boolean contexts
 - File: `vcdecomp/core/ir/rules/comparison.py:334`
 
+### ✅ Phase 1B Complete: Use-Def Chains Infrastructure + 2 Data Flow Rules
+
+**Infrastructure implemented**: UseDefChain class
+- File: `vcdecomp/core/ir/use_def.py` (370 lines, fully documented)
+- Integrated into: `vcdecomp/core/ir/simplify_engine.py`
+- Test suite: `vcdecomp/tests/test_use_def.py` (15 test cases, 480 lines)
+- Features:
+  - Efficient use-def chain tracking for all SSA values
+  - Single-use detection for inlining candidates
+  - Unused value detection for dead code elimination
+  - Copy instruction detection
+  - Constant value tracking
+  - Transitive use analysis
+
+**Rules enabled** (2/7 from Priority 1):
+1. ✅ **RuleCopyPropagation** - Replace uses of copies with original values
+   - Pattern: `x = y; z = x + 1 → z = y + 1`
+   - Status: Fully functional
+   - File: `vcdecomp/core/ir/rules/dataflow.py:36`
+
+2. ✅ **RuleConstantPropagation** - Propagate constants through assignments
+   - Pattern: `x = 5; y = x + 3 → y = 5 + 3 → y = 8`
+   - Status: Fully functional
+   - File: `vcdecomp/core/ir/rules/dataflow.py:69`
+
+**Rules analyzed but kept disabled** (5/7 - architectural limitations):
+3. ❌ **RuleDeadValue** - Cannot remove instructions (engine limitation)
+4. ❌ **RuleUnusedResult** - Same as RuleDeadValue
+5. ❌ **RuleSingleUseInline** - Requires expression tree transformation
+6. ❌ **RuleForwardSubstitution** - Redundant with rules 1+2 (iterative application)
+7. ❌ **RuleValueNumbering** - Requires separate value numbering infrastructure
+
 **Current totals**:
 - Total rules: 103
-- Enabled: 67 (65%)
-- Disabled: 36 (35%)
+- Enabled: 69 (67%)
+- Disabled: 34 (33%)
+- **Progress today**: +2 rules (RuleCopyPropagation, RuleConstantPropagation)
 
 ---
 
