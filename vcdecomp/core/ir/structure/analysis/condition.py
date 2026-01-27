@@ -511,9 +511,18 @@ def _collect_and_chain(
 
     # Check if fallthrough block is another condition in the AND chain
     ft_last_instr = fallthrough_block.instructions[-1]
+    ft_conditional = None
     if resolver.is_conditional_jump(ft_last_instr.opcode):
+        ft_conditional = ft_last_instr
+    elif len(fallthrough_block.instructions) >= 2:
+        ft_second_last = fallthrough_block.instructions[-2]
+        if (resolver.is_conditional_jump(ft_second_last.opcode) and
+                resolver.get_mnemonic(ft_last_instr.opcode) == "JMP"):
+            ft_conditional = ft_second_last
+
+    if ft_conditional:
         # Check if it jumps to the SAME false target
-        if ft_last_instr.arg1 == false_target_addr:
+        if ft_conditional.arg1 == false_target_addr:
             # It's part of the AND chain! Recursively collect the rest
             rest_chain, true_target, _ = _collect_and_chain(
                 fallthrough_block_id, cfg, resolver, start_to_block, visited
@@ -636,10 +645,20 @@ def _collect_or_chain(
 
     # Check if fallthrough block is another condition in the OR chain
     ft_last_instr = fallthrough_block.instructions[-1]
-    ft_mnemonic = resolver.get_mnemonic(ft_last_instr.opcode)
-    if ft_mnemonic == "JNZ":
+    ft_conditional = None
+    if resolver.is_conditional_jump(ft_last_instr.opcode):
+        if resolver.get_mnemonic(ft_last_instr.opcode) == "JNZ":
+            ft_conditional = ft_last_instr
+    elif len(fallthrough_block.instructions) >= 2:
+        ft_second_last = fallthrough_block.instructions[-2]
+        if (resolver.is_conditional_jump(ft_second_last.opcode) and
+                resolver.get_mnemonic(ft_second_last.opcode) == "JNZ" and
+                resolver.get_mnemonic(ft_last_instr.opcode) == "JMP"):
+            ft_conditional = ft_second_last
+
+    if ft_conditional:
         # Check if it jumps to the SAME true target
-        if ft_last_instr.arg1 == true_target_addr:
+        if ft_conditional.arg1 == true_target_addr:
             # It's part of the OR chain! Recursively collect the rest
             rest_chain, _, false_target = _collect_or_chain(
                 fallthrough_block_id, cfg, resolver, start_to_block, visited
