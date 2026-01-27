@@ -179,6 +179,7 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
 
     # Build SSA function object
     ssa_func = SSAFunction(cfg=cfg, values=values, instructions=instructions, scr=scr)
+    _annotate_call_out_params(ssa_func)
 
     # Apply bidirectional type inference (optional, can be disabled)
     # This improves type inference accuracy by 15-20% through backward
@@ -210,6 +211,42 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
             logger.info(f"LoadGuard: {stats}")
 
     return ssa_func
+
+
+def _annotate_call_out_params(ssa_func: SSAFunction) -> None:
+    """Attach out-parameter metadata to CALL/XCALL instructions."""
+    from ..headers.database import get_header_database
+
+    header_db = get_header_database()
+    for block_insts in ssa_func.instructions.values():
+        for inst in block_insts:
+            if inst.mnemonic not in {"CALL", "XCALL"}:
+                continue
+
+            out_params: List[int] = []
+            func_name = None
+            if inst.mnemonic == "XCALL" and inst.instruction and inst.instruction.instruction:
+                xfn_idx = inst.instruction.instruction.arg1
+                xfn_entry = ssa_func.scr.get_xfn(xfn_idx) if ssa_func.scr else None
+                if xfn_entry:
+                    full_name = xfn_entry.name
+                    paren_idx = full_name.find("(")
+                    func_name = full_name[:paren_idx] if paren_idx > 0 else full_name
+
+            if func_name and header_db:
+                sig = header_db.get_function_signature(func_name)
+                if sig:
+                    out_params = sig.get("out_params") or sig.get("out_param_indices") or []
+
+            if not out_params:
+                out_params = [
+                    idx for idx, val in enumerate(inst.inputs)
+                    if val.alias and val.alias.startswith("&")
+                ]
+
+            if out_params:
+                inst.metadata["out_param_indices"] = out_params
+                inst.metadata["has_out_params"] = True
 
 
 def _mark_simple_arithmetic_compound_stores(instructions: Dict[int, List[SSAInstruction]]) -> None:

@@ -20,6 +20,31 @@ class FieldInfo:
     size: int          # Field size in bytes
 
 
+def _is_out_param(type_str: str, name: str) -> bool:
+    """Detect out parameters from pointer types or explicit out names."""
+    type_normalized = type_str.replace(" ", "")
+    if "*" in type_normalized:
+        return True
+
+    name = name.strip()
+    if not name:
+        return False
+    name_lower = name.lower()
+    if name_lower == "out" or name_lower.startswith("out_"):
+        return True
+    if name_lower.startswith("out") and len(name) > 3 and name[3].isalpha():
+        return True
+    if name_lower.startswith("pout"):
+        return True
+    return False
+
+
+def _derive_out_params(parameters: List[Tuple[str, str]]) -> List[int]:
+    """Return parameter indices that look like out params."""
+    return [idx for idx, (param_type, param_name) in enumerate(parameters)
+            if _is_out_param(param_type or "", param_name or "")]
+
+
 class HeaderDatabase:
     """
     Database for header information with fast lookup.
@@ -164,10 +189,15 @@ class HeaderDatabase:
         if self.sdk_db:
             sdk_sig = self.sdk_db.get_function_signature(name)
             if sdk_sig:
+                out_params = getattr(sdk_sig, 'out_params', None)
+                if out_params is None:
+                    out_params = _derive_out_params(sdk_sig.parameters)
                 # Convert SDK signature to header database format
                 return {
                     'return_type': sdk_sig.return_type,
                     'parameters': sdk_sig.parameters,
+                    'out_params': out_params,
+                    'has_out_params': bool(out_params),
                     'is_variadic': False,  # SDK signatures don't track varargs yet
                     'source': 'SDK'  # Mark source for debugging
                 }
@@ -175,7 +205,12 @@ class HeaderDatabase:
         # PRIORITY 2: Header files
         header_sig = self.functions.get(name)
         if header_sig:
-            return header_sig
+            parameters = header_sig.get('parameters', [])
+            out_params = _derive_out_params(parameters)
+            enriched = dict(header_sig)
+            enriched['out_params'] = out_params
+            enriched['has_out_params'] = bool(out_params)
+            return enriched
 
         return None
 

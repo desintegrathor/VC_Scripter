@@ -429,6 +429,13 @@ def _build_use_count_map(ssa_func: SSAFunction, func_block_ids: Set[int], rename
                     if display_name.startswith("&"):
                         display_name = display_name[1:]
                     use_counts[display_name] = use_counts.get(display_name, 0) + 1
+            if inst.mnemonic in {"CALL", "XCALL"} and inst.metadata.get("has_out_params"):
+                for inp in inst.inputs:
+                    alias = inp.alias or ""
+                    if alias.startswith("&"):
+                        base_name = alias[1:]
+                        if base_name:
+                            use_counts[base_name] = max(use_counts.get(base_name, 0), 1)
 
     return use_counts
 
