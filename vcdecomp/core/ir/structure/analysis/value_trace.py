@@ -1489,6 +1489,22 @@ def trace_loop_bounds(ssa_func: SSAFunction) -> Dict[str, BoundInfo]:
     """
     bounds: Dict[str, BoundInfo] = {}
 
+    def _resolve_constant(value) -> Optional[int]:
+        if value is None:
+            return None
+        if hasattr(value, 'constant_value') and value.constant_value is not None:
+            return value.constant_value
+        if value.alias and value.alias.isdigit():
+            return int(value.alias)
+        if value.alias and value.alias.startswith("data_"):
+            try:
+                offset_idx = int(value.alias[5:])
+                if ssa_func.scr and ssa_func.scr.data_segment:
+                    return ssa_func.scr.data_segment.get_dword(offset_idx * 4)
+            except (ValueError, AttributeError):
+                return None
+        return None
+
     # Find all comparison instructions that might define loop bounds
     for block_id, ssa_instrs in ssa_func.instructions.items():
         for inst in ssa_instrs:
@@ -1512,22 +1528,16 @@ def trace_loop_bounds(ssa_func: SSAFunction) -> Dict[str, BoundInfo]:
             if left_name and not left_name.startswith("t") and ("_" not in left_name or left_name.startswith("local_")):
                 # This looks like a loop counter variable (i, j, idx, etc.)
                 # Try to extract bound from right side
-                if hasattr(right_val, 'constant_value') and right_val.constant_value is not None:
+                bound_value = _resolve_constant(right_val)
+                if bound_value is not None:
                     var_name = left_name
-                    bound_value = right_val.constant_value
-                elif right_val.alias and right_val.alias.isdigit():
-                    var_name = left_name
-                    bound_value = int(right_val.alias)
 
             # Pattern 2: constant > var (or constant >= var)
             right_name = right_val.alias or right_val.name
             if not var_name and right_name and not right_name.startswith("t") and ("_" not in right_name or right_name.startswith("local_")):
-                if hasattr(left_val, 'constant_value') and left_val.constant_value is not None:
+                bound_value = _resolve_constant(left_val)
+                if bound_value is not None:
                     var_name = right_name
-                    bound_value = left_val.constant_value
-                elif left_val.alias and left_val.alias.isdigit():
-                    var_name = right_name
-                    bound_value = int(left_val.alias)
 
             if var_name and bound_value is not None:
                 # Adjust bound based on comparison type

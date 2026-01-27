@@ -608,6 +608,22 @@ def cmd_structure(args):
     # Pattern: ADD(base_addr, MUL(index, stride)) reveals stride = inner_dimension * element_size
     # Maps byte_offset -> list of detected strides (for multi-dim analysis)
     array_strides = {}  # byte_offset -> set of strides
+
+    def _get_constant_value(value):
+        if value is None:
+            return None
+        if hasattr(value, 'constant_value') and value.constant_value is not None:
+            return value.constant_value
+        if value.alias and value.alias.lstrip('-').isdigit():
+            return int(value.alias)
+        if value.alias and value.alias.startswith("data_") and scr.data_segment:
+            try:
+                offset_idx = int(value.alias[5:])
+                return scr.data_segment.get_dword(offset_idx * 4)
+            except (ValueError, AttributeError):
+                return None
+        return None
+
     for block_id, instrs in ssa_func.instructions.items():
         for inst in instrs:
             # Look for ADD instructions (used in array indexing)
@@ -636,11 +652,7 @@ def cmd_structure(args):
                         if len(mul_inst.inputs) >= 2:
                             # Look for constant stride in MUL inputs
                             for mul_inp in mul_inst.inputs:
-                                stride = None
-                                if hasattr(mul_inp, 'constant_value') and mul_inp.constant_value is not None:
-                                    stride = mul_inp.constant_value
-                                elif mul_inp.alias and mul_inp.alias.lstrip('-').isdigit():
-                                    stride = int(mul_inp.alias)
+                                stride = _get_constant_value(mul_inp)
 
                                 if stride and stride > 0:
                                     if base_offset not in array_strides:
@@ -673,7 +685,8 @@ def cmd_structure(args):
             names = header_db.get_constant_names_by_value(dim)
             if names:
                 max_names = [name for name in names if name.endswith("_MAX")]
-                return max_names[0] if max_names else names[0]
+                if max_names:
+                    return max_names[0]
         return str(dim)
 
     def _infer_element_size(var_type: str) -> Optional[int]:
@@ -710,6 +723,8 @@ def cmd_structure(args):
 
         strides = sorted(array_strides[offset], reverse=True)
         if not strides:
+            return None
+        if not element_size or not any(stride > element_size for stride in strides):
             return None
 
         total_bytes = total_dwords * 4
@@ -783,6 +798,33 @@ def cmd_structure(args):
             else:
                 # True fallback - unknown type
                 var_type = "dword"
+
+            # SDK type mapping: preserve known struct types based on element size and name hints
+            if var_type in {"int", "dword"} and usage.is_array_base and usage.array_element_size:
+                from vcdecomp.core.structures import get_struct_by_size
+
+                name_hints = {
+                    "recover": "s_SC_MP_Recover",
+                    "rec": "s_SC_MP_Recover",
+                    "sphere": "s_sphere",
+                    "vec": "c_Vector3",
+                    "vector": "c_Vector3",
+                }
+
+                candidates = get_struct_by_size(usage.array_element_size)
+                if candidates:
+                    if len(candidates) == 1:
+                        var_type = candidates[0].name
+                    elif usage.name:
+                        name_lower = usage.name.lower()
+                        for hint, struct_name in name_hints.items():
+                            if hint in name_lower:
+                                for candidate in candidates:
+                                    if candidate.name == struct_name:
+                                        var_type = candidate.name
+                                        break
+                            if var_type not in {"int", "dword"}:
+                                break
 
             # FIX: Detect float type from initializer value in data segment
             # If a variable has type "int" or "dword" and its initializer looks like
