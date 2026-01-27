@@ -157,7 +157,12 @@ class RuleBlockOr(CollapseRule):
         super().__init__("BlockOr")
 
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        # Block must have exactly two outgoing edges (binary condition)
         if len(block.out_edges) != 2:
+            return False
+
+        # Neither branch can be a goto
+        if block.is_goto_out(0) or block.is_goto_out(1):
             return False
 
         # Check each branch for nested condition pattern
@@ -175,12 +180,27 @@ class RuleBlockOr(CollapseRule):
             if len(inner_block.out_edges) != 2:
                 continue
 
+            # Don't match if inner_block has unstructured gotos coming into it
+            if inner_block.is_interior_goto_target():
+                continue
+
+            # Don't use loop back edge to get to inner_block
+            if block.is_back_edge_out(i):
+                continue
+
             # Check if one of inner_block's targets == other branch of block
             other_branch = block.out_edges[1-i].target
+
+            # Skip if other_branch is same as block (no looping)
+            if other_branch == block:
+                continue
 
             for j in range(2):
                 if inner_block.out_edges[j].target == other_branch:
                     # Found short-circuit pattern!
+                    # Also check that the loop-back doesn't go to block
+                    if inner_block.out_edges[1-j].target == block:
+                        continue
                     return True
 
         return False
@@ -308,8 +328,16 @@ class RuleBlockProperIf(CollapseRule):
         super().__init__("BlockProperIf")
 
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
-        # Block must have exactly two successors
+        # Block must have exactly two successors (binary condition)
         if len(block.out_edges) != 2:
+            return False
+
+        # No loops back to self
+        if block.out_edges[0].target == block or block.out_edges[1].target == block:
+            return False
+
+        # Neither branch can be unstructured
+        if block.is_goto_out(0) or block.is_goto_out(1):
             return False
 
         succ1 = block.out_edges[0].target
@@ -318,19 +346,24 @@ class RuleBlockProperIf(CollapseRule):
         if succ1.is_collapsed or succ2.is_collapsed:
             return False
 
-        # One branch should be the body, other should be merge point
-        # Body has single successor which is the merge point
         # Check if succ1 is body and succ2 is merge
-        if (succ1.has_single_successor() and
-            succ1.get_single_successor() == succ2 and
-            succ1.has_single_predecessor()):
-            return True
+        # Body (clause) must have: single predecessor, single successor, be a decision edge
+        if (succ1.has_single_predecessor() and
+            succ1.has_single_successor() and
+            block.is_decision_out(0)):
+            if succ1.get_single_successor() == succ2:
+                # Clause must not have unstructured gotos out
+                if not succ1.is_goto_out(0):
+                    return True
 
         # Check if succ2 is body and succ1 is merge
-        if (succ2.has_single_successor() and
-            succ2.get_single_successor() == succ1 and
-            succ2.has_single_predecessor()):
-            return True
+        if (succ2.has_single_predecessor() and
+            succ2.has_single_successor() and
+            block.is_decision_out(1)):
+            if succ2.get_single_successor() == succ1:
+                # Clause must not have unstructured gotos out
+                if not succ2.is_goto_out(0):
+                    return True
 
         return False
 
@@ -420,10 +453,22 @@ class RuleBlockIfElse(CollapseRule):
         if len(block.out_edges) != 2:
             return False
 
+        # No loops back to self
+        if block.out_edges[0].target == block or block.out_edges[1].target == block:
+            return False
+
+        # Neither branch can be unstructured
+        if block.is_goto_out(0) or block.is_goto_out(1):
+            return False
+
         true_branch = block.out_edges[0].target
         false_branch = block.out_edges[1].target
 
         if true_branch.is_collapsed or false_branch.is_collapsed:
+            return False
+
+        # Don't match if branches are same block (would be proper if)
+        if true_branch == false_branch:
             return False
 
         # Both must have single successor and single predecessor
@@ -432,15 +477,15 @@ class RuleBlockIfElse(CollapseRule):
         if not false_branch.has_single_successor() or not false_branch.has_single_predecessor():
             return False
 
+        # Neither branch should have unstructured gotos out
+        if true_branch.is_goto_out(0) or false_branch.is_goto_out(0):
+            return False
+
         # Both must go to the same merge point
         true_merge = true_branch.get_single_successor()
         false_merge = false_branch.get_single_successor()
 
         if true_merge != false_merge:
-            return False
-
-        # Don't match if branches are same block (would be proper if)
-        if true_branch == false_branch:
             return False
 
         return True
@@ -522,7 +567,7 @@ class RuleBlockWhileDo(CollapseRule):
         super().__init__("BlockWhileDo")
 
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
-        # Header must have exactly two successors
+        # Header must have exactly two successors (condition + exit)
         if len(block.out_edges) != 2:
             return False
 
@@ -540,11 +585,15 @@ class RuleBlockWhileDo(CollapseRule):
         if not has_back_edge_in or body_block is None:
             return False
 
-        # Find the exit block (successor that's not body or self)
-        for edge in block.out_edges:
-            if edge.target != body_block and edge.target != block:
+        # Identify body vs exit in outgoing edges
+        for i, edge in enumerate(block.out_edges):
+            if edge.target == body_block:
+                # This is the loop edge back to body
+                # Check that it's not marked as unstructured
+                if block.is_goto_out(i):
+                    return False
+            elif edge.target != block:
                 exit_block = edge.target
-                break
 
         if exit_block is None:
             return False
@@ -1132,9 +1181,11 @@ class RuleBlockIfNoExit(CollapseRule):
         super().__init__("BlockIfNoExit")
 
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        # Block must have exactly two successors (binary condition)
         if len(block.out_edges) != 2:
             return False
 
+        # Check each branch for dead-end pattern
         for i in range(2):
             clause = block.out_edges[i].target
 
@@ -1145,12 +1196,12 @@ class RuleBlockIfNoExit(CollapseRule):
             if not clause.has_single_predecessor():
                 continue
 
-            # Clause has NO exits (dead end)
+            # Clause has NO exits (dead end - no return)
             if len(clause.out_edges) != 0:
                 continue
 
-            # Check edge is not goto
-            if block.out_edges[i].edge_type in (EdgeType.GOTO_EDGE, EdgeType.IRREDUCIBLE):
+            # Edge to clause must not be unstructured
+            if block.is_goto_out(i):
                 continue
 
             return True

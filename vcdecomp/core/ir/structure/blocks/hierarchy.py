@@ -137,6 +137,69 @@ class StructuredBlock:
             return self.in_edges[0].source
         return None
 
+    def is_interior_goto_target(self) -> bool:
+        """
+        Check if this block has an unstructured goto coming into it.
+
+        Returns True if any incoming edge is marked as GOTO_EDGE or IRREDUCIBLE.
+        This is used to prevent pattern matching on blocks that are targets of
+        unstructured jumps, as they may have complex entry conditions.
+        """
+        return any(e.edge_type in (EdgeType.GOTO_EDGE, EdgeType.IRREDUCIBLE)
+                   for e in self.in_edges)
+
+    def is_goto_out(self, index: int) -> bool:
+        """
+        Check if outgoing edge at given index is an unstructured goto.
+
+        Args:
+            index: Index of outgoing edge to check
+
+        Returns:
+            True if edge is GOTO_EDGE or IRREDUCIBLE
+        """
+        if 0 <= index < len(self.out_edges):
+            return self.out_edges[index].edge_type in (EdgeType.GOTO_EDGE, EdgeType.IRREDUCIBLE)
+        return False
+
+    def is_decision_out(self, index: int) -> bool:
+        """
+        Check if outgoing edge is a normal decision edge.
+
+        A decision edge is one that's not a loop back edge, loop exit,
+        goto, or irreducible edge. This is used to identify normal
+        conditional branches suitable for if/else patterns.
+
+        Args:
+            index: Index of outgoing edge to check
+
+        Returns:
+            True if edge is a normal decision (not special edge type)
+        """
+        if 0 <= index < len(self.out_edges):
+            edge_type = self.out_edges[index].edge_type
+            return edge_type not in (
+                EdgeType.BACK_EDGE,
+                EdgeType.LOOP_EXIT,
+                EdgeType.GOTO_EDGE,
+                EdgeType.IRREDUCIBLE
+            )
+        return False
+
+    def is_back_edge_out(self, index: int) -> bool:
+        """
+        Check if outgoing edge at given index is a back edge.
+
+        Args:
+            index: Index of outgoing edge to check
+
+        Returns:
+            True if edge is a back edge
+        """
+        if 0 <= index < len(self.out_edges):
+            return self.out_edges[index].edge_type == EdgeType.BACK_EDGE
+        return False
+
 
 @dataclass
 class BlockBasic(StructuredBlock):

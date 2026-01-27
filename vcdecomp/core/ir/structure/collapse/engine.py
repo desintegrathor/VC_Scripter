@@ -95,16 +95,27 @@ class CollapseStructure:
         """
         Run the full collapse algorithm.
 
+        Following Ghidra's approach:
+        1. Label loops (back edges)
+        2. Collapse boolean conditions first (AND/OR patterns)
+        3. Apply structural collapse rules iteratively
+        4. Handle any remaining irreducible flow
+
         Returns:
             The root block after collapse, or None if collapse failed
         """
         # Phase 1: Label back edges and loop structure
         self._label_loops()
 
-        # Phase 2: Iterative collapse
+        # Phase 2: Collapse boolean conditions first (Ghidra-style)
+        # This is done separately before main collapse because condition
+        # combining should happen eagerly before other patterns
+        self._collapse_conditions()
+
+        # Phase 3: Iterative structural collapse
         self._iterative_collapse()
 
-        # Phase 3: Handle any remaining irreducible flow with gotos
+        # Phase 4: Handle any remaining irreducible flow with gotos
         if not self.graph.is_fully_collapsed():
             self._handle_irreducible()
 
@@ -149,6 +160,60 @@ class CollapseStructure:
             in_stack.remove(block.block_id)
 
         dfs(self.graph.entry_block)
+
+    def _collapse_conditions(self):
+        """
+        Collapse boolean AND/OR condition patterns.
+
+        This is run as a separate phase before main structural collapse,
+        following Ghidra's collapseConditions() approach. It repeatedly
+        applies the BlockOr rule until no more patterns are found.
+
+        The reason this is separate: combining boolean conditions should
+        happen eagerly, before other structural patterns are applied.
+        This produces cleaner, more readable conditions like:
+          if (a || b || c)  instead of  if (a) { } else if (b) { } else if (c)
+        """
+        # Find the RuleBlockOr in our rule lists
+        or_rule = None
+        for rule in self.primary_rules:
+            if isinstance(rule, RuleBlockOr):
+                or_rule = rule
+                break
+
+        if or_rule is None:
+            # No OR rule available, skip this phase
+            return
+
+        # Apply RuleBlockOr repeatedly until no changes
+        max_iterations = len(self.graph.blocks) * 5  # Safety limit
+        condition_iterations = 0
+
+        while condition_iterations < max_iterations:
+            changed = False
+            condition_iterations += 1
+
+            # Get current uncollapsed blocks
+            blocks = self.graph.get_uncollapsed_blocks()
+
+            # Try to apply OR rule to each block
+            for block in blocks:
+                if block.is_collapsed:
+                    continue
+
+                if or_rule.matches(self.graph, block):
+                    result = or_rule.apply(self.graph, block)
+                    if result is not None:
+                        # Track statistics
+                        self.rules_applied[or_rule.name] = self.rules_applied.get(or_rule.name, 0) + 1
+                        changed = True
+                        logger.debug(f"Collapsed condition: {or_rule.name} at block {block.block_id} -> {result.block_id}")
+                        break  # Restart from beginning after change
+
+            if not changed:
+                break  # No more OR patterns found
+
+        logger.debug(f"Condition collapse completed in {condition_iterations} iterations")
 
     def _iterative_collapse(self):
         """
