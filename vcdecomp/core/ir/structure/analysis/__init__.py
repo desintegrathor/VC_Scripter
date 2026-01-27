@@ -54,6 +54,12 @@ from .loop_analysis import (
     analyze_loops,
 )
 
+from .for_loop_detection import (
+    ForLoopPattern,
+    ForLoopDetector,
+    detect_for_loops_in_function,
+)
+
 __all__ = [
     # Flow analysis
     "_get_loop_for_block",
@@ -90,4 +96,8 @@ __all__ = [
     "LoopBody",
     "LoopAnalysis",
     "analyze_loops",
+    # For-loop detection
+    "ForLoopPattern",
+    "ForLoopDetector",
+    "detect_for_loops_in_function",
 ]
