@@ -347,20 +347,24 @@ class HierarchicalCodeEmitter:
                     lines.extend(loop_lines)
                     continue
 
-            # Skip orphaned blocks that have no gotos targeting them
-            # These are blocks that didn't get collapsed into structures but also
-            # have no unstructured jumps pointing to them - they're dead code or
-            # artifacts of incomplete collapse
+            # Skip orphaned blocks that have no gotos targeting them AND no real content.
+            # Blocks with actual statements should still be emitted even without goto targets,
+            # as they may contain code that wasn't collapsed into structures.
             if block_id not in needed_labels:
-                # Mark as emitted to prevent future attempts, but don't emit
-                self.emitted_blocks.add(block_id)
-                continue
+                # Check if block has actual statements (not just control flow)
+                ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+                from ..utils.helpers import _is_control_flow_only
+                if _is_control_flow_only(ssa_instrs, self.resolver):
+                    # Truly empty - skip it
+                    self.emitted_blocks.add(block_id)
+                    continue
+                # Has content - emit it even without goto target (will be unlabeled)
 
-            # Not a loop - emit as labeled block (has gotos targeting it)
-            if block_id not in self.block_labels:
-                self.block_labels[block_id] = f"block_{block_id}"
-
-            lines.append(f"{self.block_labels[block_id]}:")
+            # Emit block - only add label if gotos target it
+            if block_id in needed_labels:
+                if block_id not in self.block_labels:
+                    self.block_labels[block_id] = f"block_{block_id}"
+                lines.append(f"{self.block_labels[block_id]}:")
             lines.extend(self._emit_basic_by_id(block_id, indent))
 
         return lines
@@ -940,7 +944,12 @@ class HierarchicalCodeEmitter:
         # Emit cases
         for case in block.cases:
             lines.append(f"{indent}case {case.value}:")
-            if case.body_block is not None:
+            # Prefer body_block_ids if available (contains ALL body blocks)
+            # body_block is just the entry point and may not cover all body blocks
+            if case.body_block_ids:
+                body_lines = self._emit_switch_case_body_by_ids(case.body_block_ids, indent + "    ")
+                lines.extend(body_lines)
+            elif case.body_block is not None:
                 body_lines = self._emit_block(case.body_block, indent + "    ")
                 lines.extend(body_lines)
             if case.has_break:
@@ -949,12 +958,52 @@ class HierarchicalCodeEmitter:
         # Emit default case
         if block.default_case is not None:
             lines.append(f"{indent}default:")
-            if block.default_case.body_block is not None:
+            # Prefer body_block_ids if available
+            if block.default_case.body_block_ids:
+                body_lines = self._emit_switch_case_body_by_ids(block.default_case.body_block_ids, indent + "    ")
+                lines.extend(body_lines)
+            elif block.default_case.body_block is not None:
                 lines.extend(self._emit_block(block.default_case.body_block, indent + "    "))
             if block.default_case.has_break:
                 lines.append(f"{indent}    break;")
 
         lines.append(f"{indent}}}")
+
+        return lines
+
+    def _emit_switch_case_body_by_ids(self, body_block_ids: Set[int], indent: str) -> List[str]:
+        """
+        Emit switch case body using CFG block IDs.
+
+        This is a fallback for when body_block is None but we have the list of
+        CFG block IDs that make up the case body.
+        """
+        lines = []
+
+        # Sort blocks by start address
+        sorted_block_ids = sorted(
+            body_block_ids,
+            key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
+        )
+
+        for block_id in sorted_block_ids:
+            if block_id in self.emitted_blocks:
+                continue
+
+            self.emitted_blocks.add(block_id)
+
+            from ..emit.code_emitter import _render_block_statements
+
+            block_lines = _render_block_statements(
+                self.ssa_func,
+                block_id,
+                self.formatter,
+                self.resolver,
+                self.global_map,
+            )
+
+            for line in block_lines:
+                lines.append(f"{indent}{line}")
 
         return lines
 

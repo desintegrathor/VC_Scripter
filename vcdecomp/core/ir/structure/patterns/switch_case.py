@@ -1399,9 +1399,10 @@ def _detect_switch_patterns(
                 debug_print(f"DEBUG SWITCH: Pre-scan found nested_switch_headers: {sorted(nested_switch_headers)}")
 
             # Step 1: Find preliminary body blocks for each case
-            # Use case entries, chain blocks, AND nested headers as stop barriers
+            # Use case entries and nested headers as stop barriers
+            # NOTE: Do NOT add chain_blocks to stop - they can be before/after case entries
+            # and adding them prevents BFS from finding complete case bodies
             preliminary_stop = all_case_blocks.copy()
-            preliminary_stop.update(chain_blocks)
             preliminary_stop.update(nested_switch_headers)  # CRITICAL: Include nested headers
 
             preliminary_bodies: Dict[int, Set[int]] = {}
@@ -1514,9 +1515,11 @@ def _detect_switch_patterns(
             # Build stop blocks: all case entries + exit + default
             stop_blocks = all_case_blocks.copy()
             debug_print(f"DEBUG SWITCH: Initial stop_blocks (case entries): {sorted(stop_blocks)}")
-            # BUG FIX: Add chain blocks (test blocks) to prevent BFS from crossing into next case test
-            debug_print(f"DEBUG SWITCH: Adding chain_blocks to stop_blocks: {sorted(chain_blocks)}")
-            stop_blocks.update(chain_blocks)
+            # NOTE: Do NOT add chain_blocks to stop_blocks. When a case entry IS a chain block
+            # (comparison falls through to case body), adding it to stop_blocks causes BFS to
+            # stop immediately, resulting in empty case bodies. The all_case_blocks set already
+            # provides sufficient boundaries between cases.
+            debug_print(f"DEBUG SWITCH: chain_blocks (NOT added to stop_blocks): {sorted(chain_blocks)}")
 
             # FIX (01-24): Do NOT add nested_switch_headers to stop_blocks
             # Instead, let them be included in case bodies and detected as nested switches later
@@ -1528,7 +1531,10 @@ def _detect_switch_patterns(
                 debug_print(f"DEBUG SWITCH: Adding exit_block to stop_blocks: {exit_block}")
                 stop_blocks.add(exit_block)
             if current_block is not None:
-                stop_blocks.add(current_block)
+                # NOTE: Do NOT add current_block to stop_blocks here.
+                # current_block is the last test block (part of chain_blocks), and adding it
+                # would prevent BFS from finding case bodies that come after case entries
+                # but before the next test block in the comparison chain.
 
                 # FIX #1 PART 2: Find the actual default entry block
                 # current_block is the last test block (e.g., block 18 at 091)

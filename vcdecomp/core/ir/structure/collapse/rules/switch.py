@@ -224,6 +224,7 @@ class RuleBlockSwitch(CollapseRule):
                 body_block=case_body,  # Already structured (BlockIf, BlockList, etc.)
                 is_default=False,
                 has_break=has_break,
+                body_block_ids=set(case_info.body_blocks),  # CFG block IDs as fallback
             ))
 
         # Build default case
@@ -263,6 +264,7 @@ class RuleBlockSwitch(CollapseRule):
                 body_block=default_body,
                 is_default=True,
                 has_break=True,
+                body_block_ids=set(pattern.default_body_blocks),  # CFG block IDs as fallback
             )
 
         # Create switch block
@@ -305,10 +307,14 @@ class RuleBlockSwitch(CollapseRule):
                 )
                 switch_block.out_edges.append(exit_edge)
 
-                # Update exit block's in_edges
+                # Update exit block's in_edges - preserve edges from switch body blocks
+                # that are being removed (they're part of the switch structure)
+                switch_body_blocks = set(block_ids_to_remove)
                 exit_block.in_edges = [
                     e for e in exit_block.in_edges
-                    if e.source.is_collapsed or e.source == switch_block
+                    if e.source.is_collapsed
+                    or e.source == switch_block
+                    or getattr(e.source, 'original_block_id', None) in switch_body_blocks
                 ]
                 exit_block.in_edges.append(exit_edge)
 

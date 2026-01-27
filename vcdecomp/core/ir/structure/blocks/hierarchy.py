@@ -430,6 +430,7 @@ class SwitchCase:
     is_default: bool = False
     has_break: bool = True
     fall_through_to: Optional[int] = None  # Next case value if fall-through
+    body_block_ids: Set[int] = field(default_factory=set)  # CFG block IDs for body (fallback if body_block is None)
 
 
 @dataclass

@@ -262,19 +262,31 @@ def _find_case_body_blocks(
     if known_exit_blocks:
         effective_stop.update(known_exit_blocks)
 
+    _debug_body = False  # Set to True to debug specific case
+
     while worklist:
         block_id = worklist.pop(0)
 
+        if _debug_body:
+            import sys
+            print(f"DEBUG BODY: Processing block_id={block_id}, worklist={worklist}, visited={visited}", file=sys.stderr)
+
         # Skip if already visited
         if block_id in visited:
+            if _debug_body:
+                print(f"DEBUG BODY: Skipping {block_id} - already visited", file=sys.stderr)
             continue
 
         # Stop at barriers (other cases, exit, etc.)
         if block_id in effective_stop and block_id != case_entry:
+            if _debug_body:
+                print(f"DEBUG BODY: Stopping at {block_id} - in effective_stop {effective_stop}", file=sys.stderr)
             continue
 
         block = cfg.blocks.get(block_id)
         if not block:
+            if _debug_body:
+                print(f"DEBUG BODY: Block {block_id} not found in CFG", file=sys.stderr)
             continue
 
         # IMPROVED CONVERGENCE DETECTION (Ghidra-style):
@@ -294,18 +306,34 @@ def _find_case_body_blocks(
             predecessors = getattr(block, 'predecessors', [])
             if predecessors and len(predecessors) >= convergence_threshold:
                 preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
-                preds_from_other_cases = sum(1 for p in predecessors if p in effective_stop)
+                # FIX: Don't count case_entry as "from other cases" - it's OUR case's entry!
+                # Also don't count predecessors that are already in body_blocks/visited
+                preds_from_other_cases = sum(
+                    1 for p in predecessors
+                    if p in effective_stop
+                    and p != case_entry  # Our case's entry
+                    and p not in body_blocks  # Already part of our case
+                    and p not in visited  # Already part of our case
+                )
                 preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
+
+                if _debug_body:
+                    import sys
+                    print(f"DEBUG BODY: Convergence check for {block_id}: preds={predecessors}, in_body={preds_in_body}, from_other_cases={preds_from_other_cases}, external={preds_external}", file=sys.stderr)
 
                 # CRITICAL FIX: Only stop if there are predecessors from other cases/stop_blocks
                 # OR if there are multiple external predecessors (not from our case)
                 # This allows if/else merges within a case to pass through
                 if preds_from_other_cases > 0:
                     # This block has predecessors from other switch cases - it's the switch exit
+                    if _debug_body:
+                        print(f"DEBUG BODY: Stopping at {block_id} - has preds from other cases", file=sys.stderr)
                     continue
 
                 if preds_external >= convergence_threshold and preds_in_body == 0:
                     # All predecessors are external (not from our case body) - likely switch exit
+                    if _debug_body:
+                        print(f"DEBUG BODY: Stopping at {block_id} - external preds >= threshold", file=sys.stderr)
                     continue
 
                 # If all predecessors are from body_blocks/visited, this is an if/else merge
@@ -313,6 +341,10 @@ def _find_case_body_blocks(
 
         visited.add(block_id)
         body_blocks.add(block_id)
+
+        if _debug_body:
+            import sys
+            print(f"DEBUG BODY: Added {block_id} to body_blocks, successors={block.successors}", file=sys.stderr)
 
         # Check if block ends with return - don't follow after return
         if block.instructions:
