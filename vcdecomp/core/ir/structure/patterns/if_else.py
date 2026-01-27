@@ -631,6 +631,14 @@ def _detect_ternary_pattern(
     true_exprs = format_block_expressions(ssa_func, true_block_id, formatter=formatter)
     false_exprs = format_block_expressions(ssa_func, false_block_id, formatter=formatter)
 
+    side_effect_mnemonics = {"CALL", "XCALL", "STORE", "DCP", "ASGN"}
+    for expr in true_exprs:
+        if expr.mnemonic in side_effect_mnemonics:
+            return None
+    for expr in false_exprs:
+        if expr.mnemonic in side_effect_mnemonics:
+            return None
+
     # Filter out control flow (goto, etc.)
     true_assignments = []
     for expr in true_exprs:

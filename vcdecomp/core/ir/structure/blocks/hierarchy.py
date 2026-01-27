@@ -487,7 +487,7 @@ class BlockGraph:
     - Finding patterns for collapse rules
     """
 
-    def __init__(self):
+    def __init__(self, ssa_func: Optional["SSAFunction"] = None):
         self.blocks: Dict[int, StructuredBlock] = {}
         self.entry_block: Optional[StructuredBlock] = None
         self.root: Optional[StructuredBlock] = None
@@ -495,6 +495,7 @@ class BlockGraph:
 
         # Mapping from original CFG block IDs to structured blocks
         self.cfg_to_struct: Dict[int, StructuredBlock] = {}
+        self.ssa_func: Optional["SSAFunction"] = ssa_func
 
     def _allocate_block_id(self) -> int:
         """Allocate a new unique block ID."""
@@ -651,7 +652,7 @@ class BlockGraph:
 
         Creates a BlockBasic for each CFG block and connects them with edges.
         """
-        graph = cls()
+        graph = cls(ssa_func=ssa_func)
 
         # Create basic blocks for each CFG block
         for block_id, cfg_block in cfg.blocks.items():
@@ -741,7 +742,7 @@ class BlockGraph:
         Returns:
             BlockGraph containing only the specified blocks
         """
-        graph = cls()
+        graph = cls(ssa_func=ssa_func)
 
         # Create basic blocks only for blocks in the subset
         for block_id in block_ids:
@@ -815,4 +816,3 @@ class BlockGraph:
             graph.entry_block = graph.cfg_to_struct[entry_block_id]
 
         return graph
-
