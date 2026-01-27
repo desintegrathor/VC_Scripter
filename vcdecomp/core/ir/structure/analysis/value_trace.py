@@ -1509,7 +1509,7 @@ def trace_loop_bounds(ssa_func: SSAFunction) -> Dict[str, BoundInfo]:
 
             # Pattern 1: var < constant (or var <= constant)
             left_name = left_val.alias or left_val.name
-            if left_name and not left_name.startswith("t") and "_" not in left_name:
+            if left_name and not left_name.startswith("t") and ("_" not in left_name or left_name.startswith("local_")):
                 # This looks like a loop counter variable (i, j, idx, etc.)
                 # Try to extract bound from right side
                 if hasattr(right_val, 'constant_value') and right_val.constant_value is not None:
@@ -1521,7 +1521,7 @@ def trace_loop_bounds(ssa_func: SSAFunction) -> Dict[str, BoundInfo]:
 
             # Pattern 2: constant > var (or constant >= var)
             right_name = right_val.alias or right_val.name
-            if not var_name and right_name and not right_name.startswith("t") and "_" not in right_name:
+            if not var_name and right_name and not right_name.startswith("t") and ("_" not in right_name or right_name.startswith("local_")):
                 if hasattr(left_val, 'constant_value') and left_val.constant_value is not None:
                     var_name = right_name
                     bound_value = left_val.constant_value

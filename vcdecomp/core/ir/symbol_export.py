@@ -239,7 +239,10 @@ class SymbolTableExporter:
             lines.append(comment)
 
             # Array declaration
-            if usage.is_array_base and usage.array_element_size:
+            if usage.array_dimensions:
+                dim_suffix = "".join(f"[{dim}]" for dim in usage.array_dimensions)
+                lines.append(f"extern {var_type} {var_name}{dim_suffix};")
+            elif usage.is_array_base and usage.array_element_size:
                 # Try to estimate array size
                 array_size = 10  # Default guess
                 lines.append(f"extern {var_type} {var_name}[{array_size}];")
