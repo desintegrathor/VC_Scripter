@@ -22,6 +22,9 @@ from ..blocks.hierarchy import (
 )
 from .rules import CollapseRule, DEFAULT_RULES, PRIMARY_RULES, SECONDARY_RULES, RuleBlockSwitch
 from .trace_dag import TraceDAG
+from ..analysis.dominance import DominatorAnalysis, compute_dominators
+from ..analysis.loop_analysis import LoopAnalysis, analyze_loops
+from ..analysis.irreducible import SpanningTreeAnalysis, detect_irreducible_edges
 
 if TYPE_CHECKING:
     from ....ssa import SSAFunction
@@ -78,6 +81,12 @@ class CollapseStructure:
         # Switch header blocks - these are reserved and should not be collapsed by other rules
         self.switch_header_cfg_ids: set = set()
 
+        # Advanced analyses (computed on demand)
+        self.dom_analysis: Optional[DominatorAnalysis] = None
+        self.loop_analysis: Optional[LoopAnalysis] = None
+        self.spanning_tree: Optional[SpanningTreeAnalysis] = None
+        self.use_advanced_analysis = True  # Enable/disable for testing
+
     def set_switch_patterns(self, patterns):
         """Set switch patterns for the switch rule."""
         # Update both rules list and primary_rules list
@@ -96,6 +105,7 @@ class CollapseStructure:
         Run the full collapse algorithm.
 
         Following Ghidra's approach:
+        0. Compute advanced analyses (dominator, loop, irreducible)
         1. Label loops (back edges)
         2. Collapse boolean conditions first (AND/OR patterns)
         3. Apply structural collapse rules iteratively
@@ -104,6 +114,10 @@ class CollapseStructure:
         Returns:
             The root block after collapse, or None if collapse failed
         """
+        # Phase 0: Compute advanced analyses (if enabled)
+        if self.use_advanced_analysis:
+            self._compute_analyses()
+
         # Phase 1: Label back edges and loop structure
         self._label_loops()
 
@@ -131,15 +145,48 @@ class CollapseStructure:
 
         return self.graph.root
 
+    def _compute_analyses(self) -> None:
+        """
+        Compute advanced control flow analyses.
+
+        Computes dominator tree, loop structure, and spanning tree with
+        irreducible edge detection. These provide more accurate information
+        for collapse rules and goto insertion.
+        """
+        logger.debug("Computing dominator analysis...")
+        self.dom_analysis = compute_dominators(self.graph)
+
+        logger.debug("Computing loop analysis...")
+        self.loop_analysis = analyze_loops(self.graph, self.dom_analysis)
+
+        logger.debug("Computing spanning tree and irreducible edges...")
+        self.spanning_tree = detect_irreducible_edges(self.graph)
+
+        # Log statistics
+        if self.loop_analysis:
+            logger.debug(f"Found {len(self.loop_analysis.loops)} loops")
+        if self.spanning_tree:
+            irreducible = self.spanning_tree.get_irreducible_edges()
+            logger.debug(f"Found {len(irreducible)} irreducible edges")
+
     def _label_loops(self):
         """
         Label back edges and loop structure.
 
-        This identifies natural loops by finding back edges in the CFG.
+        If advanced analysis is available, uses dominator-based loop detection.
+        Otherwise falls back to simple DFS-based back edge detection.
         """
         if self.graph.entry_block is None:
             return
 
+        # If we have loop analysis, back edges are already labeled
+        if self.loop_analysis is not None:
+            logger.debug("Using loop analysis for back edge labeling")
+            # Back edges already labeled by loop analysis
+            return
+
+        # Fallback: Simple DFS-based back edge detection
+        logger.debug("Using DFS for back edge labeling (fallback)")
         visited = set()
         in_stack = set()
 
@@ -300,13 +347,33 @@ class CollapseStructure:
         """
         Handle irreducible control flow by inserting gotos.
 
-        Uses TraceDAG heuristic to identify the best edges to mark as gotos.
+        If spanning tree analysis is available, uses irreducible edges identified
+        by Tarjan's algorithm. Otherwise falls back to TraceDAG heuristic.
         """
         uncollapsed = self.graph.get_uncollapsed_blocks()
         if len(uncollapsed) <= 1:
             return
 
-        # Use TraceDAG to find goto edges
+        # First, check if we have pre-identified irreducible edges
+        if self.spanning_tree is not None:
+            irreducible_edges = self.spanning_tree.get_irreducible_edges()
+            if irreducible_edges:
+                logger.debug(f"Using {len(irreducible_edges)} pre-identified irreducible edges")
+                for source, target in irreducible_edges:
+                    # Find the edge and mark it
+                    for edge in source.out_edges:
+                        if edge.target == target:
+                            if edge.edge_type != EdgeType.IRREDUCIBLE:
+                                edge.edge_type = EdgeType.GOTO_EDGE
+                                self.gotos_inserted += 1
+                            break
+
+                # Try one more round of collapse
+                self._iterative_collapse()
+                return
+
+        # Fallback: Use TraceDAG heuristic to find goto edges
+        logger.debug("Using TraceDAG heuristic for goto selection")
         trace_dag = TraceDAG(self.graph)
         goto_edges = trace_dag.find_goto_edges()
 
@@ -321,11 +388,31 @@ class CollapseStructure:
 
     def get_statistics(self) -> Dict:
         """Get collapse statistics."""
-        return {
+        stats = {
             "iterations": self.iterations,
             "rules_applied": self.rules_applied.copy(),
             "gotos_inserted": self.gotos_inserted,
         }
+
+        # Add analysis statistics if available
+        if self.loop_analysis:
+            stats["loops_detected"] = len(self.loop_analysis.loops)
+        if self.spanning_tree:
+            stats["irreducible_edges"] = len(self.spanning_tree.get_irreducible_edges())
+
+        return stats
+
+    def get_dominator_analysis(self) -> Optional[DominatorAnalysis]:
+        """Get the dominator analysis, if computed."""
+        return self.dom_analysis
+
+    def get_loop_analysis(self) -> Optional[LoopAnalysis]:
+        """Get the loop analysis, if computed."""
+        return self.loop_analysis
+
+    def get_spanning_tree(self) -> Optional[SpanningTreeAnalysis]:
+        """Get the spanning tree analysis, if computed."""
+        return self.spanning_tree
 
 
 def collapse_function(graph: BlockGraph, switch_patterns=None) -> Optional[StructuredBlock]:
