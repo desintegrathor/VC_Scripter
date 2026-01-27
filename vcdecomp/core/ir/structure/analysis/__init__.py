@@ -48,6 +48,12 @@ from .irreducible import (
     detect_irreducible_edges,
 )
 
+from .loop_analysis import (
+    LoopBody,
+    LoopAnalysis,
+    analyze_loops,
+)
+
 __all__ = [
     # Flow analysis
     "_get_loop_for_block",
@@ -80,4 +86,8 @@ __all__ = [
     "SpanningTreeAnalysis",
     "SpanningEdgeType",
     "detect_irreducible_edges",
+    # Loop analysis
+    "LoopBody",
+    "LoopAnalysis",
+    "analyze_loops",
 ]
