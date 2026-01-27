@@ -824,3 +824,55 @@ class RuleBitUndistribute(SimplificationRule):
         self.apply_count += 1
         logger.debug(f"RuleBitUndistribute: (x{left_inst.mnemonic}a){inst.mnemonic}(x{right_inst.mnemonic}b) → factored")
         return None  # Requires multi-instruction support
+
+
+class RuleNotDistribute(SimplificationRule):
+    """
+    Apply DeMorgan's laws to distribute NOT over AND/OR.
+
+    Examples:
+        ~(a & b) → ~a | ~b
+        ~(a | b) → ~a & ~b
+
+    This is Ghidra's approach to boolean/bitwise simplification.
+
+    Reference: Ghidra ruleaction.cc, similar to DeMorgan transformation
+    """
+
+    def __init__(self):
+        super().__init__("RuleNotDistribute")
+        self.is_disabled = True  # May increase code complexity
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Must be BN (bitwise NOT)
+        if inst.mnemonic != "BN":
+            return False
+        if len(inst.inputs) != 1:
+            return False
+
+        # Input must be AND or OR
+        input_val = inst.inputs[0]
+        if not input_val.producer_inst:
+            return False
+
+        inner_inst = input_val.producer_inst
+        return inner_inst.mnemonic in ("BA", "BO") and len(inner_inst.inputs) == 2
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[SSAInstruction]:
+        # Get the inner operation: ~(a op b)
+        inner_inst = inst.inputs[0].producer_inst
+        a, b = inner_inst.inputs
+
+        # Determine the new operation
+        # ~(a & b) → ~a | ~b
+        # ~(a | b) → ~a & ~b
+        new_op = "BO" if inner_inst.mnemonic == "BA" else "BA"
+
+        # This requires creating NOT operations for both operands
+        # Requires multi-instruction transformation, which we'll skip for now
+
+        self.apply_count += 1
+        logger.debug(f"RuleNotDistribute: ~({inner_inst.mnemonic}) → {new_op} with NOTs")
+        return None  # Requires multi-instruction support

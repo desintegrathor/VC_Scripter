@@ -243,3 +243,4 @@ class RuleStrengthReduction(SimplificationRule):
         self.apply_count += 1
         logger.debug(f"RuleStrengthReduction: x / x → 1")
         return new_inst
+
