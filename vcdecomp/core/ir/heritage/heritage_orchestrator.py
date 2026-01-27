@@ -654,14 +654,13 @@ class HeritageOrchestrator:
             "RET", "JMP", "JZ", "JNZ",
             "LLD", "GLD", "DLD",  # Stores
             "SSP", "ASP",  # Stack manipulation
+            "CALL", "XCALL",  # External/internal calls are side-effecting
         }
 
         # Single pass: mark all unused values as dead
         for block_id, ssa_insts in self.ssa_func.instructions.items():
             for inst in ssa_insts:
                 if inst.mnemonic in side_effects:
-                    continue
-                if inst.mnemonic in {"CALL", "XCALL"} and inst.metadata.get("has_out_params"):
                     continue
 
                 # Check if all outputs are unused
