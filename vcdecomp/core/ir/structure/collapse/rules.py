@@ -377,12 +377,13 @@ class RuleBlockProperIf(CollapseRule):
             succ1.has_single_predecessor()):
             body = succ1
             merge = succ2
-            # True branch is body (index 0)
+            # True branch is body (index 0) - no negation needed
             negate_condition = False
         else:
             body = succ2
             merge = succ1
             # True branch is merge, so we need to negate condition
+            # In Ghidra terms: the "false" branch (index 1) goes to body
             negate_condition = True
 
         # Create if block
@@ -393,6 +394,10 @@ class RuleBlockProperIf(CollapseRule):
             true_block=body,
             false_block=None,  # No else
         )
+
+        # Apply condition negation if needed (Ghidra-style)
+        if negate_condition:
+            if_block.negate_condition()
 
         # Update covered blocks
         if_block.covered_blocks = block.covered_blocks | body.covered_blocks
@@ -615,16 +620,19 @@ class RuleBlockWhileDo(CollapseRule):
         # Find body and exit
         body_block = None
         exit_block = None
+        body_edge_index = -1
 
         for edge in block.in_edges:
             if edge.edge_type == EdgeType.BACK_EDGE:
                 body_block = edge.source
                 break
 
-        for edge in block.out_edges:
-            if edge.target != body_block and edge.target != block:
+        # Find which outgoing edge goes to body
+        for i, edge in enumerate(block.out_edges):
+            if edge.target == body_block:
+                body_edge_index = i
+            elif edge.target != block:
                 exit_block = edge.target
-                break
 
         if body_block is None or exit_block is None:
             return None
@@ -636,6 +644,12 @@ class RuleBlockWhileDo(CollapseRule):
             condition_block=block,
             body_block=body_block,
         )
+
+        # Ghidra: negate condition if body is on false branch (index 1)
+        # while (cond) { body } means cond should be true to enter body
+        # If bytecode has false branch going to body, we need to negate
+        if body_edge_index == 1:
+            while_block.negate_condition()
 
         # Update covered blocks
         while_block.covered_blocks = block.covered_blocks | body_block.covered_blocks
@@ -727,12 +741,14 @@ class RuleBlockDoWhile(CollapseRule):
         if cond is None:
             return None
 
-        # Find exit block
+        # Find exit block and back edge index
         exit_block = None
-        for edge in cond.out_edges:
-            if edge.target != block:
+        back_edge_index = -1
+        for i, edge in enumerate(cond.out_edges):
+            if edge.target == block and edge.edge_type == EdgeType.BACK_EDGE:
+                back_edge_index = i
+            elif edge.target != block:
                 exit_block = edge.target
-                break
 
         if exit_block is None:
             return None
@@ -744,6 +760,12 @@ class RuleBlockDoWhile(CollapseRule):
             body_block=block,
             condition_block=cond,
         )
+
+        # Ghidra: negate condition if back edge is on false branch (index 1)
+        # do { body } while (cond) means cond should be true to loop back
+        # If bytecode has false branch looping back, we need to negate
+        if back_edge_index == 1:
+            dowhile_block.negate_condition()
 
         # Update covered blocks
         dowhile_block.covered_blocks = block.covered_blocks | cond.covered_blocks
@@ -1230,7 +1252,8 @@ class RuleBlockIfNoExit(CollapseRule):
             return None
 
         # Determine if we need to negate condition
-        # If dead clause is on index 1 (false branch), negate condition
+        # If dead clause is on index 1 (false branch), we need to negate
+        # to make it the true branch for proper if-then syntax
         negate_condition = (dead_clause_idx == 1)
 
         # Create if block
@@ -1241,6 +1264,10 @@ class RuleBlockIfNoExit(CollapseRule):
             true_block=dead_clause,
             false_block=None,  # No else
         )
+
+        # Apply condition negation if needed (Ghidra-style)
+        if negate_condition:
+            if_block.negate_condition()
 
         # Update covered blocks
         if_block.covered_blocks = block.covered_blocks | dead_clause.covered_blocks
