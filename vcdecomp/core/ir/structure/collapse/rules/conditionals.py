@@ -18,6 +18,37 @@ from ...blocks.hierarchy import (
     BlockIf,
     BlockEdge,
 )
+from ....expr import ExpressionFormatter, format_block_expressions
+
+_SIDE_EFFECT_MNEMONICS = {"CALL", "XCALL", "STORE", "DCP", "ASGN"}
+
+
+def _get_expression_formatter(graph: BlockGraph) -> Optional[ExpressionFormatter]:
+    if graph.ssa_func is None:
+        return None
+    formatter = getattr(graph, "_expr_formatter", None)
+    if formatter is None:
+        formatter = ExpressionFormatter(graph.ssa_func)
+        setattr(graph, "_expr_formatter", formatter)
+    return formatter
+
+
+def _block_has_side_effect_expressions(graph: BlockGraph, block: Optional[StructuredBlock]) -> bool:
+    if graph.ssa_func is None or block is None:
+        return False
+    formatter = _get_expression_formatter(graph)
+    if formatter is None:
+        return False
+    for block_id in block.covered_blocks:
+        expressions = format_block_expressions(graph.ssa_func, block_id, formatter=formatter)
+        for expr in expressions:
+            if expr.mnemonic in _SIDE_EFFECT_MNEMONICS:
+                return True
+    return False
+
+
+def _if_has_side_effect_expressions(graph: BlockGraph, *blocks: Optional[StructuredBlock]) -> bool:
+    return any(_block_has_side_effect_expressions(graph, block) for block in blocks)
 
 
 class RuleBlockProperIf(CollapseRule):
@@ -64,6 +95,8 @@ class RuleBlockProperIf(CollapseRule):
             if succ1.get_single_successor() == succ2:
                 # Clause must not have unstructured gotos out
                 if not succ1.is_goto_out(0):
+                    if _if_has_side_effect_expressions(graph, block, succ1):
+                        return False
                     return True
 
         # Check if succ2 is body and succ1 is merge
@@ -73,6 +106,8 @@ class RuleBlockProperIf(CollapseRule):
             if succ2.get_single_successor() == succ1:
                 # Clause must not have unstructured gotos out
                 if not succ2.is_goto_out(0):
+                    if _if_has_side_effect_expressions(graph, block, succ2):
+                        return False
                     return True
 
         return False
@@ -246,6 +281,9 @@ class RuleBlockIfElse(CollapseRule):
         false_merge = false_branch.get_single_successor()
 
         if true_merge != false_merge:
+            return False
+
+        if _if_has_side_effect_expressions(graph, block, true_branch, false_branch):
             return False
 
         return True

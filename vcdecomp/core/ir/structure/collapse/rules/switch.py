@@ -7,7 +7,9 @@ fall-through cases.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Iterable
+import os
+import sys
 
 from .base import CollapseRule
 from ...blocks.hierarchy import (
@@ -20,6 +22,52 @@ from ...blocks.hierarchy import (
     BlockEdge,
     SwitchCase,
 )
+from ....expr import ExpressionFormatter, format_block_expressions
+
+SWITCH_EMPTY_DEBUG = os.environ.get("VCDECOMP_SWITCH_EMPTY_DEBUG", "0") == "1"
+
+
+def _switch_empty_debug(msg: str) -> None:
+    if SWITCH_EMPTY_DEBUG:
+        print(f"DEBUG SWITCH EMPTY: {msg}", file=sys.stderr)
+
+
+def _get_expression_formatter(graph: BlockGraph) -> Optional[ExpressionFormatter]:
+    if graph.ssa_func is None:
+        return None
+    formatter = getattr(graph, "_expr_formatter", None)
+    if formatter is None:
+        formatter = ExpressionFormatter(graph.ssa_func)
+        setattr(graph, "_expr_formatter", formatter)
+    return formatter
+
+
+def _block_ids_have_emitted_expressions(
+    graph: BlockGraph,
+    block_ids: Iterable[int],
+    formatter: Optional[ExpressionFormatter],
+    context: str,
+) -> bool:
+    if graph.ssa_func is None:
+        _switch_empty_debug(f"{context}: no SSA function available")
+        return False
+    if formatter is None:
+        _switch_empty_debug(f"{context}: no expression formatter available")
+        return False
+    ids = list(block_ids)
+    if not ids:
+        _switch_empty_debug(f"{context}: no block IDs to inspect")
+        return False
+    for block_id in ids:
+        expressions = format_block_expressions(graph.ssa_func, block_id, formatter=formatter)
+        for expr in expressions:
+            if expr.text.strip() and not expr.text.strip().startswith("goto "):
+                _switch_empty_debug(
+                    f"{context}: emitted expression found in block {block_id} ({expr.mnemonic})"
+                )
+                return True
+    _switch_empty_debug(f"{context}: no emitted expressions found")
+    return False
 
 
 class RuleBlockSwitch(CollapseRule):
@@ -128,6 +176,7 @@ class RuleBlockSwitch(CollapseRule):
         """
         Apply switch collapse using already-structured case bodies from graph.
         """
+        formatter = _get_expression_formatter(graph)
         # Get the CFG block ID
         cfg_block_id = None
         if isinstance(block, BlockBasic):
@@ -157,6 +206,16 @@ class RuleBlockSwitch(CollapseRule):
                 has_break = len(case_body.out_edges) > 0
 
             else:
+                if _block_ids_have_emitted_expressions(
+                    graph,
+                    [case_info.block_id],
+                    formatter,
+                    f"case {case_info.value}",
+                ):
+                    _switch_empty_debug(
+                        f"case {case_info.value}: body has emitted expressions; refusing to discard"
+                    )
+                    return None
                 case_body = None
                 has_break = case_info.has_break
 
@@ -189,6 +248,15 @@ class RuleBlockSwitch(CollapseRule):
                         if struct_block != block:
                             block_ids_to_remove.add(struct_block.block_id)
                         break
+
+            if default_body is None and _block_ids_have_emitted_expressions(
+                graph,
+                pattern.default_body_blocks,
+                formatter,
+                "default case",
+            ):
+                _switch_empty_debug("default case: body has emitted expressions; refusing to discard")
+                return None
 
             default_case = SwitchCase(
                 value=-1,
