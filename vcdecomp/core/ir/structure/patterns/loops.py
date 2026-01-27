@@ -31,8 +31,13 @@ def _condition_mentions_loop_var(
         loop_vars = {init_var} if init_var else set()
     else:
         loop_vars = {v for v in init_var if v}
-    if loop_vars and any(loop_var in condition_text for loop_var in loop_vars):
-        return True
+    if loop_vars:
+        import re
+        for loop_var in loop_vars:
+            if not loop_var:
+                continue
+            if re.search(rf'\b{re.escape(loop_var)}\b', condition_text):
+                return True
     if values:
         for value in values:
             value_name = value.alias or value.name
@@ -57,6 +62,8 @@ def _score_loop_var_name(name: Optional[str], preferred: Optional[Set[str]] = No
     score = 0
     if preferred and name in preferred:
         score += 6
+    if name in {"i", "j", "k", "n", "m", "idx", "index"}:
+        score += 5
     if name.startswith("local_"):
         score += 4
     if name.startswith("param_"):
@@ -210,6 +217,7 @@ def _detect_for_loop(
     init_var = None
     init_value = None
     init_candidates: List[Tuple[str, str, Optional[object]]] = []
+    init_ssa_map: Dict[str, Optional[object]] = {}
 
     def _maybe_store_init(var_name: Optional[str], value_text: str, ssa_value) -> None:
         if not var_name:
@@ -217,6 +225,7 @@ def _detect_for_loop(
         init_candidates.append((var_name, value_text, ssa_value))
 
     condition_candidates: Set[str] = set()
+    condition_values: List = []
 
     # Check predecessors for initialization pattern
     # Pattern 1: Direct assignment (inst has outputs)
@@ -264,6 +273,7 @@ def _detect_for_loop(
             if break_condition:
                 inverted_condition = _invert_condition_text(break_condition)
                 condition_candidates = _extract_condition_vars(inverted_condition, condition_render.values)
+                condition_values = condition_render.values or []
                 if _condition_mentions_loop_var(inverted_condition, condition_candidates, condition_render.values):
                     condition_text = inverted_condition
                     guard_block = loop.header
@@ -376,7 +386,6 @@ def _detect_for_loop(
                     init_value = formatter.render_value(inst.inputs[0])
                     _maybe_store_init(target_name, init_value, inst.inputs[1])
 
-    init_ssa_map: Dict[str, Optional[object]] = {}
     if init_candidates:
         def _init_candidate_score(item: Tuple[str, str, Optional[object]]) -> int:
             name, _, ssa_val = item
@@ -395,6 +404,16 @@ def _detect_for_loop(
     if not init_var:
         return None
 
+    init_ssa = init_ssa_map.get(init_var)
+    loop_equivalence_val = init_ssa
+    if init_ssa and condition_text and condition_values:
+        import re
+        for cond_val in condition_values:
+            if _check_ssa_value_equivalence(init_ssa, cond_val, ssa_func):
+                cond_name = _normalize_loop_var_name(cond_val.alias or cond_val.name)
+                if cond_name and cond_name != init_var:
+                    condition_text = re.sub(rf'\b{re.escape(cond_name)}\b', init_var, condition_text)
+
     # Step 3: Find increment at end of loop body
     # Look in blocks that jump back to header (back edges)
     # Pattern 1: Direct increment (inst has outputs with init_var name)
@@ -402,6 +421,8 @@ def _detect_for_loop(
     increment_text = None
     increment_var = init_var
     increment_ssa_val = None
+    increment_inputs: List = []
+    increment_candidate_inputs: List = []
     loop_vars = {init_var} | condition_candidates
     for back_edge in loop.back_edges:
         source_id = back_edge.source
@@ -423,6 +444,8 @@ def _detect_for_loop(
                         # Found assignment to loop variable
                         increment_var = var_name
                         increment_ssa_val = inst.outputs[0]
+                        increment_inputs = list(inst.inputs)
+                        increment_candidate_inputs = list(inst.inputs)
                         # Check if it's increment pattern: i = i + 1
                         if inst.mnemonic in {"IADD", "CADD", "SADD"}:
                             # Simple increment
@@ -433,22 +456,35 @@ def _detect_for_loop(
                             if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
                                 increment_text = f"{increment_var}++"
                             else:
-                                inc_value = inst.inputs[0]
-                                if inc_value and inc_value.producer_inst:
-                                    prod_inst = inc_value.producer_inst
-                                    if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
-                                        left, right = prod_inst.inputs[0], prod_inst.inputs[1]
-                                        other = None
-                                        if _check_ssa_value_equivalence(left, inst.outputs[0], ssa_func):
-                                            other = right
-                                        elif _check_ssa_value_equivalence(right, inst.outputs[0], ssa_func):
-                                            other = left
-                                        if other:
-                                            other_text = formatter.render_value(other)
-                                            if other_text in {"1", "1.0", "1.0f"}:
-                                                increment_text = f"{increment_var}++"
-                                                break
-                                increment_text = f"{increment_var} = {inc_expr}"
+                                import re
+                                simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                                if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                                    increment_text = f"{increment_var}++"
+                                else:
+                                    inc_value = inst.inputs[0]
+                                    if inc_value and inc_value.producer_inst:
+                                        increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                                        prod_inst = inc_value.producer_inst
+                                        if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                            left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                            other = None
+                                            if _check_ssa_value_equivalence(left, inst.outputs[0], ssa_func):
+                                                other = right
+                                            elif _check_ssa_value_equivalence(right, inst.outputs[0], ssa_func):
+                                                other = left
+                                            if other:
+                                                other_text = formatter.render_value(other)
+                                                if other_text in {"1", "1.0", "1.0f"}:
+                                                    increment_text = f"{increment_var}++"
+                                                    break
+                                    increment_text = f"{increment_var} = {inc_expr}"
+                        if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                            import re
+                            for inp in increment_candidate_inputs:
+                                if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                                    inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                                    if inp_name and inp_name != increment_var:
+                                        increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
                         break
                 # Pattern 2: ASGN instruction (inputs=[value, &target])
                 elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
@@ -463,6 +499,8 @@ def _detect_for_loop(
                     if matches_loop_var:
                         increment_var = target_name
                         increment_ssa_val = target
+                        increment_inputs = list(inst.inputs)
+                        increment_candidate_inputs = list(inst.inputs)
                         # Found assignment to loop variable
                         # Render the increment expression
                         inc_expr = formatter.render_value(inst.inputs[0])
@@ -470,22 +508,35 @@ def _detect_for_loop(
                         if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
                             increment_text = f"{increment_var}++"
                         else:
-                            inc_value = inst.inputs[0]
-                            if inc_value and inc_value.producer_inst:
-                                prod_inst = inc_value.producer_inst
-                                if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
-                                    left, right = prod_inst.inputs[0], prod_inst.inputs[1]
-                                    other = None
-                                    if _check_ssa_value_equivalence(left, target, ssa_func):
-                                        other = right
-                                    elif _check_ssa_value_equivalence(right, target, ssa_func):
-                                        other = left
-                                    if other:
-                                        other_text = formatter.render_value(other)
-                                        if other_text in {"1", "1.0", "1.0f"}:
-                                            increment_text = f"{increment_var}++"
-                                            break
-                            increment_text = f"{increment_var} = {inc_expr}"
+                            import re
+                            simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                            if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                                increment_text = f"{increment_var}++"
+                            else:
+                                inc_value = inst.inputs[0]
+                                if inc_value and inc_value.producer_inst:
+                                    increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                                    prod_inst = inc_value.producer_inst
+                                    if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                        left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                        other = None
+                                        if _check_ssa_value_equivalence(left, target, ssa_func):
+                                            other = right
+                                        elif _check_ssa_value_equivalence(right, target, ssa_func):
+                                            other = left
+                                        if other:
+                                            other_text = formatter.render_value(other)
+                                            if other_text in {"1", "1.0", "1.0f"}:
+                                                increment_text = f"{increment_var}++"
+                                                break
+                                increment_text = f"{increment_var} = {inc_expr}"
+                        if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                            import re
+                            for inp in increment_candidate_inputs:
+                                if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                                    inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                                    if inp_name and inp_name != increment_var:
+                                        increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
                         break
             if increment_text:
                 break
