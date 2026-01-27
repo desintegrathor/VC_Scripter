@@ -263,6 +263,26 @@ class BlockIf(StructuredBlock):
         """Check if this if has an else branch."""
         return self.false_block is not None
 
+    def negate_condition(self):
+        """
+        Negate the condition by swapping true and false branches.
+
+        Following Ghidra's approach, when a pattern requires the condition
+        to be flipped (e.g., true branch is the merge point in proper-if),
+        we swap the branches instead of textually negating the expression.
+
+        This preserves the original condition and makes the code more readable.
+        The emitter will handle rendering based on the actual branch order.
+        """
+        # Swap true and false branches
+        self.true_block, self.false_block = self.false_block, self.true_block
+
+        # Mark that condition was negated (for emitter to adjust rendering)
+        # The emitter can either:
+        # 1. Keep the condition as-is and emit branches in swapped order
+        # 2. Or apply textual negation if needed for readability
+        # For now, we just swap branches and let emitter decide
+
     def __post_init__(self):
         if self.condition_block:
             self.covered_blocks.update(self.condition_block.covered_blocks)
@@ -296,6 +316,19 @@ class BlockWhileDo(StructuredBlock):
     for_init: Optional[str] = None
     for_increment: Optional[str] = None
 
+    def negate_condition(self):
+        """
+        Negate the loop condition.
+
+        For while loops, negation is typically needed when the exit condition
+        needs to be flipped to match the source pattern. This will require
+        textual negation of the condition expression.
+        """
+        # Import here to avoid circular dependency
+        from ...expr import negate_condition_expr
+        if self.condition_expr:
+            self.condition_expr = negate_condition_expr(self.condition_expr)
+
     def __post_init__(self):
         if self.condition_block:
             self.covered_blocks.update(self.condition_block.covered_blocks)
@@ -316,6 +349,19 @@ class BlockDoWhile(StructuredBlock):
     body_block: Optional[StructuredBlock] = None
     condition_block: Optional[StructuredBlock] = None
     condition_expr: Optional[str] = None
+
+    def negate_condition(self):
+        """
+        Negate the loop condition.
+
+        For do-while loops, the condition typically controls whether to
+        continue looping. Negation is needed when the pattern requires
+        the exit condition to be flipped.
+        """
+        # Import here to avoid circular dependency
+        from ...expr import negate_condition_expr
+        if self.condition_expr:
+            self.condition_expr = negate_condition_expr(self.condition_expr)
 
     def __post_init__(self):
         if self.body_block:

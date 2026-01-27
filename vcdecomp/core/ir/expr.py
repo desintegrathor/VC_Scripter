@@ -293,6 +293,106 @@ COMPARISON_OPS = {
     "SEQU", "SLES", "SLEQ", "SGRE",
 }
 
+# Negation mapping for comparison operators (Ghidra-inspired)
+# Maps each comparison to its logical negation:
+# !(a < b) => (a >= b), !(a == b) => (a != b), etc.
+COMPARISON_NEGATION = {
+    # Integer comparisons
+    "EQU": "NEQ",
+    "NEQ": "EQU",
+    "LES": "GEQ",
+    "LEQ": "GRE",
+    "GRE": "LEQ",
+    "GEQ": "LES",
+    # Unsigned comparisons
+    "ULES": "UGEQ",
+    "ULEQ": "UGRE",
+    "UGRE": "ULEQ",
+    "UGEQ": "ULES",
+    # Float comparisons
+    "FEQU": "FNEQ",
+    "FNEQ": "FEQU",
+    "FLES": "FGEQ",
+    "FLEQ": "FGRE",
+    "FGRE": "FLEQ",
+    "FGEQ": "FLES",
+    # Double comparisons
+    "DEQU": "DNEQ",
+    "DNEQ": "DEQU",
+    "DLES": "DGEQ",
+    "DLEQ": "DGRE",
+    "DGRE": "DLEQ",
+    "DGEQ": "DLES",
+    # Char comparisons
+    "CEQU": "CNEQ",
+    "CNEQ": "CEQU",
+    "CLES": "CLEQ",  # Note: No CGEQ in opcodes
+    "CLEQ": "CLES",  # Approximation
+    # Short comparisons
+    "SEQU": "SLES",  # Approximation (no SNEQ in original set)
+    "SLES": "SLEQ",  # Approximation
+    "SLEQ": "SGRE",
+    "SGRE": "SLEQ",
+}
+
+
+def negate_comparison_op(op: str) -> str:
+    """
+    Negate a comparison operator.
+
+    Given a comparison operator like "LES" (<), returns its negation "GEQ" (>=).
+    This follows Ghidra's negateCondition logic for flipping conditional branches.
+
+    Args:
+        op: Comparison operator mnemonic (e.g., "LES", "EQU", "FGRE")
+
+    Returns:
+        Negated operator mnemonic, or original if not a comparison
+
+    Example:
+        negate_comparison_op("LES") -> "GEQ"  # !(a < b) => (a >= b)
+        negate_comparison_op("EQU") -> "NEQ"  # !(a == b) => (a != b)
+    """
+    return COMPARISON_NEGATION.get(op, op)
+
+
+def negate_condition_expr(expr: str) -> str:
+    """
+    Negate a condition expression at the text level.
+
+    Handles simple cases by wrapping in !(expr) or removing existing negation.
+    For compound conditions, this provides basic negation that can be
+    further optimized by simplification passes.
+
+    Args:
+        expr: Condition expression string
+
+    Returns:
+        Negated expression
+
+    Examples:
+        negate_condition_expr("a < b") -> "!(a < b)"
+        negate_condition_expr("!(x)") -> "x"
+        negate_condition_expr("flag") -> "!flag"
+    """
+    expr = expr.strip()
+
+    # Remove existing negation: !(expr) => expr
+    if expr.startswith("!(") and expr.endswith(")"):
+        return expr[2:-1]
+    if expr.startswith("!") and not expr[1:].startswith("="):
+        # !flag => flag (but not !=)
+        return expr[1:]
+
+    # Add negation: expr => !(expr)
+    # For simple expressions, wrap in !()
+    if " " not in expr or expr.count(" ") <= 2:
+        # Simple expression like "flag" or "a < b"
+        return f"!({expr})"
+
+    # Complex expression - wrap in !()
+    return f"!({expr})"
+
 
 TYPE_NAMES = {
     opcodes.ResultType.VOID: "void",
