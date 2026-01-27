@@ -724,7 +724,17 @@ class RuleHighOrderAnd(SimplificationRule):
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
-    ) -> Optional[SSAInstruction]:
+    ) -> Optional[List[SSAInstruction]]:
+        """
+        Apply high-order AND optimization using multi-instruction transformation.
+
+        Pattern: (x & 0xff00) >> 8 → (x >> 8) & 0xff
+
+        Returns:
+            List of instructions: [shift_op, and_op]
+        """
+        from ..ssa import SSAValue, SSAInstruction as SSAInst
+
         shift_amount_val = inst.inputs[1]
         shift_amount = get_constant_value(shift_amount_val, ssa_func)
 
@@ -738,12 +748,49 @@ class RuleHighOrderAnd(SimplificationRule):
         # Calculate new mask after shifting
         new_mask = (mask_val >> shift_amount) & 0xFFFFFFFF
 
-        # Build: (x >> shift) & new_mask
-        # This requires creating an intermediate shift operation
-        # For simplicity, we'll skip this optimization for now
-        # (requires multi-instruction transformation)
+        # Create intermediate value for shifted result
+        temp_val = SSAValue(
+            name=f"highorder_{inst.address}_shifted",
+            value_type=inst.outputs[0].value_type,
+            producer=inst.address - 1,  # Pseudo-address
+        )
 
-        return None
+        # Create shift instruction: temp = original_value >> shift_amount
+        shift_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic=inst.mnemonic,  # RS or RSA
+            address=inst.address - 1,  # Pseudo-address before target
+            inputs=[original_value, shift_amount_val],
+            outputs=[temp_val],
+            instruction=inst.instruction,
+        )
+
+        # Link temp_val to its producer
+        temp_val.producer_inst = shift_inst
+
+        # Create new mask constant
+        new_mask_val = create_constant_value(new_mask, inst.outputs[0].value_type, ssa_func)
+
+        # Create AND instruction: result = temp & new_mask
+        and_final = SSAInst(
+            block_id=inst.block_id,
+            mnemonic="BA",  # Bitwise AND
+            address=inst.address,
+            inputs=[temp_val, new_mask_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Update producer links for outputs
+        for output_val in and_final.outputs:
+            output_val.producer_inst = and_final
+
+        self.apply_count += 1
+        logger.debug(f"RuleHighOrderAnd: (x & 0x{mask_val:x}) >> {shift_amount} → (x >> {shift_amount}) & 0x{new_mask:x}")
+
+        # Return list: [shift, and]
+        return [shift_inst, and_final]
 
 
 class RuleBitUndistribute(SimplificationRule):
@@ -796,7 +843,18 @@ class RuleBitUndistribute(SimplificationRule):
 
     def apply(
         self, inst: SSAInstruction, ssa_func: SSAFunction
-    ) -> Optional[SSAInstruction]:
+    ) -> Optional[List[SSAInstruction]]:
+        """
+        Apply bit undistribution using multi-instruction transformation.
+
+        Pattern: (x & a) | (x & b) → x & (a | b)
+        Pattern: (x | a) & (x | b) → x | (a & b)
+
+        Returns:
+            List of instructions: [intermediate_op, final_result]
+        """
+        from ..ssa import SSAValue, SSAInstruction as SSAInst
+
         left_inst = inst.inputs[0].producer_inst
         right_inst = inst.inputs[1].producer_inst
 
@@ -817,10 +875,170 @@ class RuleBitUndistribute(SimplificationRule):
         left_unique = [v for k, v in left_ops.items() if k != common_name][0]
         right_unique = [v for k, v in right_ops.items() if k != common_name][0]
 
-        # Build: x & (a | b) or x | (a & b)
-        # This requires creating an intermediate operation
-        # For simplicity, we'll skip this for now (requires multi-instruction transformation)
+        # Determine intermediate operation
+        # Pattern: (x & a) | (x & b) → x & (a | b)
+        #   intermediate: a | b (use inner operation)
+        #   final: x & intermediate (use outer operation)
+        # Pattern: (x | a) & (x | b) → x | (a & b)
+        #   intermediate: a & b
+        #   final: x | intermediate
+        intermediate_op = left_inst.mnemonic  # BA or BO (inner op)
+        final_op = inst.mnemonic  # BO or BA (outer op)
+
+        # Create intermediate value: temp = a op1 b
+        temp_val = SSAValue(
+            name=f"bitundist_{inst.address}_temp",
+            value_type=inst.outputs[0].value_type,
+            producer=inst.address - 1,  # Pseudo-address
+        )
+
+        # Create intermediate instruction: temp = left_unique OP right_unique
+        intermediate_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic=intermediate_op,
+            address=inst.address - 1,  # Pseudo-address before target
+            inputs=[left_unique, right_unique],
+            outputs=[temp_val],
+            instruction=inst.instruction,
+        )
+
+        # Link temp_val to its producer
+        temp_val.producer_inst = intermediate_inst
+
+        # Create final instruction: result = common_val OP temp_val
+        final_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic=final_op,
+            address=inst.address,
+            inputs=[common_val, temp_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Update producer links for outputs
+        for output_val in final_inst.outputs:
+            output_val.producer_inst = final_inst
 
         self.apply_count += 1
-        logger.debug(f"RuleBitUndistribute: (x{left_inst.mnemonic}a){inst.mnemonic}(x{right_inst.mnemonic}b) → factored")
-        return None  # Requires multi-instruction support
+        logger.debug(f"RuleBitUndistribute: (x {intermediate_op} a) {final_op} (x {intermediate_op} b) → x {final_op} (a {intermediate_op} b)")
+
+        # Return list: [intermediate, final]
+        return [intermediate_inst, final_inst]
+
+
+class RuleNotDistribute(SimplificationRule):
+    """
+    Apply DeMorgan's laws to distribute NOT over AND/OR.
+
+    Examples:
+        ~(a & b) → ~a | ~b
+        ~(a | b) → ~a & ~b
+
+    This is Ghidra's approach to boolean/bitwise simplification.
+
+    Reference: Ghidra ruleaction.cc, similar to DeMorgan transformation
+    """
+
+    def __init__(self):
+        super().__init__("RuleNotDistribute")
+        self.is_disabled = True  # May increase code complexity (3 inst vs 2 inst)
+
+    def matches(self, inst: SSAInstruction, ssa_func: SSAFunction) -> bool:
+        # Must be BN (bitwise NOT)
+        if inst.mnemonic != "BN":
+            return False
+        if len(inst.inputs) != 1:
+            return False
+
+        # Input must be AND or OR
+        input_val = inst.inputs[0]
+        if not input_val.producer_inst:
+            return False
+
+        inner_inst = input_val.producer_inst
+        return inner_inst.mnemonic in ("BA", "BO") and len(inner_inst.inputs) == 2
+
+    def apply(
+        self, inst: SSAInstruction, ssa_func: SSAFunction
+    ) -> Optional[List[SSAInstruction]]:
+        """
+        Apply DeMorgan's laws using multi-instruction transformation.
+
+        Pattern: ~(a & b) → ~a | ~b
+        Pattern: ~(a | b) → ~a & ~b
+
+        Returns:
+            List of instructions: [not_a, not_b, final_op]
+        """
+        from ..ssa import SSAValue, SSAInstruction as SSAInst
+
+        # Get the inner operation: ~(a op b)
+        inner_inst = inst.inputs[0].producer_inst
+        a, b = inner_inst.inputs
+
+        # Determine the new operation
+        # ~(a & b) → ~a | ~b
+        # ~(a | b) → ~a & ~b
+        new_op = "BO" if inner_inst.mnemonic == "BA" else "BA"
+
+        # Create intermediate value for ~a
+        not_a_val = SSAValue(
+            name=f"demorgan_{inst.address}_not_a",
+            value_type=inst.outputs[0].value_type,
+            producer=inst.address - 2,  # Pseudo-address
+        )
+
+        # Create NOT instruction for a
+        not_a_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic="BN",  # Bitwise NOT
+            address=inst.address - 2,  # Pseudo-address
+            inputs=[a],
+            outputs=[not_a_val],
+            instruction=inst.instruction,
+        )
+
+        # Link not_a_val to its producer
+        not_a_val.producer_inst = not_a_inst
+
+        # Create intermediate value for ~b
+        not_b_val = SSAValue(
+            name=f"demorgan_{inst.address}_not_b",
+            value_type=inst.outputs[0].value_type,
+            producer=inst.address - 1,  # Pseudo-address
+        )
+
+        # Create NOT instruction for b
+        not_b_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic="BN",  # Bitwise NOT
+            address=inst.address - 1,  # Pseudo-address
+            inputs=[b],
+            outputs=[not_b_val],
+            instruction=inst.instruction,
+        )
+
+        # Link not_b_val to its producer
+        not_b_val.producer_inst = not_b_inst
+
+        # Create final instruction: result = not_a new_op not_b
+        final_inst = SSAInst(
+            block_id=inst.block_id,
+            mnemonic=new_op,
+            address=inst.address,
+            inputs=[not_a_val, not_b_val],
+            outputs=inst.outputs,
+            instruction=inst.instruction,
+            metadata=inst.metadata,
+        )
+
+        # Update producer links for outputs
+        for output_val in final_inst.outputs:
+            output_val.producer_inst = final_inst
+
+        self.apply_count += 1
+        logger.debug(f"RuleNotDistribute: ~({inner_inst.mnemonic}(a,b)) → {new_op}(~a, ~b)")
+
+        # Return list: [not_a, not_b, final]
+        return [not_a_inst, not_b_inst, final_inst]
