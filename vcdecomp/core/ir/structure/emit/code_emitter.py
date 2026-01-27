@@ -117,7 +117,9 @@ def _render_if_else_recursive(
     start_to_block: Dict[int, int],
     resolver: opcodes.OpcodeResolver,
     # FÁZE 1.3: Early return/break pattern detection
-    early_returns: Optional[Dict[int, tuple]] = None
+    early_returns: Optional[Dict[int, tuple]] = None,
+    func_loops: Optional[List] = None,
+    global_map: Optional[Dict[int, str]] = None
 ) -> List[str]:
     """
     Recursively render if/else with nested structures.
@@ -210,16 +212,33 @@ def _render_if_else_recursive(
         lines.append(f"{indent}if ({cond_text}) {{")
 
         # Render true body - iterate over ALL body blocks, not just target
-        for body_block_id in sorted(true_body, key=lambda b: cfg.blocks[b].start if b in cfg.blocks else b):
-            if body_block_id not in emitted_blocks:
-                true_block_lines = _format_block_lines(
-                    ssa_func, body_block_id, indent + "    ", formatter,
-                    block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                    early_returns
-                )
-                lines.extend(true_block_lines)
-                # Mark this body block as emitted
-                emitted_blocks.add(body_block_id)
+        if func_loops:
+            lines.extend(_render_blocks_with_loops(
+                sorted(true_body, key=lambda b: cfg.blocks[b].start if b in cfg.blocks else b),
+                indent + "    ",
+                ssa_func,
+                formatter,
+                cfg,
+                func_loops,
+                start_to_block,
+                resolver,
+                block_to_if,
+                visited_ifs,
+                emitted_blocks,
+                global_map,
+                early_returns
+            ))
+        else:
+            for body_block_id in sorted(true_body, key=lambda b: cfg.blocks[b].start if b in cfg.blocks else b):
+                if body_block_id not in emitted_blocks:
+                    true_block_lines = _format_block_lines(
+                        ssa_func, body_block_id, indent + "    ", formatter,
+                        block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                        early_returns
+                    )
+                    lines.extend(true_block_lines)
+                    # Mark this body block as emitted
+                    emitted_blocks.add(body_block_id)
 
         lines.append(f"{indent}}}")
 
@@ -312,35 +331,24 @@ def _render_if_else_recursive(
 
     # Render true branch (recursively)
     true_body_sorted = sorted(if_pattern.true_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
-    for body_block_id in true_body_sorted:
-        # FÁZE 1.1: Skip already emitted blocks
-        if body_block_id in emitted_blocks:
-            continue
-        body_block = cfg.blocks.get(body_block_id)
-        if body_block:
-            # Recursive call - will detect nested if/else
-            ssa_block = ssa_blocks.get(body_block_id, [])
-            if not _is_control_flow_only(ssa_block, resolver):
-                if SHOW_BLOCK_COMMENTS: lines.append(f"{indent}    // Block {body_block_id} @{body_block.start}")
-            lines.extend(_format_block_lines(
-                ssa_func, body_block_id, indent + "    ", formatter,
-                block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                early_returns
-            ))
-
-            # DEAD CODE ELIMINATION: Stop if block ends with return
-            if body_block.instructions:
-                last_instr = body_block.instructions[-1]
-                if resolver.is_return(last_instr.opcode):
-                    break  # Remaining blocks are unreachable
-
-    # Render false branch if exists
-    if if_pattern.false_body:
-        lines.append(f"{indent}}} else {{")
-
-        # Render false branch (recursively)
-        false_body_sorted = sorted(if_pattern.false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
-        for body_block_id in false_body_sorted:
+    if func_loops:
+        lines.extend(_render_blocks_with_loops(
+            true_body_sorted,
+            indent + "    ",
+            ssa_func,
+            formatter,
+            cfg,
+            func_loops,
+            start_to_block,
+            resolver,
+            block_to_if,
+            visited_ifs,
+            emitted_blocks,
+            global_map,
+            early_returns
+        ))
+    else:
+        for body_block_id in true_body_sorted:
             # FÁZE 1.1: Skip already emitted blocks
             if body_block_id in emitted_blocks:
                 continue
@@ -361,6 +369,51 @@ def _render_if_else_recursive(
                     last_instr = body_block.instructions[-1]
                     if resolver.is_return(last_instr.opcode):
                         break  # Remaining blocks are unreachable
+
+    # Render false branch if exists
+    if if_pattern.false_body:
+        lines.append(f"{indent}}} else {{")
+
+        # Render false branch (recursively)
+        false_body_sorted = sorted(if_pattern.false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+        if func_loops:
+            lines.extend(_render_blocks_with_loops(
+                false_body_sorted,
+                indent + "    ",
+                ssa_func,
+                formatter,
+                cfg,
+                func_loops,
+                start_to_block,
+                resolver,
+                block_to_if,
+                visited_ifs,
+                emitted_blocks,
+                global_map,
+                early_returns
+            ))
+        else:
+            for body_block_id in false_body_sorted:
+                # FÁZE 1.1: Skip already emitted blocks
+                if body_block_id in emitted_blocks:
+                    continue
+                body_block = cfg.blocks.get(body_block_id)
+                if body_block:
+                    # Recursive call - will detect nested if/else
+                    ssa_block = ssa_blocks.get(body_block_id, [])
+                    if not _is_control_flow_only(ssa_block, resolver):
+                        if SHOW_BLOCK_COMMENTS: lines.append(f"{indent}    // Block {body_block_id} @{body_block.start}")
+                    lines.extend(_format_block_lines(
+                        ssa_func, body_block_id, indent + "    ", formatter,
+                        block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                        early_returns
+                    ))
+
+                    # DEAD CODE ELIMINATION: Stop if block ends with return
+                    if body_block.instructions:
+                        last_instr = body_block.instructions[-1]
+                        if resolver.is_return(last_instr.opcode):
+                            break  # Remaining blocks are unreachable
 
     lines.append(f"{indent}}}")
 
@@ -566,7 +619,7 @@ def _render_blocks_with_loops(
                     skip_var = None
                     if for_info:
                         # Check if this block jumps back to header (back edge)
-                        if header_loop.header in loop_body_block.successors:
+                        if any(edge.source == loop_body_id for edge in header_loop.back_edges):
                             skip_var = for_info.var  # Skip increment for loop variable
 
                     if skip_var:
@@ -581,7 +634,8 @@ def _render_blocks_with_loops(
                         lines.extend(_format_block_lines(
                             ssa_func, loop_body_id, indent + "    ", formatter,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                            early_returns, guard_blocks
+                            early_returns, guard_blocks,
+                            func_loops=func_loops, global_map=global_map
                         ))
 
             # Close loop with appropriate syntax
@@ -612,7 +666,8 @@ def _render_blocks_with_loops(
                 lines.extend(_format_block_lines(
                     ssa_func, body_block_id, indent, formatter,
                     block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-                    early_returns, guard_blocks
+                    early_returns, guard_blocks,
+                    func_loops=func_loops, global_map=global_map
                 ))
 
             # DEAD CODE ELIMINATION: Check if block terminates execution

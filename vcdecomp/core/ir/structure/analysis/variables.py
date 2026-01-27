@@ -64,6 +64,20 @@ def result_type_to_c_type(result_type: opcodes.ResultType) -> Optional[str]:
     return c_type
 
 
+def _normalize_decl_type(type_name: Optional[str]) -> Optional[str]:
+    """Normalize SDK type strings for local variable declarations."""
+    if not type_name:
+        return type_name
+    compact = type_name.replace(" ", "")
+    if compact.upper() == "BOOL":
+        return "BOOL"
+    if compact.lower() == "c_vector3":
+        return "c_Vector3"
+    if compact.lower() == "c_vector3*":
+        return "c_Vector3*"
+    return type_name
+
+
 def _is_mul_add_pattern(inst) -> Tuple[bool, Optional[int], Optional[str], Optional[str]]:
     """
     Detect arr[i*width + j] pattern for multi-dimensional arrays.
@@ -1051,9 +1065,9 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 if hasattr(formatter, '_header_db') and formatter._header_db:
                     func_sig = formatter._header_db.get_function_signature(func_name)
                     if func_sig and func_sig.get('return_type'):
-                        return_type = func_sig['return_type']
+                        return_type = _normalize_decl_type(func_sig['return_type'])
                         # Only add if it's a meaningful type (not void/dword/int)
-                        if return_type and return_type not in ('void', 'dword', 'int', 'BOOL'):
+                        if return_type and return_type not in ('void', 'dword', 'int'):
                             # Store in return_type_vars if not already set
                             if var_name not in return_type_vars:
                                 return_type_vars[var_name] = return_type
@@ -1218,6 +1232,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # This allows proper type inference for things like ushort* from SC_Wtxt
     # Applied after other type inference but with medium priority - override defaults but not field_tracker
     for var_name, return_type in return_type_vars.items():
+        return_type = _normalize_decl_type(return_type)
         current_type = var_types.get(var_name, 'int')
         # Only override if current type is a generic default (int, dword)
         # Don't override high-confidence types from field_tracker
