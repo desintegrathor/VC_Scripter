@@ -325,6 +325,11 @@ When `--debug` is enabled, DEBUG lines (written to stderr) show internal analysi
 
 ## Common Development Tasks
 
+### Code Organization & Module Size
+- **Avoid large monolithic modules**: Keep individual Python modules under **1500 lines** for better maintainability
+- When a module grows too large, split it into smaller, focused modules with clear responsibilities
+- Prefer multiple small modules over one large file
+
 ### Adding New Opcode Support
 1. Update `vcdecomp/core/disasm/opcodes.py`
 2. Add handling in `vcdecomp/core/ir/stack_lifter.py`
