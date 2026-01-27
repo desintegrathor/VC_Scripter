@@ -3989,7 +3989,8 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                 # Output is never used - skip this instruction (dead code)
                 continue
 
-        should_emit = not inst.outputs or not all(
+        has_out_params = inst.metadata.get("has_out_params", False) if inst.mnemonic in {"CALL", "XCALL"} else False
+        should_emit = has_out_params or not inst.outputs or not all(
             formatter._can_inline(val) for val in inst.outputs
         )
         if not should_emit:

@@ -8,9 +8,34 @@ Provides fast access to:
 """
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
+
+
+def _is_out_param(type_str: str, name: str) -> bool:
+    """Detect out parameters from pointer types or explicit out names."""
+    type_normalized = type_str.replace(" ", "")
+    if "*" in type_normalized:
+        return True
+
+    name = name.strip()
+    if not name:
+        return False
+    name_lower = name.lower()
+    if name_lower == "out" or name_lower.startswith("out_"):
+        return True
+    if name_lower.startswith("out") and len(name) > 3 and name[3].isalpha():
+        return True
+    if name_lower.startswith("pout"):
+        return True
+    return False
+
+
+def _derive_out_params(parameters: List[Tuple[str, str]]) -> List[int]:
+    """Return parameter indices that look like out params."""
+    return [idx for idx, (param_type, param_name) in enumerate(parameters)
+            if _is_out_param(param_type or "", param_name or "")]
 
 
 @dataclass
@@ -19,22 +44,29 @@ class FunctionSignature:
     name: str
     return_type: str
     parameters: List[Tuple[str, str]]  # [(type, name), ...]
+    out_params: List[int] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         return {
             'name': self.name,
             'return_type': self.return_type,
-            'parameters': [{'type': t, 'name': n} for t, n in self.parameters]
+            'parameters': [{'type': t, 'name': n} for t, n in self.parameters],
+            'out_params': list(self.out_params),
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> 'FunctionSignature':
         """Create from dictionary (JSON deserialization)."""
+        parameters = [(p['type'], p['name']) for p in data['parameters']]
+        out_params = data.get('out_params')
+        if out_params is None:
+            out_params = _derive_out_params(parameters)
         return cls(
             name=data['name'],
             return_type=data['return_type'],
-            parameters=[(p['type'], p['name']) for p in data['parameters']]
+            parameters=parameters,
+            out_params=out_params
         )
 
 

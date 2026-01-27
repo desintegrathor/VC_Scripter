@@ -25,7 +25,7 @@ from ....core.disasm import opcodes
 from ..cfg import CFG, get_iterated_dominance_frontier, _compute_dominance_frontiers
 from ..ssa import (
     SSAFunction, SSAValue, SSAInstruction,
-    _propagate_types, _merge_result_types
+    _propagate_types, _merge_result_types, _annotate_call_out_params
 )
 from ..stack_lifter import (
     lift_function, lift_basic_block, LiftedInstruction, StackValue,
@@ -524,12 +524,14 @@ class HeritageOrchestrator:
 
             instructions[block_id] = ssa_block
 
-        return SSAFunction(
+        ssa_func = SSAFunction(
             cfg=self.cfg,
             values=values,
             instructions=instructions,
             scr=self.scr
         )
+        _annotate_call_out_params(ssa_func)
+        return ssa_func
 
     def _refine_ssa(self) -> None:
         """
@@ -649,7 +651,7 @@ class HeritageOrchestrator:
 
         # Side-effecting mnemonics that should not be eliminated
         side_effects = {
-            "XCALL", "CALL", "RET", "JMP", "JZ", "JNZ",
+            "RET", "JMP", "JZ", "JNZ",
             "LLD", "GLD", "DLD",  # Stores
             "SSP", "ASP",  # Stack manipulation
         }
@@ -658,6 +660,8 @@ class HeritageOrchestrator:
         for block_id, ssa_insts in self.ssa_func.instructions.items():
             for inst in ssa_insts:
                 if inst.mnemonic in side_effects:
+                    continue
+                if inst.mnemonic in {"CALL", "XCALL"} and inst.metadata.get("has_out_params"):
                     continue
 
                 # Check if all outputs are unused

@@ -14,7 +14,7 @@ import re
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,7 @@ class ParsedFunction:
     return_type: str
     parameters: List[Tuple[str, str]]  # [(type, name), ...]
     struct_params: Dict[int, str]  # {param_index: struct_type}
+    out_params: List[int] = field(default_factory=list)  # Parameter indices that are out/pointer
 
 
 class SCGlobalParser:
@@ -324,6 +325,7 @@ class SCGlobalParser:
             # Parse parameters
             parameters = []
             struct_params: Dict[int, str] = {}
+            out_params: List[int] = []
 
             if params_str and params_str != 'void':
                 param_list = params_str.split(',')
@@ -346,16 +348,40 @@ class SCGlobalParser:
                             struct_type = self._extract_struct_type(param_type)
                             if struct_type:
                                 struct_params[idx] = struct_type
+                        if self._is_out_param(full_type, param_name):
+                            out_params.append(idx)
                     else:
                         # Fallback parsing
                         parameters.append((param, ''))
+                        if self._is_out_param(param, ''):
+                            out_params.append(idx)
 
             self.functions[func_name] = ParsedFunction(
                 name=func_name,
                 return_type=return_type,
                 parameters=parameters,
-                struct_params=struct_params
+                struct_params=struct_params,
+                out_params=out_params
             )
+
+    @staticmethod
+    def _is_out_param(type_str: str, name: str) -> bool:
+        """Detect out parameters from pointer types or explicit out names."""
+        type_normalized = type_str.replace(" ", "")
+        if "*" in type_normalized:
+            return True
+
+        name = name.strip()
+        if not name:
+            return False
+        name_lower = name.lower()
+        if name_lower == "out" or name_lower.startswith("out_"):
+            return True
+        if name_lower.startswith("out") and len(name) > 3 and name[3].isalpha():
+            return True
+        if name_lower.startswith("pout"):
+            return True
+        return False
 
     def _extract_struct_type(self, type_str: str) -> Optional[str]:
         """Extract struct type name if the type is a known struct."""
