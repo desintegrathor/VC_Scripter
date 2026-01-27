@@ -262,6 +262,52 @@ BOOL_CONSTANTS: Dict[int, str] = {
     1: "TRUE",
 }
 
+# =============================================================================
+# Known SDK constants for formatting (contextual usage)
+# =============================================================================
+KNOWN_SDK_CONSTANTS_BY_VARIABLE: Dict[str, Dict[int, str]] = {
+    # Multiplayer end rule enum (SC_MP_ENDRULE_*)
+    "gEndRule": {
+        0: "SC_MP_ENDRULE_TIME",
+        1: "SC_MP_ENDRULE_FRAGS",
+        2: "SC_MP_ENDRULE_POINTS",
+    },
+    # Mission phase enum (MISSION_PHASE_*)
+    "gMission_phase": {
+        0: "MISSION_PHASE_NOACTIVE",
+        1: "MISSION_PHASE_INGAME",
+        2: "MISSION_PHASE_WIN_ATTACKERS",
+        3: "MISSION_PHASE_WIN_DEFENDERS",
+    },
+}
+
+
+def _strip_outer_parens(expr: str) -> str:
+    """Strip a single layer of outer parentheses from an expression."""
+    if not expr:
+        return expr
+    expr = expr.strip()
+    if expr.startswith("(") and expr.endswith(")"):
+        return expr[1:-1].strip()
+    return expr
+
+
+def get_known_constant_for_variable(variable_expr: str, value: int) -> Optional[str]:
+    """
+    Resolve known SDK constants based on variable context.
+
+    Args:
+        variable_expr: Rendered variable/expression name (e.g., "gEndRule")
+        value: Integer constant value
+
+    Returns:
+        Constant name if known, otherwise None.
+    """
+    if not variable_expr:
+        return None
+    normalized = _strip_outer_parens(variable_expr)
+    return KNOWN_SDK_CONSTANTS_BY_VARIABLE.get(normalized, {}).get(value)
+
 
 def load_constants_from_headers() -> None:
     """

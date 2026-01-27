@@ -19,6 +19,7 @@ from ..parenthesization import ExpressionContext, is_simple_expression
 from ...disasm import opcodes
 from ..type_inference import TypeInferenceEngine
 from ...headers.database import get_header_database
+from ...constants import get_known_constant_for_variable
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,10 @@ def _render_switch_case_value(
     switch: SwitchPattern,
     formatter: Optional[ExpressionFormatter]
 ) -> str:
+    if isinstance(case_value, int) and switch.test_var:
+        const_name = get_known_constant_for_variable(switch.test_var, case_value)
+        if const_name:
+            return const_name
     if isinstance(case_value, int) and switch.test_var == "info->message":
         const_name = _resolve_verified_sc_net_mes(case_value, formatter)
         if const_name:

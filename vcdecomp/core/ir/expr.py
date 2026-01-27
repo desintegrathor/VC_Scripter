@@ -15,7 +15,12 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Set, Tuple
 
 from ..disasm import opcodes
-from ..constants import get_constant_name, get_player_constant, FUNCTION_CONSTANT_CONTEXT
+from ..constants import (
+    get_constant_name,
+    get_player_constant,
+    get_known_constant_for_variable,
+    FUNCTION_CONSTANT_CONTEXT,
+)
 from ..structures import (
     get_struct_by_name, get_struct_by_size, get_verified_field_name,
     infer_struct_from_function, STRUCTURES_BY_SIZE
@@ -3126,6 +3131,10 @@ class ExpressionFormatter:
     def _is_parametric_alias(alias: str) -> bool:
         return alias.startswith("param_") or alias.startswith("info->")
 
+    def _resolve_known_constant_for_variable(self, variable_expr: str, value: int) -> Optional[str]:
+        """Resolve known SDK constants by variable name context."""
+        return get_known_constant_for_variable(variable_expr, value)
+
     def _inline_expression(
         self,
         value: SSAValue,
@@ -3226,6 +3235,18 @@ class ExpressionFormatter:
                         # Found it! Use array load instead of PHI alias
                         left_operand = self._recent_array_loads[search_addr]
                         break
+
+            if inst.mnemonic in COMPARISON_OPS:
+                left_const = self._get_constant_int(inst.inputs[0])
+                right_const = self._get_constant_int(inst.inputs[1])
+                if left_const is None and right_const is not None:
+                    const_name = self._resolve_known_constant_for_variable(left_operand, right_const)
+                    if const_name:
+                        right_operand = const_name
+                elif right_const is None and left_const is not None:
+                    const_name = self._resolve_known_constant_for_variable(right_operand, left_const)
+                    if const_name:
+                        left_operand = const_name
 
             # FIX 3: Smart parenthesization based on operator precedence and context
             # Check if left operand needs parens
