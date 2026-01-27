@@ -742,9 +742,13 @@ class HierarchicalCodeEmitter:
         # Emit condition block statements (before the if)
         if block.condition_block is not None:
             cond_lines = self._emit_block(block.condition_block, indent)
-            # Remove the last statement if it's a conditional jump (handled by if)
+            # Remove the last statement only if it looks like a control-flow stub
             if cond_lines:
-                lines.extend(cond_lines[:-1] if len(cond_lines) > 0 else [])
+                last_line = cond_lines[-1].strip()
+                if last_line.startswith("if ") or last_line.startswith("if(") or last_line.startswith("goto "):
+                    lines.extend(cond_lines[:-1])
+                else:
+                    lines.extend(cond_lines)
 
         # Emit if header
         lines.append(f"{indent}if ({condition}) {{")
