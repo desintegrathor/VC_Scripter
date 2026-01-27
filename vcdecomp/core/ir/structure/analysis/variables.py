@@ -14,7 +14,7 @@ import logging
 
 from ....disasm import opcodes
 from ...ssa import SSAFunction
-from ...structures import get_struct_by_name
+from ....structures import get_struct_by_name
 from ..utils.helpers import debug_print
 
 logger = logging.getLogger(__name__)
