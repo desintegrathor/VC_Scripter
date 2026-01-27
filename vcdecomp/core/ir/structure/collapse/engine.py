@@ -20,7 +20,14 @@ from ..blocks.hierarchy import (
     BlockGraph,
     BlockEdge,
 )
-from .rules import CollapseRule, DEFAULT_RULES, PRIMARY_RULES, SECONDARY_RULES, RuleBlockSwitch
+from .rules import (
+    CollapseRule,
+    DEFAULT_RULES,
+    PRIMARY_RULES,
+    SECONDARY_RULES,
+    RuleBlockSwitch,
+    RuleBlockOr,
+)
 from .trace_dag import TraceDAG
 from ..analysis.dominance import DominatorAnalysis, compute_dominators
 from ..analysis.loop_analysis import LoopAnalysis, analyze_loops
