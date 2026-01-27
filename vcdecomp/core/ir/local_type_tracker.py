@@ -42,6 +42,9 @@ class VariableUsageInfo:
     max_array_index: Optional[int] = None
     """Maximum constant index observed (for static array sizing)"""
 
+    array_dimensions: Optional[List[int]] = None
+    """Known multi-dimensional array sizes, if detected."""
+
     # Struct usage patterns
     is_struct: bool = False
     """Whether variable is used with struct field access: var.field"""
@@ -106,6 +109,7 @@ class VariableUsageInfo:
         """Mark as array of structs."""
         self.is_array = True
         self.is_struct_array = True
+        self.is_struct = True
         self.array_element_sizes.add(element_size)
         if struct_type:
             self.struct_type = struct_type
@@ -460,6 +464,27 @@ class LocalVariableTypeTracker:
 
         debug_print(f"DEBUG TypeTracker: Runtime field usage - {notation}")
 
+    def register_array_dimensions(self, var_name: str, dimensions: List[int], struct_type: Optional[str] = None):
+        """
+        Register confirmed multi-dimensional array sizes for a variable.
+
+        Args:
+            var_name: Variable name (e.g., "local_296")
+            dimensions: List of dimension sizes (e.g., [rows, cols])
+            struct_type: Optional element struct type (if array of structs)
+        """
+        if not dimensions:
+            return
+
+        info = self._get_or_create_info(var_name)
+        info.array_dimensions = list(dimensions)
+        info.is_array = True
+        if struct_type:
+            info.struct_type = struct_type
+            info.is_struct_array = True
+        info._record_evidence("array_dims")
+        info._recalculate_confidence()
+
     # =========================================================================
     # Finalization and Type Resolution
     # =========================================================================
@@ -519,6 +544,9 @@ class LocalVariableTypeTracker:
         if info.struct_type and info.confidence >= 0.8:
             if info.is_struct_array or info.is_array:
                 # Struct array
+                if info.array_dimensions and len(info.array_dimensions) > 1:
+                    dim_suffix = "".join(f"[{dim}]" for dim in info.array_dimensions)
+                    return f"{info.struct_type}{dim_suffix}"
                 size = self._estimate_array_size(info)
                 return f"{info.struct_type}[{size}]"
             # Plain struct
@@ -530,11 +558,17 @@ class LocalVariableTypeTracker:
         # Priority 1: Struct array (both array + struct patterns)
         if info.is_struct_array:
             struct_type = info.struct_type or "dword"
+            if info.array_dimensions and len(info.array_dimensions) > 1:
+                dim_suffix = "".join(f"[{dim}]" for dim in info.array_dimensions)
+                return f"{struct_type}{dim_suffix}"
             size = self._estimate_array_size(info)
             return f"{struct_type}[{size}]"
 
         # Priority 2: Plain array (no struct type)
         if info.is_array and not info.is_struct:
+            if info.array_dimensions and len(info.array_dimensions) > 1:
+                dim_suffix = "".join(f"[{dim}]" for dim in info.array_dimensions)
+                return f"dword{dim_suffix}"
             size = self._estimate_array_size(info)
             return f"dword[{size}]"
 

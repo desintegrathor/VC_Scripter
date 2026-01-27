@@ -14,6 +14,7 @@ import logging
 
 from ....disasm import opcodes
 from ...ssa import SSAFunction
+from ...structures import get_struct_by_name
 from ..utils.helpers import debug_print
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class ArrayDims:
     element_type: str  # Element type (int, float, struct name, etc.)
     element_size: int  # Size in bytes of each element
     confidence: float  # Confidence in the dimension calculation (0.0-1.0)
+    element_type_confidence: float  # Confidence in the element type (0.0-1.0)
 
 
 @dataclass
@@ -78,26 +80,38 @@ def _is_mul_add_pattern(inst) -> Tuple[bool, Optional[int], Optional[str], Optio
     if inst.mnemonic != "ADD" or len(inst.inputs) < 2:
         return (False, None, None, None)
 
+    def _extract_mul_stride(mul_inst):
+        if len(mul_inst.inputs) < 2:
+            return None, None
+        mul_left, mul_right = mul_inst.inputs[0], mul_inst.inputs[1]
+
+        stride = None
+        index_val = None
+        if hasattr(mul_right, 'constant_value') and mul_right.constant_value is not None:
+            stride = mul_right.constant_value
+            index_val = mul_left
+        elif mul_right.alias and mul_right.alias.isdigit():
+            stride = int(mul_right.alias)
+            index_val = mul_left
+        elif hasattr(mul_left, 'constant_value') and mul_left.constant_value is not None:
+            stride = mul_left.constant_value
+            index_val = mul_right
+        elif mul_left.alias and mul_left.alias.isdigit():
+            stride = int(mul_left.alias)
+            index_val = mul_right
+
+        return stride, index_val
+
     left = inst.inputs[0]
     right = inst.inputs[1]
 
-    # Check if left is MUL instruction
-    if left.producer_inst and left.producer_inst.mnemonic in {"MUL", "IMUL"}:
-        mul_inst = left.producer_inst
-        if len(mul_inst.inputs) >= 2:
-            mul_left = mul_inst.inputs[0]
-            mul_right = mul_inst.inputs[1]
-
-            # Extract stride (width) from MUL constant
-            stride = None
-            if hasattr(mul_right, 'constant_value') and mul_right.constant_value is not None:
-                stride = mul_right.constant_value
-            elif mul_right.alias and mul_right.alias.isdigit():
-                stride = int(mul_right.alias)
-
+    for mul_candidate, inner_candidate in ((left, right), (right, left)):
+        if mul_candidate.producer_inst and mul_candidate.producer_inst.mnemonic in {"MUL", "IMUL"}:
+            mul_inst = mul_candidate.producer_inst
+            stride, index_val = _extract_mul_stride(mul_inst)
             if stride:
-                outer_idx = mul_left.alias or mul_left.name
-                inner_idx = right.alias or right.name
+                outer_idx = index_val.alias or index_val.name
+                inner_idx = inner_candidate.alias or inner_candidate.name
                 return (True, stride, outer_idx, inner_idx)
 
     return (False, None, None, None)
@@ -124,6 +138,15 @@ def _detect_multidim_arrays(
         Dict mapping variable name to ArrayDims
     """
     multidim_arrays: Dict[str, ArrayDims] = {}
+    type_sizes = {
+        "char": 1,
+        "short": 2,
+        "int": 4,
+        "float": 4,
+        "double": 8,
+        "dword": 4,
+        "BOOL": 4,
+    }
 
     # Scan for multi-dimensional indexing patterns
     for block_id in func_block_ids:
@@ -155,10 +178,35 @@ def _detect_multidim_arrays(
 
                                 # Get element type and size
                                 struct_info = inferred_struct_types.get(base_var)
-                                element_type = struct_info.struct_type if struct_info else "int"
-                                element_size = 4  # Default for int/float/pointer
+                                element_type = "int"
+                                element_type_confidence = 0.4
+                                if struct_info:
+                                    element_type = struct_info.struct_type
+                                    element_type_confidence = struct_info.confidence
+
+                                opcode_type = None
+                                if inst.outputs:
+                                    opcode_type = result_type_to_c_type(inst.outputs[0].value_type)
+                                if not opcode_type:
+                                    for inp in inst.inputs:
+                                        if inp and inp.value_type != opcodes.ResultType.UNKNOWN:
+                                            opcode_type = result_type_to_c_type(inp.value_type)
+                                            if opcode_type:
+                                                break
+
+                                if opcode_type and (not struct_info or struct_info.confidence < 0.8):
+                                    element_type = opcode_type
+                                    element_type_confidence = max(element_type_confidence, 0.6)
+
+                                element_size = type_sizes.get(element_type, 4)
+                                if struct_info and struct_info.struct_type == element_type:
+                                    struct_def = get_struct_by_name(element_type)
+                                    if struct_def:
+                                        element_size = struct_def.size
 
                                 # Calculate inner dimension from stride
+                                if not element_size or stride % element_size != 0:
+                                    continue
                                 inner_dim = stride // element_size
 
                                 # Get outer dimension from loop bounds
@@ -184,7 +232,8 @@ def _detect_multidim_arrays(
                                         dimensions=[outer_dim, inner_dim],
                                         element_type=element_type,
                                         element_size=element_size,
-                                        confidence=confidence
+                                        confidence=confidence,
+                                        element_type_confidence=element_type_confidence
                                     )
                                     logger.info(f"Multi-dimensional array detected: {base_var}[{outer_dim}][{inner_dim}] (confidence={confidence:.2f})")
 
@@ -942,6 +991,14 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         inferred_struct_types,
         loop_bounds
     )
+    if type_tracker:
+        for var_name, array_info in multidim_arrays.items():
+            struct_type = None
+            if array_info.element_type_confidence >= 0.6 and (
+                array_info.element_type.startswith("s_") or array_info.element_type.startswith("c_")
+            ):
+                struct_type = array_info.element_type
+            type_tracker.register_array_dimensions(var_name, array_info.dimensions, struct_type=struct_type)
 
     # Process all instructions in function blocks
     for block_id in func_block_ids:
@@ -1202,6 +1259,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             dims = array_info.dimensions
             element_type = array_info.element_type
             confidence = array_info.confidence
+            element_type_confidence = array_info.element_type_confidence
 
             # Format declaration based on number of dimensions
             if len(dims) == 1:
@@ -1218,6 +1276,8 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # Add TODO comment for low confidence
             if confidence < 0.70:
                 decl += f" /* TODO: verify array size (confidence={confidence:.2f}) */"
+            if element_type_confidence < 0.60:
+                decl += f" /* TODO: verify element type (confidence={element_type_confidence:.2f}) */"
 
             declarations.append(decl)
 
