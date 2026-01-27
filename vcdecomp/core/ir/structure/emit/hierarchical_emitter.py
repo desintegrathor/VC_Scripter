@@ -33,6 +33,7 @@ from ..blocks.hierarchy import (
     SwitchCase,
 )
 from ..analysis.condition import render_condition
+from ....constants import get_known_constant_for_variable
 
 if TYPE_CHECKING:
     from .....disasm import opcodes
@@ -943,7 +944,12 @@ class HierarchicalCodeEmitter:
 
         # Emit cases
         for case in block.cases:
-            lines.append(f"{indent}case {case.value}:")
+            case_value = case.value
+            if isinstance(case_value, int) and block.test_var:
+                const_name = get_known_constant_for_variable(block.test_var, case_value)
+                if const_name:
+                    case_value = const_name
+            lines.append(f"{indent}case {case_value}:")
             # Prefer body_block_ids if available (contains ALL body blocks)
             # body_block is just the entry point and may not cover all body blocks
             if case.body_block_ids:
