@@ -57,6 +57,7 @@ class LoopBody:
     exits: List[Tuple[StructuredBlock, StructuredBlock]] = field(default_factory=list)
     depth: int = 0  # Nesting depth (0 = outermost)
     container: Optional['LoopBody'] = None  # Immediately containing loop
+    exitblock: Optional[StructuredBlock] = None  # Official exit block
 
     def add_tail(self, tail: StructuredBlock) -> None:
         """Add a tail block (has back edge to head)."""
@@ -70,6 +71,199 @@ class LoopBody:
     def is_exit_edge(self, source: StructuredBlock, target: StructuredBlock) -> bool:
         """Check if an edge exits the loop."""
         return (source.block_id in self.body) and (target.block_id not in self.body)
+
+    def order_tails(self) -> None:
+        """
+        Order tail blocks by preference.
+
+        Following Ghidra's orderTails(), this method reorders the tail list
+        so that a preferred tail (one that has an edge to the exitblock) is first.
+        This is used during collapse to prefer certain exit paths.
+
+        Corresponds to blockaction.cc:245.
+        """
+        if len(self.tails) <= 1:
+            return
+
+        if self.exitblock is None:
+            return
+
+        # Find a tail that has an edge to exitblock
+        pref_index = -1
+        for i, tail in enumerate(self.tails):
+            for edge in tail.out_edges:
+                if edge.target.block_id == self.exitblock.block_id:
+                    pref_index = i
+                    break
+            if pref_index >= 0:
+                break
+
+        # If found and not already first, swap to front
+        if pref_index > 0:
+            self.tails[0], self.tails[pref_index] = (
+                self.tails[pref_index],
+                self.tails[0]
+            )
+            logger.debug(f"Loop {self.head.block_id}: reordered tails, "
+                        f"preferred tail {self.tails[0].block_id} now first")
+
+    def extend_body(self, graph: 'BlockGraph') -> None:
+        """
+        Extend loop body to include blocks reachable only from head.
+
+        Following Ghidra's extend(), this method extends the loop body to
+        include any block that can be reached ONLY from the head without
+        hitting the exitblock. This captures blocks that are logically
+        part of the loop but weren't included in the initial body computation.
+
+        Algorithm:
+        1. For each block in body, check its successors
+        2. If a successor can only be reached via blocks in the body,
+           and it's not the exitblock, add it to the body
+
+        Corresponds to blockaction.cc:150.
+        """
+        if self.exitblock is None:
+            return
+
+        # Track how many in-edges each candidate has from body blocks
+        candidates: Dict[int, int] = {}  # block_id -> count of in-edges from body
+
+        # Scan all blocks in body
+        for block_id in list(self.body):  # Copy to avoid modification during iteration
+            block = graph.blocks.get(block_id)
+            if block is None:
+                continue
+
+            # Check each successor
+            for edge in block.out_edges:
+                target = edge.target
+
+                # Skip if already in body
+                if target.block_id in self.body:
+                    continue
+
+                # Skip exitblock
+                if target.block_id == self.exitblock.block_id:
+                    continue
+
+                # Skip goto edges
+                if edge.edge_type == EdgeType.GOTO_EDGE:
+                    continue
+
+                # Count how many in-edges this target has from body
+                if target.block_id not in candidates:
+                    candidates[target.block_id] = 0
+                candidates[target.block_id] += 1
+
+        # Add candidates that have all their in-edges from body
+        extended_count = 0
+        for block_id, in_count in candidates.items():
+            block = graph.blocks.get(block_id)
+            if block is None:
+                continue
+
+            # Count total incoming edges (excluding gotos)
+            total_in = sum(1 for e in block.in_edges
+                          if e.edge_type != EdgeType.GOTO_EDGE)
+
+            # If all non-goto in-edges are from body, add to body
+            if total_in > 0 and in_count == total_in:
+                self.body.add(block_id)
+                extended_count += 1
+
+        if extended_count > 0:
+            logger.debug(f"Loop {self.head.block_id}: extended body by {extended_count} blocks")
+
+    def find_exit_block(self, graph: 'BlockGraph') -> None:
+        """
+        Find the official exit block for this loop.
+
+        Following Ghidra's findExit(), this method identifies a single
+        "official" exit block for the loop. Preference order:
+        1. Exit from a tail block
+        2. Exit from the head block
+        3. Exit from a middle block
+
+        If there's a containing loop, the exit must be within that container.
+
+        Corresponds to blockaction.cc:182.
+        """
+        trial_exits: List[StructuredBlock] = []
+
+        # First, check exits from tails
+        for tail in self.tails:
+            for edge in tail.out_edges:
+                target = edge.target
+
+                # Skip goto edges
+                if edge.edge_type == EdgeType.GOTO_EDGE:
+                    continue
+
+                # Check if this exits the loop
+                if target.block_id not in self.body:
+                    # If no container, use first exit found
+                    if self.container is None:
+                        self.exitblock = target
+                        logger.debug(f"Loop {self.head.block_id}: exit from tail -> {target.block_id}")
+                        return
+
+                    # Otherwise add to trials
+                    if target not in trial_exits:
+                        trial_exits.append(target)
+
+        # Next, check exits from head
+        for edge in self.head.out_edges:
+            target = edge.target
+
+            if edge.edge_type == EdgeType.GOTO_EDGE:
+                continue
+
+            if target.block_id not in self.body:
+                if self.container is None:
+                    self.exitblock = target
+                    logger.debug(f"Loop {self.head.block_id}: exit from head -> {target.block_id}")
+                    return
+
+                if target not in trial_exits:
+                    trial_exits.append(target)
+
+        # Finally, check exits from middle blocks
+        for block_id in self.body:
+            if block_id == self.head.block_id:
+                continue
+            if any(tail.block_id == block_id for tail in self.tails):
+                continue
+
+            block = graph.blocks.get(block_id)
+            if block is None:
+                continue
+
+            for edge in block.out_edges:
+                target = edge.target
+
+                if edge.edge_type == EdgeType.GOTO_EDGE:
+                    continue
+
+                if target.block_id not in self.body:
+                    if self.container is None:
+                        self.exitblock = target
+                        logger.debug(f"Loop {self.head.block_id}: exit from middle -> {target.block_id}")
+                        return
+
+                    if target not in trial_exits:
+                        trial_exits.append(target)
+
+        # If we have a container, choose exit that's within container
+        if self.container and trial_exits:
+            for trial in trial_exits:
+                if trial.block_id in self.container.body:
+                    self.exitblock = trial
+                    logger.debug(f"Loop {self.head.block_id}: exit within container -> {trial.block_id}")
+                    return
+
+        # Default: no exit found
+        self.exitblock = None
 
 
 class LoopAnalysis:
@@ -104,6 +298,10 @@ class LoopAnalysis:
         self._compute_loop_bodies()
         self._identify_exits()
         self._compute_nesting()
+
+        # Apply Ghidra-style loop refinements
+        self._refine_loops()
+
         self._sort_by_depth()
         return self.loops
 
@@ -265,6 +463,29 @@ class LoopAnalysis:
     def _sort_by_depth(self) -> None:
         """Sort loops by depth (innermost first)."""
         self.loops.sort(key=lambda l: l.depth, reverse=True)
+
+    def _refine_loops(self) -> None:
+        """
+        Apply Ghidra-style loop refinements.
+
+        Following Ghidra's loop analysis pipeline, this applies:
+        1. find_exit_block() - Identify official exit block
+        2. extend_body() - Extend body to blocks reachable only from head
+        3. order_tails() - Reorder tails to prefer exit to exitblock
+
+        These refinements improve loop structure quality and exit handling.
+        Corresponds to Ghidra's blockaction.cc loop processing.
+        """
+        for loop in self.loops:
+            # First find the official exit block
+            loop.find_exit_block(self.graph)
+
+            # Then extend the body if we have an exit
+            if loop.exitblock:
+                loop.extend_body(self.graph)
+
+            # Finally order tails by preference
+            loop.order_tails()
 
     def get_loop_for_block(self, block: StructuredBlock) -> Optional[LoopBody]:
         """
