@@ -17,7 +17,7 @@ from .rules import (
     DEFAULT_RULES,
 )
 from .engine import CollapseStructure, collapse_function
-from .trace_dag import TraceDAG, BlockTrace, BranchPoint
+from .trace_dag import TraceDAG, BlockTrace, BranchPoint, BadEdgeScore
 
 __all__ = [
     "CollapseRule",
@@ -34,4 +34,5 @@ __all__ = [
     "TraceDAG",
     "BlockTrace",
     "BranchPoint",
+    "BadEdgeScore",
 ]

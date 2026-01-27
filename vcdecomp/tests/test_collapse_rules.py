@@ -1,5 +1,5 @@
 """
-Tests for the collapse rules module.
+Tests for the collapse rules module and TraceDAG algorithm.
 """
 
 import pytest
@@ -18,6 +18,12 @@ from vcdecomp.core.ir.structure.collapse.rules import (
     RuleBlockProperIf,
     RuleBlockIfElse,
     DEFAULT_RULES,
+)
+from vcdecomp.core.ir.structure.collapse.trace_dag import (
+    TraceDAG,
+    BranchPoint,
+    BlockTrace,
+    BadEdgeScore,
 )
 
 
@@ -238,3 +244,197 @@ class TestDefaultRules:
         for rule in DEFAULT_RULES:
             assert rule.name
             assert isinstance(rule.name, str)
+
+
+class TestBranchPoint:
+    """Test the BranchPoint class."""
+
+    def test_mark_path_toggles_marks(self):
+        """Test that mark_path toggles marks from BP to root."""
+        # Create a hierarchy: root -> bp1 -> bp2
+        root = BranchPoint(top=None, depth=0)
+        bp1 = BranchPoint(top=None, parent=root, depth=1)
+        bp2 = BranchPoint(top=None, parent=bp1, depth=2)
+
+        # Initially all unmarked
+        assert not root.is_marked
+        assert not bp1.is_marked
+        assert not bp2.is_marked
+
+        # Mark path from bp2
+        bp2.mark_path()
+        assert root.is_marked
+        assert bp1.is_marked
+        assert bp2.is_marked
+
+        # Mark again to unmark
+        bp2.mark_path()
+        assert not root.is_marked
+        assert not bp1.is_marked
+        assert not bp2.is_marked
+
+    def test_distance_same_bp(self):
+        """Test distance to self is 0."""
+        bp = BranchPoint(top=None, depth=0)
+        bp.mark_path()
+        assert bp.distance(bp) == 0
+        bp.mark_path()
+
+    def test_distance_parent_child(self):
+        """Test distance between parent and child."""
+        root = BranchPoint(top=None, depth=0)
+        bp1 = BranchPoint(top=None, parent=root, depth=1)
+        bp2 = BranchPoint(top=None, parent=bp1, depth=2)
+
+        # Distance from bp2 to root
+        bp2.mark_path()
+        assert bp2.distance(root) == 2  # bp2 -> bp1 -> root
+        bp2.mark_path()
+
+        # Distance from bp1 to root
+        bp1.mark_path()
+        assert bp1.distance(root) == 1
+        bp1.mark_path()
+
+    def test_distance_siblings(self):
+        """Test distance between siblings."""
+        root = BranchPoint(top=None, depth=0)
+        bp1 = BranchPoint(top=None, parent=root, depth=1)
+        bp2 = BranchPoint(top=None, parent=root, depth=1)
+
+        # Distance between siblings (LCA is root)
+        bp1.mark_path()
+        assert bp1.distance(bp2) == 2  # bp1 -> root -> bp2
+        bp1.mark_path()
+
+
+class TestBlockTrace:
+    """Test the BlockTrace class."""
+
+    def test_identity_equality(self):
+        """Test that BlockTrace uses identity for equality."""
+        bp = BranchPoint(top=None, depth=0)
+        trace1 = BlockTrace(top=bp, pathout=0)
+        trace2 = BlockTrace(top=bp, pathout=0)
+
+        # Same attributes but different identity
+        assert trace1 != trace2
+        assert trace1 == trace1
+
+
+class TestBadEdgeScore:
+    """Test the BadEdgeScore class."""
+
+    def test_sorting_by_exit_block(self):
+        """Test that scores sort by exit block first."""
+        graph = create_test_graph()
+        block1 = add_block_to_graph(graph, 1)
+        block2 = add_block_to_graph(graph, 2)
+
+        bp = BranchPoint(top=None, depth=0)
+        trace1 = BlockTrace(top=bp, pathout=0)
+        trace2 = BlockTrace(top=bp, pathout=1)
+
+        score1 = BadEdgeScore(trace=trace1, exitproto=block2)
+        score2 = BadEdgeScore(trace=trace2, exitproto=block1)
+
+        # block1.block_id < block2.block_id, so score2 should be less
+        assert score2 < score1
+
+    def test_compare_final_sibling_edge(self):
+        """Test that more sibling edges = less likely to be bad."""
+        graph = create_test_graph()
+        block1 = add_block_to_graph(graph, 1)
+
+        bp = BranchPoint(top=None, depth=0)
+        trace1 = BlockTrace(top=bp, pathout=0)
+        trace2 = BlockTrace(top=bp, pathout=1)
+
+        score1 = BadEdgeScore(trace=trace1, exitproto=block1, siblingedge=0)
+        score2 = BadEdgeScore(trace=trace2, exitproto=block1, siblingedge=2)
+
+        # More sibling edges = less likely to be bad
+        # compare_final returns True if self is LESS likely bad
+        assert score2.compare_final(score1)  # score2 (2 siblings) is less bad
+        assert not score1.compare_final(score2)  # score1 (0 siblings) is more bad
+
+    def test_compare_final_terminal(self):
+        """Test terminal vs non-terminal edge comparison."""
+        graph = create_test_graph()
+        block1 = add_block_to_graph(graph, 1)
+
+        bp = BranchPoint(top=None, depth=0)
+        trace1 = BlockTrace(top=bp, pathout=0)
+        trace2 = BlockTrace(top=bp, pathout=1)
+
+        score1 = BadEdgeScore(trace=trace1, exitproto=block1, terminal=0)
+        score2 = BadEdgeScore(trace=trace2, exitproto=block1, terminal=1)
+
+        # Per Ghidra: non-terminal (terminal=0) is LESS likely to be the bad edge
+        # because switches frequently exit to terminal nodes (return blocks)
+        assert score1.compare_final(score2)  # score1 (non-terminal) is less bad
+        assert not score2.compare_final(score1)  # score2 (terminal) is more bad
+
+
+class TestTraceDAG:
+    """Test the TraceDAG algorithm."""
+
+    def test_empty_graph(self):
+        """Test TraceDAG on empty graph."""
+        graph = create_test_graph()
+        trace_dag = TraceDAG(graph)
+        result = trace_dag.find_goto_edges()
+        assert result == []
+
+    def test_linear_sequence(self):
+        """Test TraceDAG on linear sequence (no gotos needed)."""
+        graph = create_test_graph()
+        block1 = add_block_to_graph(graph, 1)
+        block2 = add_block_to_graph(graph, 2)
+        block3 = add_block_to_graph(graph, 3)
+
+        add_edge(block1, block2)
+        add_edge(block2, block3)
+        graph.entry_block = block1
+
+        trace_dag = TraceDAG(graph)
+        result = trace_dag.find_goto_edges()
+        assert result == []
+
+    def test_diamond_pattern(self):
+        """Test TraceDAG on diamond pattern (if-else, no gotos needed)."""
+        graph = create_test_graph()
+        entry = add_block_to_graph(graph, 1)
+        true_branch = add_block_to_graph(graph, 2)
+        false_branch = add_block_to_graph(graph, 3)
+        merge = add_block_to_graph(graph, 4)
+
+        add_edge(entry, true_branch)
+        add_edge(entry, false_branch)
+        add_edge(true_branch, merge)
+        add_edge(false_branch, merge)
+        graph.entry_block = entry
+
+        trace_dag = TraceDAG(graph)
+        result = trace_dag.find_goto_edges()
+        # Diamond pattern is structurable - no gotos needed
+        assert result == []
+
+    def test_irreducible_pattern(self):
+        """Test TraceDAG on irreducible control flow."""
+        graph = create_test_graph()
+        block1 = add_block_to_graph(graph, 1)
+        block2 = add_block_to_graph(graph, 2)
+        block3 = add_block_to_graph(graph, 3)
+
+        # Create irreducible pattern: 1->2, 1->3, 2->3, 3->2
+        add_edge(block1, block2)
+        add_edge(block1, block3)
+        add_edge(block2, block3)
+        add_edge(block3, block2)
+        graph.entry_block = block1
+
+        trace_dag = TraceDAG(graph)
+        result = trace_dag.find_goto_edges()
+        # Should identify at least one goto edge
+        assert len(result) >= 1
