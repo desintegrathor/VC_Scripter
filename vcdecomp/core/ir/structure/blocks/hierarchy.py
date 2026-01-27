@@ -263,6 +263,7 @@ class BlockIf(StructuredBlock):
     condition_expr: Optional[str] = None
     true_block: Optional[StructuredBlock] = None
     false_block: Optional[StructuredBlock] = None  # None for if-then (no else)
+    condition_negated: bool = False  # Track if negate_condition() was called
 
     def has_else(self) -> bool:
         """Check if this if has an else branch."""
@@ -270,23 +271,24 @@ class BlockIf(StructuredBlock):
 
     def negate_condition(self):
         """
-        Negate the condition by swapping true and false branches.
+        Mark that the condition needs textual negation when rendered.
 
-        Following Ghidra's approach, when a pattern requires the condition
-        to be flipped (e.g., true branch is the merge point in proper-if),
-        we swap the branches instead of textually negating the expression.
+        This is called when the pattern detection determines that the CFG
+        branches don't match the desired if-then(-else) semantics. Rather than
+        swapping branches (which doesn't work for if-then without else), we
+        track that the condition text needs to be negated.
 
-        This preserves the original condition and makes the code more readable.
-        The emitter will handle rendering based on the actual branch order.
+        The emitter will use condition_negated to determine whether to apply
+        textual negation (e.g., "!cond" vs "cond") to match the branch layout.
+
+        NOTE: This method NO LONGER swaps branches. The collapse rules are
+        responsible for assigning true_block/false_block correctly before
+        calling this. This method only affects condition rendering.
+
+        Toggle behavior: if called twice, it cancels out.
         """
-        # Swap true and false branches
-        self.true_block, self.false_block = self.false_block, self.true_block
-
-        # Mark that condition was negated (for emitter to adjust rendering)
-        # The emitter can either:
-        # 1. Keep the condition as-is and emit branches in swapped order
-        # 2. Or apply textual negation if needed for readability
-        # For now, we just swap branches and let emitter decide
+        # Toggle the negation flag - if called twice, it cancels out
+        self.condition_negated = not self.condition_negated
 
     def __post_init__(self):
         if self.condition_block:
@@ -661,21 +663,57 @@ class BlockGraph:
             graph.blocks[basic.block_id] = basic
             graph.cfg_to_struct[block_id] = basic
 
-        # Create edges
+        # Create edges with deterministic ordering
+        # For conditional jumps: index 0 = jump target (taken), index 1 = fallthrough
+        # This matches the JZ/JNZ semantics where index 0 is "false path" for JZ
         for block_id, cfg_block in cfg.blocks.items():
             source = graph.cfg_to_struct[block_id]
-            for succ_id in cfg_block.successors:
-                if succ_id in graph.cfg_to_struct:
-                    target = graph.cfg_to_struct[succ_id]
 
-                    # Determine edge type
-                    edge_type = EdgeType.NORMAL
-                    if succ_id in getattr(cfg_block, 'back_edge_targets', set()):
-                        edge_type = EdgeType.BACK_EDGE
+            # Determine edge ordering based on instruction type
+            if cfg_block.instructions:
+                last_instr = cfg_block.instructions[-1]
+                jump_target = last_instr.arg1  # For conditional jumps, this is the target address
+                fallthrough_addr = last_instr.address + 1
 
-                    edge = BlockEdge(source=source, target=target, edge_type=edge_type)
-                    source.out_edges.append(edge)
-                    target.in_edges.append(edge)
+                # Order successors: jump target first, then fallthrough
+                ordered_succs = []
+                jump_succ = None
+                fallthrough_succ = None
+
+                for succ_id in cfg_block.successors:
+                    if succ_id not in graph.cfg_to_struct:
+                        continue
+                    succ_block = cfg.blocks.get(succ_id)
+                    if succ_block and succ_block.start == jump_target:
+                        jump_succ = succ_id
+                    elif succ_block and succ_block.start == fallthrough_addr:
+                        fallthrough_succ = succ_id
+                    else:
+                        # Unknown ordering - add at end
+                        ordered_succs.append(succ_id)
+
+                # Build ordered list: jump target first (index 0), fallthrough second (index 1)
+                if jump_succ is not None:
+                    ordered_succs.insert(0, jump_succ)
+                if fallthrough_succ is not None:
+                    # Insert after jump_succ if present, otherwise at position 0
+                    insert_pos = 1 if jump_succ is not None else 0
+                    ordered_succs.insert(insert_pos, fallthrough_succ)
+            else:
+                # No instructions - just use whatever order
+                ordered_succs = [s for s in cfg_block.successors if s in graph.cfg_to_struct]
+
+            for succ_id in ordered_succs:
+                target = graph.cfg_to_struct[succ_id]
+
+                # Determine edge type
+                edge_type = EdgeType.NORMAL
+                if succ_id in getattr(cfg_block, 'back_edge_targets', set()):
+                    edge_type = EdgeType.BACK_EDGE
+
+                edge = BlockEdge(source=source, target=target, edge_type=edge_type)
+                source.out_edges.append(edge)
+                target.in_edges.append(edge)
 
         # Set entry block
         if cfg.entry_block in graph.cfg_to_struct:
@@ -718,26 +756,59 @@ class BlockGraph:
             graph.blocks[basic.block_id] = basic
             graph.cfg_to_struct[block_id] = basic
 
-        # Create edges only between blocks in the subset
+        # Create edges with deterministic ordering (only between blocks in the subset)
+        # For conditional jumps: index 0 = jump target (taken), index 1 = fallthrough
         for block_id in block_ids:
             if block_id not in cfg.blocks:
                 continue
             cfg_block = cfg.blocks[block_id]
             source = graph.cfg_to_struct[block_id]
 
-            for succ_id in cfg_block.successors:
-                # Only create edge if successor is in our subset
-                if succ_id in graph.cfg_to_struct:
-                    target = graph.cfg_to_struct[succ_id]
+            # Determine edge ordering based on instruction type
+            if cfg_block.instructions:
+                last_instr = cfg_block.instructions[-1]
+                jump_target = last_instr.arg1  # For conditional jumps, this is the target address
+                fallthrough_addr = last_instr.address + 1
 
-                    # Determine edge type
-                    edge_type = EdgeType.NORMAL
-                    if succ_id in getattr(cfg_block, 'back_edge_targets', set()):
-                        edge_type = EdgeType.BACK_EDGE
+                # Order successors: jump target first, then fallthrough
+                ordered_succs = []
+                jump_succ = None
+                fallthrough_succ = None
 
-                    edge = BlockEdge(source=source, target=target, edge_type=edge_type)
-                    source.out_edges.append(edge)
-                    target.in_edges.append(edge)
+                for succ_id in cfg_block.successors:
+                    # Only consider successors in our subset
+                    if succ_id not in graph.cfg_to_struct:
+                        continue
+                    succ_block = cfg.blocks.get(succ_id)
+                    if succ_block and succ_block.start == jump_target:
+                        jump_succ = succ_id
+                    elif succ_block and succ_block.start == fallthrough_addr:
+                        fallthrough_succ = succ_id
+                    else:
+                        # Unknown ordering - add at end
+                        ordered_succs.append(succ_id)
+
+                # Build ordered list: jump target first (index 0), fallthrough second (index 1)
+                if jump_succ is not None:
+                    ordered_succs.insert(0, jump_succ)
+                if fallthrough_succ is not None:
+                    insert_pos = 1 if jump_succ is not None else 0
+                    ordered_succs.insert(insert_pos, fallthrough_succ)
+            else:
+                # No instructions - just use whatever order
+                ordered_succs = [s for s in cfg_block.successors if s in graph.cfg_to_struct]
+
+            for succ_id in ordered_succs:
+                target = graph.cfg_to_struct[succ_id]
+
+                # Determine edge type
+                edge_type = EdgeType.NORMAL
+                if succ_id in getattr(cfg_block, 'back_edge_targets', set()):
+                    edge_type = EdgeType.BACK_EDGE
+
+                edge = BlockEdge(source=source, target=target, edge_type=edge_type)
+                source.out_edges.append(edge)
+                target.in_edges.append(edge)
 
         # Set entry block
         if entry_block_id in graph.cfg_to_struct:

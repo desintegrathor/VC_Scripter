@@ -156,7 +156,75 @@ class HierarchicalCodeEmitter:
         if self.graph.root is not None:
             walk_block(self.graph.root)
 
+        # ALSO walk all blocks in graph.blocks (may include disconnected structures)
+        # This catches blocks that got collapsed but aren't reachable from root
+        for block in self.graph.blocks.values():
+            walk_block(block)
+
         return covered
+
+    def _compute_needed_labels(self) -> Set[int]:
+        """
+        Compute which CFG block IDs are actual goto targets.
+
+        A block needs a label only if there's a BlockGoto pointing to it.
+        Blocks that are merely uncollapsed but have no gotos targeting them
+        should not be emitted as labeled blocks (they're orphaned).
+
+        Returns:
+            Set of CFG block IDs that need labels (are goto targets)
+        """
+        needed = set()
+
+        def find_goto_targets(block: StructuredBlock):
+            """Recursively find all goto targets in a structure."""
+            if block is None:
+                return
+
+            if isinstance(block, BlockGoto):
+                # This block has a goto - its target needs a label
+                if block.goto_target is not None:
+                    if isinstance(block.goto_target, BlockBasic):
+                        needed.add(block.goto_target.original_block_id)
+                    elif hasattr(block.goto_target, 'covered_blocks') and block.goto_target.covered_blocks:
+                        # Target is a collapsed structure - add its entry block
+                        needed.add(min(block.goto_target.covered_blocks))
+                # Also walk the wrapped block
+                find_goto_targets(block.wrapped_block)
+            elif isinstance(block, BlockList):
+                for comp in block.components:
+                    find_goto_targets(comp)
+            elif isinstance(block, BlockIf):
+                find_goto_targets(block.condition_block)
+                find_goto_targets(block.true_block)
+                find_goto_targets(block.false_block)
+            elif isinstance(block, BlockWhileDo):
+                find_goto_targets(block.condition_block)
+                find_goto_targets(block.body_block)
+            elif isinstance(block, BlockDoWhile):
+                find_goto_targets(block.body_block)
+                find_goto_targets(block.condition_block)
+            elif isinstance(block, BlockInfLoop):
+                find_goto_targets(block.body_block)
+            elif isinstance(block, BlockCondition):
+                find_goto_targets(block.first_condition)
+                find_goto_targets(block.second_condition)
+            elif isinstance(block, BlockSwitch):
+                find_goto_targets(block.header_block)
+                for case in block.cases:
+                    find_goto_targets(case.body_block)
+                if block.default_case:
+                    find_goto_targets(block.default_case.body_block)
+
+        # Walk from root to find all gotos
+        if self.graph.root is not None:
+            find_goto_targets(self.graph.root)
+
+        # Also check all blocks in graph (for disconnected gotos)
+        for block in self.graph.blocks.values():
+            find_goto_targets(block)
+
+        return needed
 
     def emit_function(self, indent: str = "    ") -> List[str]:
         """
@@ -239,6 +307,10 @@ class HierarchicalCodeEmitter:
         # These should NOT be emitted as separate labeled blocks
         covered_by_structure = self._collect_covered_blocks()
 
+        # Compute which blocks are actual goto targets (need labels)
+        # Orphaned blocks without gotos targeting them should not be emitted
+        needed_labels = self._compute_needed_labels()
+
         # Finally, emit any CFG blocks that weren't reached through the graph
         # (e.g., blocks removed during switch collapse)
         # Only iterate through blocks that belong to this function
@@ -275,7 +347,16 @@ class HierarchicalCodeEmitter:
                     lines.extend(loop_lines)
                     continue
 
-            # Not a loop - emit as labeled block
+            # Skip orphaned blocks that have no gotos targeting them
+            # These are blocks that didn't get collapsed into structures but also
+            # have no unstructured jumps pointing to them - they're dead code or
+            # artifacts of incomplete collapse
+            if block_id not in needed_labels:
+                # Mark as emitted to prevent future attempts, but don't emit
+                self.emitted_blocks.add(block_id)
+                continue
+
+            # Not a loop - emit as labeled block (has gotos targeting it)
             if block_id not in self.block_labels:
                 self.block_labels[block_id] = f"block_{block_id}"
 
@@ -613,7 +694,42 @@ class HierarchicalCodeEmitter:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
             else:
-                condition = self._extract_condition(block.condition_block)
+                # Determine negation based on condition_negated flag
+                # When negate_condition() was called, branches were swapped.
+                # We need to invert the JZ/JNZ auto-detection to match.
+                #
+                # Logic:
+                # - JZ normally means "if (!cond)" since it jumps when zero
+                # - JNZ normally means "if (cond)" since it jumps when non-zero
+                # - When branches are swapped (condition_negated=True), we need
+                #   to flip the polarity: JZ becomes "if (cond)", JNZ becomes "if (!cond)"
+                #
+                # By passing negate=block.condition_negated, we invert the auto-detection:
+                # - If condition_negated=False: auto-detect (JZ->negate, JNZ->no negate)
+                # - If condition_negated=True: pass negate=True to flip the result
+                #   Actually, we need to pass the OPPOSITE of what JZ/JNZ would normally do
+                #
+                # Correction: render_condition auto-detects JZ->negate=True, JNZ->negate=False
+                # If branches were swapped, we want the OPPOSITE behavior.
+                # So if condition_negated=True, we pass negate=False to cancel JZ's negation
+                # or negate=True to add negation to JNZ.
+                #
+                # Actually simpler: if condition_negated, we want the opposite of auto-detect.
+                # Pass negate=None when not negated (auto-detect), but when negated:
+                # - We need to compute what auto-detect would do and flip it
+                # This is complex. Simpler approach: always pass explicit negate value.
+                #
+                # Final logic: When condition_negated=True, we want condition WITHOUT negation
+                # (because swapping branches already "negates" semantically).
+                # Pass negate=False when condition_negated=True.
+                # Pass negate=None (auto-detect) when condition_negated=False.
+                if block.condition_negated:
+                    # Branches were swapped, so emit condition without negation
+                    # The swap itself handles the semantic negation
+                    condition = self._extract_condition(block.condition_block, negate=False)
+                else:
+                    # Normal case - let render_condition auto-detect from JZ/JNZ
+                    condition = self._extract_condition(block.condition_block, negate=None)
 
         if condition is None:
             condition = "/* condition */"
@@ -867,8 +983,22 @@ class HierarchicalCodeEmitter:
 
         return lines
 
-    def _extract_condition(self, block: StructuredBlock) -> Optional[str]:
-        """Extract condition expression from a block."""
+    def _extract_condition(
+        self,
+        block: StructuredBlock,
+        negate: Optional[bool] = None
+    ) -> Optional[str]:
+        """
+        Extract condition expression from a block.
+
+        Args:
+            block: The block containing the conditional jump
+            negate: If specified, overrides the auto-detection of negation.
+                    True = apply ! prefix, False = no prefix, None = auto-detect from JZ/JNZ
+
+        Returns:
+            The rendered condition expression, or None if not applicable
+        """
         if not isinstance(block, BlockBasic):
             return None
 
@@ -876,12 +1006,14 @@ class HierarchicalCodeEmitter:
         cfg = self.cfg
 
         # Use render_condition to get the condition
+        # Pass negate to override auto-detection when branches were swapped
         cond_render = render_condition(
             self.ssa_func,
             cfg_block_id,
             self.formatter,
             cfg,
             self.resolver,
+            negate=negate,
         )
 
         return cond_render.text if cond_render else None

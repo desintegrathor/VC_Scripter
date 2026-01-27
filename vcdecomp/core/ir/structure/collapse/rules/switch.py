@@ -60,20 +60,44 @@ class RuleBlockSwitch(CollapseRule):
         Find the entry block for a case in the current graph state.
 
         Since blocks may have been collapsed, we look for the block that
-        covers the case's entry CFG block ID.
+        covers the case's entry CFG block ID. This handles cases where:
+        1. The block is still a basic uncollapsed block
+        2. The block was collapsed into a larger structure (BlockIf, BlockList, etc.)
+        3. The block is inside another structure's covered_blocks
+
+        Args:
+            graph: The current block graph
+            case_info: Case information containing block_id
+
+        Returns:
+            The structured block for the case entry, or None if not found
         """
         entry_cfg_id = case_info.block_id
 
-        # First try direct lookup
+        # First try direct lookup in cfg_to_struct mapping
         if entry_cfg_id in graph.cfg_to_struct:
             block = graph.cfg_to_struct[entry_cfg_id]
             if not block.is_collapsed:
                 return block
 
-        # Search through uncollapsed blocks for one that covers this CFG block
+        # Search through ALL uncollapsed blocks for one that covers this CFG block
+        # This handles the case where the entry block was collapsed into a larger
+        # structure (e.g., BlockIf, BlockList) that covers multiple CFG blocks
         for struct_block in graph.get_uncollapsed_blocks():
             if entry_cfg_id in struct_block.covered_blocks:
                 return struct_block
+
+        # If still not found, search through ALL blocks in graph (including collapsed)
+        # to find one whose covered_blocks contains the entry CFG block ID.
+        # This is a fallback for complex collapse scenarios.
+        for struct_block in graph.blocks.values():
+            if entry_cfg_id in struct_block.covered_blocks:
+                # Found it in a collapsed structure - check if it's the entry point
+                # of that structure (we want the outermost containing structure)
+                if not struct_block.is_collapsed:
+                    return struct_block
+                # It's collapsed into something else - continue searching for
+                # the outermost uncollapsed container
 
         return None
 

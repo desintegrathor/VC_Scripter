@@ -78,23 +78,66 @@ class RuleBlockProperIf(CollapseRule):
         return False
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        succ1 = block.out_edges[0].target
-        succ2 = block.out_edges[1].target
+        succ1 = block.out_edges[0].target  # Jump target (FALSE path for JZ)
+        succ2 = block.out_edges[1].target  # Fallthrough (TRUE path for JZ)
 
         # Determine which is body and which is merge
+        # Edge ordering: index 0 = jump target (FALSE for JZ), index 1 = fallthrough (TRUE for JZ)
         if (succ1.has_single_successor() and
             succ1.get_single_successor() == succ2 and
             succ1.has_single_predecessor()):
+            # succ1 (jump target / FALSE path) is the body
             body = succ1
             merge = succ2
-            # True branch is body (index 0) - no negation needed
-            negate_condition = False
+            # Body is on FALSE branch (jump target), need to negate condition
+            # so that "if (!cond)" becomes the semantic equivalent of "if body on false"
+            # Actually: JZ already auto-negates, so we need to CANCEL that negation
+            # to get "if (cond) { body }" where body executes when original condition is FALSE
+            negate_condition = True
         else:
+            # succ2 (fallthrough / TRUE path) is the body
             body = succ2
             merge = succ1
-            # True branch is merge, so we need to negate condition
-            # In Ghidra terms: the "false" branch (index 1) goes to body
-            negate_condition = True
+            # Body is on TRUE branch (fallthrough), no additional negation needed
+            # JZ auto-negates, which would give "if (!cond) { body }"
+            # But we want "if (cond) { body }" - so we need to cancel JZ's auto-negation
+            # Wait - if body is on TRUE path and JZ auto-negates...
+            # Actually: when body is on fallthrough (TRUE path), we want "if (cond)"
+            # JZ renders as "if (!cond)" by default, so we need to cancel that
+            # But that seems wrong for this case...
+            #
+            # Let me reconsider:
+            # - JZ jumps when cond == 0 (false), continues when cond != 0 (true)
+            # - Fallthrough (succ2) executes when cond is TRUE
+            # - Jump target (succ1) executes when cond is FALSE
+            #
+            # render_condition with JZ auto-adds "!" because JZ semantics are inverted
+            # So render_condition gives "!cond" when cond was the value being tested
+            #
+            # If body is on fallthrough (TRUE path):
+            # - We want: if (cond) { body }
+            # - render_condition gives: !cond
+            # - We need to negate that: !!cond = cond
+            # - So negate_condition = True? No wait, that's confusing.
+            #
+            # Let me think differently:
+            # - render_condition with negate=None (auto) and JZ gives "!cond"
+            # - render_condition with negate=False gives "cond"
+            # - render_condition with negate=True gives "!cond"
+            #
+            # If body is on fallthrough (TRUE), we want "if (cond) { body }"
+            # - condition_negated=True means pass negate=False, giving "cond" ✓
+            #
+            # If body is on jump target (FALSE), we want "if (!cond) { body }"
+            # - Actually no, we want the condition to evaluate to TRUE when body runs
+            # - If body runs when original cond is FALSE, we want "if (!cond) { body }"
+            # - condition_negated=True means pass negate=False, giving "cond"
+            # - But we want "!cond"! So condition_negated should be False here.
+            #
+            # OK new logic:
+            # - If body is on TRUE path (fallthrough/succ2): want "if (cond)", negate_condition=True (cancels JZ's !)
+            # - If body is on FALSE path (jump target/succ1): want "if (!cond)", negate_condition=False (keeps JZ's !)
+            negate_condition = True  # Cancel JZ's auto-negation to get "if (cond)"
 
         # Create if block
         if_block = BlockIf(
@@ -105,7 +148,9 @@ class RuleBlockProperIf(CollapseRule):
             false_block=None,  # No else
         )
 
-        # Apply condition negation if needed (Ghidra-style)
+        # Apply condition negation if needed
+        # condition_negated flag tells emitter to pass negate=False to render_condition,
+        # which cancels JZ's auto-negation
         if negate_condition:
             if_block.negate_condition()
 
