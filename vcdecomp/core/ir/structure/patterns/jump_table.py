@@ -125,14 +125,28 @@ def _detect_binary_search_switch(
 
     logger.info(f"Detected binary search switch on '{test_var}' with {len(cases)} cases at block {start_block}")
 
-    return SwitchPattern(
+    # Create initial pattern
+    pattern = SwitchPattern(
         test_var=test_var,
         header_block=start_block,
         cases=cases,
-        default_block=None,  # TODO: detect default case
+        default_block=None,
         exit_block=exit_block,
         all_blocks=all_blocks
     )
+
+    # Detect default case using Ghidra-inspired algorithm
+    from .switch_default import detect_default_case, find_default_body_blocks
+    default_block = detect_default_case(pattern, cfg, func_block_ids)
+    if default_block is not None:
+        pattern.default_block = default_block
+        pattern.default_body_blocks = find_default_body_blocks(
+            default_block, pattern, cfg, func_block_ids
+        )
+        pattern.all_blocks.add(default_block)
+        pattern.all_blocks.update(pattern.default_body_blocks)
+
+    return pattern
 
 
 def _build_decision_tree(
