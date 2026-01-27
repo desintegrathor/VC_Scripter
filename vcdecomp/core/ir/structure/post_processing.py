@@ -6,6 +6,12 @@ including for-loop detection and other final optimizations.
 
 These are analogous to Ghidra's finalTransform() methods that run after
 the main structuring phase is complete.
+
+The post-processing pipeline consists of:
+1. ActionFinalStructure - Block ordering, break/goto marking
+2. ActionNormalizeBranches - Conditional normalization
+3. ActionPreferComplement - Symmetric if/else preference
+4. For-loop transformation - While to for-loop conversion
 """
 
 from __future__ import annotations
@@ -21,6 +27,11 @@ from .blocks.hierarchy import (
     BlockGraph,
 )
 from .analysis.for_loop_detection import ForLoopDetector, ForLoopPattern
+from .actions import (
+    ActionFinalStructure,
+    # ActionNormalizeBranches,
+    # ActionPreferComplement,
+)
 
 if TYPE_CHECKING:
     from ..ssa import SSAFunction
@@ -38,27 +49,50 @@ class PostProcessor:
     - Final formatting adjustments
     """
 
-    def __init__(self, ssa_func: Optional['SSAFunction'] = None):
+    def __init__(
+        self,
+        ssa_func: Optional['SSAFunction'] = None,
+        enable_actions: bool = True
+    ):
         """
         Initialize post-processor.
 
         Args:
             ssa_func: Optional SSA function for advanced analysis
+            enable_actions: Enable Ghidra-style Action passes (default True)
         """
         self.ssa_func = ssa_func
         self.for_loop_detector = ForLoopDetector(ssa_func) if ssa_func else None
 
-    def process(self, root: StructuredBlock) -> StructuredBlock:
+        # Ghidra-style Action passes
+        self.enable_actions = enable_actions
+        self.actions = []
+        if enable_actions:
+            self.actions.append(ActionFinalStructure())
+            # NOTE: Normalization actions disabled for now - need to adjust
+            # for string-based condition representation
+            # self.actions.append(ActionNormalizeBranches())
+            # self.actions.append(ActionPreferComplement())
+
+    def process(self, root: StructuredBlock, graph: Optional[BlockGraph] = None) -> StructuredBlock:
         """
         Run all post-processing transformations.
 
         Args:
             root: Root of the structured block tree
+            graph: Optional BlockGraph for Action passes
 
         Returns:
             Transformed root block
         """
-        # Transform while loops to for loops where possible
+        # Phase 1: Ghidra-style Action passes (if enabled and graph provided)
+        if self.enable_actions and graph:
+            for action in self.actions:
+                count = action.apply(graph)
+                if count > 0:
+                    logger.debug(f"{action.name}: {count} changes")
+
+        # Phase 2: Transform while loops to for loops where possible
         self._transform_for_loops(root)
 
         return root
@@ -139,7 +173,9 @@ class PostProcessor:
 
 def apply_post_processing(
     root: StructuredBlock,
-    ssa_func: Optional['SSAFunction'] = None
+    graph: Optional[BlockGraph] = None,
+    ssa_func: Optional['SSAFunction'] = None,
+    enable_actions: bool = True
 ) -> StructuredBlock:
     """
     Apply post-processing transformations to structured code.
@@ -149,10 +185,12 @@ def apply_post_processing(
 
     Args:
         root: Root of the structured block tree
+        graph: Optional BlockGraph for Action passes
         ssa_func: Optional SSA function for advanced analysis
+        enable_actions: Enable Ghidra-style Action passes (default True)
 
     Returns:
         Transformed root block
     """
-    processor = PostProcessor(ssa_func)
-    return processor.process(root)
+    processor = PostProcessor(ssa_func, enable_actions=enable_actions)
+    return processor.process(root, graph=graph)

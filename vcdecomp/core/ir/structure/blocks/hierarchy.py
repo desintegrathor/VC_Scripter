@@ -101,6 +101,11 @@ class StructuredBlock:
     is_collapsed: bool = False
     covered_blocks: Set[int] = field(default_factory=set)  # Original CFG block IDs
 
+    # Label management (for gotos)
+    label: Optional[str] = None  # Label name if this block is a goto target
+    needs_label: bool = False  # True if this block needs a label
+    label_bump_up: bool = False  # True if label should be moved to parent
+
     def get_successors(self) -> List[StructuredBlock]:
         """Get all successor blocks."""
         return [e.target for e in self.out_edges]

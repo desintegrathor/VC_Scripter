@@ -684,6 +684,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                    f"{sum(stats['rules_applied'].values())} rules applied, "
                    f"{stats['gotos_inserted']} gotos")
 
+        # Apply post-processing transformations (Ghidra-style Actions + for-loop detection)
+        if root_block is not None:
+            from .post_processing import apply_post_processing
+            root_block = apply_post_processing(root_block, graph=block_graph, ssa_func=ssa_func)
+            debug_print("DEBUG POST-PROCESS: Applied post-processing transformations")
+
         # Emit code using hierarchical emitter
         emitter = HierarchicalCodeEmitter(
             graph=block_graph,
