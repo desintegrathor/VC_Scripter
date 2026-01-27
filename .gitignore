@@ -9,6 +9,7 @@
 !decompiler_source_tests/**
 !README.md
 !CLAUDE.md
+!agents.md
 !GHIDRA_ANALYSIS.md
 !PHASE1_COMPLETE.md
 !PHASE2_COMPLETE.md
