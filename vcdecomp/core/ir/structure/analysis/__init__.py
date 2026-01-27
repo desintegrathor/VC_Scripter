@@ -37,6 +37,29 @@ from .variables import (
     _collect_local_variables,
 )
 
+from .dominance import (
+    DominatorAnalysis,
+    compute_dominators,
+)
+
+from .irreducible import (
+    SpanningTreeAnalysis,
+    SpanningEdgeType,
+    detect_irreducible_edges,
+)
+
+from .loop_analysis import (
+    LoopBody,
+    LoopAnalysis,
+    analyze_loops,
+)
+
+from .for_loop_detection import (
+    ForLoopPattern,
+    ForLoopDetector,
+    detect_for_loops_in_function,
+)
+
 __all__ = [
     # Flow analysis
     "_get_loop_for_block",
@@ -62,4 +85,19 @@ __all__ = [
     "_find_switch_variable_from_nearby_gcp",
     # Variable collection
     "_collect_local_variables",
+    # Dominator analysis
+    "DominatorAnalysis",
+    "compute_dominators",
+    # Irreducible edge detection
+    "SpanningTreeAnalysis",
+    "SpanningEdgeType",
+    "detect_irreducible_edges",
+    # Loop analysis
+    "LoopBody",
+    "LoopAnalysis",
+    "analyze_loops",
+    # For-loop detection
+    "ForLoopPattern",
+    "ForLoopDetector",
+    "detect_for_loops_in_function",
 ]
