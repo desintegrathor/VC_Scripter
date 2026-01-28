@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Iterable
 
 from ..loader.scr_loader import SCRFile
 from ..disasm import opcodes
@@ -71,23 +71,7 @@ def build_ssa(scr: SCRFile) -> SSAFunction:
 def build_ssa_all_blocks(scr: SCRFile) -> SSAFunction:
     """Build SSA for ALL blocks in the file, not just reachable from entry."""
     resolver = getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
-    cfg, _ = lift_function(scr, resolver)
-
-    # Lift ALL blocks, not just reachable ones
-    from .stack_lifter import lift_basic_block
-    lifted: Dict[int, List[LiftedInstruction]] = {}
-    phi_counter = 0
-
-    def phi_name_fn(block_id: int, depth: int) -> str:
-        nonlocal phi_counter
-        name = f"phi_{block_id}_{depth}_{phi_counter}"
-        phi_counter += 1
-        return name
-
-    # Process ALL blocks in the CFG
-    for block_id in sorted(cfg.blocks.keys()):
-        lifted[block_id] = lift_basic_block(block_id, cfg, resolver, phi_name_fn, scr)
-
+    cfg, lifted = lift_function(scr, resolver)
     return _build_ssa_from_lifted(scr, resolver, cfg, lifted)
 
 
@@ -174,11 +158,14 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
             ssa_block.append(ssa_inst)
         instructions[block_id] = ssa_block
 
-    _propagate_types(resolver, instructions)
-    _mark_simple_arithmetic_compound_stores(instructions)
-
     # Build SSA function object
     ssa_func = SSAFunction(cfg=cfg, values=values, instructions=instructions, scr=scr)
+    orphan_fixes = _fix_orphan_temporaries(ssa_func)
+    if orphan_fixes:
+        logger.debug("Fixed %d orphan temporaries after SSA build", orphan_fixes)
+
+    _propagate_types(resolver, instructions)
+    _mark_simple_arithmetic_compound_stores(instructions)
     _annotate_call_out_params(ssa_func)
 
     # Apply bidirectional type inference (optional, can be disabled)
@@ -211,6 +198,128 @@ def _build_ssa_from_lifted(scr: SCRFile, resolver, cfg: CFG, lifted: Dict[int, L
             logger.info(f"LoadGuard: {stats}")
 
     return ssa_func
+
+
+def _iter_instructions(ssa_func: SSAFunction) -> Iterable[SSAInstruction]:
+    for block_insts in ssa_func.instructions.values():
+        for inst in block_insts:
+            yield inst
+
+
+def _find_latest_alias_value(
+    block_insts: List[SSAInstruction],
+    alias: Optional[str]
+) -> Optional[SSAValue]:
+    if not alias:
+        return None
+    for inst in reversed(block_insts):
+        for out_val in inst.outputs:
+            if out_val.alias == alias:
+                return out_val
+    return None
+
+
+def _replace_orphan_uses(
+    block_insts: List[SSAInstruction],
+    orphan: SSAValue,
+    replacement: SSAValue
+) -> None:
+    for inst in block_insts:
+        for idx, val in enumerate(inst.inputs):
+            if val is orphan:
+                inst.inputs[idx] = replacement
+                replacement.uses.append((inst.address, idx))
+    orphan.uses = []
+
+
+def _fix_orphan_temporaries(ssa_func: SSAFunction) -> int:
+    """
+    Post-pass validation for orphan temporaries (use-before-def) with auto-fix.
+
+    Strategy:
+    - If an orphan has an alias and predecessors exist, synthesize a PHI from
+      predecessor values matching the alias.
+    - Otherwise, promote to an input value scoped to the block.
+    """
+    cfg = ssa_func.cfg
+    existing_addresses = [inst.address for inst in _iter_instructions(ssa_func)]
+    next_phi_address = min(existing_addresses, default=0) - 1
+    fixes = 0
+
+    for block_id, block_insts in ssa_func.instructions.items():
+        if not block_insts:
+            continue
+
+        orphans: Dict[str, SSAValue] = {}
+        for inst in block_insts:
+            for val in inst.inputs:
+                if val.producer is None and not val.phi_sources:
+                    orphans[val.name] = val
+
+        if not orphans:
+            continue
+
+        block = cfg.blocks.get(block_id)
+        insert_index = 0
+        for inst in block_insts:
+            if inst.mnemonic != "PHI":
+                break
+            insert_index += 1
+
+        for orphan in orphans.values():
+            phi_inputs: List[SSAValue] = []
+            phi_sources: List[Tuple[int, str]] = []
+
+            if block and block.predecessors:
+                for pred_id in block.predecessors:
+                    pred_insts = ssa_func.instructions.get(pred_id, [])
+                    pred_val = _find_latest_alias_value(pred_insts, orphan.alias)
+                    if pred_val:
+                        phi_inputs.append(pred_val)
+                        phi_sources.append((pred_id, pred_val.name))
+
+            if phi_inputs:
+                phi_name = f"phi_orphan_{block_id}_{orphan.name}"
+                phi_val = SSAValue(
+                    name=phi_name,
+                    value_type=orphan.value_type,
+                    producer=next_phi_address,
+                    phi_sources=phi_sources,
+                    alias=orphan.alias,
+                    metadata={"orphan_fix": True},
+                )
+                ssa_func.values[phi_name] = phi_val
+                for idx, src_val in enumerate(phi_inputs):
+                    src_val.uses.append((next_phi_address, idx))
+                phi_inst = SSAInstruction(
+                    block_id=block_id,
+                    mnemonic="PHI",
+                    address=next_phi_address,
+                    inputs=phi_inputs,
+                    outputs=[phi_val],
+                    metadata={"orphan_fix": True},
+                )
+                phi_val.producer_inst = phi_inst
+                block_insts.insert(insert_index, phi_inst)
+                insert_index += 1
+                next_phi_address -= 1
+                _replace_orphan_uses(block_insts, orphan, phi_val)
+                fixes += 1
+                continue
+
+            input_name = f"input_{block_id}_{orphan.name}"
+            input_val = SSAValue(
+                name=input_name,
+                value_type=orphan.value_type,
+                producer=None,
+                alias=orphan.alias,
+                metadata={"orphan_fix": True},
+            )
+            ssa_func.values[input_name] = input_val
+            _replace_orphan_uses(block_insts, orphan, input_val)
+            fixes += 1
+
+    return fixes
 
 
 def _annotate_call_out_params(ssa_func: SSAFunction) -> None:
