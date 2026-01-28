@@ -572,6 +572,22 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
     # FIX (07-04): Track multi-dimensional arrays detected from indexing patterns
     multidim_arrays: Dict[str, ArrayDims] = {}
 
+    def _get_allowed_semantic_name(var_name: str) -> Optional[str]:
+        """Return semantic name only if formatter would actually use it in output."""
+        if not hasattr(formatter, "_semantic_names"):
+            return None
+        semantic_name = formatter._semantic_names.get(var_name)
+        if not semantic_name:
+            return None
+        # Respect formatter's own gating to avoid declaration/name mismatches
+        should_use = True
+        if hasattr(formatter, "_should_use_semantic_name"):
+            try:
+                should_use = formatter._should_use_semantic_name(var_name)
+            except Exception:
+                should_use = True
+        return semantic_name if should_use else None
+
     def process_value(value, default_type="int"):
         """Process a value to extract variable names and types."""
         if not value:
@@ -604,7 +620,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         # Check if variable has semantic name (i, player_info, etc.)
         display_name = var_name
         if var_name.startswith("local_"):
-            semantic_name = formatter._semantic_names.get(var_name)
+            semantic_name = _get_allowed_semantic_name(var_name)
             if semantic_name:
                 display_name = semantic_name
 
@@ -854,9 +870,9 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 struct_info = inferred_struct_types.get(array_var)
                 if struct_info:
                     local_arrays[array_var] = (struct_info.struct_type, max_bound)
-                    # Also mark for semantic name if it exists
-                    semantic_name = formatter._semantic_names.get(array_var)
-                    if semantic_name:
+                    # Also mark for semantic name if it exists and is allowed
+                    semantic_name = _get_allowed_semantic_name(array_var)
+                    if semantic_name and semantic_name != array_var:
                         local_arrays[semantic_name] = (struct_info.struct_type, max_bound)
 
     # P0.3: First pass - detect local arrays from usage patterns
@@ -1128,7 +1144,13 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                                     if arg.isupper() or arg.isdigit():
                                         continue
                                     loop_counter_names = {"i", "j", "k", "idx", "n", "m"}
-                                    semantic_names = set(formatter._semantic_names.values()) if hasattr(formatter, '_semantic_names') else set()
+                                    if hasattr(formatter, '_semantic_names'):
+                                        semantic_names = {
+                                            name for var, name in formatter._semantic_names.items()
+                                            if _get_allowed_semantic_name(var)
+                                        }
+                                    else:
+                                        semantic_names = set()
                                     if arg in loop_counter_names or arg in semantic_names or arg.startswith("local_"):
                                         param_type_vars[arg] = mapped_type
 
@@ -1205,9 +1227,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             # FIX (01-21): When a variable has a semantic name, use ONLY the semantic name
             # This prevents duplicate declarations like both "local_1" and "atg_settings"
             # being declared as s_SC_MP_SRV_AtgSettings
-            semantic_name = None
-            if hasattr(formatter, '_semantic_names'):
-                semantic_name = formatter._semantic_names.get(var_name)
+            semantic_name = _get_allowed_semantic_name(var_name)
 
             if semantic_name:
                 # Use semantic name instead of original local_X name

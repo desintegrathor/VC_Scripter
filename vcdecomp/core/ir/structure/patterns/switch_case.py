@@ -1420,7 +1420,7 @@ def _detect_switch_patterns(
         for case in cases:
             shared_body_map.setdefault(case.block_id, []).append(case)
 
-        for block_id, shared_cases in shared_body_map.items():
+        for shared_bid, shared_cases in shared_body_map.items():
             if len(shared_cases) <= 1:
                 continue
             # Preserve detection order: earlier cases fall through to the last one
@@ -1432,7 +1432,7 @@ def _detect_switch_patterns(
                     shared_case.has_break = False
                     _switch_debug(
                         f"Marked shared-body case {shared_case.value} as fall-through to case {body_case.value} "
-                        f"(shared block {block_id})"
+                        f"(shared block {shared_bid})"
                     )
 
         # Determine if this should be a switch statement

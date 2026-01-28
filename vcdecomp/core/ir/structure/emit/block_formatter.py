@@ -181,6 +181,13 @@ def _format_block_lines(
     # Regular block formatting
     expressions = format_block_expressions(ssa_func, block_id, formatter=formatter)
 
+    # Mark block as emitted BEFORE rendering to prevent re-entry issues
+    # This must happen here to prevent duplicate emission when blocks are processed
+    # from multiple call sites (e.g., both from switch case body iteration and
+    # from nested if/else rendering within the same case body).
+    if emitted_blocks is not None:
+        emitted_blocks.add(block_id)
+
     # TASK 2 (07-07): Detect and remove unreachable code after returns
     # Scan through expressions and stop emitting after an unconditional return
     filtered_lines = []
