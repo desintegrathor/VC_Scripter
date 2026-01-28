@@ -25,7 +25,7 @@ from ....core.disasm import opcodes
 from ..cfg import CFG, get_iterated_dominance_frontier, _compute_dominance_frontiers
 from ..ssa import (
     SSAFunction, SSAValue, SSAInstruction,
-    _propagate_types, _merge_result_types, _annotate_call_out_params
+    _propagate_types, _merge_result_types, _annotate_call_out_params, _fix_orphan_temporaries
 )
 from ..stack_lifter import (
     lift_function, lift_basic_block, LiftedInstruction, StackValue,
@@ -531,6 +531,9 @@ class HeritageOrchestrator:
             scr=self.scr
         )
         _annotate_call_out_params(ssa_func)
+        orphan_fixes = _fix_orphan_temporaries(ssa_func)
+        if orphan_fixes:
+            logger.debug("Fixed %d orphan temporaries in heritage SSA", orphan_fixes)
         return ssa_func
 
     def _refine_ssa(self) -> None:

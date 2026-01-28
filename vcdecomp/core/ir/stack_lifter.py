@@ -367,6 +367,65 @@ def _merge_stacks(
     return merged
 
 
+def _stack_state_signature(state: Optional[List[StackValue]]) -> Optional[Tuple]:
+    if state is None:
+        return None
+    signature = []
+    for val in state:
+        phi_sources = None
+        if val.phi_sources:
+            phi_sources = tuple((pred, src.name) for pred, src in val.phi_sources)
+        signature.append((val.name, val.value_type, val.alias, phi_sources))
+    return tuple(signature)
+
+
+def _make_phi_name_fn() -> Callable[[int, int], str]:
+    phi_names: Dict[Tuple[int, int], str] = {}
+
+    def phi_name_fn(block_id: int, depth: int) -> str:
+        key = (block_id, depth)
+        if key not in phi_names:
+            phi_names[key] = f"phi_{block_id}_{depth}_{len(phi_names)}"
+        return phi_names[key]
+
+    return phi_name_fn
+
+
+def _lift_function_fixed_point(
+    scr: SCRFile,
+    resolver: opcodes.OpcodeResolver,
+    cfg: CFG,
+    phi_name_fn: Callable[[int, int], str],
+) -> Dict[int, List[LiftedInstruction]]:
+    lifted: Dict[int, List[LiftedInstruction]] = {}
+    order = sorted(cfg.blocks.keys())
+    max_iters = max(3, len(order) * 2)
+
+    for _ in range(max_iters):
+        changed = False
+        for block_id in order:
+            block = cfg.get_block(block_id)
+            prev_in = getattr(block, "_in_stack", None)
+            prev_out = getattr(block, "_out_stack", None)
+            lifted[block_id] = lift_basic_block(
+                block_id, cfg, resolver, phi_name_fn, scr
+            )
+            new_in = getattr(block, "_in_stack", None)
+            new_out = getattr(block, "_out_stack", None)
+            if _stack_state_signature(prev_in) != _stack_state_signature(new_in):
+                changed = True
+            if _stack_state_signature(prev_out) != _stack_state_signature(new_out):
+                changed = True
+        if not changed:
+            return lifted
+
+    logger.debug(
+        "Stack lifting did not converge after %d iterations; using last state",
+        max_iters,
+    )
+    return lifted
+
+
 def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeResolver] = None, phi_name_fn: Optional[Callable[[int, int], str]] = None, scr: Optional["SCRFile"] = None) -> List[LiftedInstruction]:
     block = cfg.get_block(block_id)
     instructions = block.instructions
@@ -687,20 +746,8 @@ def _assign_call_arguments(lifted: List[LiftedInstruction], resolver: opcodes.Op
 def lift_function(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = None) -> Tuple[CFG, Dict[int, List[LiftedInstruction]]]:
     resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     cfg = build_cfg(scr, resolver)
-    lifted: Dict[int, List[LiftedInstruction]] = {}
-    phi_counter = 0
-
-    def phi_name_fn(block_id: int, depth: int) -> str:
-        nonlocal phi_counter
-        name = f"phi_{block_id}_{depth}_{phi_counter}"
-        phi_counter += 1
-        return name
-
-    # Process ALL blocks in the CFG, not just reachable from entry
-    # This ensures we don't lose data when entry point detection is complex
-    order = sorted(cfg.blocks.keys())
-    for block_id in order:
-        lifted[block_id] = lift_basic_block(block_id, cfg, resolver, phi_name_fn, scr)
+    phi_name_fn = _make_phi_name_fn()
+    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn)
     return cfg, lifted
 
 
@@ -729,31 +776,19 @@ def lift_function_heritage(
     """
     resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     cfg = build_cfg(scr, resolver)
-    lifted: Dict[int, List[LiftedInstruction]] = {}
-    phi_counter = 0
-
-    def phi_name_fn(block_id: int, depth: int) -> str:
-        nonlocal phi_counter
-        name = f"phi_{block_id}_{depth}_{phi_counter}"
-        phi_counter += 1
-        return name
-
-    # Process ALL blocks in the CFG
-    order = sorted(cfg.blocks.keys())
-    for block_id in order:
-        block_lifted = lift_basic_block(block_id, cfg, resolver, phi_name_fn, scr)
-
-        # Apply space filter if provided
-        if space_filter is not None:
+    phi_name_fn = _make_phi_name_fn()
+    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn)
+    if space_filter is not None:
+        filtered_lifted: Dict[int, List[LiftedInstruction]] = {}
+        for block_id, block_lifted in lifted.items():
             filtered = []
             for inst in block_lifted:
                 mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
                 include = _should_include_instruction(mnemonic, inst.instruction, space_filter)
                 if include:
                     filtered.append(inst)
-            lifted[block_id] = filtered
-        else:
-            lifted[block_id] = block_lifted
+            filtered_lifted[block_id] = filtered
+        lifted = filtered_lifted
 
     return cfg, lifted
 
