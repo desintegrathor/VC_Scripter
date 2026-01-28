@@ -169,6 +169,11 @@ class CollapseStructure:
         logger.debug("Computing spanning tree and irreducible edges...")
         self.spanning_tree = detect_irreducible_edges(self.graph)
 
+        # Expose analyses to rules via the graph (hard signals)
+        self.graph.dom_analysis = self.dom_analysis
+        self.graph.loop_analysis = self.loop_analysis
+        self.graph.spanning_tree = self.spanning_tree
+
         # Log statistics
         if self.loop_analysis:
             logger.debug(f"Found {len(self.loop_analysis.loops)} loops")

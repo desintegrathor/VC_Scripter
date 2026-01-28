@@ -27,6 +27,9 @@ from typing import Dict, List, Optional, Set, TYPE_CHECKING
 if TYPE_CHECKING:
     from ....cfg import CFG
     from ....ssa import SSAFunction
+    from ..analysis.dominance import DominatorAnalysis
+    from ..analysis.loop_analysis import LoopAnalysis
+    from ..analysis.irreducible import SpanningTreeAnalysis
 
 
 class BlockType(Enum):
@@ -497,6 +500,11 @@ class BlockGraph:
         # Mapping from original CFG block IDs to structured blocks
         self.cfg_to_struct: Dict[int, StructuredBlock] = {}
         self.ssa_func: Optional["SSAFunction"] = ssa_func
+
+        # Optional analysis caches (filled by collapse engine)
+        self.dom_analysis: Optional["DominatorAnalysis"] = None
+        self.loop_analysis: Optional["LoopAnalysis"] = None
+        self.spanning_tree: Optional["SpanningTreeAnalysis"] = None
 
     def _allocate_block_id(self) -> int:
         """Allocate a new unique block ID."""
