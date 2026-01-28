@@ -267,6 +267,8 @@ class LocalVariableTypeTracker:
             for inst in ssa_instrs:
                 self._analyze_instruction(inst)
 
+        self._detect_vector3_assignments(func_block_ids)
+
     def _analyze_instruction(self, inst: SSAInstruction):
         """Analyze single instruction for type patterns."""
         # Pattern 1: Array indexing - ADD(LADR(local_X), MUL(idx, size))
@@ -317,6 +319,40 @@ class LocalVariableTypeTracker:
                 info.update_struct_evidence(existing_struct, offset, source="ssa_pattern")
                 debug_print(f"DEBUG TypeTracker: PNT pattern detected - {base_var}.field_{offset}")
 
+    def _detect_vector3_assignments(self, func_block_ids: Set[int]) -> None:
+        """
+        Detect 3 consecutive float assignments to the same base + offsets (0,4,8).
+
+        This maps array/struct storage patterns to c_Vector3 for better declarations.
+        """
+        for block_id in func_block_ids:
+            ssa_instrs = self.ssa_func.instructions.get(block_id, [])
+            window: List[Tuple[str, Optional[int], int]] = []
+            for inst in ssa_instrs:
+                if inst.mnemonic != "ASGN" or len(inst.inputs) < 2:
+                    window = []
+                    continue
+
+                source = inst.inputs[0]
+                target = inst.inputs[1]
+                if not self._is_float_value(source):
+                    window = []
+                    continue
+
+                target_info = self._extract_base_with_offset(target)
+                if not target_info:
+                    window = []
+                    continue
+
+                base_var, element_size, offset = target_info
+                window.append((base_var, element_size, offset))
+                if len(window) > 3:
+                    window.pop(0)
+
+                if len(window) == 3 and self._is_vector3_window(window):
+                    self._apply_vector3_evidence(window)
+                    window = []
+
     def _extract_local_from_ladr(self, value: SSAValue) -> Optional[str]:
         """Extract local variable name if value comes from LADR."""
         # Check alias for &local_X pattern
@@ -331,6 +367,98 @@ class LocalVariableTypeTracker:
                     return out.alias[1:]
 
         return None
+
+    def _extract_base_with_offset(self, value: SSAValue) -> Optional[Tuple[str, Optional[int], int]]:
+        """
+        Extract base variable, optional element size, and byte offset from address expression.
+
+        Returns (base_var, element_size, offset) where element_size is set for array indexing.
+        """
+        base_var = self._extract_local_from_ladr(value)
+        if base_var:
+            return base_var, None, 0
+
+        if not value.producer_inst or value.producer_inst.mnemonic not in {"ADD", "IADD"}:
+            return None
+
+        left, right = value.producer_inst.inputs
+        left_const = self._extract_constant(left)
+        right_const = self._extract_constant(right)
+
+        if left_const is not None:
+            base_info = self._extract_array_base(right) or self._extract_local_from_ladr(right)
+            if isinstance(base_info, tuple):
+                base_var, element_size = base_info
+                return base_var, element_size, left_const
+            if isinstance(base_info, str):
+                return base_info, None, left_const
+
+        if right_const is not None:
+            base_info = self._extract_array_base(left) or self._extract_local_from_ladr(left)
+            if isinstance(base_info, tuple):
+                base_var, element_size = base_info
+                return base_var, element_size, right_const
+            if isinstance(base_info, str):
+                return base_info, None, right_const
+
+        base_info = self._extract_array_base(value)
+        if base_info:
+            base_var, element_size = base_info
+            return base_var, element_size, 0
+
+        return None
+
+    def _extract_array_base(self, value: SSAValue) -> Optional[Tuple[str, int]]:
+        """Detect ADD(LADR(base), MUL(idx, size)) array base pattern."""
+        if not value.producer_inst or value.producer_inst.mnemonic not in {"ADD", "IADD"}:
+            return None
+
+        left, right = value.producer_inst.inputs
+        base_var = self._extract_local_from_ladr(left)
+        if base_var:
+            element_size, _ = self._extract_mul_pattern(right)
+            if element_size:
+                return base_var, element_size
+
+        base_var = self._extract_local_from_ladr(right)
+        if base_var:
+            element_size, _ = self._extract_mul_pattern(left)
+            if element_size:
+                return base_var, element_size
+
+        return None
+
+    def _is_float_value(self, value: SSAValue) -> bool:
+        """Check whether value is likely a float-producing source."""
+        if value.value_type == opcodes.ResultType.FLOAT:
+            return True
+        if value.producer_inst and value.producer_inst.mnemonic in {"FADD", "FSUB", "FMUL", "FDIV", "FNEG", "ITOF", "DTOF"}:
+            return True
+        if value.alias and "." in value.alias:
+            return True
+        return False
+
+    def _is_vector3_window(self, window: List[Tuple[str, Optional[int], int]]) -> bool:
+        base_vars = {entry[0] for entry in window}
+        element_sizes = {entry[1] for entry in window}
+        offsets = {entry[2] for entry in window}
+        if len(base_vars) != 1 or len(offsets) != 3:
+            return False
+        if offsets != {0, 4, 8}:
+            return False
+        if len(element_sizes) != 1:
+            return False
+        return True
+
+    def _apply_vector3_evidence(self, window: List[Tuple[str, Optional[int], int]]) -> None:
+        base_var = window[0][0]
+        element_size = window[0][1]
+        offsets = [entry[2] for entry in window]
+        info = self._get_or_create_info(base_var)
+        for offset in offsets:
+            info.update_struct_evidence("c_Vector3", offset, source="ssa_pattern")
+        if element_size:
+            info.mark_struct_array(element_size, "c_Vector3", source="ssa_pattern")
 
     def _extract_mul_pattern(self, value: SSAValue) -> Tuple[Optional[int], Optional[int]]:
         """

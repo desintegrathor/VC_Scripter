@@ -628,6 +628,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # Heritage: Pass heritage_metadata for improved variable names
     formatter = ExpressionFormatter(ssa_func, func_start=entry_addr, func_end=end_addr, func_name=func_name, symbol_db=symbol_db, func_signature=func_sig, function_bounds=function_bounds, rename_map=rename_map, heritage_metadata=heritage_metadata)
     ssa_blocks = ssa_func.instructions
+    formatter.seed_float_opcode_types()
 
     # UNIFIED TYPE TRACKER: Create tracker for coordinating declarations with usage
     # Pass 1: Pre-analyze SSA patterns BEFORE formatting

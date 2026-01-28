@@ -94,6 +94,8 @@ class HeritageOrchestrator:
         self.cfg = cfg
         self.max_passes = max_passes
         self.resolver = getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
+        from ...headers.database import get_header_database
+        self.header_db = get_header_database()
 
         self.location_map = LocationMap()
         self.ssa_func: Optional[SSAFunction] = None
@@ -128,7 +130,7 @@ class HeritageOrchestrator:
         # Process all blocks in order
         for block_id in sorted(self.cfg.blocks.keys()):
             lifted[block_id] = lift_basic_block(
-                block_id, self.cfg, self.resolver, phi_name_fn, self.scr
+                block_id, self.cfg, self.resolver, phi_name_fn, self.scr, self.header_db
             )
 
         return lifted

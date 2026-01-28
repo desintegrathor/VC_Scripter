@@ -550,6 +550,24 @@ class ExpressionFormatter:
         # Used by _format_call to annotate functions like SC_MissionSave(&local_80)
         self._struct_text_tracker = StructAssignmentTracker()
 
+    def seed_float_opcode_types(self) -> None:
+        """
+        Strengthen type evidence for float opcodes before dataflow passes.
+
+        This seeds SSA value_type with float for FADD/FSUB/FMUL/FDIV operands and
+        results so downstream type inference has early, concrete evidence.
+        """
+        for block_insts in self._ssa_func.instructions.values():
+            for inst in block_insts:
+                if inst.mnemonic not in {"FADD", "FSUB", "FMUL", "FDIV"}:
+                    continue
+                for value in (inst.inputs or []):
+                    if value and value.value_type != opcodes.ResultType.FLOAT:
+                        value.value_type = opcodes.ResultType.FLOAT
+                for value in (inst.outputs or []):
+                    if value and value.value_type != opcodes.ResultType.FLOAT:
+                        value.value_type = opcodes.ResultType.FLOAT
+
     def _resolve_field_name(self, base_var: str, offset: int) -> str:
         """
         Resolve field name from struct type and offset.
