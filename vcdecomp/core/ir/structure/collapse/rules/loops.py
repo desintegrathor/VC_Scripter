@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import Optional
 
 from .base import CollapseRule
+from ..analysis_helpers import (
+    is_loop_header,
+    get_loop_body,
+    get_loop_tails,
+    dominates,
+)
 from ...blocks.hierarchy import (
     BlockType,
     EdgeType,
@@ -38,42 +44,86 @@ class RuleBlockWhileDo(CollapseRule):
     def __init__(self):
         super().__init__("BlockWhileDo")
 
-    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
-        # Header must have exactly two successors (condition + exit)
-        if len(block.out_edges) != 2:
-            return False
+    def _resolve_components(
+        self,
+        graph: BlockGraph,
+        block: StructuredBlock
+    ) -> Optional[tuple[StructuredBlock, StructuredBlock, int]]:
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        dom_analysis = getattr(graph, "dom_analysis", None)
+        loop_body = get_loop_body(block, loop_analysis) if loop_analysis else None
 
-        # One edge should be a back edge coming back to this block
-        has_back_edge_in = False
         body_block = None
         exit_block = None
+        body_edge_index = -1
 
+        if loop_body:
+            for i, edge in enumerate(block.out_edges):
+                if edge.target.block_id in loop_body and edge.target != block:
+                    if body_block is not None:
+                        return None
+                    body_block = edge.target
+                    body_edge_index = i
+                elif edge.target != block:
+                    exit_block = edge.target
+
+            if body_block is None or exit_block is None:
+                return None
+
+            if exit_block.block_id in loop_body:
+                return None
+
+            if dom_analysis and not dominates(block, body_block, dom_analysis):
+                return None
+
+            tails = get_loop_tails(block, loop_analysis)
+            if not tails:
+                return None
+
+            return body_block, exit_block, body_edge_index
+
+        # Fallback to local back-edge detection
+        body_block = None
+        exit_block = None
+        body_edge_index = -1
         for edge in block.in_edges:
             if edge.edge_type == EdgeType.BACK_EDGE:
-                has_back_edge_in = True
                 body_block = edge.source
                 break
 
-        if not has_back_edge_in or body_block is None:
-            return False
+        if body_block is None:
+            return None
 
-        # Identify body vs exit in outgoing edges
         for i, edge in enumerate(block.out_edges):
             if edge.target == body_block:
-                # This is the loop edge back to body
-                # Check that it's not marked as unstructured
                 if block.is_goto_out(i):
-                    return False
+                    return None
+                body_edge_index = i
             elif edge.target != block:
                 exit_block = edge.target
 
         if exit_block is None:
+            return None
+
+        return body_block, exit_block, body_edge_index
+
+    def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        if loop_analysis and not is_loop_header(block, loop_analysis):
             return False
+
+        # Header must have exactly two successors (condition + exit)
+        if len(block.out_edges) != 2:
+            return False
+
+        resolved = self._resolve_components(graph, block)
+        if resolved is None:
+            return False
+        body_block, _, _ = resolved
 
         # Body should have single successor back to header
         if not body_block.has_single_successor():
             return False
-
         if body_block.get_single_successor() != block:
             return False
 
@@ -84,25 +134,10 @@ class RuleBlockWhileDo(CollapseRule):
         return True
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        # Find body and exit
-        body_block = None
-        exit_block = None
-        body_edge_index = -1
-
-        for edge in block.in_edges:
-            if edge.edge_type == EdgeType.BACK_EDGE:
-                body_block = edge.source
-                break
-
-        # Find which outgoing edge goes to body
-        for i, edge in enumerate(block.out_edges):
-            if edge.target == body_block:
-                body_edge_index = i
-            elif edge.target != block:
-                exit_block = edge.target
-
-        if body_block is None or exit_block is None:
+        resolved = self._resolve_components(graph, block)
+        if resolved is None:
             return None
+        body_block, exit_block, body_edge_index = resolved
 
         # Create while block
         while_block = BlockWhileDo(
@@ -175,6 +210,11 @@ class RuleBlockDoWhile(CollapseRule):
         super().__init__("BlockDoWhile")
 
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        dom_analysis = getattr(graph, "dom_analysis", None)
+        if loop_analysis and not is_loop_header(block, loop_analysis):
+            return False
+
         # This block is the body - should have single successor (condition)
         if not block.has_single_successor():
             return False
@@ -196,6 +236,13 @@ class RuleBlockDoWhile(CollapseRule):
 
         if not has_back_to_body:
             return False
+
+        if loop_analysis:
+            loop_body = get_loop_body(block, loop_analysis)
+            if loop_body is None or cond.block_id not in loop_body:
+                return False
+            if dom_analysis and not dominates(block, cond, dom_analysis):
+                return False
 
         # Condition should have single predecessor (body)
         if not cond.has_single_predecessor():

@@ -41,6 +41,7 @@ class GlobalUsage:
     array_base_offset: Optional[int] = None  # Offset base pole pokud is_array_element=True
     array_strides: Optional[List[int]] = None  # Stride constants for multi-dimensional arrays
     array_dimensions: Optional[List[int]] = None  # Dimension sizes for multi-dimensional arrays
+    array_index_vars: Optional[List[str]] = None  # Index variables used in array access (outer -> inner)
 
     # SaveInfo metadata
     saveinfo_size_dwords: Optional[int] = None  # Size in dwords from save_info (if available)
@@ -150,8 +151,14 @@ class GlobalResolver:
         # Pojmenuj globály podle patterns (SGI names override auto-generated)
         self._assign_names()
 
+        # Apply struct size hints (requires names for heuristics)
+        self._apply_struct_size_hints()
+
         # Finalize array dimension inference (requires SaveInfo size)
         self._finalize_array_dimensions()
+
+        # Additional array dimension inference from loop bounds
+        self._infer_array_dimensions_from_loop_bounds()
 
         # Populate initializers from data segment (after types are inferred)
         self._apply_data_segment_initializers()
@@ -276,15 +283,11 @@ class GlobalResolver:
                             if right.producer.mnemonic == "MUL":
                                 # Zkus extrahovat multiplier (element size)
                                 if len(right.producer.inputs) >= 2:
-                                    # Zkontroluj druhý operand MUL (měla by být konstanta)
+                                    mul_left = right.producer.inputs[0]
                                     mul_right = right.producer.inputs[1]
-                                    if mul_right.alias and mul_right.alias.startswith("data_"):
-                                        try:
-                                            offset_idx = int(mul_right.alias[5:])
-                                            if self.scr and self.scr.data_segment:
-                                                multiplier = self.scr.data_segment.get_dword(offset_idx * 4)
-                                        except (ValueError, AttributeError):
-                                            pass
+                                    multiplier = self._get_constant_value(mul_right)
+                                    if multiplier is None:
+                                        multiplier = self._get_constant_value(mul_left)
 
                         # Pokud našli pattern, je to array access
                         if base_offset is not None and multiplier is not None:
@@ -347,6 +350,50 @@ class GlobalResolver:
 
         return []
 
+    def _extract_index_name(self, value) -> Optional[str]:
+        if not value:
+            return None
+        candidate = value.alias or value.name
+        if not candidate:
+            return None
+        if candidate.isdigit():
+            return None
+        if candidate.startswith("data_"):
+            return None
+        return candidate
+
+    def _extract_stride_terms(self, value) -> List[Tuple[int, str]]:
+        """
+        Extract (stride, index_var) pairs from an additive index expression.
+
+        Pattern: ADD(MUL(idx, stride), ADD(MUL(idx2, stride2), ...))
+        """
+        if not value or not value.producer_inst:
+            return []
+
+        inst = value.producer_inst
+        if inst.mnemonic == "ADD" and len(inst.inputs) >= 2:
+            left_terms = self._extract_stride_terms(inst.inputs[0])
+            right_terms = self._extract_stride_terms(inst.inputs[1])
+            return left_terms + right_terms
+
+        if inst.mnemonic in {"MUL", "IMUL"} and len(inst.inputs) >= 2:
+            left = inst.inputs[0]
+            right = inst.inputs[1]
+            left_const = self._get_constant_value(left)
+            right_const = self._get_constant_value(right)
+
+            if left_const is not None and right_const is None:
+                index_name = self._extract_index_name(right)
+                if index_name:
+                    return [(left_const, index_name)]
+            if right_const is not None and left_const is None:
+                index_name = self._extract_index_name(left)
+                if index_name:
+                    return [(right_const, index_name)]
+
+        return []
+
     def _detect_multidim_array_patterns(self):
         """
         Detect multi-dimensional global array indexing patterns.
@@ -360,43 +407,46 @@ class GlobalResolver:
                     continue
 
                 left, right = instr.inputs[0], instr.inputs[1]
-                if not left.producer_inst or left.producer_inst.mnemonic != "GADR":
+
+                def _find_base_offset(val) -> Optional[int]:
+                    if not val or not val.producer_inst:
+                        return None
+                    inst = val.producer_inst
+                    if inst.mnemonic == "GADR" and inst.instruction and inst.instruction.instruction:
+                        return inst.instruction.instruction.arg1 * 4
+                    if inst.mnemonic == "ADD" and len(inst.inputs) >= 2:
+                        return _find_base_offset(inst.inputs[0]) or _find_base_offset(inst.inputs[1])
+                    return None
+
+                base_offset = _find_base_offset(left) or _find_base_offset(right)
+
+                if base_offset is None:
                     continue
 
-                gadr_inst = left.producer_inst
-                if not gadr_inst.instruction or not gadr_inst.instruction.instruction:
+                stride_terms = self._extract_stride_terms(left) + self._extract_stride_terms(right)
+                if len(stride_terms) < 2:
                     continue
 
-                base_dword_offset = gadr_inst.instruction.instruction.arg1
-                base_byte_offset = base_dword_offset * 4
-
-                if not right.producer_inst or right.producer_inst.mnemonic not in {"MUL", "IMUL"}:
+                strides = [stride for stride, _ in stride_terms if stride]
+                if not strides:
                     continue
 
-                mul_inst = right.producer_inst
-                if len(mul_inst.inputs) < 2:
-                    continue
+                element_size = min(strides)
+                array_strides = sorted([s for s in strides if s != element_size], reverse=True)
+                terms_sorted = sorted(stride_terms, key=lambda t: t[0], reverse=True)
+                index_vars = [name for _, name in terms_sorted]
 
-                element_size = self._get_constant_value(mul_inst.inputs[1])
-                index_expr = mul_inst.inputs[0]
-                if element_size is None:
-                    element_size = self._get_constant_value(mul_inst.inputs[0])
-                    index_expr = mul_inst.inputs[1]
+                if base_offset not in self.globals:
+                    self.globals[base_offset] = GlobalUsage(offset=base_offset)
 
-                if not element_size:
-                    continue
-
-                stride_constants = self._extract_stride_constants(index_expr)
-                if not stride_constants:
-                    continue
-
-                if base_byte_offset not in self.globals:
-                    self.globals[base_byte_offset] = GlobalUsage(offset=base_byte_offset)
-
-                usage = self.globals[base_byte_offset]
+                usage = self.globals[base_offset]
                 usage.is_array_base = True
-                usage.array_element_size = element_size
-                usage.array_strides = stride_constants
+                if usage.array_element_size is None or element_size < usage.array_element_size:
+                    usage.array_element_size = element_size
+                if array_strides:
+                    usage.array_strides = array_strides
+                if index_vars:
+                    usage.array_index_vars = index_vars
 
     def _finalize_array_dimensions(self) -> None:
         """
@@ -431,6 +481,56 @@ class GlobalResolver:
                         dims = [outer_dim] + dims
 
             if len(dims) >= 2:
+                usage.array_dimensions = dims
+
+    def _infer_array_dimensions_from_loop_bounds(self) -> None:
+        """
+        Infer array dimensions using loop bound variables (i/j/k) and known constants.
+        """
+        from .structure.analysis.value_trace import trace_loop_bounds
+
+        loop_bounds = trace_loop_bounds(self.ssa_func)
+
+        for usage in self.globals.values():
+            if usage.array_dimensions or not usage.array_index_vars:
+                continue
+
+            dims = []
+            unknown_count = 0
+            for var_name in usage.array_index_vars:
+                bound = loop_bounds.get(var_name)
+                if bound:
+                    dims.append(bound.max_value + 1)
+                else:
+                    dims.append(None)
+                    unknown_count += 1
+
+            if all(dim is None for dim in dims):
+                continue
+
+            total_elements = None
+            if usage.saveinfo_size_dwords and usage.array_element_size:
+                total_elements = (usage.saveinfo_size_dwords * 4) // usage.array_element_size
+
+            if total_elements and unknown_count == 1:
+                product = 1
+                for dim in dims:
+                    if dim:
+                        product *= dim
+                if product and total_elements % product == 0:
+                    missing = total_elements // product
+                    dims = [missing if dim is None else dim for dim in dims]
+
+            if any(dim is None for dim in dims):
+                continue
+
+            if len(dims) >= 2:
+                if total_elements:
+                    product = 1
+                    for dim in dims:
+                        product *= dim
+                    if product != total_elements:
+                        continue
                 usage.array_dimensions = dims
 
     def _detect_constant_offset_arrays(self):
@@ -1325,26 +1425,32 @@ class GlobalResolver:
             return None, False, None
 
         if producer.mnemonic == "ADD" and len(producer.inputs) >= 2:
-            left, right = producer.inputs[0], producer.inputs[1]
-            base_inst = None
-            offset_val = None
-            if left.producer_inst and left.producer_inst.mnemonic == "GADR":
-                base_inst = left.producer_inst
-                offset_val = right
-            elif right.producer_inst and right.producer_inst.mnemonic == "GADR":
-                base_inst = right.producer_inst
-                offset_val = left
+            def _find_base_and_terms(val) -> Tuple[Optional[int], List[SSAValue]]:
+                if not val or not val.producer_inst:
+                    return None, []
+                inst = val.producer_inst
+                if inst.mnemonic == "GADR" and inst.instruction and inst.instruction.instruction:
+                    return inst.instruction.instruction.arg1, []
+                if inst.mnemonic == "ADD" and len(inst.inputs) >= 2:
+                    left_base, left_terms = _find_base_and_terms(inst.inputs[0])
+                    right_base, right_terms = _find_base_and_terms(inst.inputs[1])
+                    base = left_base if left_base is not None else right_base
+                    return base, left_terms + right_terms
+                return None, [val]
 
-            if base_inst and base_inst.instruction and base_inst.instruction.instruction:
-                dword_offset = base_inst.instruction.instruction.arg1
-                byte_offset = dword_offset * 4
+            base_dword_offset, terms = _find_base_and_terms(value)
+            if base_dword_offset is not None:
+                byte_offset = base_dword_offset * 4
                 element_size = None
-                if offset_val and offset_val.producer_inst and offset_val.producer_inst.mnemonic in {"MUL", "IMUL"}:
-                    mul_inst = offset_val.producer_inst
-                    if len(mul_inst.inputs) >= 2:
-                        element_size = self._get_constant_value(mul_inst.inputs[1])
-                        if element_size is None:
-                            element_size = self._get_constant_value(mul_inst.inputs[0])
+                for term in terms:
+                    if term.producer_inst and term.producer_inst.mnemonic in {"MUL", "IMUL"}:
+                        mul_inst = term.producer_inst
+                        if len(mul_inst.inputs) >= 2:
+                            element_size = self._get_constant_value(mul_inst.inputs[1])
+                            if element_size is None:
+                                element_size = self._get_constant_value(mul_inst.inputs[0])
+                            if element_size:
+                                break
                 return self.globals.get(byte_offset), True, element_size
 
         return None, False, None

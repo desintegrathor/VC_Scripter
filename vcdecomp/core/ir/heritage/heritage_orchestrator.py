@@ -25,7 +25,7 @@ from ....core.disasm import opcodes
 from ..cfg import CFG, get_iterated_dominance_frontier, _compute_dominance_frontiers
 from ..ssa import (
     SSAFunction, SSAValue, SSAInstruction,
-    _propagate_types, _merge_result_types, _annotate_call_out_params
+    _propagate_types, _merge_result_types, _annotate_call_out_params, _fix_orphan_temporaries
 )
 from ..stack_lifter import (
     lift_function, lift_basic_block, LiftedInstruction, StackValue,
@@ -94,6 +94,8 @@ class HeritageOrchestrator:
         self.cfg = cfg
         self.max_passes = max_passes
         self.resolver = getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
+        from ...headers.database import get_header_database
+        self.header_db = get_header_database()
 
         self.location_map = LocationMap()
         self.ssa_func: Optional[SSAFunction] = None
@@ -128,7 +130,7 @@ class HeritageOrchestrator:
         # Process all blocks in order
         for block_id in sorted(self.cfg.blocks.keys()):
             lifted[block_id] = lift_basic_block(
-                block_id, self.cfg, self.resolver, phi_name_fn, self.scr
+                block_id, self.cfg, self.resolver, phi_name_fn, self.scr, self.header_db
             )
 
         return lifted
@@ -531,6 +533,9 @@ class HeritageOrchestrator:
             scr=self.scr
         )
         _annotate_call_out_params(ssa_func)
+        orphan_fixes = _fix_orphan_temporaries(ssa_func)
+        if orphan_fixes:
+            logger.debug("Fixed %d orphan temporaries in heritage SSA", orphan_fixes)
         return ssa_func
 
     def _refine_ssa(self) -> None:
@@ -654,14 +659,13 @@ class HeritageOrchestrator:
             "RET", "JMP", "JZ", "JNZ",
             "LLD", "GLD", "DLD",  # Stores
             "SSP", "ASP",  # Stack manipulation
+            "CALL", "XCALL",  # External/internal calls are side-effecting
         }
 
         # Single pass: mark all unused values as dead
         for block_id, ssa_insts in self.ssa_func.instructions.items():
             for inst in ssa_insts:
                 if inst.mnemonic in side_effects:
-                    continue
-                if inst.mnemonic in {"CALL", "XCALL"} and inst.metadata.get("has_out_params"):
                     continue
 
                 # Check if all outputs are unused

@@ -369,6 +369,7 @@ class RuleBlockIfNoExit(CollapseRule):
             return False
 
         # Check each branch for dead-end pattern
+        dead_end_indices = []
         for i in range(2):
             clause = block.out_edges[i].target
 
@@ -387,9 +388,9 @@ class RuleBlockIfNoExit(CollapseRule):
             if block.is_goto_out(i):
                 continue
 
-            return True
+            dead_end_indices.append(i)
 
-        return False
+        return len(dead_end_indices) in (1, 2)
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
         # Find dead-end clauses and any continuation block

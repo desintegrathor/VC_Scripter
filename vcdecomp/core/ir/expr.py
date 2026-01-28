@@ -15,7 +15,12 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Set, Tuple
 
 from ..disasm import opcodes
-from ..constants import get_constant_name, get_player_constant, FUNCTION_CONSTANT_CONTEXT
+from ..constants import (
+    get_constant_name,
+    get_player_constant,
+    get_known_constant_for_variable,
+    FUNCTION_CONSTANT_CONTEXT,
+)
 from ..structures import (
     get_struct_by_name, get_struct_by_size, get_verified_field_name,
     infer_struct_from_function, STRUCTURES_BY_SIZE
@@ -544,6 +549,24 @@ class ExpressionFormatter:
         # Tracks constant assignments to struct fields (e.g., local_80.field0 = 9136)
         # Used by _format_call to annotate functions like SC_MissionSave(&local_80)
         self._struct_text_tracker = StructAssignmentTracker()
+
+    def seed_float_opcode_types(self) -> None:
+        """
+        Strengthen type evidence for float opcodes before dataflow passes.
+
+        This seeds SSA value_type with float for FADD/FSUB/FMUL/FDIV operands and
+        results so downstream type inference has early, concrete evidence.
+        """
+        for block_insts in self._ssa_func.instructions.values():
+            for inst in block_insts:
+                if inst.mnemonic not in {"FADD", "FSUB", "FMUL", "FDIV"}:
+                    continue
+                for value in (inst.inputs or []):
+                    if value and value.value_type != opcodes.ResultType.FLOAT:
+                        value.value_type = opcodes.ResultType.FLOAT
+                for value in (inst.outputs or []):
+                    if value and value.value_type != opcodes.ResultType.FLOAT:
+                        value.value_type = opcodes.ResultType.FLOAT
 
     def _resolve_field_name(self, base_var: str, offset: int) -> str:
         """
@@ -3126,6 +3149,10 @@ class ExpressionFormatter:
     def _is_parametric_alias(alias: str) -> bool:
         return alias.startswith("param_") or alias.startswith("info->")
 
+    def _resolve_known_constant_for_variable(self, variable_expr: str, value: int) -> Optional[str]:
+        """Resolve known SDK constants by variable name context."""
+        return get_known_constant_for_variable(variable_expr, value)
+
     def _inline_expression(
         self,
         value: SSAValue,
@@ -3226,6 +3253,18 @@ class ExpressionFormatter:
                         # Found it! Use array load instead of PHI alias
                         left_operand = self._recent_array_loads[search_addr]
                         break
+
+            if inst.mnemonic in COMPARISON_OPS:
+                left_const = self._get_constant_int(inst.inputs[0])
+                right_const = self._get_constant_int(inst.inputs[1])
+                if left_const is None and right_const is not None:
+                    const_name = self._resolve_known_constant_for_variable(left_operand, right_const)
+                    if const_name:
+                        right_operand = const_name
+                elif right_const is None and left_const is not None:
+                    const_name = self._resolve_known_constant_for_variable(right_operand, left_const)
+                    if const_name:
+                        left_operand = const_name
 
             # FIX 3: Smart parenthesization based on operator precedence and context
             # Check if left operand needs parens

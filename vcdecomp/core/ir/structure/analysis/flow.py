@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Set, Tuple, TYPE_CHECKING
 
-from ...cfg import CFG, NaturalLoop, BasicBlock
+from ...cfg import CFG, NaturalLoop, BasicBlock, dominates
 from ....disasm import opcodes
 
 if TYPE_CHECKING:
@@ -22,7 +22,21 @@ def _get_loop_for_block(block_id: int, loops: List[NaturalLoop]) -> Optional[Nat
     containing_loops = [l for l in loops if block_id in l.body]
     if not containing_loops:
         return None
-    # Return the smallest (innermost) loop
+    # Prefer loops whose bodies are strict subsets of others (nested loops)
+    innermost_candidates = []
+    for loop in containing_loops:
+        is_inner = True
+        for other in containing_loops:
+            if loop is other:
+                continue
+            if other.body.issubset(loop.body) and other.body != loop.body:
+                is_inner = False
+                break
+        if is_inner:
+            innermost_candidates.append(loop)
+    if innermost_candidates:
+        containing_loops = innermost_candidates
+    # Return the smallest (innermost) loop by body size
     return min(containing_loops, key=lambda l: len(l.body))
 
 
@@ -62,6 +76,11 @@ def _find_if_body_blocks(
     if context_stop_blocks:
         effective_stop.update(context_stop_blocks)
 
+    def _is_dominated(candidate: int) -> bool:
+        if not cfg.idom:
+            return True
+        return dominates(cfg, entry, candidate)
+
     while worklist:
         block_id = worklist.pop(0)
 
@@ -70,6 +89,10 @@ def _find_if_body_blocks(
 
         # Stop at barriers (merge point, other branches, context boundaries)
         if block_id in effective_stop and block_id != entry:
+            continue
+
+        # Dominance is a hard signal for structured bodies
+        if block_id != entry and not _is_dominated(block_id):
             continue
 
         visited.add(block_id)
@@ -264,6 +287,11 @@ def _find_case_body_blocks(
 
     _debug_body = False  # Set to True to debug specific case
 
+    def _is_dominated(candidate: int) -> bool:
+        if not cfg.idom:
+            return True
+        return dominates(cfg, case_entry, candidate)
+
     while worklist:
         block_id = worklist.pop(0)
 
@@ -281,6 +309,12 @@ def _find_case_body_blocks(
         if block_id in effective_stop and block_id != case_entry:
             if _debug_body:
                 print(f"DEBUG BODY: Stopping at {block_id} - in effective_stop {effective_stop}", file=sys.stderr)
+            continue
+
+        if block_id != case_entry and not _is_dominated(block_id):
+            if _debug_body:
+                import sys
+                print(f"DEBUG BODY: Skipping {block_id} - not dominated by case entry", file=sys.stderr)
             continue
 
         block = cfg.blocks.get(block_id)

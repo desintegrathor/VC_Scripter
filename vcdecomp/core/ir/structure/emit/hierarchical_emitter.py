@@ -33,6 +33,8 @@ from ..blocks.hierarchy import (
     SwitchCase,
 )
 from ..analysis.condition import render_condition
+from ..analysis.boolean_match import simplify_boolean_expression
+from ....constants import get_known_constant_for_variable
 
 if TYPE_CHECKING:
     from .....disasm import opcodes
@@ -743,8 +745,8 @@ class HierarchicalCodeEmitter:
             cond_lines = self._emit_block(block.condition_block, indent)
             if cond_lines:
                 # _emit_block for basic blocks doesn't emit jumps, so keep statements.
-                last = cond_lines[-1].lstrip()
-                if last.startswith("goto ") or last.startswith("if ("):
+                last_line = cond_lines[-1].lstrip()
+                if last_line.startswith("if (") or last_line.startswith("if(") or last_line.startswith("goto "):
                     cond_lines = cond_lines[:-1]
                 lines.extend(cond_lines)
 
@@ -923,13 +925,15 @@ class HierarchicalCodeEmitter:
                 cond2 = self._extract_condition(block.second_condition)
 
         if cond1 and cond2:
-            return f"({cond1}{operator}{cond2})"
+            combined = f"({cond1}{operator}{cond2})"
         elif cond1:
-            return cond1
+            combined = cond1
         elif cond2:
-            return cond2
+            combined = cond2
         else:
-            return "/* combined condition */"
+            combined = "true"
+
+        return simplify_boolean_expression(combined)
 
     def _emit_switch(self, block: BlockSwitch, indent: str) -> List[str]:
         """Emit a switch-case structure."""
@@ -977,7 +981,12 @@ class HierarchicalCodeEmitter:
 
         # Emit cases
         for case in block.cases:
-            lines.append(f"{indent}case {case.value}:")
+            case_value = case.value
+            if isinstance(case_value, int) and block.test_var:
+                const_name = get_known_constant_for_variable(block.test_var, case_value)
+                if const_name:
+                    case_value = const_name
+            lines.append(f"{indent}case {case_value}:")
             # Prefer flat-mode rendering for case bodies to preserve nested if/else structure.
             if case.body_block_ids:
                 lines.extend(self._emit_switch_case_body_flat(case, block, exit_ids, indent + "    "))

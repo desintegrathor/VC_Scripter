@@ -7,13 +7,14 @@ identifying initialization, condition, and increment components.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Iterable, Set
 
 from ...cfg import CFG, NaturalLoop
 from ....disasm import opcodes
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
 from ..analysis.condition import render_condition
+from ..analysis.value_trace import _check_ssa_value_equivalence
 from .if_else import _detect_early_return_pattern
 
 from .models import ForLoopInfo, WhileLoopInfo, DoWhileLoopInfo
@@ -21,19 +22,76 @@ from .models import ForLoopInfo, WhileLoopInfo, DoWhileLoopInfo
 
 def _condition_mentions_loop_var(
     condition_text: str,
-    init_var: str,
+    init_var: str | Iterable[str],
     values: Optional[List] = None
 ) -> bool:
-    if init_var and init_var in condition_text:
-        return True
+    if not condition_text:
+        return False
+    if isinstance(init_var, str):
+        loop_vars = {init_var} if init_var else set()
+    else:
+        loop_vars = {v for v in init_var if v}
+    if loop_vars:
+        import re
+        for loop_var in loop_vars:
+            if not loop_var:
+                continue
+            if re.search(rf'\b{re.escape(loop_var)}\b', condition_text):
+                return True
     if values:
         for value in values:
             value_name = value.alias or value.name
             if value_name and value_name.startswith("&"):
                 value_name = value_name[1:]
-            if value_name == init_var:
+            if value_name in loop_vars:
                 return True
     return False
+
+
+def _normalize_loop_var_name(name: Optional[str]) -> Optional[str]:
+    if not name:
+        return None
+    if name.startswith("&"):
+        name = name[1:]
+    return name
+
+
+def _score_loop_var_name(name: Optional[str], preferred: Optional[Set[str]] = None) -> int:
+    if not name:
+        return -100
+    score = 0
+    if preferred and name in preferred:
+        score += 6
+    if name in {"i", "j", "k", "n", "m", "idx", "index"}:
+        score += 5
+    if name.startswith("local_"):
+        score += 4
+    if name.startswith("param_"):
+        score += 2
+    if name.startswith("ptr"):
+        score -= 3
+    if name.startswith("tmp"):
+        score -= 2
+    if name.startswith("t") and name[1:].isdigit():
+        score -= 1
+    if name.startswith("data_"):
+        score -= 6
+    return score
+
+
+def _extract_condition_vars(condition_text: str, values: Optional[List]) -> Set[str]:
+    vars_found: Set[str] = set()
+    if values:
+        for value in values:
+            value_name = _normalize_loop_var_name(value.alias or value.name)
+            if value_name:
+                vars_found.add(value_name)
+    if condition_text:
+        import re
+        match = re.match(r'!?\(?\s*([A-Za-z_]\w*)\s*[<>=!]+', condition_text)
+        if match:
+            vars_found.add(match.group(1))
+    return vars_found
 
 
 def _invert_condition_text(condition_text: str) -> str:
@@ -58,6 +116,201 @@ def _invert_condition_text(condition_text: str) -> str:
     return f"!({condition_text})"
 
 
+def _collect_preheader_blocks(
+    cfg: CFG,
+    loop: NaturalLoop,
+    predecessor_id: int
+) -> List[int]:
+    """
+    Collect linear preheader blocks leading into the loop header.
+
+    We walk backwards through single-predecessor/single-successor chains that
+    stay outside the loop body. This captures common preheader init patterns
+    where the compiler inserts one or more blocks before the loop header.
+    """
+    blocks: List[int] = []
+    current = predecessor_id
+    visited = set()
+
+    while current not in visited and current not in loop.body:
+        visited.add(current)
+        blocks.append(current)
+        block = cfg.blocks.get(current)
+        if not block:
+            break
+        preds = [p for p in block.predecessors if p not in loop.body]
+        if len(preds) != 1:
+            break
+        pred = preds[0]
+        pred_block = cfg.blocks.get(pred)
+        if not pred_block:
+            break
+        if len(pred_block.successors) != 1 or current not in pred_block.successors:
+            break
+        current = pred
+
+    return blocks
+
+
+def _collect_latch_chain(
+    cfg: CFG,
+    loop: NaturalLoop,
+    latch_id: int
+) -> List[int]:
+    """
+    Collect a linear chain of latch/postheader blocks leading into the back edge.
+
+    We walk backwards through blocks that have a single successor into the
+    current block, staying inside the loop body. This captures loop-carried
+    increments that are not in the immediate back-edge block.
+    """
+    chain: List[int] = []
+    current = latch_id
+    visited = set()
+
+    while current not in visited and current in loop.body and current != loop.header:
+        visited.add(current)
+        chain.append(current)
+        block = cfg.blocks.get(current)
+        if not block:
+            break
+        preds = [p for p in block.predecessors if p in loop.body and p != loop.header]
+        if len(preds) != 1:
+            break
+        pred = preds[0]
+        pred_block = cfg.blocks.get(pred)
+        if not pred_block:
+            break
+        if len(pred_block.successors) != 1 or current not in pred_block.successors:
+            break
+        current = pred
+
+    return chain
+
+
+def _find_increment_in_block(
+    block_id: int,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    loop_vars: Set[str],
+    condition_render,
+    loop_equivalence_val
+) -> Optional[Tuple[str, str, Optional[object], List]]:
+    """
+    Detect increment assignment for a loop variable in a single SSA block.
+
+    Returns:
+        Tuple of (increment_text, increment_var, increment_ssa_val, inputs)
+        or None if no increment pattern found.
+    """
+    increment_candidate_inputs: List = []
+    source_ssa_block = ssa_func.instructions.get(block_id, [])
+    for inst in reversed(source_ssa_block):
+        # Pattern 1: Direct output (e.g., i = i + 1)
+        if inst.outputs and len(inst.outputs) == 1:
+            var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
+            matches_loop_var = var_name in loop_vars
+            if not matches_loop_var and condition_render and condition_render.values:
+                for cond_val in condition_render.values:
+                    if _check_ssa_value_equivalence(inst.outputs[0], cond_val, ssa_func):
+                        matches_loop_var = True
+                        break
+            if matches_loop_var:
+                increment_var = var_name
+                increment_ssa_val = inst.outputs[0]
+                increment_candidate_inputs = list(inst.inputs)
+                if inst.mnemonic in {"IADD", "CADD", "SADD"}:
+                    increment_text = f"{increment_var}++"
+                elif inst.inputs:
+                    inc_expr = formatter.render_value(inst.inputs[0]) if inst.inputs else "?"
+                    if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
+                        increment_text = f"{increment_var}++"
+                    else:
+                        import re
+                        simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                        if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                            increment_text = f"{increment_var}++"
+                        else:
+                            inc_value = inst.inputs[0]
+                            if inc_value and inc_value.producer_inst:
+                                increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                                prod_inst = inc_value.producer_inst
+                                if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                    left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                    other = None
+                                    if _check_ssa_value_equivalence(left, inst.outputs[0], ssa_func):
+                                        other = right
+                                    elif _check_ssa_value_equivalence(right, inst.outputs[0], ssa_func):
+                                        other = left
+                                    if other:
+                                        other_text = formatter.render_value(other)
+                                        if other_text in {"1", "1.0", "1.0f"}:
+                                            increment_text = f"{increment_var}++"
+                                            return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+                            increment_text = f"{increment_var} = {inc_expr}"
+
+                if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                    import re
+                    for inp in increment_candidate_inputs:
+                        if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                            inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                            if inp_name and inp_name != increment_var:
+                                increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
+                return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+
+        # Pattern 2: ASGN instruction (inputs=[value, &target])
+        elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
+            target = inst.inputs[1]
+            target_name = _normalize_loop_var_name(target.alias or target.name)
+            matches_loop_var = target_name in loop_vars
+            if not matches_loop_var and condition_render and condition_render.values:
+                for cond_val in condition_render.values:
+                    if _check_ssa_value_equivalence(target, cond_val, ssa_func):
+                        matches_loop_var = True
+                        break
+            if matches_loop_var:
+                increment_var = target_name
+                increment_ssa_val = target
+                increment_candidate_inputs = list(inst.inputs)
+                inc_expr = formatter.render_value(inst.inputs[0])
+                if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
+                    increment_text = f"{increment_var}++"
+                else:
+                    import re
+                    simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                    if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                        increment_text = f"{increment_var}++"
+                    else:
+                        inc_value = inst.inputs[0]
+                        if inc_value and inc_value.producer_inst:
+                            increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                            prod_inst = inc_value.producer_inst
+                            if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                other = None
+                                if _check_ssa_value_equivalence(left, target, ssa_func):
+                                    other = right
+                                elif _check_ssa_value_equivalence(right, target, ssa_func):
+                                    other = left
+                                if other:
+                                    other_text = formatter.render_value(other)
+                                    if other_text in {"1", "1.0", "1.0f"}:
+                                        increment_text = f"{increment_var}++"
+                                        return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+                        increment_text = f"{increment_var} = {inc_expr}"
+
+                if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                    import re
+                    for inp in increment_candidate_inputs:
+                        if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                            inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                            if inp_name and inp_name != increment_var:
+                                increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
+                return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+
+    return None
+
+
 def _find_guard_condition(
     loop: NaturalLoop,
     cfg: CFG,
@@ -65,7 +318,7 @@ def _find_guard_condition(
     formatter: ExpressionFormatter,
     resolver: opcodes.OpcodeResolver,
     start_to_block: Dict[int, int],
-    init_var: str
+    init_var: str | Iterable[str]
 ) -> Optional[Tuple[str, int]]:
     sorted_body = sorted(loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
     for block_id in sorted_body:
@@ -158,48 +411,50 @@ def _detect_for_loop(
 
     init_var = None
     init_value = None
+    init_candidates: List[Tuple[str, str, Optional[object]]] = []
+    init_ssa_map: Dict[str, Optional[object]] = {}
 
-    # Check predecessors for initialization pattern
+    def _maybe_store_init(var_name: Optional[str], value_text: str, ssa_value) -> None:
+        if not var_name:
+            return
+        init_candidates.append((var_name, value_text, ssa_value))
+
+    condition_candidates: Set[str] = set()
+    condition_values: List = []
+
+    # Check predecessors for initialization pattern (including preheader chains)
     # Pattern 1: Direct assignment (inst has outputs)
     # Pattern 2: ASGN instruction (inputs=[value, &target])
+    preheader_blocks: List[int] = []
     for pred_id in predecessors:
+        preheader_blocks.extend(_collect_preheader_blocks(cfg, loop, pred_id))
+    for pred_id in preheader_blocks:
         pred_ssa_block = ssa_func.instructions.get(pred_id, [])
         # Look for assignments like: local_2 = 0, i = 0
         for inst in reversed(pred_ssa_block):  # Check from end backwards
             # Pattern 1: Direct output (e.g., local_2 = 0)
             if inst.outputs and len(inst.outputs) == 1:
-                var_name = inst.outputs[0].alias or inst.outputs[0].name
-                if var_name and not var_name.startswith("data_") and not var_name.startswith("&"):
+                var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
+                if var_name and not var_name.startswith("data_"):
                     # Found potential init variable
-                    init_var = var_name
                     # Get initialization value from instruction
                     if inst.inputs and len(inst.inputs) > 0:
                         init_value = formatter.render_value(inst.inputs[0])
                     else:
                         init_value = "0"  # Default
-                    break
+                    _maybe_store_init(var_name, init_value, inst.outputs[0])
             # Pattern 2: ASGN instruction (inputs=[value, &target])
             elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
                 target = inst.inputs[1]
-                target_name = target.alias or target.name
-                # Extract variable name from &local_2 → local_2
-                if target_name and target_name.startswith("&"):
-                    var_name = target_name[1:]  # Strip & prefix
-                    if var_name and not var_name.startswith("data_"):
-                        # Found potential init variable
-                        init_var = var_name
-                        # Get initialization value from first input
-                        init_value = formatter.render_value(inst.inputs[0])
-                        break
-        if init_var:
-            break
-
-    if not init_var:
-        return None
+                target_name = _normalize_loop_var_name(target.alias or target.name)
+                if target_name and not target_name.startswith("data_"):
+                    init_value = formatter.render_value(inst.inputs[0])
+                    _maybe_store_init(target_name, init_value, target)
 
     # Step 2: Extract condition from header's conditional jump
     condition_text = None
     guard_block: Optional[int] = None
+    condition_render = None
     last_instr = header_block.instructions[-1]
     if resolver.is_conditional_jump(last_instr.opcode):
         target_block = start_to_block.get(last_instr.arg1)
@@ -215,7 +470,9 @@ def _detect_for_loop(
             break_condition = condition_render.text or ""
             if break_condition:
                 inverted_condition = _invert_condition_text(break_condition)
-                if _condition_mentions_loop_var(inverted_condition, init_var, condition_render.values):
+                condition_candidates = _extract_condition_vars(inverted_condition, condition_render.values)
+                condition_values = condition_render.values or []
+                if _condition_mentions_loop_var(inverted_condition, condition_candidates, condition_render.values):
                     condition_text = inverted_condition
                     guard_block = loop.header
 
@@ -306,75 +563,124 @@ def _detect_for_loop(
 
                                 cond_expr = f"({left} {op} {right})"
 
-                                # Check if condition involves our loop variable (check both name and any aliases)
-                                # For example, local_2 might be rendered as "i" due to aliasing
-                                involves_loop_var = init_var in cond_expr
-                                # Also check if any of the inputs have the init_var as their base
-                                if not involves_loop_var:
-                                    for inp in compare_inst.inputs:
-                                        inp_name = inp.alias or inp.name
-                                        # Strip & prefix if present
-                                        if inp_name and inp_name.startswith("&"):
-                                            inp_name = inp_name[1:]
-                                        if inp_name == init_var:
-                                            involves_loop_var = True
-                                            break
-                                if involves_loop_var:
+                                condition_candidates = _extract_condition_vars(cond_expr, compare_inst.inputs)
+                                if _condition_mentions_loop_var(cond_expr, condition_candidates, compare_inst.inputs):
                                     condition_text = cond_expr
                             break
                     break
+
+    if condition_text is None:
+        # Postheader condition: header falls into a guard block with the loop exit.
+        header_successors = [s for s in header_block.successors if s in loop.body]
+        if len(header_successors) == 1:
+            guard_candidate = header_successors[0]
+            guard_block_obj = cfg.blocks.get(guard_candidate)
+            if guard_block_obj and guard_block_obj.instructions:
+                guard_last = guard_block_obj.instructions[-1]
+                if resolver.is_conditional_jump(guard_last.opcode):
+                    guard_target = start_to_block.get(guard_last.arg1)
+                    if guard_target is not None and guard_target not in loop.body:
+                        condition_render = render_condition(
+                            ssa_func,
+                            guard_candidate,
+                            formatter,
+                            cfg,
+                            resolver,
+                            negate=None
+                        )
+                        break_condition = condition_render.text or ""
+                        if break_condition:
+                            inverted_condition = _invert_condition_text(break_condition)
+                            condition_candidates = _extract_condition_vars(inverted_condition, condition_render.values)
+                            condition_values = condition_render.values or []
+                            if _condition_mentions_loop_var(inverted_condition, condition_candidates, condition_render.values):
+                                condition_text = inverted_condition
+                                guard_block = guard_candidate
+
+    # If we didn't find a candidate in predecessors, try header block for init
+    if not init_candidates:
+        header_ssa_block = ssa_func.instructions.get(loop.header, [])
+        for inst in reversed(header_ssa_block):
+            if inst.outputs and len(inst.outputs) == 1:
+                var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
+                if var_name and not var_name.startswith("data_"):
+                    init_value = formatter.render_value(inst.inputs[0]) if inst.inputs else "0"
+                    _maybe_store_init(var_name, init_value, inst.outputs[0])
+            elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
+                target_name = _normalize_loop_var_name(inst.inputs[1].alias or inst.inputs[1].name)
+                if target_name and not target_name.startswith("data_"):
+                    init_value = formatter.render_value(inst.inputs[0])
+                    _maybe_store_init(target_name, init_value, inst.inputs[1])
+
+    if init_candidates:
+        def _init_candidate_score(item: Tuple[str, str, Optional[object]]) -> int:
+            name, _, ssa_val = item
+            score = _score_loop_var_name(name, condition_candidates)
+            if ssa_val and condition_render and condition_render.values:
+                for cond_val in condition_render.values:
+                    if _check_ssa_value_equivalence(ssa_val, cond_val, ssa_func):
+                        score += 5
+                        break
+            return score
+
+        init_candidates.sort(key=_init_candidate_score, reverse=True)
+        init_var, init_value, _ = init_candidates[0]
+        init_ssa_map = {name: ssa_val for name, _, ssa_val in init_candidates}
+
+    if not init_var:
+        return None
+
+    init_ssa = init_ssa_map.get(init_var)
+    loop_equivalence_val = init_ssa
+    if init_ssa and condition_text and condition_values:
+        import re
+        for cond_val in condition_values:
+            if _check_ssa_value_equivalence(init_ssa, cond_val, ssa_func):
+                cond_name = _normalize_loop_var_name(cond_val.alias or cond_val.name)
+                if cond_name and cond_name != init_var:
+                    condition_text = re.sub(rf'\b{re.escape(cond_name)}\b', init_var, condition_text)
 
     # Step 3: Find increment at end of loop body
     # Look in blocks that jump back to header (back edges)
     # Pattern 1: Direct increment (inst has outputs with init_var name)
     # Pattern 2: ASGN instruction (inputs=[value, &init_var])
     increment_text = None
+    increment_var = init_var
+    increment_ssa_val = None
+    loop_vars = {init_var} | condition_candidates
     for back_edge in loop.back_edges:
         source_id = back_edge.source
         target_id = back_edge.target
         if target_id == loop.header:
-            # This block jumps back to header - check for increment
-            source_ssa_block = ssa_func.instructions.get(source_id, [])
-            for inst in reversed(source_ssa_block):
-                # Pattern 1: Direct output (e.g., i = i + 1)
-                if inst.outputs and len(inst.outputs) == 1:
-                    var_name = inst.outputs[0].alias or inst.outputs[0].name
-                    if var_name == init_var:
-                        # Found assignment to loop variable
-                        # Check if it's increment pattern: i = i + 1
-                        if inst.mnemonic in {"IADD", "CADD", "SADD"}:
-                            # Simple increment
-                            increment_text = f"{init_var}++"
-                        elif inst.inputs:
-                            # Generic assignment - render it
-                            inc_expr = formatter.render_value(inst.inputs[0]) if inst.inputs else "?"
-                            if f"{init_var} + 1" in inc_expr or f"({init_var} + 1)" == inc_expr:
-                                increment_text = f"{init_var}++"
-                            else:
-                                increment_text = f"{init_var} = {inc_expr}"
-                        break
-                # Pattern 2: ASGN instruction (inputs=[value, &target])
-                elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
-                    target = inst.inputs[1]
-                    target_name = target.alias or target.name
-                    # Extract variable name from &local_2 → local_2
-                    if target_name and target_name.startswith("&"):
-                        var_name = target_name[1:]  # Strip & prefix
-                        if var_name == init_var:
-                            # Found assignment to loop variable
-                            # Render the increment expression
-                            inc_expr = formatter.render_value(inst.inputs[0])
-                            # Check for i+1 pattern
-                            if f"{init_var} + 1" in inc_expr or f"({init_var} + 1)" == inc_expr:
-                                increment_text = f"{init_var}++"
-                            else:
-                                increment_text = f"{init_var} = {inc_expr}"
-                            break
-            if increment_text:
-                break
+            latch_chain = _collect_latch_chain(cfg, loop, source_id)
+            for candidate_id in latch_chain:
+                result = _find_increment_in_block(
+                    candidate_id,
+                    ssa_func,
+                    formatter,
+                    loop_vars,
+                    condition_render,
+                    loop_equivalence_val
+                )
+                if result:
+                    increment_text, increment_var, increment_ssa_val, _ = result
+                    break
+        if increment_text:
+            break
 
     if not increment_text:
         return None
+
+    if increment_var != init_var:
+        init_ssa = init_ssa_map.get(init_var)
+        if init_ssa and increment_ssa_val and _check_ssa_value_equivalence(init_ssa, increment_ssa_val, ssa_func):
+            increment_text = increment_text.replace(increment_var, init_var)
+            increment_var = init_var
+        for candidate_var, candidate_value, _ in init_candidates:
+            if candidate_var == increment_var:
+                init_var = candidate_var
+                init_value = candidate_value
+                break
 
     guard_info = _find_guard_condition(
         loop,
@@ -383,7 +689,7 @@ def _detect_for_loop(
         formatter,
         resolver,
         start_to_block,
-        init_var
+        loop_vars
     )
     if guard_info:
         condition_text, guard_block = guard_info
@@ -400,11 +706,16 @@ def _detect_for_loop(
     if match:
         cond_var = match.group(1)
         if cond_var != init_var:
-            # Use the variable name from condition (it's the aliased form)
-            display_var = cond_var
-            # Also update increment to use display_var
-            increment_text = increment_text.replace(init_var, display_var)
-            condition_text = condition_text.replace(init_var, display_var)
+            preferred = _score_loop_var_name(cond_var, condition_candidates)
+            current = _score_loop_var_name(init_var, condition_candidates)
+            if preferred >= current:
+                # Use the variable name from condition (it's the aliased form)
+                display_var = cond_var
+                # Also update increment to use display_var
+                increment_text = increment_text.replace(init_var, display_var)
+                condition_text = condition_text.replace(init_var, display_var)
+            else:
+                condition_text = condition_text.replace(cond_var, init_var)
 
     return ForLoopInfo(
         var=display_var,

@@ -513,7 +513,15 @@ def _detect_if_else_pattern(
     # FIX #2: Add loop body blocks to stop blocks to prevent if/else from capturing loop code
     # This prevents if/else BFS from crossing into loop bodies that should be rendered inside loops
     if func_loops:
+        from ..analysis.flow import _get_loop_for_block
+        containing_loop = _get_loop_for_block(block_id, func_loops)
         for loop in func_loops:
+            if containing_loop and loop.header in containing_loop.body:
+                continue
+            if (true_block is not None and true_block in loop.body) or (
+                false_block is not None and false_block in loop.body
+            ):
+                continue
             # Add all blocks in loop body (including header) to stop blocks
             stop_blocks.update(loop.body)
             # Also add the loop header itself

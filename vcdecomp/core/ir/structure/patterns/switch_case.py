@@ -372,6 +372,88 @@ def _case_has_break(
     return True
 
 
+def _block_ends_with_return(
+    cfg: CFG,
+    block_id: int,
+    resolver: opcodes.OpcodeResolver
+) -> bool:
+    """
+    Check if a block ends with a return instruction.
+
+    Args:
+        cfg: Control flow graph
+        block_id: Block to check
+        resolver: Opcode resolver
+
+    Returns:
+        True if block ends with RET, False otherwise
+    """
+    block = cfg.blocks.get(block_id)
+    if not block or not block.instructions:
+        return False
+
+    last_instr = block.instructions[-1]
+    return resolver.is_return(last_instr.opcode)
+
+
+def _block_is_returnish(
+    cfg: CFG,
+    block_id: int,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int]
+) -> bool:
+    """
+    Check if a block either returns directly or jumps to a return block.
+
+    Args:
+        cfg: Control flow graph
+        block_id: Block to check
+        resolver: Opcode resolver
+        start_to_block: Mapping from instruction address to block ID
+
+    Returns:
+        True if block ends with RET or JMP to a RET block
+    """
+    block = cfg.blocks.get(block_id)
+    if not block or not block.instructions:
+        return False
+
+    last_instr = block.instructions[-1]
+    if resolver.is_return(last_instr.opcode):
+        return True
+
+    if resolver.get_mnemonic(last_instr.opcode) == "JMP":
+        target_block_id = start_to_block.get(last_instr.arg1)
+        if target_block_id is not None:
+            return _block_ends_with_return(cfg, target_block_id, resolver)
+
+    return False
+
+
+def _is_simple_return_switch(
+    cases: List[CaseInfo],
+    cfg: CFG,
+    resolver: opcodes.OpcodeResolver,
+    start_to_block: Dict[int, int]
+) -> bool:
+    """
+    Heuristic for small switch-return functions where integrity checks fail.
+
+    This accepts a switch if every case entry block immediately returns
+    (or jumps to a return), which matches patterns like:
+        case 0: return 0;
+        case 3: return 0;
+        default: return 1;
+    """
+    if len(cases) < 2:
+        return False
+
+    return all(
+        _block_is_returnish(cfg, case.block_id, resolver, start_to_block)
+        for case in cases
+    )
+
+
 def _find_param_field_in_predecessors(
     ssa_func: SSAFunction,
     current_block_id: int,
@@ -1328,6 +1410,31 @@ def _detect_switch_patterns(
                 case.has_break = False  # Fall-through cases don't have break
                 _switch_debug(f"Marked case {case.value} as fall-through to case {case.falls_through_to}")
 
+        # Handle shared case bodies (multiple case values mapping to the same entry block).
+        # This happens in patterns like:
+        #   case 0:
+        #   case 3:
+        #       return 0;
+        # The compiler can point both case values at the same block without an explicit JMP.
+        shared_body_map: Dict[int, List[CaseInfo]] = {}
+        for case in cases:
+            shared_body_map.setdefault(case.block_id, []).append(case)
+
+        for block_id, shared_cases in shared_body_map.items():
+            if len(shared_cases) <= 1:
+                continue
+            # Preserve detection order: earlier cases fall through to the last one
+            shared_cases_sorted = sorted(shared_cases, key=lambda c: c.detection_order)
+            body_case = shared_cases_sorted[-1]
+            for shared_case in shared_cases_sorted[:-1]:
+                if shared_case.falls_through_to is None:
+                    shared_case.falls_through_to = body_case.value
+                    shared_case.has_break = False
+                    _switch_debug(
+                        f"Marked shared-body case {shared_case.value} as fall-through to case {body_case.value} "
+                        f"(shared block {block_id})"
+                    )
+
         # Determine if this should be a switch statement
         # 3+ cases always becomes a switch
         # 2 cases becomes a switch only if there's a default case OR case values are non-sequential
@@ -1348,11 +1455,16 @@ def _detect_switch_patterns(
 
         if should_be_switch:
             if not _validate_switch_integrity(cases, filtered_case_sources, cfg, start_to_block, resolver):
+                if not _is_simple_return_switch(cases, cfg, resolver, start_to_block):
+                    _switch_debug(
+                        f"Switch integrity check failed for block {block_id}; "
+                        "falling back to raw control flow"
+                    )
+                    continue
                 _switch_debug(
-                    f"Switch integrity check failed for block {block_id}; "
-                    "falling back to raw control flow"
+                    f"Switch integrity check failed for block {block_id}, "
+                    "but simple return-switch heuristic matched"
                 )
-                continue
             debug_print(f"DEBUG SWITCH: Creating switch with {len(cases)} cases on variable '{test_var}'")
             logger.debug(f"Found switch with {len(cases)} cases on variable '{test_var}'")
 
@@ -1730,9 +1842,19 @@ def _detect_switch_patterns(
 
                             # If the potential exit block starts after all case bodies, it's post-switch code
                             if potential_exit_addr >= max_case_addr:
-                                debug_print(f"DEBUG SWITCH: No explicit default case - default body {default_body} is post-switch code")
-                                default_body = None
-                                current_block = None
+                                # Special case: switch-return functions often have a single return block
+                                # as the implicit default. Keep it if there's no common exit block.
+                                if exit_block is None and _block_ends_with_return(cfg, potential_exit, resolver):
+                                    debug_print(
+                                        "DEBUG SWITCH: Keeping default body as return-only block "
+                                        f"for switch-return function (default_body={default_body})"
+                                    )
+                                else:
+                                    debug_print(
+                                        f"DEBUG SWITCH: No explicit default case - default body {default_body} is post-switch code"
+                                    )
+                                    default_body = None
+                                    current_block = None
 
                     if default_body:
                         all_blocks.update(default_body)
