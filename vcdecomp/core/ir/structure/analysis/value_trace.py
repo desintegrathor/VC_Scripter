@@ -18,6 +18,75 @@ from ...expr import ExpressionFormatter
 
 logger = logging.getLogger(__name__)
 
+LOGICAL_OPS = {"AND", "OR"}
+NEGATION_OPS = {"NOT"}
+
+
+def _trace_branch_operands(
+    value,
+    max_depth: int = 10,
+    operands: Optional[list] = None,
+    addresses: Optional[Set[int]] = None,
+    visited: Optional[Set[int]] = None,
+) -> tuple[list, Set[int]]:
+    """
+    Trace operands for composite branch conditions (AND/OR/NOT).
+
+    This helper expands logical operators so their underlying operands
+    are included when collecting condition values for branch rendering.
+    """
+    if operands is None:
+        operands = []
+    if addresses is None:
+        addresses = set()
+    if visited is None:
+        visited = set()
+
+    if not value or max_depth < 0 or id(value) in visited:
+        return operands, addresses
+
+    visited.add(id(value))
+    operands.append(value)
+
+    producer = value.producer_inst
+    if not producer:
+        return operands, addresses
+
+    addresses.add(producer.address)
+
+    if producer.mnemonic in LOGICAL_OPS or producer.mnemonic in NEGATION_OPS:
+        for input_value in producer.inputs:
+            _trace_branch_operands(
+                input_value,
+                max_depth - 1,
+                operands=operands,
+                addresses=addresses,
+                visited=visited,
+            )
+        return operands, addresses
+
+    if producer.mnemonic == "PHI":
+        for input_value in producer.inputs:
+            _trace_branch_operands(
+                input_value,
+                max_depth - 1,
+                operands=operands,
+                addresses=addresses,
+                visited=visited,
+            )
+        return operands, addresses
+
+    for input_value in producer.inputs:
+        _trace_branch_operands(
+            input_value,
+            max_depth - 1,
+            operands=operands,
+            addresses=addresses,
+            visited=visited,
+        )
+
+    return operands, addresses
+
 
 def _score_producer_quality(inst):
     """Score instruction quality for PHI resolution - prefer informative sources."""

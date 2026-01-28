@@ -33,6 +33,7 @@ from ..blocks.hierarchy import (
     SwitchCase,
 )
 from ..analysis.condition import render_condition
+from ..analysis.boolean_match import simplify_boolean_expression
 from ....constants import get_known_constant_for_variable
 
 if TYPE_CHECKING:
@@ -925,13 +926,15 @@ class HierarchicalCodeEmitter:
                 cond2 = self._extract_condition(block.second_condition)
 
         if cond1 and cond2:
-            return f"({cond1}{operator}{cond2})"
+            combined = f"({cond1}{operator}{cond2})"
         elif cond1:
-            return cond1
+            combined = cond1
         elif cond2:
-            return cond2
+            combined = cond2
         else:
-            return "/* combined condition */"
+            combined = "true"
+
+        return simplify_boolean_expression(combined)
 
     def _emit_switch(self, block: BlockSwitch, indent: str) -> List[str]:
         """Emit a switch-case structure."""
