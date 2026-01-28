@@ -87,6 +87,8 @@ class RuleLoopCounterNormalize(SimplificationRule):
             return False
 
         val = get_constant_value(right, ssa_func)
+        if val is None:
+            return False
 
         # Normalize addition of negative to subtraction
         if inst.mnemonic == "ADD" and val < 0:
@@ -105,6 +107,8 @@ class RuleLoopCounterNormalize(SimplificationRule):
         """Normalize to canonical form."""
         left, right = inst.inputs
         val = get_constant_value(right, ssa_func)
+        if val is None:
+            return None
 
         if inst.mnemonic == "ADD" and val < 0:
             # i + (-n) → i - n

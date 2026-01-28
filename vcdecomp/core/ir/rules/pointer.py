@@ -229,6 +229,8 @@ class RulePtrSubNormalize(SimplificationRule):
 
         # Check if constant is negative
         val = get_constant_value(right, ssa_func)
+        if val is None:
+            return False
         return val < 0
 
     def apply(
@@ -523,6 +525,8 @@ class RuleArrayBounds(SimplificationRule):
         # Calculate index * elem_size
         index = get_constant_value(mul_left, ssa_func)
         elem_size = get_constant_value(mul_right, ssa_func)
+        if index is None or elem_size is None:
+            return None
         offset = index * elem_size
 
         # Create new constant

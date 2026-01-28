@@ -118,6 +118,20 @@ class RuleCastIdentity(SimplificationRule):
 
         # Since we don't have explicit type information in the opcode,
         # we rely on the SSA value types
+        if inst.mnemonic not in (
+            "CTOI",
+            "STOI",
+            "ITOC",
+            "ITOS",
+            "ITOF",
+            "ITOD",
+            "FTOI",
+            "FTOD",
+            "DTOI",
+            "DTOF",
+        ):
+            return False
+
         if len(inst.inputs) != 1:
             return False
 

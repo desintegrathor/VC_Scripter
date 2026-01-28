@@ -15,6 +15,7 @@ Key features:
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
@@ -184,6 +185,12 @@ class SimplificationEngine:
         """
         changes = 0
         made_change = True
+        total_insts = sum(len(block) for block in ssa_func.instructions.values())
+        default_max_changes = max(1000, total_insts * 10)
+        try:
+            max_changes = int(os.environ.get("VCDECOMP_SIMPLIFY_MAX_CHANGES", default_max_changes))
+        except ValueError:
+            max_changes = default_max_changes
 
         # Keep applying this rule until it makes no more changes
         while made_change:
@@ -239,6 +246,14 @@ class SimplificationEngine:
 
                                 changes += 1
                                 made_change = True
+                                if changes >= max_changes:
+                                    logger.warning(
+                                        "SimplificationEngine: Rule %s exceeded max changes (%d); "
+                                        "breaking to avoid infinite loop.",
+                                        rule.name,
+                                        max_changes,
+                                    )
+                                    return changes
 
                                 if self.debug:
                                     logger.debug(
@@ -250,6 +265,14 @@ class SimplificationEngine:
                                 block_insts[inst_idx] = result
                                 changes += 1
                                 made_change = True
+                                if changes >= max_changes:
+                                    logger.warning(
+                                        "SimplificationEngine: Rule %s exceeded max changes (%d); "
+                                        "breaking to avoid infinite loop.",
+                                        rule.name,
+                                        max_changes,
+                                    )
+                                    return changes
 
                                 if self.debug:
                                     logger.debug(

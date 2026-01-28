@@ -10,12 +10,24 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Callable
 import logging
+import os
+import sys
 
 from ..loader.scr_loader import Instruction, SCRFile
 from ..disasm import opcodes
 from .cfg import CFG, build_cfg, BasicBlock
 
 logger = logging.getLogger(__name__)
+STACK_DEBUG = os.environ.get("VCDECOMP_STACK_DEBUG", "0") == "1"
+STACK_TRACE = os.environ.get("VCDECOMP_STACK_TRACE", "0") == "1"
+STACK_STATS = os.environ.get("VCDECOMP_STACK_STATS", "0") == "1"
+_STACK_VALUE_CREATED = 0
+_STACK_PHI_CREATED = 0
+
+
+def _stack_debug(msg: str) -> None:
+    if STACK_DEBUG or STACK_TRACE or STACK_STATS:
+        print(msg, file=sys.stderr)
 
 
 SIMPLE_ARITHMETIC_MNEMONICS = {
@@ -335,6 +347,13 @@ class StackValue:
     alias: Optional[str] = None
     metadata: Dict = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if STACK_STATS:
+            global _STACK_VALUE_CREATED, _STACK_PHI_CREATED
+            _STACK_VALUE_CREATED += 1
+            if self.phi_sources:
+                _STACK_PHI_CREATED += 1
+
 
 @dataclass
 class LiftedInstruction:
@@ -399,7 +418,7 @@ def _stack_state_signature(state: Optional[List[StackValue]]) -> Optional[Tuple]
         phi_sources = None
         if val.phi_sources:
             phi_sources = tuple((pred, src.name) for pred, src in val.phi_sources)
-        signature.append((val.name, val.value_type, val.alias, phi_sources))
+        signature.append((val.name, val.alias, phi_sources))
     return tuple(signature)
 
 
@@ -426,9 +445,25 @@ def _lift_function_fixed_point(
     order = sorted(cfg.blocks.keys())
     max_iters = max(3, len(order) * 2)
 
-    for _ in range(max_iters):
+    total_blocks = len(order)
+    for iteration in range(max_iters):
         changed = False
-        for block_id in order:
+        changed_blocks: Set[int] = set()
+        changed_in = 0
+        changed_out = 0
+        max_in_depth = -1
+        max_out_depth = -1
+        max_in_block = None
+        max_out_block = None
+        if STACK_STATS:
+            created_start = _STACK_VALUE_CREATED
+            phi_start = _STACK_PHI_CREATED
+        for block_idx, block_id in enumerate(order, start=1):
+            if STACK_TRACE:
+                _stack_debug(
+                    f"DEBUG STACK: iter {iteration + 1}/{max_iters} "
+                    f"block {block_id} start ({block_idx}/{total_blocks})"
+                )
             block = cfg.get_block(block_id)
             prev_in = getattr(block, "_in_stack", None)
             prev_out = getattr(block, "_out_stack", None)
@@ -442,10 +477,52 @@ def _lift_function_fixed_point(
             )
             new_in = getattr(block, "_in_stack", None)
             new_out = getattr(block, "_out_stack", None)
+
+            if new_in is not None and len(new_in) > max_in_depth:
+                max_in_depth = len(new_in)
+                max_in_block = block_id
+            if new_out is not None and len(new_out) > max_out_depth:
+                max_out_depth = len(new_out)
+                max_out_block = block_id
+
             if _stack_state_signature(prev_in) != _stack_state_signature(new_in):
                 changed = True
+                changed_blocks.add(block_id)
+                changed_in += 1
             if _stack_state_signature(prev_out) != _stack_state_signature(new_out):
                 changed = True
+                changed_blocks.add(block_id)
+                changed_out += 1
+            if STACK_TRACE:
+                in_len = len(new_in) if new_in is not None else 0
+                out_len = len(new_out) if new_out is not None else 0
+                _stack_debug(
+                    f"DEBUG STACK: iter {iteration + 1}/{max_iters} "
+                    f"block {block_id} end in={in_len} out={out_len}"
+                )
+        if STACK_DEBUG or STACK_STATS:
+            created_delta = _STACK_VALUE_CREATED - created_start if STACK_STATS else 0
+            phi_delta = _STACK_PHI_CREATED - phi_start if STACK_STATS else 0
+            stats_suffix = ""
+            if STACK_STATS:
+                stats_suffix = (
+                    f" created+={created_delta} (total={_STACK_VALUE_CREATED})"
+                    f" phi+={phi_delta} (total={_STACK_PHI_CREATED})"
+                )
+            blocks_suffix = ""
+            if STACK_DEBUG and 0 < len(changed_blocks) <= 20:
+                blocks_suffix = f" blocks={sorted(changed_blocks)}"
+            _stack_debug(
+                "DEBUG STACK: iter "
+                f"{iteration + 1}/{max_iters} "
+                f"changed_blocks={len(changed_blocks)} "
+                f"in_changed={changed_in} "
+                f"out_changed={changed_out} "
+                f"max_in={max_in_depth} (b{max_in_block}) "
+                f"max_out={max_out_depth} (b{max_out_block})"
+                f"{stats_suffix}"
+                f"{blocks_suffix}"
+            )
         if not changed:
             return lifted
 
@@ -481,6 +558,35 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
 
     for instr in instructions:
         info = resolver.get_info(instr.opcode)
+        mnemonic = resolver.get_mnemonic(instr.opcode)
+
+        if mnemonic == "SSP":
+            pop_count = instr.arg1 if instr.arg1 > 0 else 0
+            preserve_ret = False
+            ret_val: Optional[StackValue] = None
+
+            if scr and stack:
+                top_producer = stack[-1].producer
+                if top_producer and resolver.get_mnemonic(top_producer.opcode) == "XCALL":
+                    xfn_entry = scr.get_xfn(top_producer.arg1)
+                    if xfn_entry and xfn_entry.arg_count == 0xFFFFFFFF:
+                        pop_count += 1  # Variadic metadata value
+                    returns_value, _ = _get_xcall_return_info(top_producer.arg1, scr, header_db=header_db)
+                    if returns_value:
+                        preserve_ret = True
+
+            inputs = []
+            if preserve_ret and stack:
+                ret_val = stack.pop()
+            pop_total = min(pop_count, len(stack))
+            for _ in range(pop_total):
+                inputs.insert(0, stack.pop())
+            if preserve_ret and ret_val:
+                stack.append(ret_val)
+
+            lifted.append(LiftedInstruction(instruction=instr, inputs=inputs, outputs=[]))
+            prev_instr = instr
+            continue
 
         # FÁZE 1.6: Handle context-dependent LLD behavior
         # LLD has multiple usage patterns:
@@ -507,8 +613,6 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
 
         outputs: List[StackValue] = []
         inferred_alias = _derive_alias(instr, resolver)
-        mnemonic = resolver.get_mnemonic(instr.opcode)
-
         for idx in range(pushes):
             # Prefer opcode-based type inference over generic result_type
             inferred_type = _infer_type_from_opcode(mnemonic, resolver)

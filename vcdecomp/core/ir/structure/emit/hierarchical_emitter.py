@@ -32,7 +32,7 @@ from ..blocks.hierarchy import (
     BlockGraph,
     SwitchCase,
 )
-from ..analysis.condition import render_condition
+from ..analysis.condition import render_condition, _find_condition_jump
 from ..analysis.boolean_match import simplify_boolean_expression
 from ....constants import get_known_constant_for_variable
 
@@ -1158,7 +1158,13 @@ class HierarchicalCodeEmitter:
             The rendered condition expression, or None if not applicable
         """
         if not isinstance(block, BlockBasic):
-            return None
+            if isinstance(block, BlockList):
+                candidate = self._find_condition_block_in_list(block)
+                if candidate is None:
+                    return None
+                block = candidate
+            else:
+                return None
 
         cfg_block_id = block.original_block_id
         cfg = self.cfg
@@ -1175,3 +1181,16 @@ class HierarchicalCodeEmitter:
         )
 
         return cond_render.text if cond_render else None
+
+    def _find_condition_block_in_list(self, block_list: BlockList) -> Optional[BlockBasic]:
+        """Find the last basic block in a list that ends with a conditional jump."""
+        for component in reversed(block_list.components):
+            if isinstance(component, BlockBasic):
+                cfg_block = self.cfg.blocks.get(component.original_block_id)
+                if cfg_block and _find_condition_jump(cfg_block, self.resolver):
+                    return component
+            if isinstance(component, BlockList):
+                nested = self._find_condition_block_in_list(component)
+                if nested is not None:
+                    return nested
+        return None
