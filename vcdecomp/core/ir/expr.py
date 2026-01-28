@@ -853,7 +853,7 @@ class ExpressionFormatter:
                                 value = self.data_segment.get_dword(offset * 4)
                                 if 0 <= value <= 10:
                                     # Target is initialized to small value
-                                    if target.alias and (target.alias.startswith("local_") or target.alias.startswith("param_")):
+                                    if target.alias and target.alias.startswith("local_"):
                                         candidates[target.alias] = candidates.get(target.alias, 0) + 1
                         except (ValueError, AttributeError):
                             pass
@@ -861,7 +861,7 @@ class ExpressionFormatter:
                 # Pattern 2: Comparison operators
                 if inst.mnemonic in ("LES", "LEQ", "GRE", "GEQ", "ULES", "ULEQ"):
                     for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
+                        if inp.alias and inp.alias.startswith("local_"):
                             candidates[inp.alias] = candidates.get(inp.alias, 0) + 2
 
                 # Pattern 3: Increment operations
@@ -870,7 +870,7 @@ class ExpressionFormatter:
                     if inst.mnemonic == "ADD" and len(inst.inputs) == 2:
                         # Check if one operand is constant 1
                         for inp in inst.inputs:
-                            if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
+                            if inp.alias and inp.alias.startswith("local_"):
                                 other_inp = inst.inputs[1] if inst.inputs[0] == inp else inst.inputs[0]
                                 # Check if other input is 1
                                 if other_inp.alias and other_inp.alias.startswith("data_"):
@@ -884,13 +884,13 @@ class ExpressionFormatter:
                                         pass
                     elif inst.mnemonic == "INC":
                         for inp in inst.inputs:
-                            if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
+                            if inp.alias and inp.alias.startswith("local_"):
                                 candidates[inp.alias] = candidates.get(inp.alias, 0) + 3
 
                 # Pattern 4: Used in multiplication (array indexing)
                 if inst.mnemonic in ("MUL", "CMUL"):
                     for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
+                        if inp.alias and inp.alias.startswith("local_"):
                             candidates[inp.alias] = candidates.get(inp.alias, 0) + 1
 
         # Sort candidates by score (highest first)
@@ -916,7 +916,7 @@ class ExpressionFormatter:
                 # Find MUL operations (used for array indexing: index * element_size)
                 if inst.mnemonic == "MUL" and len(inst.inputs) == 2:
                     for inp in inst.inputs:
-                        if inp.alias and (inp.alias.startswith("local_") or inp.alias.startswith("param_")):
+                        if inp.alias and inp.alias.startswith("local_"):
                             index_vars.add(inp.alias)
                             if inp.alias in self._semantic_names:
                                 semantic_index_vars[inp.alias] = self._semantic_names[inp.alias]
@@ -936,12 +936,7 @@ class ExpressionFormatter:
                 if inst.mnemonic in ("SUB", "FSUB", "ADD", "FADD") and len(inst.inputs) == 2:
                     for inp in inst.inputs:
                         if inp.alias and inp.alias.startswith("param_"):
-                            # This param is used in arithmetic - if we have a loop counter, assign same name
-                            if semantic_index_vars:
-                                semantic_name = next(iter(semantic_index_vars.values()))
-                                if inp.alias not in self._semantic_names:
-                                    self._semantic_names[inp.alias] = semantic_name
-                                    break
+                            continue
 
     def _assign_parameter_names(self) -> None:
         """
@@ -1488,6 +1483,15 @@ class ExpressionFormatter:
         constant_value = self._constant_propagator.get_constant(value)
         if constant_value is not None:
             return self._format_constant_value(constant_value, expected_type_str, context)
+
+        # Inline eval-stack copies produced by LCP
+        if value.producer_inst and value.producer_inst.mnemonic == "LCP" and value.producer_inst.inputs:
+            return self._render_value(
+                value.producer_inst.inputs[0],
+                expected_type_str=expected_type_str,
+                context=context,
+                parent_operator=parent_operator,
+            )
 
         # FÁZE 3.3: Check if value is a function parameter (VERY HIGH PRIORITY)
         if value.producer_inst and value.producer_inst.mnemonic == "LCP":
@@ -3988,6 +3992,18 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
 
     formatted: List[FormattedExpression] = []
 
+    def _to_signed32(val: int) -> int:
+        return val - 0x100000000 if val >= 0x80000000 else val
+
+    def _stack_alias_from_offset(offset: int) -> str:
+        signed = _to_signed32(offset)
+        if signed < 0:
+            param_idx = signed + 4  # -4 -> 0, -3 -> 1, ...
+            if param_idx < 0:
+                return f"stack_{abs(signed)}"
+            return f"param_{param_idx}"
+        return f"local_{signed}"
+
     for inst in instructions:
         # WORKAROUND: Track DCP with array patterns for later use
         if inst.mnemonic == "DCP" and len(inst.inputs) > 0:
@@ -4005,7 +4021,11 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
 
         # Skip constant loading - values are inlined via alias
         if inst.mnemonic in CONST_LOAD_OPS:
-            continue
+            # LLD/GLD can also be stores (pops=1, pushes=0) - keep those
+            if inst.mnemonic in {"LLD", "GLD"} and not inst.outputs:
+                pass
+            else:
+                continue
 
         # Skip stack manipulation instructions
         if inst.mnemonic in STACK_OPS:
@@ -4033,6 +4053,25 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
             formatter._can_inline(val) for val in inst.outputs
         )
         if not should_emit:
+            continue
+
+        # Handle LLD/GLD store patterns (pops=1, pushes=0)
+        if inst.mnemonic in {"LLD", "GLD"} and not inst.outputs:
+            if inst.instruction and inst.instruction.instruction and inst.inputs:
+                raw_offset = inst.instruction.instruction.arg1
+                if inst.mnemonic == "LLD":
+                    signed_offset = _to_signed32(raw_offset)
+                    if signed_offset >= 0:
+                        target = _stack_alias_from_offset(raw_offset)
+                    else:
+                        target = None
+                else:
+                    target = formatter._global_names.get(raw_offset, f"data_{raw_offset}")
+                if target:
+                    source = formatter.render_value(inst.inputs[0])
+                    formatted.append(
+                        FormattedExpression(text=f"{target} = {source};", address=inst.address, mnemonic=inst.mnemonic)
+                    )
             continue
 
         store_text = formatter._format_store(inst)

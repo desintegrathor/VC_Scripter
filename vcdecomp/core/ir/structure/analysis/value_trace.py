@@ -14,7 +14,7 @@ import re
 import sys
 
 from ...ssa import SSAFunction
-from ...expr import ExpressionFormatter
+from ...expr import ExpressionFormatter, format_block_expressions
 
 logger = logging.getLogger(__name__)
 
@@ -431,6 +431,19 @@ def _build_condition_value_map(
             break
 
     if not last_asgn:
+        return {}
+
+    # Only rename to the assignment target if that assignment will actually be emitted.
+    # This prevents conditions from referencing locals that were optimized out.
+    try:
+        emitted_addrs = {expr.address for expr in format_block_expressions(
+            ssa_func,
+            block_id,
+            formatter=formatter,
+        )}
+    except Exception:
+        emitted_addrs = None
+    if emitted_addrs is not None and last_asgn.address not in emitted_addrs:
         return {}
 
     source_value, target_value = _get_assignment_source_target(last_asgn)

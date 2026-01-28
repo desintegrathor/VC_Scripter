@@ -1,4 +1,4 @@
-// Structured decompilation of decompiler_source_tests\test1\tt.scr
+﻿// Structured decompilation of decompiler_source_tests\test1\tt.scr
 // Functions: 15
 
 #include <inc\sc_global.h>
@@ -46,16 +46,12 @@ dword g_FPV_VcFlag = 0;
 dword g_FPV_NeFlag = 0;
 
 int _init(s_SC_NET_info *info) {
-    int n;
-
     return;
 }
 
 int func_0050(float param_0) {
-    int n;
-
-    if (n != 0) {
-        if (local_0 != 2) {
+    if (gEndRule != 0) {
+        if (gEndRule != 2) {
             SC_message(&data_2119, gEndRule);
         } else {
             if (gSidePoints[0] >= gEndValue || gSidePoints[1] >= gEndValue) {
@@ -167,10 +163,8 @@ void func_0294(void) {
 }
 
 int func_0334(int param_0) {
-    int n;
-
-    if (local_0 != 0) {
-        if (local_0 != 3) {
+    if ((param_0 % 4) != 0) {
+        if ((param_0 % 4) != 3) {
             return TRUE;
         }
     } else {
@@ -204,9 +198,7 @@ int func_0498(int param_0, int param_1) {
     s_SC_FpvMapSign local_5[4];
     int idx;
     int local_2;
-    dword local_4;
     int local_41;
-    int m;
     int n;
 
     local_4 = 0;
@@ -219,7 +211,6 @@ block_96:
 
 int func_0752(int param_0, int param_1) {
     int idx;
-    dword local_1;
     int n;
     s_SC_P_getinfo player_info;
 
@@ -239,7 +230,7 @@ int func_0752(int param_0, int param_1) {
             }
             local_1 = 0;
         }
-        t827_ret = SC_MP_SRV_P_SetSideClass(param_0, local_1, local_1 * 20 + 1);
+        t827_ret = SC_MP_SRV_P_SetSideClass(param_0, ptr, 1 + 20 * ptr);
         if (abl_lists < 64) {
             abl_list[abl_lists] = param_1;
             abl_lists++;
@@ -252,10 +243,10 @@ int func_0852(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
     int k;
-    dword local_1;
     int local_2;
     int local_265;
     int local_266;
+    int m;
 
     if (! SC_MP_SRV_GetAutoTeamBalance()) {
         return;
@@ -266,17 +257,17 @@ int func_0852(void) {
     }
     if (local_0 <= 0) {
         local_1 = 1;
-        local_2 = tmp7 / 2;
+        local_2 = tmp6 / 2;
     } else {
         local_1 = 0;
         local_2 = local_0 / 2;
     }
     local_265 = 64;
-    t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, local_1);
+    t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, ptr);
 block_156:
-    t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, ((1 - local_1)) * 20 + 1);
-    local_8[j].id = 0;
-    local_2 = i - 1;
+    t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - ptr, 1 + 20 * ((1 - ptr)));
+    local_8[ptr5].id = 0;
+    local_2 = ptr1 - 1;
 block_157:
     return;
 }
@@ -284,7 +275,7 @@ block_157:
 int func_1028(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
-    dword local_257;
+    int local_257;
     int local_258;
     int local_260;
 
@@ -292,12 +283,12 @@ int func_1028(void) {
     func_0334(t1037_ret);
     local_257 = 1 - t1037_ret;
     local_258 = 64;
-    t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
+    t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, ptr);
 block_159:
     local_256 = 0;
-    for (i = 0; i < local_258; i++) {
+    for (local_256 = 0; local_256 < ptr1; local_256++) {
         SC_MP_RecoverPlayer(t1084_);
-        local_256 = i + 1;
+        local_256 = obj + 1;
     }
 block_164:
     return;
@@ -309,10 +300,8 @@ int ScriptMain(s_SC_NET_info *info) {
     char local_0[32];
     s_SC_MP_hud hudinfo;
     int i;
-    int idx;
-    dword j;
+    int j;
     int k;
-    dword local_11;
     int local_12;
     int local_13;
     int local_294;
@@ -329,12 +318,10 @@ int ScriptMain(s_SC_NET_info *info) {
     int local_420;
     float local_421;
     int local_8;
+    int m;
     int n;
     s_SC_P_getinfo player_info;
     s_SC_MP_SRV_settings srv_settings;
-    int strict_cmp_0;
-    int strict_cmp_1;
-    int strict_cmp_2;
     char* t2998_ret;
     ushort* t3021_ret;
     ushort* t3085_ret;
@@ -344,31 +331,27 @@ int ScriptMain(s_SC_NET_info *info) {
     char* t3275_ret;
     ushort* t3326_ret;
     s_SC_MP_Recover t3600_0;
-    dword* tmp222;
-    dword* tmp238;
-    dword* tmp241;
     c_Vector3 vec;
 
-    for (j = 0; j < local_12; j++) {
-        *(&local_296) + tmp26 * 4 = 1;
-        local_8 = j + 1;
+    for (local_8 = 0; local_8 < ptr; local_8++) {
+        (&local_296) + tmp26 * 4 = 1;
+        local_8 = obj + 1;
     }
 block_192:
     local_8 = 0;
-    for (j = 0; j < 2; j++) {
+    for (local_8 = 0; local_8 < 2; local_8++) {
         local_9 = 0;
         local_10 = 0;
-        gRecTimer[768] + idx * 128 + idx29 * 4 -= info->elapsed_time;
-        local_10 = idx29 + 1;
-        local_9 = idx + 1;
-        local_8 = j + 1;
+        gRecTimer[768] + ptr29 * 128 + ptr40 * 4 -= info->elapsed_time;
+        local_10 = ptr40 + 1;
+        local_9 = ptr29 + 1;
+        local_8 = obj + 1;
     }
 block_210:
 block_211:
     gMission_afterstart_time += info->elapsed_time;
     gMissionTime -= info->elapsed_time;
     func_0264(info->elapsed_time);
-    t1489_0 = LN(gMissionTime > 0.0f);
 block_212:
     gMission_phase = 3;
     SC_sgi(503, gMission_phase);
@@ -376,11 +359,11 @@ block_212:
     func_0355();
 block_215:
     local_8 = 0;
-    for (j = 0; j < local_12; j++) {
+    for (local_8 = 0; local_8 < ptr; local_8++) {
         SC_P_GetPos(t1547_, &vec);
         local_9 = gCurStep - 1;
-        t1576_ret = SC_IsNear3D(&vec, &gStepSwitch[idx], t1574_);
-        gCurStep = idx;
+        t1576_ret = SC_IsNear3D(&vec, &gStepSwitch[ptr29], t1574_);
+        gCurStep = ptr29;
         t1595_ret = SC_MP_GetHandleofPl(t1593_);
         SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
         SC_sgi(507, gCurStep);
@@ -393,8 +376,8 @@ block_215:
         gPhaseTimer = 8.0f;
         func_0355();
         SC_P_MP_AddPoints(t1647_, 2);
-        local_9 = idx + 1;
-        local_8 = j + 1;
+        local_9 = ptr29 + 1;
+        local_8 = obj + 1;
     }
 block_228:
 block_230:
@@ -411,14 +394,14 @@ block_234:
     SC_MP_RecoverAllNoAiPlayers();
 block_235:
 block_236:
-    for (j = 0; j < 6; j++) {
-        t2286_ret = sprintf(&n, "TT_flag_%d", j);
+    for (local_8 = 0; local_8 < 6; local_8++) {
+        t2286_ret = sprintf(&n, "TT_flag_%d", t2286_ret);
         local_295 = SC_NOD_GetNoMessage(0, &local_0);
-        SC_NOD_GetPivotWorld(local_295, &gFlagPos[j]);
-        gFlagNod[j].field_0 = SC_NOD_Get(local_295, "vlajkaUS");
-        gFlagNod[j].field_4 = SC_NOD_Get(local_295, "Vlajka VC");
-        gFlagNod[j].field_8 = SC_NOD_Get(local_295, "vlajka N");
-        local_8 = j + 1;
+        SC_NOD_GetPivotWorld(ptr49, &gFlagPos[t2286_ret]);
+        gFlagNod[t2286_ret].field_0 = SC_NOD_Get(ptr49, "vlajkaUS");
+        gFlagNod[t2286_ret].field_4 = SC_NOD_Get(ptr49, "Vlajka VC");
+        gFlagNod[t2286_ret].field_8 = SC_NOD_Get(ptr49, "vlajka N");
+        local_8 = obj + 1;
     }
 block_284:
 block_285:
@@ -449,28 +432,28 @@ block_285:
         local_294 = 65;
         local_9 = 0;
         local_8 = 0;
-        t2484_ret = sprintf(&local_0, "TT_%c%d_%d", local_294, idx, j);
-        t2513_ret = SC_NET_FillRecover(&gRec[3072] + idx * 512 + tmp288 * 16, &local_0);
-        gRecs[idx29] + idx * 4++;
-        local_8 = j + 1;
-        local_8 = 32 - tmp317;
-        SC_MP_GetRecovers(t2595_, &gRec[3072] + idx * 512 + tmp331 * 16, &local_8);
-        gRecs[idx29] + idx * 4 += j;
-        local_9 = idx + 1;
-        local_10 = idx29 + 1;
+        t2484_ret = sprintf(&local_0, "TT_%c%d_%d", ptr50, ptr29, "TT_%c%d_%d");
+        t2513_ret = SC_NET_FillRecover(&gRec[3072] + ptr29 * 512 + tmp287 * 16, &local_0);
+        gRecs[ptr40] + ptr29 * 4++;
+        local_8 = obj + 1;
+        local_8 = 32 - tmp316;
+        SC_MP_GetRecovers(t2595_, &gRec[3072] + ptr29 * 512 + tmp330 * 16, &local_8);
+        gRecs[ptr40] + ptr29 * 4 += obj;
+        local_9 = ptr29 + 1;
+        local_10 = ptr40 + 1;
     }
 block_301:
     gSteps = 0;
     local_8 = 0;
-    for (j = 0; j < 6; j++) {
-        gSteps = j + 1;
-        local_8 = j + 1;
+    for (local_8 = 0; local_8 < 6; local_8++) {
+        gSteps = obj + 1;
+        local_8 = obj + 1;
     }
-    for (j = 0; j < (gSteps - 1; j++) {
-        t2757_ret = sprintf(&local_0, "TTS_%d", j);
-        t2769_ret = SC_GetScriptHelper(&local_0, &gStepSwitch[j]);
+    for (local_8 = 0; local_8 < (gSteps - 1; local_8++) {
+        t2757_ret = sprintf(&local_0, "TTS_%d", t2757_ret);
+        t2769_ret = SC_GetScriptHelper(&local_0, &gStepSwitch[t2757_ret]);
         SC_message(&data_2636, &local_0);
-        local_8 = j + 1;
+        local_8 = t2757_ret + 1;
     }
 block_315:
     SC_sgi(508, gSteps);
@@ -489,11 +472,11 @@ block_338:
 block_339:
     gCLN_ShowStartInfo = 3.0f;
 block_405:
-    &idx.fval1 = 0.1f;
+    &param_0.fval1 = 0.1f;
 block_409:
     local_8 = 0;
 block_413:
-    local_8 = j + 1;
+    local_8 = obj + 1;
 block_427:
 block_428:
 block_456:

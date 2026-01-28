@@ -611,8 +611,18 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
                 fake = StackValue(name=fake_name, producer=None, value_type=opcodes.ResultType.UNKNOWN)
                 inputs.insert(0, fake)
 
+        lcp_copy_source: Optional[StackValue] = None
+        if mnemonic == "LCP" and instr.arg1 >= 0 and stack:
+            if instr.arg1 % 4 == 0:
+                stack_index = instr.arg1 // 4
+                if stack_index < len(stack):
+                    lcp_copy_source = stack[-(stack_index + 1)]
+                    inputs = [lcp_copy_source]
+
         outputs: List[StackValue] = []
         inferred_alias = _derive_alias(instr, resolver)
+        if lcp_copy_source is not None:
+            inferred_alias = lcp_copy_source.alias
         for idx in range(pushes):
             # Prefer opcode-based type inference over generic result_type
             inferred_type = _infer_type_from_opcode(mnemonic, resolver)
