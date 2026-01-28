@@ -116,6 +116,201 @@ def _invert_condition_text(condition_text: str) -> str:
     return f"!({condition_text})"
 
 
+def _collect_preheader_blocks(
+    cfg: CFG,
+    loop: NaturalLoop,
+    predecessor_id: int
+) -> List[int]:
+    """
+    Collect linear preheader blocks leading into the loop header.
+
+    We walk backwards through single-predecessor/single-successor chains that
+    stay outside the loop body. This captures common preheader init patterns
+    where the compiler inserts one or more blocks before the loop header.
+    """
+    blocks: List[int] = []
+    current = predecessor_id
+    visited = set()
+
+    while current not in visited and current not in loop.body:
+        visited.add(current)
+        blocks.append(current)
+        block = cfg.blocks.get(current)
+        if not block:
+            break
+        preds = [p for p in block.predecessors if p not in loop.body]
+        if len(preds) != 1:
+            break
+        pred = preds[0]
+        pred_block = cfg.blocks.get(pred)
+        if not pred_block:
+            break
+        if len(pred_block.successors) != 1 or current not in pred_block.successors:
+            break
+        current = pred
+
+    return blocks
+
+
+def _collect_latch_chain(
+    cfg: CFG,
+    loop: NaturalLoop,
+    latch_id: int
+) -> List[int]:
+    """
+    Collect a linear chain of latch/postheader blocks leading into the back edge.
+
+    We walk backwards through blocks that have a single successor into the
+    current block, staying inside the loop body. This captures loop-carried
+    increments that are not in the immediate back-edge block.
+    """
+    chain: List[int] = []
+    current = latch_id
+    visited = set()
+
+    while current not in visited and current in loop.body and current != loop.header:
+        visited.add(current)
+        chain.append(current)
+        block = cfg.blocks.get(current)
+        if not block:
+            break
+        preds = [p for p in block.predecessors if p in loop.body and p != loop.header]
+        if len(preds) != 1:
+            break
+        pred = preds[0]
+        pred_block = cfg.blocks.get(pred)
+        if not pred_block:
+            break
+        if len(pred_block.successors) != 1 or current not in pred_block.successors:
+            break
+        current = pred
+
+    return chain
+
+
+def _find_increment_in_block(
+    block_id: int,
+    ssa_func: SSAFunction,
+    formatter: ExpressionFormatter,
+    loop_vars: Set[str],
+    condition_render,
+    loop_equivalence_val
+) -> Optional[Tuple[str, str, Optional[object], List]]:
+    """
+    Detect increment assignment for a loop variable in a single SSA block.
+
+    Returns:
+        Tuple of (increment_text, increment_var, increment_ssa_val, inputs)
+        or None if no increment pattern found.
+    """
+    increment_candidate_inputs: List = []
+    source_ssa_block = ssa_func.instructions.get(block_id, [])
+    for inst in reversed(source_ssa_block):
+        # Pattern 1: Direct output (e.g., i = i + 1)
+        if inst.outputs and len(inst.outputs) == 1:
+            var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
+            matches_loop_var = var_name in loop_vars
+            if not matches_loop_var and condition_render and condition_render.values:
+                for cond_val in condition_render.values:
+                    if _check_ssa_value_equivalence(inst.outputs[0], cond_val, ssa_func):
+                        matches_loop_var = True
+                        break
+            if matches_loop_var:
+                increment_var = var_name
+                increment_ssa_val = inst.outputs[0]
+                increment_candidate_inputs = list(inst.inputs)
+                if inst.mnemonic in {"IADD", "CADD", "SADD"}:
+                    increment_text = f"{increment_var}++"
+                elif inst.inputs:
+                    inc_expr = formatter.render_value(inst.inputs[0]) if inst.inputs else "?"
+                    if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
+                        increment_text = f"{increment_var}++"
+                    else:
+                        import re
+                        simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                        if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                            increment_text = f"{increment_var}++"
+                        else:
+                            inc_value = inst.inputs[0]
+                            if inc_value and inc_value.producer_inst:
+                                increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                                prod_inst = inc_value.producer_inst
+                                if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                    left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                    other = None
+                                    if _check_ssa_value_equivalence(left, inst.outputs[0], ssa_func):
+                                        other = right
+                                    elif _check_ssa_value_equivalence(right, inst.outputs[0], ssa_func):
+                                        other = left
+                                    if other:
+                                        other_text = formatter.render_value(other)
+                                        if other_text in {"1", "1.0", "1.0f"}:
+                                            increment_text = f"{increment_var}++"
+                                            return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+                            increment_text = f"{increment_var} = {inc_expr}"
+
+                if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                    import re
+                    for inp in increment_candidate_inputs:
+                        if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                            inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                            if inp_name and inp_name != increment_var:
+                                increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
+                return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+
+        # Pattern 2: ASGN instruction (inputs=[value, &target])
+        elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
+            target = inst.inputs[1]
+            target_name = _normalize_loop_var_name(target.alias or target.name)
+            matches_loop_var = target_name in loop_vars
+            if not matches_loop_var and condition_render and condition_render.values:
+                for cond_val in condition_render.values:
+                    if _check_ssa_value_equivalence(target, cond_val, ssa_func):
+                        matches_loop_var = True
+                        break
+            if matches_loop_var:
+                increment_var = target_name
+                increment_ssa_val = target
+                increment_candidate_inputs = list(inst.inputs)
+                inc_expr = formatter.render_value(inst.inputs[0])
+                if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
+                    increment_text = f"{increment_var}++"
+                else:
+                    import re
+                    simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
+                    if simple_inc_match and simple_inc_match.group(1) != increment_var:
+                        increment_text = f"{increment_var}++"
+                    else:
+                        inc_value = inst.inputs[0]
+                        if inc_value and inc_value.producer_inst:
+                            increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
+                            prod_inst = inc_value.producer_inst
+                            if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
+                                left, right = prod_inst.inputs[0], prod_inst.inputs[1]
+                                other = None
+                                if _check_ssa_value_equivalence(left, target, ssa_func):
+                                    other = right
+                                elif _check_ssa_value_equivalence(right, target, ssa_func):
+                                    other = left
+                                if other:
+                                    other_text = formatter.render_value(other)
+                                    if other_text in {"1", "1.0", "1.0f"}:
+                                        increment_text = f"{increment_var}++"
+                                        return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+                        increment_text = f"{increment_var} = {inc_expr}"
+
+                if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
+                    import re
+                    for inp in increment_candidate_inputs:
+                        if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
+                            inp_name = _normalize_loop_var_name(inp.alias or inp.name)
+                            if inp_name and inp_name != increment_var:
+                                increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
+                return increment_text, increment_var, increment_ssa_val, increment_candidate_inputs
+
+    return None
+
+
 def _find_guard_condition(
     loop: NaturalLoop,
     cfg: CFG,
@@ -227,10 +422,13 @@ def _detect_for_loop(
     condition_candidates: Set[str] = set()
     condition_values: List = []
 
-    # Check predecessors for initialization pattern
+    # Check predecessors for initialization pattern (including preheader chains)
     # Pattern 1: Direct assignment (inst has outputs)
     # Pattern 2: ASGN instruction (inputs=[value, &target])
+    preheader_blocks: List[int] = []
     for pred_id in predecessors:
+        preheader_blocks.extend(_collect_preheader_blocks(cfg, loop, pred_id))
+    for pred_id in preheader_blocks:
         pred_ssa_block = ssa_func.instructions.get(pred_id, [])
         # Look for assignments like: local_2 = 0, i = 0
         for inst in reversed(pred_ssa_block):  # Check from end backwards
@@ -371,6 +569,34 @@ def _detect_for_loop(
                             break
                     break
 
+    if condition_text is None:
+        # Postheader condition: header falls into a guard block with the loop exit.
+        header_successors = [s for s in header_block.successors if s in loop.body]
+        if len(header_successors) == 1:
+            guard_candidate = header_successors[0]
+            guard_block_obj = cfg.blocks.get(guard_candidate)
+            if guard_block_obj and guard_block_obj.instructions:
+                guard_last = guard_block_obj.instructions[-1]
+                if resolver.is_conditional_jump(guard_last.opcode):
+                    guard_target = start_to_block.get(guard_last.arg1)
+                    if guard_target is not None and guard_target not in loop.body:
+                        condition_render = render_condition(
+                            ssa_func,
+                            guard_candidate,
+                            formatter,
+                            cfg,
+                            resolver,
+                            negate=None
+                        )
+                        break_condition = condition_render.text or ""
+                        if break_condition:
+                            inverted_condition = _invert_condition_text(break_condition)
+                            condition_candidates = _extract_condition_vars(inverted_condition, condition_render.values)
+                            condition_values = condition_render.values or []
+                            if _condition_mentions_loop_var(inverted_condition, condition_candidates, condition_render.values):
+                                condition_text = inverted_condition
+                                guard_block = guard_candidate
+
     # If we didn't find a candidate in predecessors, try header block for init
     if not init_candidates:
         header_ssa_block = ssa_func.instructions.get(loop.header, [])
@@ -421,125 +647,26 @@ def _detect_for_loop(
     increment_text = None
     increment_var = init_var
     increment_ssa_val = None
-    increment_inputs: List = []
-    increment_candidate_inputs: List = []
     loop_vars = {init_var} | condition_candidates
     for back_edge in loop.back_edges:
         source_id = back_edge.source
         target_id = back_edge.target
         if target_id == loop.header:
-            # This block jumps back to header - check for increment
-            source_ssa_block = ssa_func.instructions.get(source_id, [])
-            for inst in reversed(source_ssa_block):
-                # Pattern 1: Direct output (e.g., i = i + 1)
-                if inst.outputs and len(inst.outputs) == 1:
-                    var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
-                    matches_loop_var = var_name in loop_vars
-                    if not matches_loop_var and condition_render and condition_render.values:
-                        for cond_val in condition_render.values:
-                            if _check_ssa_value_equivalence(inst.outputs[0], cond_val, ssa_func):
-                                matches_loop_var = True
-                                break
-                    if matches_loop_var:
-                        # Found assignment to loop variable
-                        increment_var = var_name
-                        increment_ssa_val = inst.outputs[0]
-                        increment_inputs = list(inst.inputs)
-                        increment_candidate_inputs = list(inst.inputs)
-                        # Check if it's increment pattern: i = i + 1
-                        if inst.mnemonic in {"IADD", "CADD", "SADD"}:
-                            # Simple increment
-                            increment_text = f"{increment_var}++"
-                        elif inst.inputs:
-                            # Generic assignment - render it
-                            inc_expr = formatter.render_value(inst.inputs[0]) if inst.inputs else "?"
-                            if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
-                                increment_text = f"{increment_var}++"
-                            else:
-                                import re
-                                simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
-                                if simple_inc_match and simple_inc_match.group(1) != increment_var:
-                                    increment_text = f"{increment_var}++"
-                                else:
-                                    inc_value = inst.inputs[0]
-                                    if inc_value and inc_value.producer_inst:
-                                        increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
-                                        prod_inst = inc_value.producer_inst
-                                        if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
-                                            left, right = prod_inst.inputs[0], prod_inst.inputs[1]
-                                            other = None
-                                            if _check_ssa_value_equivalence(left, inst.outputs[0], ssa_func):
-                                                other = right
-                                            elif _check_ssa_value_equivalence(right, inst.outputs[0], ssa_func):
-                                                other = left
-                                            if other:
-                                                other_text = formatter.render_value(other)
-                                                if other_text in {"1", "1.0", "1.0f"}:
-                                                    increment_text = f"{increment_var}++"
-                                                    break
-                                    increment_text = f"{increment_var} = {inc_expr}"
-                        if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
-                            import re
-                            for inp in increment_candidate_inputs:
-                                if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
-                                    inp_name = _normalize_loop_var_name(inp.alias or inp.name)
-                                    if inp_name and inp_name != increment_var:
-                                        increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
-                        break
-                # Pattern 2: ASGN instruction (inputs=[value, &target])
-                elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
-                    target = inst.inputs[1]
-                    target_name = _normalize_loop_var_name(target.alias or target.name)
-                    matches_loop_var = target_name in loop_vars
-                    if not matches_loop_var and condition_render and condition_render.values:
-                        for cond_val in condition_render.values:
-                            if _check_ssa_value_equivalence(target, cond_val, ssa_func):
-                                matches_loop_var = True
-                                break
-                    if matches_loop_var:
-                        increment_var = target_name
-                        increment_ssa_val = target
-                        increment_inputs = list(inst.inputs)
-                        increment_candidate_inputs = list(inst.inputs)
-                        # Found assignment to loop variable
-                        # Render the increment expression
-                        inc_expr = formatter.render_value(inst.inputs[0])
-                        # Check for i+1 pattern
-                        if f"{increment_var} + 1" in inc_expr or f"({increment_var} + 1)" == inc_expr:
-                            increment_text = f"{increment_var}++"
-                        else:
-                            import re
-                            simple_inc_match = re.match(r'^\(?\s*([A-Za-z_]\w*)\s*\+\s*1(\.0f)?\s*\)?$', inc_expr)
-                            if simple_inc_match and simple_inc_match.group(1) != increment_var:
-                                increment_text = f"{increment_var}++"
-                            else:
-                                inc_value = inst.inputs[0]
-                                if inc_value and inc_value.producer_inst:
-                                    increment_candidate_inputs.extend(inc_value.producer_inst.inputs)
-                                    prod_inst = inc_value.producer_inst
-                                    if prod_inst.mnemonic in {"IADD", "CADD", "SADD"} and len(prod_inst.inputs) >= 2:
-                                        left, right = prod_inst.inputs[0], prod_inst.inputs[1]
-                                        other = None
-                                        if _check_ssa_value_equivalence(left, target, ssa_func):
-                                            other = right
-                                        elif _check_ssa_value_equivalence(right, target, ssa_func):
-                                            other = left
-                                        if other:
-                                            other_text = formatter.render_value(other)
-                                            if other_text in {"1", "1.0", "1.0f"}:
-                                                increment_text = f"{increment_var}++"
-                                                break
-                                increment_text = f"{increment_var} = {inc_expr}"
-                        if increment_text and increment_var and loop_equivalence_val and increment_candidate_inputs:
-                            import re
-                            for inp in increment_candidate_inputs:
-                                if _check_ssa_value_equivalence(loop_equivalence_val, inp, ssa_func):
-                                    inp_name = _normalize_loop_var_name(inp.alias or inp.name)
-                                    if inp_name and inp_name != increment_var:
-                                        increment_text = re.sub(rf'\b{re.escape(inp_name)}\b', increment_var, increment_text)
-                        break
-            if increment_text:
-                break
+            latch_chain = _collect_latch_chain(cfg, loop, source_id)
+            for candidate_id in latch_chain:
+                result = _find_increment_in_block(
+                    candidate_id,
+                    ssa_func,
+                    formatter,
+                    loop_vars,
+                    condition_render,
+                    loop_equivalence_val
+                )
+                if result:
+                    increment_text, increment_var, increment_ssa_val, _ = result
+                    break
+        if increment_text:
+            break
 
     if not increment_text:
         return None
