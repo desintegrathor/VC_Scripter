@@ -85,12 +85,12 @@ def get_text(text_id: int) -> Optional[str]:
     return db.get(text_id)
 
 
-def format_text_annotation(text_ids: list[int], max_length: int = 80) -> Optional[str]:
+def format_text_annotation(text_ids: list[int], max_length: int = 0) -> Optional[str]:
     """Format text IDs as annotation comment.
 
     Args:
         text_ids: List of text IDs to include
-        max_length: Maximum length of the annotation (truncate if longer)
+        max_length: Maximum length of the annotation (0 = no limit)
 
     Returns:
         Formatted annotation string like "9136: \"Air Recon\" | 9137: \"description\""
@@ -102,9 +102,7 @@ def format_text_annotation(text_ids: list[int], max_length: int = 80) -> Optiona
     for tid in text_ids:
         text = db.get(tid)
         if text:
-            # Truncate individual text if too long
-            if len(text) > 40:
-                text = text[:37] + "..."
+            # No truncation - show full text for accurate annotations
             parts.append(f'{tid}: "{text}"')
 
     if not parts:
@@ -112,8 +110,8 @@ def format_text_annotation(text_ids: list[int], max_length: int = 80) -> Optiona
 
     result = " | ".join(parts)
 
-    # Truncate entire annotation if too long
-    if len(result) > max_length:
+    # Only truncate if max_length > 0
+    if max_length > 0 and len(result) > max_length:
         result = result[:max_length - 3] + "..."
 
     return result
@@ -121,11 +119,27 @@ def format_text_annotation(text_ids: list[int], max_length: int = 80) -> Optiona
 
 # Functions that should have text annotations
 TEXT_ANNOTATION_FUNCTIONS = frozenset({
+    # Mission/UI functions
     'SC_ShowMovieInfo',
     'SC_MissionSave',
     'SC_SetObjectives',
     'SC_GameInfo',
     'SC_Wtxt',
+    # Speech/Dialog functions (text ID as parameter)
+    'SC_SpeechRadio2',
+    'SC_P_Speech2',
+    'SC_P_SpeechMes2',
+    'SC_SpeechRadioMes2',
+    'SC_P_Speach',
+    'SC_P_SpeachMes',
+    'SC_P_SpeachRadio',
+    'SC_SpeachRadio',
+    'SC_SpeachRadioMes',
+    # HUD/UI functions
+    'SC_SetCommandMenu',
+    'SC_ShowHelp',
+    'SC_ACTIVE_Add',
+    'SC_HUD_TextWriterInit',
 })
 
 

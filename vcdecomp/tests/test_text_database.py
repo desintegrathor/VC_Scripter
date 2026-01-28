@@ -60,9 +60,27 @@ class TestParseIngameText:
         assert "101:" in annotation
         assert "999999" not in annotation
 
-    def test_format_annotation_truncates_long_text(self):
-        """Test that long texts are truncated."""
-        # Find a text with length > 40
+    def test_format_annotation_no_truncation_by_default(self):
+        """Test that long texts are NOT truncated by default."""
+        # Find a text with length > 50
+        db = get_text_database()
+        long_text_id = None
+        long_text = None
+        for tid, text in db.items():
+            if len(text) > 50:
+                long_text_id = tid
+                long_text = text
+                break
+
+        if long_text_id:
+            annotation = format_text_annotation([long_text_id])
+            # Should NOT be truncated - full text should be present
+            assert long_text in annotation
+            assert not annotation.endswith("...")
+
+    def test_format_annotation_truncates_with_max_length(self):
+        """Test that texts are truncated when max_length is specified."""
+        # Find a text with length > 50
         db = get_text_database()
         long_text_id = None
         for tid, text in db.items():
@@ -71,10 +89,10 @@ class TestParseIngameText:
                 break
 
         if long_text_id:
-            annotation = format_text_annotation([long_text_id])
+            annotation = format_text_annotation([long_text_id], max_length=40)
             # Should be truncated with ...
-            assert "..." in annotation
-            assert len(annotation) < 100
+            assert annotation.endswith("...")
+            assert len(annotation) == 40
 
 
 class TestShouldAnnotateFunction:
@@ -99,6 +117,25 @@ class TestShouldAnnotateFunction:
     def test_annotate_sc_setobjectives(self):
         """SC_SetObjectives should be annotated."""
         assert should_annotate_function("SC_SetObjectives")
+
+    def test_annotate_speech_functions(self):
+        """Speech/dialog functions should be annotated."""
+        assert should_annotate_function("SC_SpeechRadio2")
+        assert should_annotate_function("SC_P_Speech2")
+        assert should_annotate_function("SC_P_SpeechMes2")
+        assert should_annotate_function("SC_SpeechRadioMes2")
+        assert should_annotate_function("SC_P_Speach")
+        assert should_annotate_function("SC_P_SpeachMes")
+        assert should_annotate_function("SC_P_SpeachRadio")
+        assert should_annotate_function("SC_SpeachRadio")
+        assert should_annotate_function("SC_SpeachRadioMes")
+
+    def test_annotate_hud_functions(self):
+        """HUD/UI functions should be annotated."""
+        assert should_annotate_function("SC_SetCommandMenu")
+        assert should_annotate_function("SC_ShowHelp")
+        assert should_annotate_function("SC_ACTIVE_Add")
+        assert should_annotate_function("SC_HUD_TextWriterInit")
 
     def test_no_annotate_other_functions(self):
         """Other functions should not be annotated."""
