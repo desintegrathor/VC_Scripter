@@ -23,6 +23,7 @@ from ...blocks.hierarchy import (
     SwitchCase,
 )
 from ....expr import ExpressionFormatter, format_block_expressions
+from .....disasm import opcodes
 
 SWITCH_EMPTY_DEBUG = os.environ.get("VCDECOMP_SWITCH_EMPTY_DEBUG", "0") == "1"
 
@@ -277,8 +278,35 @@ class RuleBlockSwitch(CollapseRule):
             default_case=default_case,
         )
 
-        # Collect all covered blocks
+        # Collect all covered blocks (exclude switch exit so it can be emitted after switch)
         switch_block.covered_blocks = set(pattern.all_blocks)
+        if pattern.exit_block is not None:
+            switch_block.covered_blocks.discard(pattern.exit_block)
+
+        # If exit_block wasn't detected, avoid covering return-only blocks
+        # that are outside any case body (common switch epilogue).
+        case_bodies: list[set] = []
+        for case_info in pattern.cases:
+            if case_info.body_blocks:
+                case_bodies.append(set(case_info.body_blocks))
+        if pattern.default_body_blocks:
+            case_bodies.append(set(pattern.default_body_blocks))
+
+        cfg = getattr(graph, "ssa_func", None).cfg if getattr(graph, "ssa_func", None) else None
+        resolver = None
+        if getattr(graph, "ssa_func", None) is not None:
+            resolver = getattr(graph.ssa_func.scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
+        if cfg and resolver:
+            case_body_ids = set().union(*case_bodies) if case_bodies else set()
+            for bid in list(switch_block.covered_blocks):
+                if bid in case_body_ids:
+                    continue
+                cfg_block = cfg.blocks.get(bid)
+                if not (cfg_block and cfg_block.instructions):
+                    continue
+                last_instr = cfg_block.instructions[-1]
+                if resolver.is_return(last_instr.opcode):
+                    switch_block.covered_blocks.discard(bid)
 
         # Set parent for header
         block.parent = switch_block

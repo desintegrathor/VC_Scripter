@@ -153,6 +153,16 @@ def is_simple_expression(expr: str) -> bool:
     if expr.startswith('"') and expr.endswith('"'):
         return True
 
+    # If expression contains operators, it's not simple.
+    # Ignore pointer field access arrows when scanning for operators.
+    expr_no_arrow = expr.replace("->", "")
+    operator_tokens = [
+        "==", "!=", "<=", ">=", "<", ">", "&&", "||",
+        "+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>",
+    ]
+    if any(op in expr_no_arrow for op in operator_tokens):
+        return False
+
     # Function call: identifier followed by (...)
     if '(' in expr:
         paren_pos = expr.find('(')

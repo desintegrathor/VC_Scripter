@@ -705,8 +705,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Generate function body (emits root structure + remaining uncollapsed blocks)
         body_lines = emitter.emit_function()
 
-        # Build complete function output
-        # First, we need to generate the function signature
+        # Build function signature early for return synthesis
         from ..function_signature import get_function_signature_string
         scr = ssa_func.scr
         signature = get_function_signature_string(
@@ -718,6 +717,78 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             type_engine=None
         )
 
+        # ---------------------------------------------------------------------
+        # Synthesized return (collapse mode)
+        # ---------------------------------------------------------------------
+        # Mirror flat-mode behavior: if a non-void function ends after a switch
+        # (or other construct) with no explicit return, synthesize one.
+        emitted_blocks = emitter.emitted_blocks
+        needs_return = False
+        return_value = None
+
+        for block_id in func_block_ids:
+            if block_id in emitted_blocks:
+                continue
+            block = cfg.blocks.get(block_id)
+            if not block or not block.instructions:
+                continue
+            last_instr = block.instructions[-1]
+            if resolver.is_return(last_instr.opcode):
+                needs_return = True
+                # Try to extract return value from SSA
+                ssa_block = ssa_func.instructions.get(block_id, [])
+                for ssa_instr in reversed(ssa_block):
+                    if ssa_instr.mnemonic == "RET":
+                        if ssa_instr.inputs:
+                            return_value = formatter.render_value(ssa_instr.inputs[0])
+                        break
+                break
+
+        # Check if last emitted line already has a return
+        last_line_has_return = False
+        for line in reversed(body_lines):
+            stripped = line.strip()
+            if stripped and not stripped.startswith("//"):
+                if stripped.startswith("return"):
+                    last_line_has_return = True
+                break
+
+        any_return_exists = any(
+            ('return ' in line or line.strip() == 'return;')
+            for line in body_lines
+            if line.strip() and not line.strip().startswith('//')
+        )
+
+        last_line_is_break_or_brace = False
+        for line in reversed(body_lines):
+            stripped = line.strip()
+            if stripped and not stripped.startswith("//"):
+                if stripped in {"break;", "}"}:
+                    last_line_is_break_or_brace = True
+                break
+
+        if needs_return and not last_line_has_return and (not any_return_exists or last_line_is_break_or_brace):
+            if return_value:
+                body_lines.append(f"    return {return_value};")
+            else:
+                # Extract return type from function signature to determine if void
+                return_type = "void"
+                sig_parts = signature.split('(')[0].strip().split()
+                if len(sig_parts) >= 2:
+                    return_type = sig_parts[0]
+
+                if return_type.lower() == 'void':
+                    body_lines.append("    return;")
+                elif 'float' in return_type.lower():
+                    body_lines.append("    return 0.0f;  // FIX (06-05): Synthesized return value")
+                elif 'double' in return_type.lower():
+                    body_lines.append("    return 0.0;  // FIX (06-05): Synthesized return value")
+                elif 'char' in return_type.lower():
+                    body_lines.append("    return 0;  // FIX (06-05): Synthesized return value")
+                else:
+                    body_lines.append("    return 0;  // FIX (06-05): Synthesized return value")
+
+        # Build complete function output
         output_lines: List[str] = [f"{signature} {{"]
 
         # Add variable declarations (reuse existing logic - imported at module level)

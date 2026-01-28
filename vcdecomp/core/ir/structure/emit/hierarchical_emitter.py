@@ -13,7 +13,7 @@ structure and generates C-like code. It handles all block types:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from typing import Dict, List, Optional, Set, TYPE_CHECKING, Any
 import logging
 
 from ..blocks.hierarchy import (
@@ -741,9 +741,12 @@ class HierarchicalCodeEmitter:
         # Emit condition block statements (before the if)
         if block.condition_block is not None:
             cond_lines = self._emit_block(block.condition_block, indent)
-            # Remove the last statement if it's a conditional jump (handled by if)
             if cond_lines:
-                lines.extend(cond_lines[:-1] if len(cond_lines) > 0 else [])
+                # _emit_block for basic blocks doesn't emit jumps, so keep statements.
+                last = cond_lines[-1].lstrip()
+                if last.startswith("goto ") or last.startswith("if ("):
+                    cond_lines = cond_lines[:-1]
+                lines.extend(cond_lines)
 
         # Emit if header
         lines.append(f"{indent}if ({condition}) {{")
@@ -939,29 +942,55 @@ class HierarchicalCodeEmitter:
             header_lines = self._emit_block(block.header_block, indent)
             lines.extend(header_lines)
 
+        # Mark switch header/dispatch blocks as emitted to prevent stray labels later.
+        all_case_ids: Set[int] = set()
+        for case in block.cases:
+            if case.body_block_ids:
+                all_case_ids.update(case.body_block_ids)
+        if block.default_case and block.default_case.body_block_ids:
+            all_case_ids.update(block.default_case.body_block_ids)
+
+        # Heuristic: switch exit block(s) are successors outside all case bodies
+        exit_ids: Set[int] = set()
+        for bid in all_case_ids:
+            cfg_block = self.cfg.blocks.get(bid)
+            if not cfg_block:
+                continue
+            for succ in getattr(cfg_block, "successors", []):
+                if succ not in all_case_ids:
+                    exit_ids.add(succ)
+        header_only = set(block.covered_blocks or []) - all_case_ids
+        if header_only:
+            # Don't suppress blocks that end in return (likely switch exit).
+            filtered_header = set()
+            for bid in header_only:
+                cfg_block = self.cfg.blocks.get(bid)
+                if cfg_block and cfg_block.instructions:
+                    last_instr = cfg_block.instructions[-1]
+                    if self.resolver.is_return(last_instr.opcode):
+                        continue
+                filtered_header.add(bid)
+            if filtered_header:
+                self.emitted_blocks.update(filtered_header)
+
         lines.append(f"{indent}switch ({test_var}) {{")
 
         # Emit cases
         for case in block.cases:
             lines.append(f"{indent}case {case.value}:")
-            # Prefer body_block_ids if available (contains ALL body blocks)
-            # body_block is just the entry point and may not cover all body blocks
+            # Prefer flat-mode rendering for case bodies to preserve nested if/else structure.
             if case.body_block_ids:
-                body_lines = self._emit_switch_case_body_by_ids(case.body_block_ids, indent + "    ")
-                lines.extend(body_lines)
+                lines.extend(self._emit_switch_case_body_flat(case, block, exit_ids, indent + "    "))
             elif case.body_block is not None:
-                body_lines = self._emit_block(case.body_block, indent + "    ")
-                lines.extend(body_lines)
+                lines.extend(self._emit_block(case.body_block, indent + "    "))
             if case.has_break:
                 lines.append(f"{indent}    break;")
 
         # Emit default case
         if block.default_case is not None:
             lines.append(f"{indent}default:")
-            # Prefer body_block_ids if available
             if block.default_case.body_block_ids:
-                body_lines = self._emit_switch_case_body_by_ids(block.default_case.body_block_ids, indent + "    ")
-                lines.extend(body_lines)
+                lines.extend(self._emit_switch_case_body_flat(block.default_case, block, exit_ids, indent + "    "))
             elif block.default_case.body_block is not None:
                 lines.extend(self._emit_block(block.default_case.body_block, indent + "    "))
             if block.default_case.has_break:
@@ -1005,6 +1034,77 @@ class HierarchicalCodeEmitter:
             for line in block_lines:
                 lines.append(f"{indent}{line}")
 
+        return lines
+
+    def _emit_switch_case_body_flat(
+        self,
+        case: SwitchCase,
+        switch_block: BlockSwitch,
+        exit_ids: Set[int],
+        indent: str
+    ) -> List[str]:
+        """
+        Emit switch case body using flat-mode block rendering with if/else detection.
+        This preserves conditional structure inside cases when collapse is incomplete.
+        """
+        if not case.body_block_ids:
+            return []
+
+        from ..emit.code_emitter import _render_blocks_with_loops
+        from ..patterns.if_else import _detect_if_else_pattern
+
+        # Sort blocks by address
+        case_body_sorted = sorted(
+            case.body_block_ids,
+            key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
+        )
+
+        # Build stop blocks from other cases/default to prevent leakage
+        case_stop_blocks: Set[int] = set()
+        for other_case in switch_block.cases:
+            if other_case is not case and other_case.body_block_ids:
+                case_stop_blocks.update(other_case.body_block_ids)
+        if switch_block.default_case and switch_block.default_case.body_block_ids:
+            case_stop_blocks.update(switch_block.default_case.body_block_ids)
+
+        # Detect if/else patterns within this case body
+        block_to_if: Dict[int, Any] = {}
+        visited_ifs: Set[int] = set()
+        for body_block_id in case_body_sorted:
+            if body_block_id in block_to_if:
+                continue
+            temp_visited: Set[int] = set()
+            if_pattern = _detect_if_else_pattern(
+                self.cfg,
+                body_block_id,
+                self.start_to_block,
+                self.resolver,
+                temp_visited,
+                self.func_loops,
+                context_stop_blocks=case_stop_blocks,
+                ssa_func=self.ssa_func,
+                formatter=self.formatter,
+            )
+            if if_pattern:
+                block_to_if[body_block_id] = if_pattern
+
+        lines = _render_blocks_with_loops(
+            case_body_sorted,
+            indent,
+            self.ssa_func,
+            self.formatter,
+            self.cfg,
+            self.func_loops,
+            self.start_to_block,
+            self.resolver,
+            block_to_if,
+            visited_ifs,
+            self.emitted_blocks,
+            self.global_map,
+        )
+        # Prevent residual case blocks from being emitted later as labels,
+        # but don't suppress the switch exit block(s) if present.
+        self.emitted_blocks.update(set(case.body_block_ids) - set(exit_ids))
         return lines
 
     def _emit_goto(self, block: BlockGoto, indent: str) -> List[str]:
