@@ -1016,3 +1016,77 @@ The VC-Script-Decompiler is **already sophisticated** with Ghidra-inspired techn
 - How critical is array detection? (Affects priority of Phase 2)
 - Are there specific scripts with poor output that should be test cases?
 - Is there a deadline for decompilation completion? (Affects phase selection)
+
+---
+
+## Decompiler audit (2026-01-28)
+
+### Scope & commands executed
+
+- `python -m vcdecomp structure decompiler_source_tests/test1/tt.scr > decompiler_source_tests/test1/tt_decompiled.c`
+- `python -m vcdecomp structure decompiler_source_tests/test3/LEVEL.SCR > decompiler_source_tests/test3/LEVEL_decompiled.c`
+
+### High-level observations (source vs. decompiled)
+
+#### Test 1: `tt.scr` vs. `tt.c`
+
+1. **Header selection is different from the original source.** The original multiplayer script includes `sc_MPglobal.h`, while the decompiler emits `sc_global.h` and `sc_def.h` instead, which drops multiplayer-specific macro defines and comments present in the original file.【F:decompiler_source_tests/test1/tt.c†L5-L94】【F:decompiler_source_tests/test1/tt_decompiled.c†L4-L46】
+2. **Global definitions and macro usage are not reconstructed.** The original defines `STEP_MAX`, `REC_MAX`, and named global variable IDs (e.g., `GVAR_SIDE0POINTS`), while the decompiled output inlines numeric constants and generic names (`gVar`, `gVar1`, etc.) rather than emitting the macros or mapping to named IDs.【F:decompiler_source_tests/test1/tt.c†L8-L228】【F:decompiler_source_tests/test1/tt_decompiled.c†L7-L159】
+3. **Static data initialization is lost.** The original `gRespawn_id` table is fully initialized with specific `SC_MP_RESPAWN_*` constants, but the decompiled output collapses it to `{0}`, which erases intent and gameplay mapping data.【F:decompiler_source_tests/test1/tt.c†L82-L86】【F:decompiler_source_tests/test1/tt_decompiled.c†L43-L43】
+4. **Control-flow recovery is inaccurate in key functions.** The original `SRV_CheckEndRule` includes time/points comparisons, but the decompiled `func_0050` calls `SC_MP_LoadNextMap()` unconditionally for the recognized cases and omits the comparison guards. The output also retains `block_XX` labels, indicating the CFG is not fully structured into readable control flow.【F:decompiler_source_tests/test1/tt.c†L97-L136】【F:decompiler_source_tests/test1/tt_decompiled.c†L54-L75】
+
+#### Test 3: `LEVEL.SCR` vs. `LEVEL.C`
+
+1. **Macro/constant context is missing.** The original file defines pilot phases, SGI comment blocks, and uses `sound.inc`. The decompiled output omits these definitions and also defaults global initializers (`g_will_group` becomes zeroed, `g_pilot_phase` loses the `PILOT_PH_DISABLED` enum), so the intent is lost despite equivalent storage sizes.【F:decompiler_source_tests/test3/LEVEL.C†L13-L57】【F:decompiler_source_tests/test3/LEVEL_decompiled.c†L4-L27】
+2. **Control-flow and data-flow reconstruction still show artifacts.** While loops are reconstructed, variable assignments are still scrambled in places (e.g., in `func_0511` the list/array updates and temporary assignments no longer mirror the original `GetFarestWills` logic).【F:decompiler_source_tests/test3/LEVEL.C†L122-L149】【F:decompiler_source_tests/test3/LEVEL_decompiled.c†L103-L137】
+3. **Expression reconstruction and precedence issues persist.** In `func_0612`, expressions like `if (!g_pilot_timer <= 0.0f)` and call arguments such as `func_0448(SC_PC_GetPos(&vec))` indicate that operator precedence and parameter sourcing are being mis-modeled, which risks changing semantics even when control flow is preserved.【F:decompiler_source_tests/test3/LEVEL_decompiled.c†L171-L201】
+
+### Likely root causes (based on current code)
+
+1. **Header detection is too coarse for multiplayer scripts.** The header detector always includes `sc_global.h` and `sc_def.h`, but there is no path for `sc_MPglobal.h`, even when the entry point is `s_SC_NET_info` and the script uses `SC_NET_*` constants; this is a likely contributor to missing macro IDs and defines.【F:vcdecomp/core/headers/detector.py†L14-L104】
+2. **Condition rendering does not preserve semantic guards reliably.** The `render_condition` flow depends on being able to trace SSA inputs for conditional jumps; when that trace is incomplete or incorrect, comparisons disappear and the emitted control flow degrades into unconditional branches (as seen in `func_0050`). This is evident in the call chain of `_find_condition_jump` → `_find_ssa_condition_value` → `render_condition` in the condition analysis module.【F:vcdecomp/core/ir/structure/analysis/condition.py†L24-L144】
+3. **Loop/structure identification is limited to pattern detection without robust fallback.** The loop detector focuses on identifying canonical loop headers and increment patterns, but the outputs show that when these patterns fail, blocks remain uncollapsed and emit `block_XX` labels. The core loop detection logic is concentrated in `structure/patterns/loops.py`, which likely needs stronger heuristics or integration with a broader collapse strategy to handle more CFG shapes.【F:vcdecomp/core/ir/structure/patterns/loops.py†L1-L210】
+
+### Recommendations (implementation-oriented)
+
+#### 1) Improve header selection for multiplayer scripts
+
+- **Goal:** Emit `#include <inc\sc_MPglobal.h>` when the entry signature indicates `s_SC_NET_info` or when `SC_NET_*`/`SC_MP_*` identifiers are referenced.
+- **Implementation path:** Extend `HeaderDetector` to test for multiplayer usage and swap in `sc_MPglobal.h` (or add it before `sc_global.h` when necessary) rather than always defaulting to `sc_global.h`/`sc_def.h`. This will better preserve constant definitions and align with original sources in `decompiler_source_tests/test1/`.【F:vcdecomp/core/headers/detector.py†L14-L104】【F:decompiler_source_tests/test1/tt.c†L5-L94】
+
+#### 2) Strengthen condition reconstruction (SSA + boolean folding)
+
+- **Goal:** Reduce missing or simplified condition guards by ensuring condition values are traced through SSA and by adding robust boolean expression folding.
+- **Implementation path:** Extend `render_condition` to recover conditions when the SSA source is missing by:
+  - Inspecting predecessor blocks for comparison ops and resolving branch polarity.
+  - Folding `CMP + JZ/JNZ` into explicit comparisons (inspired by Ghidra’s condition and flow handling).
+- **Ghidra inspiration:** Ghidra’s flow and block actions are designed to handle loop bodies and conditional structure across collapse stages, and can guide how to collect and stabilize boolean expressions across CFG edges.【F:vcdecomp/core/ir/structure/analysis/condition.py†L24-L200】【F:ghidra-decompiler-src/blockaction.cc†L40-L176】
+
+#### 3) Expand structured loop recovery (loop body, exit selection, and irreducible edges)
+
+- **Goal:** Avoid `block_XX` labels by better identifying loop bodies and exits, especially for nested loops and loops with internal `break`/`continue`.
+- **Implementation path:** Enhance loop recognition to:
+  - Build loop bodies using more robust reachability (akin to Ghidra’s loop body extension and exit selection). 
+  - Add fallback `while (1)` + `break` reconstruction for unstructured loops.
+- **Ghidra inspiration:** `LoopBody::extend`/`findExit` in Ghidra provides a model for how to capture structured loop bodies with explicit exit selection when there are multiple tails or exits.【F:vcdecomp/core/ir/structure/patterns/loops.py†L1-L210】【F:ghidra-decompiler-src/blockaction.cc†L146-L200】
+
+#### 4) Improve switch/case recovery via jump table modeling
+
+- **Goal:** Restore structured `switch` statements (observed to regress to simplified/unguarded cases in `tt_decompiled.c`).
+- **Implementation path:** Expand jump-table detection to emulate the address calculation of indirect jumps and map entries to case labels; include ranges and fall-through behavior.
+- **Ghidra inspiration:** Ghidra’s `jumptable.cc` shows a dedicated emulation path to compute load tables and normalize jump table entries, which can guide how to model switch recovery even in non-native bytecode representations.【F:decompiler_source_tests/test1/tt.c†L97-L136】【F:ghidra-decompiler-src/jumptable.cc†L16-L200】
+
+#### 5) Fix expression emission for lvalue/rvalue correctness
+
+- **Goal:** Prevent invalid or ambiguous expressions like `if (!g_pilot_timer <= 0.0f)` and argument corruption such as `func_0448(SC_PC_GetPos(&vec))` by ensuring operator precedence and lvalue tracking are preserved.
+- **Implementation path:**
+  - In the emitter, track whether an expression is assignable before applying `+=`, `-=`, etc.
+  - Add tests for vector field updates and compound assignment patterns.
+- **Ghidra inspiration:** Ghidra’s `printc.cc` documents operator precedence and explicit token classification which can inform emitter ordering and lvalue safety checks.【F:decompiler_source_tests/test3/LEVEL_decompiled.c†L171-L201】【F:ghidra-decompiler-src/printc.cc†L21-L140】
+
+### Suggested next validation steps
+
+1. After addressing the above items, re-run:
+   - `python -m vcdecomp structure decompiler_source_tests/test1/tt.scr > decompiler_source_tests/test1/tt_decompiled.c`
+   - `python -m vcdecomp structure decompiler_source_tests/test3/LEVEL.SCR > decompiler_source_tests/test3/LEVEL_decompiled.c`
+2. Visually diff against the originals in `decompiler_source_tests/test1/tt.c` and `decompiler_source_tests/test3/LEVEL.C` to ensure headers, conditionals, and loop structure align closer to source.
