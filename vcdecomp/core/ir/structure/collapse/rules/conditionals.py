@@ -95,8 +95,6 @@ class RuleBlockProperIf(CollapseRule):
             if succ1.get_single_successor() == succ2:
                 # Clause must not have unstructured gotos out
                 if not succ1.is_goto_out(0):
-                    if _if_has_side_effect_expressions(graph, block, succ1):
-                        return False
                     return True
 
         # Check if succ2 is body and succ1 is merge
@@ -106,8 +104,6 @@ class RuleBlockProperIf(CollapseRule):
             if succ2.get_single_successor() == succ1:
                 # Clause must not have unstructured gotos out
                 if not succ2.is_goto_out(0):
-                    if _if_has_side_effect_expressions(graph, block, succ2):
-                        return False
                     return True
 
         return False
@@ -283,9 +279,6 @@ class RuleBlockIfElse(CollapseRule):
         if true_merge != false_merge:
             return False
 
-        if _if_has_side_effect_expressions(graph, block, true_branch, false_branch):
-            return False
-
         return True
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
@@ -376,6 +369,7 @@ class RuleBlockIfNoExit(CollapseRule):
             return False
 
         # Check each branch for dead-end pattern
+        dead_end_indices = []
         for i in range(2):
             clause = block.out_edges[i].target
 
@@ -394,14 +388,13 @@ class RuleBlockIfNoExit(CollapseRule):
             if block.is_goto_out(i):
                 continue
 
-            return True
+            dead_end_indices.append(i)
 
-        return False
+        return len(dead_end_indices) in (1, 2)
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        # Find the dead-end clause
-        dead_clause = None
-        dead_clause_idx = -1
+        # Find the dead-end clauses
+        dead_end_indices = []
         continue_block = None
 
         for i in range(2):
@@ -411,13 +404,59 @@ class RuleBlockIfNoExit(CollapseRule):
                 continue
 
             if clause.has_single_predecessor() and len(clause.out_edges) == 0:
-                dead_clause = clause
-                dead_clause_idx = i
+                dead_end_indices.append(i)
             else:
                 continue_block = clause
 
-        if dead_clause is None:
+        if not dead_end_indices:
             return None
+
+        if len(dead_end_indices) == 2:
+            true_block = block.out_edges[0].target
+            false_block = block.out_edges[1].target
+
+            if_block = BlockIf(
+                block_type=BlockType.IF,
+                block_id=graph._allocate_block_id(),
+                condition_block=block,
+                true_block=true_block,
+                false_block=false_block,
+            )
+
+            if_block.covered_blocks = (
+                block.covered_blocks |
+                true_block.covered_blocks |
+                false_block.covered_blocks
+            )
+
+            block.parent = if_block
+            true_block.parent = if_block
+            false_block.parent = if_block
+
+            for edge in block.in_edges:
+                if not edge.source.is_collapsed:
+                    new_edge = BlockEdge(
+                        source=edge.source,
+                        target=if_block,
+                        edge_type=edge.edge_type
+                    )
+                    if_block.in_edges.append(new_edge)
+                    for j, out_edge in enumerate(edge.source.out_edges):
+                        if out_edge.target == block:
+                            edge.source.out_edges[j] = new_edge
+
+            graph.blocks[if_block.block_id] = if_block
+            if graph.entry_block == block:
+                graph.entry_block = if_block
+
+            graph.remove_block(block)
+            graph.remove_block(true_block)
+            graph.remove_block(false_block)
+
+            return if_block
+
+        dead_clause_idx = dead_end_indices[0]
+        dead_clause = block.out_edges[dead_clause_idx].target
 
         # Determine if we need to negate condition
         # If dead clause is on index 1 (false branch), we need to negate

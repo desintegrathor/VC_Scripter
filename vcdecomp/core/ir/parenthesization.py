@@ -145,6 +145,10 @@ def is_simple_expression(expr: str) -> bool:
 
     expr = expr.strip()
 
+    # Expressions with comparison/logical operators are not simple.
+    if any(op in expr for op in ("==", "!=", "<=", ">=", "<", ">", "&&", "||")):
+        return False
+
     # Literal number
     if expr.replace('.', '').replace('f', '').replace('-', '').isdigit():
         return True
