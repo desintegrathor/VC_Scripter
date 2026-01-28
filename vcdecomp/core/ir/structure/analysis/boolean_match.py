@@ -298,3 +298,55 @@ def expressions_complement(expr1: str, expr2: str) -> bool:
 def negate_expression(expr: str) -> str:
     """Intelligently negate an expression."""
     return BooleanMatch.negate(expr)
+
+
+def simplify_boolean_expression(expr: str) -> str:
+    """
+    Simplify boolean expressions by normalizing negations and applying De Morgan.
+
+    This is inspired by Ghidra's condexe normalization:
+    - Collapse double negations (!!x -> x)
+    - Negate comparisons (!(a < b) -> a >= b)
+    - Apply De Morgan (!(a && b) -> !a || !b)
+    """
+    if not expr:
+        return expr
+
+    expr = expr.strip()
+    previous = None
+
+    while expr != previous:
+        previous = expr
+        expr = BooleanMatch._normalize(expr)
+
+        if expr.startswith("!!"):
+            expr = expr[2:].strip()
+            continue
+        if expr.startswith("! !"):
+            expr = expr[3:].strip()
+            continue
+
+        if expr.startswith("!(") and expr.endswith(")"):
+            inner = expr[2:-1].strip()
+            parts = BooleanMatch._parse_binary_expr(inner)
+            if parts and parts[1] in COMPLEMENT_OPS:
+                left, op, right = parts
+                expr = f"{left} {COMPLEMENT_OPS[op]} {right}"
+                continue
+            dm_result = BooleanMatch._try_demorgan(inner)
+            if dm_result:
+                expr = dm_result
+                continue
+            if inner.startswith("!"):
+                expr = inner[1:].strip()
+                continue
+
+        if expr.startswith("!"):
+            inner = expr[1:].strip()
+            parts = BooleanMatch._parse_binary_expr(inner)
+            if parts and parts[1] in COMPLEMENT_OPS:
+                left, op, right = parts
+                expr = f"{left} {COMPLEMENT_OPS[op]} {right}"
+                continue
+
+    return expr

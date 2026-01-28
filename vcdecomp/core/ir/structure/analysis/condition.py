@@ -16,11 +16,13 @@ from ....disasm import opcodes
 from ...parenthesization import ExpressionContext, is_simple_expression
 from ...cfg import CFG
 from ..patterns.models import CompoundCondition
+from .boolean_match import simplify_boolean_expression
 from .value_trace import (
     _trace_value_to_function_call,
     _find_xcall_with_lld_in_predecessors,
     call_is_condition_only,
     _build_condition_value_map,
+    _trace_branch_operands,
 )
 
 
@@ -162,26 +164,34 @@ def render_condition(
     """
     block = cfg.blocks.get(block_id)
     if not block or not block.instructions:
-        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+        return ConditionRender(text="true", values=[], addresses=[])
 
     jump_instr = _find_condition_jump(block, resolver)
     if not jump_instr:
-        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+        return ConditionRender(text="true", values=[], addresses=[])
 
     ssa_block = ssa_func.instructions.get(block_id, [])
     cond_value = _find_ssa_condition_value(ssa_block, jump_instr.address)
     if not cond_value:
-        return ConditionRender(text=f"cond_{block_id}", values=[], addresses=[])
+        return ConditionRender(text="true", values=[], addresses=[])
 
     values: List[SSAValue] = []
     addresses: Set[int] = set()
     visited: Set[int] = set()
-    _collect_condition_values(
-        cond_value,
-        values=values,
-        addresses=addresses,
-        visited=visited
-    )
+    if cond_value.producer_inst and cond_value.producer_inst.mnemonic in {"AND", "OR", "NOT"}:
+        _trace_branch_operands(
+            cond_value,
+            operands=values,
+            addresses=addresses,
+            visited=visited,
+        )
+    else:
+        _collect_condition_values(
+            cond_value,
+            values=values,
+            addresses=addresses,
+            visited=visited
+        )
     addresses.add(jump_instr.address)
 
     call_inst = _find_call_inst_for_condition(ssa_func, cond_value)
@@ -263,6 +273,8 @@ def render_condition(
         else:
             cond_expr = f"!({cond_expr})"
 
+    cond_expr = simplify_boolean_expression(cond_expr)
+
     return ConditionRender(
         text=cond_expr,
         values=values,
@@ -303,7 +315,7 @@ def _extract_condition_from_block(
         resolver,
         negate=False
     )
-    return render.text if render.text else None
+    return simplify_boolean_expression(render.text) if render.text else None
 
 
 def _extract_condition_expr(
@@ -341,7 +353,7 @@ def _extract_condition_expr(
                     cond_value,
                     context=ExpressionContext.IN_CONDITION
                 )
-                return cond_expr
+                return simplify_boolean_expression(cond_expr)
 
             # If condition is PHI, check if any input is a comparison
             if cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
@@ -351,7 +363,7 @@ def _extract_condition_expr(
                             phi_input,
                             context=ExpressionContext.IN_CONDITION
                         )
-                        return cond_expr
+                        return simplify_boolean_expression(cond_expr)
 
             # Fallback: use render_value
             cond_expr = formatter.render_value(
@@ -365,7 +377,7 @@ def _extract_condition_expr(
                 if alias and not alias.startswith("data_"):
                     cond_expr = alias
 
-            return cond_expr
+            return simplify_boolean_expression(cond_expr)
 
     return None
 
@@ -417,7 +429,7 @@ def _combine_conditions(
         # Don't add extra parentheses for simple AND
         combined = f" {operator} ".join(rendered)
 
-    return combined
+    return simplify_boolean_expression(combined)
 
 
 def _collect_and_chain(
