@@ -131,10 +131,32 @@ def _is_xcall_return_copy(
     return len(stack) > 0
 
 
+def _result_type_from_c_type(type_str: Optional[str]) -> opcodes.ResultType:
+    """Map C type string to ResultType for early type propagation."""
+    if not type_str:
+        return opcodes.ResultType.UNKNOWN
+
+    normalized = type_str.strip().lower()
+    if "*" in normalized:
+        return opcodes.ResultType.POINTER
+    if "float" in normalized:
+        return opcodes.ResultType.FLOAT
+    if "double" in normalized:
+        return opcodes.ResultType.DOUBLE
+    if "char" in normalized:
+        return opcodes.ResultType.CHAR
+    if "short" in normalized:
+        return opcodes.ResultType.SHORT
+    if any(token in normalized for token in ("int", "dword", "long", "uint", "word")):
+        return opcodes.ResultType.INT
+
+    return opcodes.ResultType.UNKNOWN
+
+
 def _get_xcall_return_info(
     xfn_idx: int,
     scr: Optional["SCRFile"],
-    sdk_db: Optional[object] = None
+    header_db: Optional[object] = None
 ) -> Tuple[bool, "opcodes.ResultType"]:
     """
     Determine if an XCALL returns a value and its type.
@@ -167,18 +189,20 @@ def _get_xcall_return_info(
     else:
         result_type = opcodes.ResultType.INT  # Default for non-void
 
-    # SECONDARY: SDK database for more precise type info (can override for pointers)
-    if sdk_db:
-        get_sig = getattr(sdk_db, 'get_function_signature', None)
+    # SECONDARY: Header database for more precise type info (can override for pointers)
+    if header_db and xfn_entry and xfn_entry.name:
+        func_name = xfn_entry.name
+        paren_idx = func_name.find("(")
+        if paren_idx > 0:
+            func_name = func_name[:paren_idx]
+        get_sig = getattr(header_db, 'get_function_signature', None)
         if get_sig:
-            sig = get_sig(xfn_entry.name)
+            sig = get_sig(func_name)
             if sig:
-                ret_type = getattr(sig, 'return_type', None)
-                if ret_type:
-                    if ret_type == "float":
-                        result_type = opcodes.ResultType.FLOAT
-                    elif ret_type.endswith("*"):
-                        result_type = opcodes.ResultType.POINTER
+                ret_type = sig.get('return_type')
+                header_result = _result_type_from_c_type(ret_type)
+                if header_result != opcodes.ResultType.UNKNOWN:
+                    result_type = header_result
 
     return True, result_type
 
@@ -396,6 +420,7 @@ def _lift_function_fixed_point(
     resolver: opcodes.OpcodeResolver,
     cfg: CFG,
     phi_name_fn: Callable[[int, int], str],
+    header_db: Optional[object] = None,
 ) -> Dict[int, List[LiftedInstruction]]:
     lifted: Dict[int, List[LiftedInstruction]] = {}
     order = sorted(cfg.blocks.keys())
@@ -408,7 +433,12 @@ def _lift_function_fixed_point(
             prev_in = getattr(block, "_in_stack", None)
             prev_out = getattr(block, "_out_stack", None)
             lifted[block_id] = lift_basic_block(
-                block_id, cfg, resolver, phi_name_fn, scr
+                block_id,
+                cfg,
+                resolver,
+                phi_name_fn,
+                scr,
+                header_db,
             )
             new_in = getattr(block, "_in_stack", None)
             new_out = getattr(block, "_out_stack", None)
@@ -426,7 +456,7 @@ def _lift_function_fixed_point(
     return lifted
 
 
-def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeResolver] = None, phi_name_fn: Optional[Callable[[int, int], str]] = None, scr: Optional["SCRFile"] = None) -> List[LiftedInstruction]:
+def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeResolver] = None, phi_name_fn: Optional[Callable[[int, int], str]] = None, scr: Optional["SCRFile"] = None, header_db: Optional[object] = None) -> List[LiftedInstruction]:
     block = cfg.get_block(block_id)
     instructions = block.instructions
     if not instructions:
@@ -523,7 +553,7 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
         # Check XFN table's ret_size to determine if we should create an output.
         if mnemonic == "XCALL" and scr:
             xfn_idx = instr.arg1
-            returns_value, ret_type = _get_xcall_return_info(xfn_idx, scr)
+            returns_value, ret_type = _get_xcall_return_info(xfn_idx, scr, header_db=header_db)
 
             if returns_value:
                 xfn_entry = scr.get_xfn(xfn_idx)
@@ -543,7 +573,7 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
         prev_instr = instr  # Track for next iteration
 
     # Post-process: find XCALL+SSP pairs and assign arguments
-    _assign_xcall_arguments(lifted, resolver, scr)
+    _assign_xcall_arguments(lifted, resolver, scr, header_db=header_db)
     # Post-process: find CALL patterns and assign arguments
     _assign_call_arguments(lifted, resolver, scr)
 
@@ -551,7 +581,7 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
     return lifted
 
 
-def _assign_xcall_arguments(lifted: List[LiftedInstruction], resolver: opcodes.OpcodeResolver, scr: Optional["SCRFile"] = None) -> None:
+def _assign_xcall_arguments(lifted: List[LiftedInstruction], resolver: opcodes.OpcodeResolver, scr: Optional["SCRFile"] = None, header_db: Optional[object] = None) -> None:
     """Post-process lifted instructions to assign XCALL arguments from stack snapshots."""
     for i, inst in enumerate(lifted):
         mnemonic = resolver.get_mnemonic(inst.instruction.opcode)
@@ -610,6 +640,24 @@ def _assign_xcall_arguments(lifted: List[LiftedInstruction], resolver: opcodes.O
                 # Non-variadic OR edge case: take last N values
                 args = stack_snapshot[-arg_count:]
                 inst.inputs = args
+
+        if header_db and scr:
+            xfn_entry = scr.get_xfn(inst.instruction.arg1)
+            if xfn_entry and xfn_entry.name:
+                func_name = xfn_entry.name
+                paren_idx = func_name.find("(")
+                if paren_idx > 0:
+                    func_name = func_name[:paren_idx]
+                sig = header_db.get_function_signature(func_name)
+                if sig:
+                    param_types = [param[0] for param in (sig.get("parameters") or [])]
+                    for param_idx, arg_val in enumerate(inst.inputs):
+                        if not arg_val or param_idx >= len(param_types):
+                            continue
+                        param_type = param_types[param_idx]
+                        inferred_type = _result_type_from_c_type(param_type)
+                        if inferred_type != opcodes.ResultType.UNKNOWN:
+                            arg_val.value_type = inferred_type
 
 
 def _simulate_eval_stack_depth(lifted: List[LiftedInstruction],
@@ -747,7 +795,9 @@ def lift_function(scr: SCRFile, resolver: Optional[opcodes.OpcodeResolver] = Non
     resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     cfg = build_cfg(scr, resolver)
     phi_name_fn = _make_phi_name_fn()
-    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn)
+    from ..headers.database import get_header_database
+    header_db = get_header_database()
+    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn, header_db)
     return cfg, lifted
 
 
@@ -777,7 +827,9 @@ def lift_function_heritage(
     resolver = resolver or getattr(scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     cfg = build_cfg(scr, resolver)
     phi_name_fn = _make_phi_name_fn()
-    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn)
+    from ..headers.database import get_header_database
+    header_db = get_header_database()
+    lifted = _lift_function_fixed_point(scr, resolver, cfg, phi_name_fn, header_db)
     if space_filter is not None:
         filtered_lifted: Dict[int, List[LiftedInstruction]] = {}
         for block_id, block_lifted in lifted.items():
