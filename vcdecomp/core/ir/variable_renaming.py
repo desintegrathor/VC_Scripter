@@ -906,17 +906,12 @@ class VariableRenamer:
             # Use param_N naming which is clearer
             return f"param_{abs(heritage_info.get('offset', 0)) - 3}"
 
-        # If heritage detected specific type, use that to generate better name
-        if heritage_type != "UNKNOWN":
-            # Generate type-based names for stack variables
-            if heritage_space == "STACK":
-                if heritage_type == "FLOAT":
-                    return self._generate_heritage_float_name()
-                elif heritage_type == "POINTER":
-                    return self._generate_heritage_pointer_name()
-                # INT and other types: let semantic analysis decide
-                # by returning None
-
+        # Heritage type detection (FLOAT, POINTER, INT) is useful for type inference
+        # but NOT for variable naming. Per project philosophy, we should not guess
+        # semantic meaning from type alone. Generic names like "ptr", "obj", "f"
+        # are worse than the original "local_N" because they imply meaning that
+        # isn't backed by evidence. Let semantic analysis (loop counter detection,
+        # side value detection, etc.) handle naming instead.
         return None
 
     def _generate_heritage_float_name(self) -> str:

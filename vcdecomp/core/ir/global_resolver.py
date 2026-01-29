@@ -160,6 +160,10 @@ class GlobalResolver:
         # Additional array dimension inference from loop bounds
         self._infer_array_dimensions_from_loop_bounds()
 
+        # Filter spurious globals: variables that exist ONLY in _init scratch space
+        # (only written in _init, never read/written by any other function)
+        self._filter_init_only_globals()
+
         # Populate initializers from data segment (after types are inferred)
         self._apply_data_segment_initializers()
 
@@ -174,11 +178,21 @@ class GlobalResolver:
 
         Pattern: local_X se ukládá přes DCP do global segmentu
         Např: LCP local_0 → DCP offset → local_0 je inicializace globálky
+
+        Also tracks the VALUES being written so we can use them as initializers
+        (these override static data segment values which may be zero).
         """
+        # Track _init block IDs for spurious global filtering
+        self._init_block_ids: Set[int] = set()
+
+        # Map of dword_offset → init value (int) from _init function
+        self._init_values: Dict[int, int] = {}
+
         # Najdi _init funkci (začíná na adrese 0)
         init_blocks = []
         for block_id, block in self.ssa_func.cfg.blocks.items():
             if block.start == 0:
+                self._init_block_ids.add(block_id)
                 # Získej SSA instrukce pro tento blok
                 ssa_instrs = self.ssa_func.instructions.get(block_id, [])
                 init_blocks.append(ssa_instrs)
@@ -196,6 +210,22 @@ class GlobalResolver:
                             self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
                         self.globals[byte_offset].write_count += 1
                         self.globals[byte_offset].functions_used.add("_init")
+
+                        # Extract the VALUE being stored from the DCP's input
+                        # The input comes from the preceding instruction (LCP/ICP/GCP)
+                        if instr.inputs:
+                            source_val = instr.inputs[0]
+                            # Try to extract constant value from the source
+                            const_val = self._get_constant_value(source_val)
+                            if const_val is not None:
+                                self._init_values[dword_offset] = const_val
+                            elif source_val.producer_inst:
+                                # Try to get value from producer instruction
+                                prod = source_val.producer_inst
+                                if prod.mnemonic in {"LCP", "ICP", "GCP"} and prod.instruction:
+                                    raw_instr = prod.instruction.instruction
+                                    if raw_instr:
+                                        self._init_values[dword_offset] = raw_instr.arg1
 
     def _analyze_global_accesses(self):
         """
@@ -1122,6 +1152,39 @@ class GlobalResolver:
 
         return sgi_mapping
 
+    def _filter_init_only_globals(self):
+        """
+        Filter out spurious global variables that exist ONLY as _init scratch space.
+
+        The _init function uses local stack space to copy array values into the
+        global data segment. The global resolver incorrectly creates globals for
+        ALL DCP target offsets including this scratch space. This method removes
+        globals that are ONLY written in _init and never read/written by any other
+        function.
+        """
+        to_remove = []
+        for byte_offset, usage in self.globals.items():
+            # Only filter globals that are exclusively used in _init
+            if usage.functions_used and usage.functions_used == {"_init"}:
+                # This global is only written in _init and never used elsewhere
+                # But keep it if it has an SGI mapping (it's a real global)
+                if usage.sgi_index is not None or usage.sgi_name:
+                    continue
+                # Keep if it has a name from headers/symbols
+                if usage.source in {"save_info", "SGI_constant", "SGI_runtime", "global_pointer_table"}:
+                    continue
+                # Keep if it's an array base (likely a real array being initialized)
+                if usage.is_array_base:
+                    continue
+                # Keep if it has SaveInfo metadata (referenced in save/load)
+                if usage.saveinfo_size_dwords:
+                    continue
+                # This looks like scratch space - mark for removal
+                to_remove.append(byte_offset)
+
+        for byte_offset in to_remove:
+            del self.globals[byte_offset]
+
     def _assign_names(self):
         """
         Přiřadí názvy globálním proměnným na základě detected patterns.
@@ -1545,6 +1608,55 @@ class GlobalResolver:
         from .data_resolver import DataResolver
         from ...parsing.data_segment_initializers import build_initializer
         from ..structures import get_struct_by_name
+
+        # First, apply _init function values as initializers for arrays.
+        # The _init function stores runtime values (e.g., g_will_group = {3,2,1,4})
+        # that override the static data segment (which may contain zeros).
+        init_values = getattr(self, '_init_values', {})
+        if init_values:
+            for byte_offset, usage in self.globals.items():
+                if usage.initializer:
+                    continue
+                dword_offset = byte_offset // 4
+                # Check if this global has _init values
+                if dword_offset not in init_values:
+                    continue
+                # For arrays, collect consecutive _init values
+                element_count = 1
+                if usage.saveinfo_size_dwords:
+                    element_count = usage.saveinfo_size_dwords
+                elif usage.array_dimensions:
+                    element_count = 1
+                    for dim in usage.array_dimensions:
+                        element_count *= dim
+                if element_count > 1:
+                    # Collect all values for the array
+                    values = []
+                    all_from_init = True
+                    for idx in range(element_count):
+                        val = init_values.get(dword_offset + idx)
+                        if val is not None:
+                            values.append(str(val))
+                        else:
+                            all_from_init = False
+                            values.append("0")
+                    # Only use _init values if at least some are non-zero
+                    if any(v != "0" for v in values):
+                        usage.initializer = "{" + ", ".join(values) + "}"
+                elif element_count == 1:
+                    # Single variable with _init value
+                    val = init_values[dword_offset]
+                    if val != 0:
+                        element_type = usage.inferred_type or usage.header_type or "dword"
+                        if element_type == "float":
+                            import struct as _struct
+                            try:
+                                float_val = _struct.unpack('<f', _struct.pack('<I', val & 0xFFFFFFFF))[0]
+                                usage.initializer = f"{float_val}f"
+                            except Exception:
+                                usage.initializer = str(val)
+                        else:
+                            usage.initializer = str(val)
 
         type_info_dwords = {offset // 4: usage for offset, usage in self.globals.items()}
         data_resolver = DataResolver(data_segment, type_info_dwords, confidence_threshold=0.70)

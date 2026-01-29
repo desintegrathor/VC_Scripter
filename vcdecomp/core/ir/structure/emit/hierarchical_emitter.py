@@ -267,6 +267,49 @@ class HierarchicalCodeEmitter:
         if self.graph.root is not None:
             lines.extend(self._emit_block(self.graph.root, indent))
 
+        # LOOP RESCUE PASS: Detect loops whose headers were emitted during
+        # root emission but whose body blocks were NOT emitted. This happens
+        # when the collapse engine doesn't fully collapse a loop into a
+        # BlockWhileDo/BlockDoWhile, so the header gets emitted as a plain
+        # BlockBasic but the body blocks are orphaned.
+        for loop in self.func_loops:
+            header_emitted = loop.header in self.emitted_blocks
+            if not header_emitted:
+                continue
+            # Check if any body block (excluding header) was emitted
+            body_without_header = loop.body - {loop.header}
+            body_emitted = any(
+                bid in self.emitted_blocks or bid in self._emitted_as_loop_body
+                for bid in body_without_header
+            )
+            if body_emitted:
+                continue  # Body was already emitted, no rescue needed
+            # Check that body blocks actually exist and aren't covered by structures
+            body_available = body_without_header - covered_by_structure
+            if not body_available:
+                continue
+            # Rescue: emit this loop's body via _try_emit_natural_loop
+            # We need to un-mark the header first so it can be re-processed
+            self.emitted_blocks.discard(loop.header)
+            loop_lines = self._try_emit_natural_loop(loop, indent)
+            if loop_lines is not None:
+                lines.extend(loop_lines)
+            else:
+                # Couldn't detect loop pattern - re-mark header and emit body blocks directly
+                self.emitted_blocks.add(loop.header)
+                # Emit body blocks as flat code inside a while(1) wrapper
+                body_sorted = sorted(
+                    body_available,
+                    key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
+                )
+                if body_sorted:
+                    lines.append(f"{indent}/* loop body (rescue) */")
+                    for body_id in body_sorted:
+                        if body_id not in self.emitted_blocks:
+                            body_lines = self._emit_basic_by_id(body_id, indent)
+                            lines.extend(body_lines)
+                            self._emitted_as_loop_body.add(body_id)
+
         # Then, emit any remaining uncollapsed blocks in address order
         uncollapsed = self.graph.get_uncollapsed_blocks()
 
@@ -331,29 +374,52 @@ class HierarchicalCodeEmitter:
             if block_id in self.emitted_blocks or block_id in self._emitted_as_loop_body:
                 continue
 
-            # Skip blocks covered by collapsed structures (e.g., switch case bodies)
-            if block_id in covered_by_structure:
-                continue
-
-            # Check if this block is part of a loop whose header was already emitted.
-            # This prevents duplicate emission when loop body blocks appear in func_blocks_sorted
-            # after the loop has already been emitted via its header.
-            skip_as_loop_body = False
-            for loop in self.func_loops:
-                if loop.header in self.emitted_blocks and block_id in loop.body:
-                    skip_as_loop_body = True
-                    self._emitted_as_loop_body.add(block_id)  # Mark to prevent future attempts
-                    break
-            if skip_as_loop_body:
-                continue
-
-            # Check if this is a loop header
-            if block_id in self._loop_header_map:
+            # PRIORITY: Check if this is a loop header FIRST, before covered_by_structure
+            # filtering. Loop headers may be "covered" by the collapse engine but their
+            # body blocks weren't properly emitted, so we need to detect and emit them here.
+            failed_headers = getattr(self, '_failed_loop_headers', set())
+            if block_id in self._loop_header_map and block_id not in failed_headers:
                 loop = self._loop_header_map[block_id]
                 loop_lines = self._try_emit_natural_loop(loop, indent)
                 if loop_lines is not None:
                     lines.extend(loop_lines)
                     continue
+                else:
+                    # Pattern detection failed - mark so body blocks are emitted flat
+                    if not hasattr(self, '_failed_loop_headers'):
+                        self._failed_loop_headers = set()
+                    self._failed_loop_headers = getattr(self, '_failed_loop_headers', set())
+                    self._failed_loop_headers.add(block_id)
+                    # Fall through to normal emission for this header block
+
+            # Skip blocks covered by collapsed structures (e.g., switch case bodies)
+            # BUT don't skip blocks that are part of loops with failed pattern detection -
+            # these need to be emitted as flat statements to avoid losing code.
+            if block_id in covered_by_structure:
+                failed_headers_set = getattr(self, '_failed_loop_headers', set())
+                is_in_failed_loop = False
+                if failed_headers_set:
+                    for loop in self.func_loops:
+                        if loop.header in failed_headers_set and block_id in loop.body:
+                            is_in_failed_loop = True
+                            break
+                if not is_in_failed_loop:
+                    continue
+
+            # Check if this block is part of a loop whose header was already emitted
+            # as part of a successfully detected loop pattern.
+            # This prevents duplicate emission when loop body blocks appear in func_blocks_sorted
+            # after the loop has already been emitted via its header.
+            skip_as_loop_body = False
+            for loop in self.func_loops:
+                if loop.header in self.emitted_blocks and block_id in loop.body:
+                    # Only skip if the loop was SUCCESSFULLY emitted (not a failed pattern)
+                    if loop.header not in failed_headers:
+                        skip_as_loop_body = True
+                        self._emitted_as_loop_body.add(block_id)
+                        break
+            if skip_as_loop_body:
+                continue
 
             # Skip orphaned blocks that have no gotos targeting them AND no real content.
             # Blocks with actual statements should still be emitted even without goto targets,
@@ -575,14 +641,48 @@ class HierarchicalCodeEmitter:
         )
 
         # Filter out increment statement
-        inc_patterns = [
-            f"{for_info.var}++",
-            f"{for_info.increment}",
-            f"{for_info.var} = {for_info.var} + 1",
-        ]
+        # Build comprehensive patterns that account for SSA variable renaming:
+        # The for_info.var may differ from the rendered variable name in the body
+        # (e.g., for_info.var="local_20" but body renders "obj = obj + 1")
+        inc_patterns = set()
+        # Patterns using the display variable name
+        inc_patterns.add(f"{for_info.var}++")
+        inc_patterns.add(f"{for_info.var}--")
+        if for_info.increment:
+            inc_patterns.add(for_info.increment)
+        inc_patterns.add(f"{for_info.var} = {for_info.var} + 1")
+        inc_patterns.add(f"{for_info.var} = ({for_info.var} + 1)")
+        # Patterns using the init_var (original SSA variable name, may differ)
+        if hasattr(for_info, 'init_var') and for_info.init_var and for_info.init_var != for_info.var:
+            inc_patterns.add(f"{for_info.init_var}++")
+            inc_patterns.add(f"{for_info.init_var}--")
+            inc_patterns.add(f"{for_info.init_var} = {for_info.init_var} + 1")
+            inc_patterns.add(f"{for_info.init_var} = ({for_info.init_var} + 1)")
+        # Discard empty patterns
+        inc_patterns.discard("")
+
+        # Also build a regex to catch renamed increments like "obj = obj + 1"
+        # where "obj" is the SSA-renamed form of the loop counter.
+        # Since this method is ONLY called for back-edge source blocks (the
+        # increment block), a self-referential assignment "X = X + 1" or "X++"
+        # in this block is very likely the loop increment statement.
+        import re
+        _inc_re = re.compile(r'^(\w+)\s*=\s*\(?\s*\1\s*\+\s*1\.?0?f?\s*\)?;?$')
+        _pp_re = re.compile(r'^(\w+)\+\+;?$')
+        _dec_re = re.compile(r'^(\w+)\s*=\s*\(?\s*\1\s*-\s*1\.?0?f?\s*\)?;?$')
+        _mm_re = re.compile(r'^(\w+)--;?$')
 
         for line in block_lines:
-            is_increment = any(pat in line for pat in inc_patterns if pat)
+            stripped = line.strip().rstrip(';').strip()
+            is_increment = any(pat in line for pat in inc_patterns)
+            # Fallback: regex match for self-referential increment/decrement
+            # patterns in the back-edge block. This catches cases where SSA
+            # renaming changed the variable name (e.g., "obj = obj + 1" when
+            # the for-clause says "local_20++").
+            if not is_increment:
+                m = _inc_re.match(stripped) or _pp_re.match(stripped) or _dec_re.match(stripped) or _mm_re.match(stripped)
+                if m:
+                    is_increment = True
             if not is_increment:
                 lines.append(f"{indent}{line}")
 
@@ -829,10 +929,20 @@ class HierarchicalCodeEmitter:
         if block_id in self.emitted_blocks:
             return lines
 
-        # NOTE: Loop detection removed from here to prevent duplicate emission.
-        # Loop headers are detected and emitted in emit_function() which is the
-        # single canonical code path for loop detection. Having multiple detection
-        # points (here + emit_function) caused loops to be emitted twice.
+        # If this is a loop header with failed pattern detection, try to emit
+        # the entire loop structure as flat statements including body blocks.
+        failed_headers = getattr(self, '_failed_loop_headers', set())
+        if block_id in self._loop_header_map and block_id not in failed_headers:
+            # This block is a loop header that hasn't failed yet - attempt
+            # pattern detection and structured emission
+            loop = self._loop_header_map[block_id]
+            loop_lines = self._try_emit_natural_loop(loop, indent)
+            if loop_lines is not None:
+                return loop_lines
+            # Pattern detection failed - mark as failed and fall through to flat emission
+            if not hasattr(self, '_failed_loop_headers'):
+                self._failed_loop_headers = set()
+            self._failed_loop_headers.add(block_id)
 
         self.emitted_blocks.add(block_id)
 

@@ -621,6 +621,29 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # Use lowered rename_map for expression formatting
     rename_map = lowering_result.lowered_rename_map
 
+    # Inject SDK parameter names from function signature into rename_map.
+    # This replaces mechanical names like "param_0" with SDK names like "info".
+    if func_sig and func_sig.param_types:
+        param_name_overrides = {}  # "param_0" -> "info"
+        for i, param_type in enumerate(func_sig.param_types):
+            # Extract name from "s_SC_NET_info *info" -> "info"
+            tokens = param_type.replace('*', ' * ').split()
+            param_name = None
+            for token in reversed(tokens):
+                if token != '*':
+                    param_name = token.lstrip('*')
+                    break
+            if param_name and not param_name.startswith("param_"):
+                param_name_overrides[f"param_{i}"] = param_name
+        # Apply overrides: any SSA value mapped to "param_0" becomes "info"
+        if param_name_overrides:
+            for ssa_name, current_name in list(rename_map.items()):
+                # Strip & prefix for comparison
+                clean = current_name.lstrip("&")
+                if clean in param_name_overrides:
+                    prefix = "&" if current_name.startswith("&") else ""
+                    rename_map[ssa_name] = prefix + param_name_overrides[clean]
+
     # Create per-function formatter with function boundaries for accurate structure detection
     # FÁZE 3.3: Pass parameter info for correct aliasing
     # FÁZE 4: Pass function_bounds for CALL resolution

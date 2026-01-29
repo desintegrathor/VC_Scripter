@@ -2024,8 +2024,27 @@ class ExpressionFormatter:
         if "&" in rendered and not rendered.startswith('&"'):
             return True
         # Variable name (local_X, param_X, etc.) - valid lvalue
+        # But NOT if it's an arithmetic expression like "local_0 - 1.0f"
         if rendered.startswith("local_") or rendered.startswith("param_"):
-            return True
+            # Check that this is a simple variable name, not an expression
+            # containing arithmetic operators at the top level
+            import re
+            if re.match(r'^(?:local|param)_\w+$', rendered):
+                return True
+            # Could be a subscript or field access: local_0[i], local_0.field
+            # But NOT "local_0 - 1.0f" where the dot is in a float literal
+            if '[' in rendered:
+                return True
+            if '.' in rendered:
+                # Check if the dot is a struct field access (local_0.field)
+                # vs a float literal in an arithmetic expression (local_0 - 1.0f)
+                # A field access has the dot immediately after the variable name
+                if re.match(r'^(?:local|param)_\w+\.', rendered):
+                    return True
+                # Otherwise it's likely an expression containing floats
+                return False
+            # Contains arithmetic operators - this is an expression, not an lvalue
+            return False
         # Struct field access (contains .)
         if "." in rendered and not rendered.startswith('"'):
             return True

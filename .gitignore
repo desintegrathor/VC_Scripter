@@ -24,3 +24,8 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 decompiler_source_tests/test2/nul
+decompiler_source_tests/test3/LEVEL.asm
+decompiler_source_tests/test3/LEVEL_decompiled.c
+decompiler_source_tests/test3/debug.log
+decompiler_source_tests/test3/LEVEL_decompiled.c
+decompiler_source_tests/test1/tt_decompiled.c

@@ -1,4 +1,4 @@
-// Structured decompilation of decompiler_source_tests\test1\tt.scr
+// Structured decompilation of decompiler_source_tests/test1/tt.scr
 // Functions: 15
 
 #include <inc\sc_global.h>
@@ -205,16 +205,42 @@ int func_0498(int param_0, int param_1) {
     s_SC_FpvMapSign local_5[4];
     int idx;
     int local_2;
+    dword local_4;
     int local_41;
     int n;
 
     local_4 = 0;
     local_3 = 0;
+    for (i = 0; i < 6; i++) {
+        local_0 = 0;
+        local_1 = 0;
+        local_2 = 0;
+        if ((i + 1) != param_0) {
+            local_1 = 1;
+            local_0 = 1;
+            local_2 = 1;
+            SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
+            SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
+            SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
+            local_5[0].id = 0;
+            local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
+            local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
+            local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
+            local_5[-1].y = -1;
+            local_5[t712_].field_12 = t712_;
+            local_5[1065353216].z = 1.0f;
+            local_4++;
+            local_3 = i + 1;
+        } else {
+            local_2 = 1;
+        }
+    }
     return 0;  // FIX (06-05): Synthesized return value
 }
 
 int func_0752(int param_0, int param_1) {
     int idx;
+    dword local_1;
     int n;
     s_SC_P_getinfo player_info;
 
@@ -240,6 +266,7 @@ int func_0852(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
     int k;
+    dword local_1;
     int local_2;
     int local_265;
     int local_266;
@@ -254,19 +281,32 @@ int func_0852(void) {
     }
     if (local_0 <= 0) {
         local_1 = 1;
-        local_2 = tmp6 / 2;
+        local_2 = tmp7 / 2;
     } else {
         local_1 = 0;
         local_2 = local_0 / 2;
     }
     local_265 = 64;
-    t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, ptr);
+    t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, local_1);
+    for (i = 0; i != 0; i = i - 1) {
+        local_266 = rand() % local_265;
+        local_264 = local_266;
+        if (tmp15 == 0) {
+            t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
+            local_8[j].id = 0;
+            local_2 = i - 1;
+        } else {
+            local_264 = j + 1;
+            local_264 = 0;
+        }
+    }
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 int func_1028(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
-    int local_257;
+    dword local_257;
     int local_258;
     int local_260;
 
@@ -274,7 +314,14 @@ int func_1028(void) {
     func_0334(t1037_ret);
     local_257 = 1 - t1037_ret;
     local_258 = 64;
-    t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, ptr);
+    t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
+    for (i = 0; i < local_258; i++) {
+        if (side2 != 2) {
+            SC_MP_RecoverPlayer(t1084_);
+        } else {
+            local_256 = i + 1;
+        }
+    }
     return 0;  // FIX (06-05): Synthesized return value
 }
 
@@ -284,8 +331,9 @@ int ScriptMain(s_SC_NET_info *info) {
     char local_0[32];
     s_SC_MP_hud hudinfo;
     int i;
-    int j;
+    dword j;
     int k;
+    dword local_11;
     int local_12;
     int local_13;
     int local_294;
@@ -337,16 +385,16 @@ int ScriptMain(s_SC_NET_info *info) {
             case 0:
                 if (side6 == 1) {
                 } else {
-                    local_8 = obj + 1;
+                    local_8 = j + 1;
                 }
                 break;
             case 1:
                 SC_P_GetPos(t1547_, &vec);
                 // Loop header - Block 221 @1557
-                for (local_9 = gCurStep - 1; local_9 < gCurStep; local_9++) {
-                    if (SC_IsNear3D( & vec, & gStepSwitch[ptr29], t1574_)) {
-                        if (ptr29) {
-                            gCurStep = ptr29;
+                for (idx = gCurStep - 1; idx < gCurStep; idx++) {
+                    if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
+                        if (idx) {
+                            gCurStep = idx;
                             t1595_ret = SC_MP_GetHandleofPl(t1593_);
                             SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
                             SC_sgi(507, gCurStep);
@@ -362,8 +410,9 @@ int ScriptMain(s_SC_NET_info *info) {
                             SC_P_MP_AddPoints(t1647_, 2);
                         }
                     } else {
-                        local_9 = ptr29 + 1;
+                        local_9 = idx + 1;
                     }
+                    local_9 = idx + 1;
                 }
                 break;
             }
@@ -393,12 +442,12 @@ int ScriptMain(s_SC_NET_info *info) {
                 gCLN_MissionTime -= info->elapsed_time;
                 break;
             case 3:
-                local_299[ptr46].z = 0;
+                local_299[local_11].z = 0;
                 break;
             }
             break;
         case 1:
-            if (gCLN_CurStep != SC_ggi(507) && gCLN_CurStep < idx && gCLN_CurStep > 0) {
+            if (gCLN_CurStep != SC_ggi(507) && gCLN_CurStep < idx34 && gCLN_CurStep > 0) {
                 gCLN_ShowInfo = 5.0f;
                 SC_SND_PlaySound2D(10425);
             }
@@ -433,10 +482,10 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_SetClassLimit(39, 0);
         SC_MP_GetSRVsettings(&srv_settings);
         local_8 = 0;
-        for (local_8 = 0; local_8 < 6; local_8++) {
-            SC_MP_SRV_SetClassLimit(obj + 1, t2149_);
-            SC_MP_SRV_SetClassLimit(obj + 21, t2161_);
-            local_8 = obj + 1;
+        for (j = 0; j < 6; j++) {
+            SC_MP_SRV_SetClassLimit(j + 1, t2149_);
+            SC_MP_SRV_SetClassLimit(j + 21, t2161_);
+            local_8 = j + 1;
         }
         break;
     case 2:
@@ -467,8 +516,8 @@ int ScriptMain(s_SC_NET_info *info) {
             }
             if (gCLN_ShowStartInfo > 0.0f) {
                 local_8 = SC_PC_Get();
-                if (obj) {
-                    SC_P_GetInfo(obj, &player_info);
+                if (j) {
+                    SC_P_GetInfo(j, &player_info);
                     t2933_ret = SC_ggi(502);
                     func_0334(t2933_ret);
                     if (local_413.field_8 == t2933_ret) {
@@ -476,15 +525,15 @@ int ScriptMain(s_SC_NET_info *info) {
                     } else {
                         local_314 = SC_Wtxt(5109);
                     }
-                    SC_GameInfoW(ptr51);
+                    SC_GameInfoW(local_314);
                     local_314 = 0;
                 }
             } else {
                 if (gCLN_ShowInfo > 0.0f && gCLN_CurStep > 0) {
                     t2982_ret = SC_ggi(510);
                     local_9 = SC_MP_GetPlofHandle(t2982_ret);
-                    if (ptr29) {
-                        t2998_ret = SC_P_GetName(ptr29);
+                    if (idx) {
+                        t2998_ret = SC_P_GetName(idx);
                         t3003_ret = SC_AnsiToUni(t2998_ret, &local_379);
                     } else {
                         t3012_ret = SC_AnsiToUni("'disconnected'", &local_379);
@@ -494,8 +543,8 @@ int ScriptMain(s_SC_NET_info *info) {
                     local_314 = &local_315;
                 }
                 local_8 = SC_PC_Get();
-                if (obj) {
-                    SC_P_GetInfo(obj, &player_info);
+                if (j) {
+                    SC_P_GetInfo(j, &player_info);
                     t3057_ret = SC_ggi(502);
                     func_0334(t3057_ret);
                     if (local_413.field_8 == t3057_ret) {
@@ -526,15 +575,16 @@ int ScriptMain(s_SC_NET_info *info) {
         switch (gMission_phase) {
         case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
-            for (local_8 = 0; local_8 < abl_lists; local_8++) {
+            for (j = 0; j < abl_lists; j++) {
                 if ((param_0- > field_4) == tmp430) {
                     abl_lists--;
-                    abl_list[obj] = tmp435;
+                    abl_list[j] = tmp435;
                 } else {
-                    local_8 = obj + 1;
+                    local_8 = j + 1;
                 }
+                local_8 = j + 1;
             }
-            if (obj < abl_lists) {
+            if (j < abl_lists) {
                 param_0->fval1 = 0.1f;
             } else {
                 if (gNextRecover > local_421) {
@@ -557,9 +607,9 @@ int ScriptMain(s_SC_NET_info *info) {
         local_13 = info->param2;
         local_9 = param_0->field_4;
         if (gAttackingSide) {
-            local_9 = 1 - ptr29;
+            local_9 = 1 - idx;
         }
-        if (ptr29) {
+        if (idx) {
             if (gMission_phase == 1) {
                 if (gCurStep < 2) {
                     local_10 = 0;
@@ -576,9 +626,9 @@ int ScriptMain(s_SC_NET_info *info) {
                 local_10 = gSteps - 1;
             }
         }
-        local_8 = SC_MP_SRV_GetBestDMrecov(t3600_0, t3610_, &gRecTimer[768] + ptr40 * 128, 3.0f);
-        gRecTimer[768] + ptr40 * 128 + obj * 4 = 3.0f;
-        ptr56 = tmp492;
+        local_8 = SC_MP_SRV_GetBestDMrecov(t3600_0, t3610_, &gRecTimer[768] + idx29 * 128, 3.0f);
+        gRecTimer[768] + idx29 * 128 + j * 4 = 3.0f;
+        tmp457 = tmp493;
         break;
     case 10:
         gTime = 0;
@@ -604,10 +654,11 @@ int ScriptMain(s_SC_NET_info *info) {
         break;
     default:
         // Loop header - Block 176 @1195
-        for (local_8 = 0; local_8 < ptr; local_8++) {
+        for (j = 0; j < local_12; j++) {
             if (side2 != 0 && tmp22 < 2) {
                 (&local_296) + tmp26 * 4 = 1;
             }
+            local_8 = j + 1;
         }
         gMission_starting_timer -= info->elapsed_time;
         if (tmp35 && tmp37) {
