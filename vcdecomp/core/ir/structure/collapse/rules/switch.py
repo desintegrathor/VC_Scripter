@@ -235,6 +235,11 @@ class RuleBlockSwitch(CollapseRule):
                 has_break = len(case_body.out_edges) > 0
 
             else:
+                # Case entry block not found as uncollapsed block in the graph.
+                # This happens when inner blocks weren't properly collapsed.
+                # Instead of refusing the entire switch, create the case with
+                # body_block=None and use body_block_ids for flat emission.
+                # The emitter's _emit_switch_case_body_flat handles this path.
                 if _block_ids_have_emitted_expressions(
                     graph,
                     [case_info.block_id],
@@ -242,9 +247,9 @@ class RuleBlockSwitch(CollapseRule):
                     f"case {case_info.value}",
                 ):
                     _switch_empty_debug(
-                        f"case {case_info.value}: body has emitted expressions; refusing to discard"
+                        f"case {case_info.value}: body has emitted expressions but entry block "
+                        f"not found; using body_block_ids fallback for flat emission"
                     )
-                    return None
                 case_body = None
                 has_break = case_info.has_break
 

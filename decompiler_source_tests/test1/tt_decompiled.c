@@ -55,6 +55,11 @@ int func_0050(float param_0) {
         if (gMission_phase > 0) {
             gTime += param_0;
         }
+        SC_MP_EndRule_SetTimeLeft(gTime, gMission_phase);
+        if (gTime > ((float)gEndValue)) {
+            SC_MP_LoadNextMap();
+            return TRUE;
+        }
         break;
     case SC_MP_ENDRULE_POINTS:
         if (gSidePoints[0] >= gEndValue || gSidePoints[1] >= gEndValue) {
@@ -63,14 +68,7 @@ int func_0050(float param_0) {
         }
         break;
     }
-    SC_MP_EndRule_SetTimeLeft(gTime, gMission_phase);
-    if (gTime > ((float)gEndValue)) {
-        SC_MP_LoadNextMap();
-        return TRUE;
-    }
-    goto block_20;
-block_20:
-    return FALSE;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 int func_0119(void) {
@@ -197,17 +195,9 @@ void func_0355(void) {
         } else {
             gMissionTimeToBeat = gMissionTimePrev - gMissionTime;
         }
+        gMainPhase++;
         break;
     }
-    goto block_61;
-block_61:
-block_67:
-    gMainPhase++;
-block_68:
-    SC_sgi(502, gMainPhase);
-    func_0334(gMainPhase);
-    gAttackingSide = gMainPhase;
-    SC_sgi(507, 6);
     return;
 }
 
@@ -220,12 +210,6 @@ int func_0498(int param_0, int param_1) {
 
     local_4 = 0;
     local_3 = 0;
-block_74:
-block_77:
-block_80:
-block_91:
-block_96:
-    SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
     return 0;  // FIX (06-05): Synthesized return value
 }
 
@@ -239,16 +223,17 @@ int func_0752(int param_0, int param_1) {
         if (local_0 > 0) {
         } else {
         }
+        local_1 = 1;
         break;
     case 1:
         if (local_0 < 0) {
         } else {
             return;
         }
+        local_1 = 0;
         break;
     }
-block_115:
-    return;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 int func_0852(void) {
@@ -276,12 +261,6 @@ int func_0852(void) {
     }
     local_265 = 64;
     t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, ptr);
-block_156:
-    t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - ptr, 1 + 20 * ((1 - ptr)));
-    local_8[ptr5].id = 0;
-    local_2 = ptr1 - 1;
-block_157:
-    return;
 }
 
 int func_1028(void) {
@@ -296,17 +275,7 @@ int func_1028(void) {
     local_257 = 1 - t1037_ret;
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, ptr);
-block_159:
-    local_256 = 0;
-    for (local_256 = 0; local_256 < ptr1; local_256++) {
-        if (side2 != 2) {
-            SC_MP_RecoverPlayer(t1084_);
-        } else {
-            local_256 = obj + 1;
-        }
-    }
-block_164:
-    return;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 int ScriptMain(s_SC_NET_info *info) {
@@ -351,8 +320,8 @@ int ScriptMain(s_SC_NET_info *info) {
     switch (info->message) {
     case 3:
         func_0050(info->elapsed_time);
-        switch (info->elapsed_time) {
-        case 0:
+        switch (gMission_phase) {
+        case MISSION_PHASE_NOACTIVE:
             gNoActiveTime += info->elapsed_time;
             if (gMissionTime > -10.0f) {
                 gMissionTime = -10.0f;
@@ -360,7 +329,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 func_0264(0);
             }
             break;
-        case 1:
+        case MISSION_PHASE_INGAME:
             gMission_afterstart_time += info->elapsed_time;
             gMissionTime -= info->elapsed_time;
             func_0264(info->elapsed_time);
@@ -399,9 +368,9 @@ int ScriptMain(s_SC_NET_info *info) {
                 break;
             }
             break;
-        case 3:
+        case MISSION_PHASE_WIN_DEFENDERS:
             break;
-        case 2:
+        case MISSION_PHASE_WIN_ATTACKERS:
             gPhaseTimer -= info->elapsed_time;
             if (gPhaseTimer < 0.0f) {
                 gNoActiveTime = 0;
@@ -554,8 +523,8 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         break;
     case 5:
-        switch (info->param2) {
-        case 1:
+        switch (gMission_phase) {
+        case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
             for (local_8 = 0; local_8 < abl_lists; local_8++) {
                 if ((param_0- > field_4) == tmp430) {
@@ -576,7 +545,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 }
             }
             break;
-        case 0:
+        case MISSION_PHASE_NOACTIVE:
             param_0->fval1 = 3.0f;
             break;
         default:

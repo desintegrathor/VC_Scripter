@@ -39,8 +39,6 @@ int func_0292(void) {
     SC_ZeroMem(&vec, 12);
     vec.z = -20000.0f;
     local_0 = 0;
-block_7:
-    local_0 = i + 1;
     return 0;  // FIX (06-05): Synthesized return value
 }
 
@@ -50,20 +48,6 @@ int func_0355(void) {
     int local_2;
 
     local_1 = 0;
-    for (local_1 = 0; local_1 < 12; local_1++) {
-        if (obj == 9) {
-            local_0 = 0;
-            local_2 = SC_P_GetBySideGroupMember(1, obj, obj);
-            SC_P_SetActive(ptr, TRUE);
-            local_0 = i + 1;
-        } else {
-            local_1 = obj + 1;
-        }
-    }
-block_18:
-    local_1 = 0;
-block_22:
-    local_1 = obj + 1;
     return 0;  // FIX (06-05): Synthesized return value
 }
 
@@ -81,8 +65,6 @@ int func_0511(int param_0, int param_1) {
     SC_P_GetPos(param_1, &vec);
     SC_ZeroMem(&local_3, 8);
     local_6 = 0;
-block_37:
-    local_6 = ptr + 1;
     return 0;  // FIX (06-05): Synthesized return value
 }
 
@@ -133,41 +115,48 @@ int func_0612(int param_0, float param_1) {
             t870_ret = SC_PC_GetPos(&vec);
             func_0448(SC_PC_GetPos(&vec));
             SC_P_GetPos(local_12, &vec2);
-            t886_ret = SC_IsNear2D(&vec, &vec2, 50.0f);
+            if (SC_IsNear2D( & vec, & vec2, 50.0f)) {
+                g_pilot_phase = 4;
+                g_pilot_timer = 0;
+                SC_SetSideAlly(1, 2, -1.0f);
+                SC_sgi(SGI_LEVELPHASE, 2);
+            }
         }
         break;
     case 4:
         if (SC_ggi(SGI_LEVELPHASE) > 5) {
         } else {
             g_pilot_timer -= param_0;
+            if (g_pilot_timer <= 0.0f) {
+                g_pilot_timer = 1.5f;
+                func_0448();
+                t944_ret = SC_PC_Get();
+                local_10 = SC_P_GetDistance(local_13, t944_ret);
+                if (ptr2 > 15.0f) {
+                    t960_ret = SC_PC_GetPos(&vec2);
+                    func_0448(SC_PC_GetPos(&vec2));
+                    SC_P_Ai_Go(local_12, &vec2);
+                } else {
+                    if (ptr2 < 8.0f) {
+                        func_0448();
+                        SC_P_Ai_Stop(local_12);
+                    }
+                }
+            }
         }
         break;
     default:
+        if (local_11 == 1) {
+        } else {
+            if (local_11 == 2) {
+            } else {
+                if (local_11 == 4) {
+                }
+            }
+        }
         break;
     }
-    goto block_61;
-    for (local_4 = 0; local_4 < 4; t667_0 = t625_ret) {
-        if (! tmp4) {
-            local_0 = t625_ret + 1;
-        } else {
-            t654_ret = SC_IsNear2D((&g_will_pos) + (&g_will_pos) * 12, &vec, 80.0f);
-            (&g_vill_visited) + (&g_vill_visited) * 4 = 1;
-        }
-    }
-block_47:
-    local_1 = 0;
-    local_0 = 0;
-    for (t625_ret = 0; t625_ret < 3; t625_ret++) {
-        if (! tmp14) {
-            local_1 = ptr + 1;
-        } else {
-            local_0 = t625_ret + 1;
-        }
-    }
-block_61:
-block_68:
-block_79:
-    return;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
 void func_0985(int param_0, int param_1) {

@@ -252,6 +252,17 @@ class HierarchicalCodeEmitter:
         # Track which blocks are emitted as part of a loop
         self._emitted_as_loop_body: Set[int] = set()
 
+        # Collect all blocks covered by the collapsed structure (switch cases, etc.)
+        # These should NOT be emitted as separate labeled blocks.
+        # IMPORTANT: Compute this BEFORE any emission pass so that both the
+        # uncollapsed-block loop and the final CFG-block loop can use it to
+        # prevent double-emission and stray labeled blocks.
+        covered_by_structure = self._collect_covered_blocks()
+
+        # Compute which blocks are actual goto targets (need labels)
+        # Orphaned blocks without gotos targeting them should not be emitted
+        needed_labels = self._compute_needed_labels()
+
         # First, emit the root structure
         if self.graph.root is not None:
             lines.extend(self._emit_block(self.graph.root, indent))
@@ -268,6 +279,9 @@ class HierarchicalCodeEmitter:
                 if block.original_block_id in self.emitted_blocks:
                     continue
                 if block.original_block_id in self._emitted_as_loop_body:
+                    continue
+                # Skip blocks covered by collapsed structures
+                if block.original_block_id in covered_by_structure:
                     continue
             remaining.append(block)
 
@@ -304,14 +318,6 @@ class HierarchicalCodeEmitter:
 
                 lines.append(f"{self.block_labels[block_id]}:")
                 lines.extend(self._emit_basic(block, indent))
-
-        # Collect all blocks covered by the collapsed structure (switch cases, etc.)
-        # These should NOT be emitted as separate labeled blocks
-        covered_by_structure = self._collect_covered_blocks()
-
-        # Compute which blocks are actual goto targets (need labels)
-        # Orphaned blocks without gotos targeting them should not be emitted
-        needed_labels = self._compute_needed_labels()
 
         # Finally, emit any CFG blocks that weren't reached through the graph
         # (e.g., blocks removed during switch collapse)

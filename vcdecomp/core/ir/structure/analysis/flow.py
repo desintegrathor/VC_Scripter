@@ -311,11 +311,23 @@ def _find_case_body_blocks(
                 print(f"DEBUG BODY: Stopping at {block_id} - in effective_stop {effective_stop}", file=sys.stderr)
             continue
 
+        # Dominance check: require that the block is dominated by the case entry,
+        # OR that all of its predecessors are already in the case body.
+        # The second condition handles blocks that are reachable from the case entry
+        # but not dominated by it in the global dominator tree (e.g., continuation
+        # blocks after nested if/else within a case that the dominator tree resolves
+        # to a dispatch chain block instead).
         if block_id != case_entry and not _is_dominated(block_id):
-            if _debug_body:
-                import sys
-                print(f"DEBUG BODY: Skipping {block_id} - not dominated by case entry", file=sys.stderr)
-            continue
+            predecessors = getattr(cfg.blocks.get(block_id), 'predecessors', [])
+            all_preds_in_body = predecessors and all(
+                p in body_blocks or p in visited or p == case_entry
+                for p in predecessors
+            )
+            if not all_preds_in_body:
+                if _debug_body:
+                    import sys
+                    print(f"DEBUG BODY: Skipping {block_id} - not dominated by case entry and has external preds", file=sys.stderr)
+                continue
 
         block = cfg.blocks.get(block_id)
         if not block:

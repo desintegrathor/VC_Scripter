@@ -1235,11 +1235,6 @@ def _detect_switch_patterns(
 
                 _switch_debug(f"  Variable '{var_name}' assigned priority: {var_priority}")
 
-                # Track this variable's frequency and priority
-                variable_frequency[var_name] = variable_frequency.get(var_name, 0) + 1
-                variable_priority[var_name] = max(variable_priority.get(var_name, 0), var_priority)
-                variable_to_ssa[var_name] = var_value
-
                 # NESTED SWITCH FIX: When we see a different variable, it's likely a nested switch
                 # Only collect cases for the SAME variable to preserve switch structure
                 # The nested switch will be detected when we process case bodies later
@@ -1280,7 +1275,16 @@ def _detect_switch_patterns(
                         debug_print(f"DEBUG SWITCH: Added block {current_block} to nested_switch_headers")
 
                         # Don't add successors for nested switch blocks - let them be detected later
+                        # CRITICAL: Do NOT track this variable in frequency/priority - it belongs
+                        # to a nested switch, not the current one being detected.
                         continue
+
+                # Track this variable's frequency and priority.
+                # This is done AFTER the nested switch check so that variables
+                # belonging to nested switches are excluded from best-variable selection.
+                variable_frequency[var_name] = variable_frequency.get(var_name, 0) + 1
+                variable_priority[var_name] = max(variable_priority.get(var_name, 0), var_priority)
+                variable_to_ssa[var_name] = var_value
 
                 # Same variable (or first case), try to extract constant value using ConstantPropagator
                 _switch_debug(f"About to extract constant from: {const_value.name if hasattr(const_value, 'name') else const_value}")

@@ -660,6 +660,35 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     for i, sw in enumerate(switch_patterns):
         debug_print(f"DEBUG ORCHESTRATOR: Switch {i}: {sw.test_var} with {len(sw.cases)} cases, header_block={sw.header_block}")
 
+    # FIX: Expand func_block_ids to include switch case body blocks that may
+    # have been excluded by the reachability DFS.  Switch case bodies are
+    # entered through dispatch chains (computed jumps) whose targets may not
+    # appear as normal CFG successors, leaving the bodies "unreachable".
+    switch_expansion = set()
+    for sw in switch_patterns:
+        if sw.all_blocks:
+            # Only add blocks that are within the function's address range
+            for bid in sw.all_blocks:
+                if bid not in func_block_ids and bid in cfg.blocks:
+                    blk = cfg.blocks[bid]
+                    if blk.start >= entry_addr and (end_addr is None or blk.start <= end_addr):
+                        switch_expansion.add(bid)
+        for case_info in sw.cases:
+            for bid in case_info.body_blocks:
+                if bid not in func_block_ids and bid in cfg.blocks:
+                    blk = cfg.blocks[bid]
+                    if blk.start >= entry_addr and (end_addr is None or blk.start <= end_addr):
+                        switch_expansion.add(bid)
+        if sw.default_body_blocks:
+            for bid in sw.default_body_blocks:
+                if bid not in func_block_ids and bid in cfg.blocks:
+                    blk = cfg.blocks[bid]
+                    if blk.start >= entry_addr and (end_addr is None or blk.start <= end_addr):
+                        switch_expansion.add(bid)
+    if switch_expansion:
+        debug_print(f"DEBUG ORCHESTRATOR: Expanding func_block_ids with {len(switch_expansion)} switch case body blocks: {sorted(switch_expansion)}")
+        func_block_ids = func_block_ids | switch_expansion
+
     # =========================================================================
     # GHIDRA-STYLE COLLAPSE ALGORITHM (use_collapse=True)
     # =========================================================================
