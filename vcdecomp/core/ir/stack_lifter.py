@@ -54,25 +54,23 @@ def _to_signed(val: int) -> int:
 
 def _stack_alias_from_offset(offset: int) -> str:
     signed = _to_signed(offset)
-    if signed < 0:
-        # Parameters: [sp-4]=param_0, [sp-3]=param_1, [sp-2]=param_2, etc.
-        # Note: [sp-3] is SECOND parameter when there are 2+ params
-        # The slot at [sp-4] is always the first parameter (param_0)
+    if signed < 0 and signed <= -3:
+        # Parameters are accessed with negative offsets in the callee.
+        # Calling convention: [sp-3] = last param, [sp-4] = 2nd-to-last, etc.
         #
-        # Empirical evidence from bytecode analysis:
-        # - SRV_CheckEndRule(float time): uses [sp-4] for its only param
-        # - SetFlagStatus(attacking_side, cur_step): uses [sp-4] for param_0, [sp-3] for param_1
+        # During lifting we don't know the total param count, so we use a
+        # temporary param alias based on the raw offset. The final param_X
+        # name is resolved by the ExpressionFormatter which has access to
+        # the function signature and remaps via _param_names.
         #
-        # Formula: param_idx = offset + 4
-        # - offset -4 → param_0
-        # - offset -3 → param_1
-        # - offset -2 → param_2
-        param_idx = signed + 4  # -4→0, -3→1, -2→2, etc.
-        if param_idx < 0:
-            # Offsets below -4 are not valid parameters
-            # They might be something else (return address, saved frame, etc.)
-            return f"stack_{abs(signed)}"
+        # Alias: param_N where N = abs(offset) - 3 (0-based from deepest)
+        # [sp-3] → param_0, [sp-4] → param_1, [sp-5] → param_2, etc.
+        # Note: This is reversed numbering (param_0 = last pushed). The
+        # expression formatter remaps to correct param order.
+        param_idx = abs(signed) - 3
         return f"param_{param_idx}"
+    elif signed < 0:
+        return f"stack_{abs(signed)}"
     # FIX 2: Use BYTE offset, not dword index!
     # Compiler uses byte-level addressing (offset 8, 9, 10, 11, ...)
     # NOT dword-aligned (0, 4, 8, 12, ...)
@@ -140,6 +138,45 @@ def _is_xcall_return_copy(
         return False
 
     # Stack should have the return value on it
+    return len(stack) > 0
+
+
+def _is_call_return_copy(
+    instr: Instruction,
+    prev_instr: Optional[Instruction],
+    stack: List,
+    resolver: opcodes.OpcodeResolver,
+) -> bool:
+    """
+    Detect LLD [sp+X] after internal CALL with return value pattern.
+
+    When LLD immediately follows a CALL that returns a value (detected by
+    the CALL return value handling), the LLD is copying the return value
+    from eval stack to a local variable WITHOUT consuming it.
+
+    Pattern:
+        CALL func_addr
+        LLD [sp+X]  ; X >= 0, copies ret val to local_X
+
+    The return value stays on eval stack for potential use in conditions.
+    """
+    if not prev_instr:
+        return False
+
+    mnemonic = resolver.get_mnemonic(instr.opcode)
+    if mnemonic != "LLD":
+        return False
+
+    prev_mnemonic = resolver.get_mnemonic(prev_instr.opcode)
+    if prev_mnemonic != "CALL":
+        return False
+
+    # Check offset is non-negative (local variable, not return slot)
+    offset = _to_signed(instr.arg1)
+    if offset < 0:
+        return False
+
+    # Stack should have the return value on it (pushed by our CALL handling)
     return len(stack) > 0
 
 
@@ -565,14 +602,21 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
             preserve_ret = False
             ret_val: Optional[StackValue] = None
 
-            if scr and stack:
+            if stack:
                 top_producer = stack[-1].producer
                 if top_producer and resolver.get_mnemonic(top_producer.opcode) == "XCALL":
-                    xfn_entry = scr.get_xfn(top_producer.arg1)
-                    if xfn_entry and xfn_entry.arg_count == 0xFFFFFFFF:
-                        pop_count += 1  # Variadic metadata value
-                    returns_value, _ = _get_xcall_return_info(top_producer.arg1, scr, header_db=header_db)
-                    if returns_value:
+                    if scr:
+                        xfn_entry = scr.get_xfn(top_producer.arg1)
+                        if xfn_entry and xfn_entry.arg_count == 0xFFFFFFFF:
+                            pop_count += 1  # Variadic metadata value
+                        returns_value, _ = _get_xcall_return_info(top_producer.arg1, scr, header_db=header_db)
+                        if returns_value:
+                            preserve_ret = True
+                elif top_producer and resolver.get_mnemonic(top_producer.opcode) == "CALL":
+                    # Internal CALL return value - check if this value was
+                    # marked as a return value by our CALL handling
+                    top_val = stack[-1]
+                    if top_val.name.endswith("_ret"):
                         preserve_ret = True
 
             inputs = []
@@ -598,6 +642,9 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
         elif _is_xcall_return_copy(instr, prev_instr, stack, resolver, scr):
             pops, pushes = 0, 0  # Copy pattern - ret val stays on stack
             logger.info(f"LLD {instr.arg1} after XCALL: copy pattern (pops=0, pushes=0)")
+        elif _is_call_return_copy(instr, prev_instr, stack, resolver):
+            pops, pushes = 0, 0  # Copy pattern - ret val stays on stack
+            logger.info(f"LLD {instr.arg1} after CALL: copy pattern (pops=0, pushes=0)")
         else:
             pops = info.pops if info else 0
             pushes = info.pushes if info else 0
@@ -661,6 +708,60 @@ def lift_basic_block(block_id: int, cfg: CFG, resolver: Optional[opcodes.OpcodeR
         elif mnemonic == "CALL" and stack:
             # CALL also consumes arguments from stack (similar pattern)
             instr._call_stack_snapshot = stack.copy()  # type: ignore[attr-defined]
+
+        # Special handling: CALL return values and argument consumption
+        # Internal CALL functions can return values. The pattern is:
+        #   CALL func_addr
+        #   LLD [sp+N]     ; store return value to local (N >= 0)
+        #   SSP M          ; clean up arguments
+        # The CALL consumes arguments from the eval stack and may push a return value.
+        if mnemonic == "CALL":
+            # Look ahead to detect if this CALL returns a value
+            call_returns_value = False
+            instr_idx = instructions.index(instr)
+            for lookahead in range(instr_idx + 1, min(instr_idx + 3, len(instructions))):
+                next_instr = instructions[lookahead]
+                next_mnem = resolver.get_mnemonic(next_instr.opcode)
+                if next_mnem == "LLD":
+                    next_offset = _to_signed(next_instr.arg1)
+                    if next_offset >= 0:
+                        call_returns_value = True
+                    break
+                elif next_mnem in {"JMP", "JZ", "JNZ", "RET", "CALL", "XCALL"}:
+                    break
+
+            # Pop arguments from eval stack (CALL consumes its arguments)
+            # Use the same approach as _assign_call_arguments: count eval stack depth
+            arg_count = 0
+            if stack:
+                # Simple heuristic: look for SSP after the CALL+LLD sequence
+                # SSP tells us how many words to clean up (= argument count)
+                for lookahead in range(instr_idx + 1, min(instr_idx + 5, len(instructions))):
+                    next_instr_la = instructions[lookahead]
+                    next_mnem_la = resolver.get_mnemonic(next_instr_la.opcode)
+                    if next_mnem_la == "SSP":
+                        arg_count = next_instr_la.arg1
+                        break
+                    elif next_mnem_la in {"CALL", "XCALL", "RET", "JMP", "JZ", "JNZ"}:
+                        break
+
+            # Pop arguments from eval stack
+            if arg_count > 0:
+                pop_count = min(arg_count, len(stack))
+                for _ in range(pop_count):
+                    stack.pop()
+
+            # Push return value if the CALL returns one
+            if call_returns_value:
+                ret_value = StackValue(
+                    name=f"t{instr.address}_ret",
+                    producer=instr,
+                    value_type=opcodes.ResultType.INT,  # Default return type
+                    alias=None,
+                )
+                stack.append(ret_value)
+                outputs.append(ret_value)
+                logger.info(f"CALL at {instr.address} returns value, created output {ret_value.name}")
 
         # Special handling: XCALL return values
         # XCALL opcode has pushes=0 but external functions CAN return values.

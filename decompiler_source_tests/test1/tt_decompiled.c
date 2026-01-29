@@ -49,7 +49,7 @@ int _init(s_SC_NET_info *info) {
     return;
 }
 
-void func_0050(float param_0) {
+int func_0050(float param_0, int param_1) {
     switch (gEndRule) {
     case SC_MP_ENDRULE_TIME:
         if (gMission_phase > 0) {
@@ -66,10 +66,10 @@ void func_0050(float param_0) {
         }
         break;
     }
-    return;
+    return 0;  // FIX (06-05): Synthesized return value
 }
 
-void func_0119(void) {
+int func_0119(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -86,7 +86,7 @@ void func_0119(void) {
     }
 }
 
-void func_0155(int param_0) {
+int func_0155(int param_0) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -110,7 +110,7 @@ void func_0155(int param_0) {
     }
 }
 
-void func_0213(void) {
+int func_0213(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -133,7 +133,7 @@ void func_0249(void) {
     return;
 }
 
-void func_0264(int param_0, float param_1) {
+void func_0264(float param_0) {
     gMissionTime_update -= param_0;
     if (gMissionTime_update < 0.0f) {
         gMissionTime_update = 10.0f;
@@ -144,14 +144,12 @@ void func_0264(int param_0, float param_1) {
 }
 
 void func_0294(void) {
-    int n;
-
     gCurStep = gSteps - 1;
     SC_sgi(507, gCurStep);
     if ((gMainPhase % 2) != 0) {
         gMissionTime = gMissionTimeToBeat;
     } else {
-        gMissionTime = func_0213();
+        gMissionTime = t312_ret;
         gMissionTimePrev = gMissionTime;
     }
     gMissionTime_update = -1.0f;
@@ -159,7 +157,7 @@ void func_0294(void) {
     return;
 }
 
-void func_0334(int param_0) {
+int func_0334(int param_0, int param_1) {
     if ((param_0 % 4) != 0) {
         if ((param_0 % 4) != 3) {
             return TRUE;
@@ -170,8 +168,6 @@ void func_0334(int param_0) {
 }
 
 void func_0355(void) {
-    int n;
-
     switch (gMission_phase) {
     case MISSION_PHASE_WIN_DEFENDERS:
         gSidePoints[(1 - gAttackingSide)]++;
@@ -234,7 +230,7 @@ block_96:
     return;
 }
 
-void func_0752(int param_0, int param_1) {
+void func_0752(int param_0) {
     int idx;
     dword local_1;
     int n;
@@ -295,13 +291,11 @@ block_156:
 void func_1028(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
+    int input_158_unknown_158_1044_1;
     dword local_257;
     int local_258;
-    int local_260;
 
-    t1037_ret = SC_ggi(502);
-    func_0334(t1037_ret);
-    local_257 = 1 - t1037_ret;
+    local_257 = input_158_unknown_158_1044_1 - t1041_ret;
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
     SC_MP_RecoverPlayer(t1084_);
@@ -316,6 +310,9 @@ int ScriptMain(s_SC_NET_info *info) {
     char local_0[32];
     s_SC_MP_hud hudinfo;
     int i;
+    int input_170_unknown_170_1146_1;
+    int input_342_unknown_342_2940_1;
+    int input_355_unknown_355_3064_1;
     dword j;
     int k;
     dword local_11;
@@ -333,7 +330,6 @@ int ScriptMain(s_SC_NET_info *info) {
     int local_418;
     int local_419;
     int local_420;
-    float local_421;
     int local_8;
     int m;
     int n;
@@ -352,7 +348,6 @@ int ScriptMain(s_SC_NET_info *info) {
 
     switch (info->message) {
     case 3:
-        func_0050(info->elapsed_time);
         switch (gMission_phase) {
         case MISSION_PHASE_NOACTIVE:
             if (gMissionTime <= -10.0f) break;
@@ -361,9 +356,9 @@ int ScriptMain(s_SC_NET_info *info) {
             func_0264(0);
             break;
         case MISSION_PHASE_INGAME:
-            gMission_afterstart_time += info->elapsed_time;
-            gMissionTime -= info->elapsed_time;
-            func_0264(info->elapsed_time);
+            gMission_afterstart_time += tmp85;
+            gMissionTime -= tmp88;
+            func_0264(tmp91);
             switch (info->elapsed_time) {
             case 0:
                 if (side6 != 1) {
@@ -413,13 +408,13 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         break;
     case 4:
-        gCLN_ShowInfo -= info->elapsed_time;
+        gCLN_ShowInfo -= tmp128;
         switch (gCLN_ShowWaitingInfo) {
         case 0:
             func_0498(SC_ggi(508) - 1, 2);
             switch (SC_ggi(503)) {
             case 1:
-                gCLN_MissionTime -= info->elapsed_time;
+                gCLN_MissionTime -= tmp161;
                 break;
             case 3:
                 local_299[local_11].z = 0;
@@ -431,16 +426,14 @@ int ScriptMain(s_SC_NET_info *info) {
                 gCLN_ShowInfo = 5.0f;
                 SC_SND_PlaySound2D(10425);
             }
-            t1823_ret = SC_ggi(502);
-            func_0334(t1823_ret);
-            func_0498(t1823_ret, gCLN_CurStep);
+            func_0498(t1827_ret, gCLN_CurStep);
             break;
         }
         break;
     case 9:
         SC_sgi(GVAR_MP_MISSIONTYPE, 9);
-        gEndRule = param_0->field_4;
-        gEndValue = info->param2;
+        gEndRule = tmp211;
+        gEndValue = tmp213;
         gTime = 0;
         SC_MP_EnableBotsFromScene(0);
         break;
@@ -498,9 +491,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 local_8 = SC_PC_Get();
                 if (j) {
                     SC_P_GetInfo(j, &player_info);
-                    t2933_ret = SC_ggi(502);
-                    func_0334(t2933_ret);
-                    if (local_413.field_8 == t2933_ret) {
+                    if (input_342_unknown_342_2940_1 == t2937_ret) {
                         local_314 = SC_Wtxt(5108);
                     } else {
                         local_314 = SC_Wtxt(5109);
@@ -524,9 +515,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 }
                 if (! j) break;
                 SC_P_GetInfo(j, &player_info);
-                t3057_ret = SC_ggi(502);
-                func_0334(t3057_ret);
-                if (local_413.field_8 == t3057_ret) {
+                if (input_355_unknown_355_3064_1 == t3061_ret) {
                     if (gCLN_CurStep == 1) {
                         local_314 = SC_Wtxt(5111);
                     } else {
@@ -554,36 +543,35 @@ int ScriptMain(s_SC_NET_info *info) {
         case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
             for (j = 0; j < abl_lists; j++) {
-                if ((param_0- > field_4) == tmp430) {
+                if (tmp438 == tmp441) {
                     abl_lists--;
-                    abl_list[j] = tmp435;
+                    abl_list[j] = tmp446;
                 } else {
                     local_8 = j + 1;
                 }
                 local_8 = j + 1;
             }
             if (j < abl_lists) {
-                param_0->fval1 = 0.1f;
+                param_1->field_20 = 0.1f;
             } else {
-                if (gNextRecover > local_421) {
-                    param_0->fval1 = gNextRecover;
+                if (gNextRecover > t3474_ret) {
+                    param_1->field_20 = gNextRecover;
                 } else {
-                    func_0119(gNextRecover);
-                    param_0->fval1 = gNextRecover + local_421;
+                    param_1->field_20 = gNextRecover + t3487_ret;
                 }
             }
             break;
         case MISSION_PHASE_NOACTIVE:
-            param_0->fval1 = 3.0f;
+            param_1->field_20 = 3.0f;
             break;
         default:
-            param_0->fval1 = -1.0f;
+            param_1->field_20 = -1.0f;
             break;
         }
         break;
     case 6:
-        local_13 = info->param2;
-        local_9 = param_0->field_4;
+        local_13 = tmp469;
+        local_9 = tmp472;
         if (gAttackingSide) {
             local_9 = 1 - idx;
         }
@@ -606,7 +594,7 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         local_8 = SC_MP_SRV_GetBestDMrecov(t3600_0, t3610_, &gRecTimer[768] + idx29 * 128, 3.0f);
         gRecTimer[768] + idx29 * 128 + j * 4 = 3.0f;
-        tmp457 = tmp493;
+        tmp470 = tmp506;
         break;
     case 10:
         gTime = 0;
@@ -623,23 +611,23 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_ClearPlsStats();
         break;
     case 11:
-        gEndRule = param_0->field_4;
-        gEndValue = info->param2;
+        gEndRule = tmp511;
+        gEndValue = tmp513;
         gTime = 0;
         break;
     case 7:
-        func_0752(param_0->field_4);
+        func_0752(tmp516);
         break;
     default:
         // Loop header - Block 176 @1195
         for (j = 0; j < local_12; j++) {
-            if (side2 != 0 && tmp22 < 2) {
-                (&local_296) + tmp26 * 4 = 1;
+            if (side2 != 0 && tmp24 < 2) {
+                (&local_296) + tmp28 * 4 = 1;
             }
             local_8 = j + 1;
         }
-        gMission_starting_timer -= info->elapsed_time;
-        if (tmp35 && tmp37) {
+        gMission_starting_timer -= tmp34;
+        if (tmp37 && tmp39) {
             SC_MP_SetInstantRecovery(0);
             if (gMission_phase == 0) {
                 gMission_phase = 1;

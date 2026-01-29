@@ -180,12 +180,9 @@ def detect_function_signature(
             if func_end is None or block.start <= func_end:
                 func_blocks.add(block_id)
 
-    # Track parameter accesses: offset -> is_float
-    param_accesses: Dict[int, bool] = {}  # offset -> is_float
-
-    # DEBUG: Track what we find
-    import sys
-    debug = False  # Set to True to enable debug output
+    # Track parameter accesses: stack_offset -> is_float
+    # We store raw negative stack offsets and compute param indices at the end
+    param_offset_accesses: Dict[int, bool] = {}  # stack_offset -> is_float
 
     # Track if we've seen any RET that returns a value
     has_value_return = False
@@ -205,31 +202,22 @@ def detect_function_signature(
                 orig_instr = instr.instruction.instruction
                 stack_offset = orig_instr.arg1
 
-                # CRITICAL FIX: Check if this is a signed offset
-                # The stack offset might be stored as unsigned int, but represents signed
-                # If offset > 2^31, it's actually negative (two's complement)
+                # Check if this is a signed offset (two's complement)
                 if stack_offset >= 0x80000000:
-                    # Convert from unsigned to signed (two's complement)
                     stack_offset = stack_offset - 0x100000000
 
-                # Parameters are accessed with NEGATIVE offsets in the callee
-                # Empirical evidence from bytecode analysis:
-                # - SRV_CheckEndRule(float time): uses [sp-4] for its only param
-                # - SetFlagStatus(attacking_side, cur_step): uses [sp-4] for param_0, [sp-3] for param_1
+                # Parameters are accessed with NEGATIVE offsets in the callee.
+                # The calling convention pushes params right-to-left, then the
+                # return address, then space for local frame. So parameter offsets
+                # are: [sp-3] = last param, [sp-4] = second-to-last, etc.
                 #
-                # Formula: param_idx = offset + 4
-                # - offset -4 → param_0
-                # - offset -3 → param_1
-                # - offset -2 → param_2
-                if stack_offset < 0:
-                    # Calculate parameter index using the same formula as stack_lifter
-                    # This ensures consistency between function signature and SSA value aliases
-                    param_idx = stack_offset + 4  # -4→0, -3→1, -2→2, etc.
-
-                    # Skip if this doesn't look like a valid parameter (offset < -4)
-                    if param_idx < 0:
-                        continue
-
+                # For a function with N params:
+                #   [sp-3]   = param_{N-1} (last param)
+                #   [sp-4]   = param_{N-2}
+                #   [sp-(N+2)] = param_0 (first param)
+                #
+                # We record all negative offsets and compute param indices at the end.
+                if stack_offset < 0 and stack_offset <= -3:
                     # Check if next instruction uses this as float
                     is_float = False
                     if i + 1 < len(ssa_instrs):
@@ -237,36 +225,55 @@ def detect_function_signature(
                         if next_instr.mnemonic in {"FADD", "FSUB", "FMUL", "FDIV", "FGRE", "FLES", "FEQU"}:
                             is_float = True
 
-                    param_accesses[param_idx] = is_float
+                    param_offset_accesses[stack_offset] = is_float
 
             # Check for RET instruction to detect return type.
-            # RET arg1 encodes the stack cleanup/return mechanism:
-            # - RET(negative) (e.g., -3, -4, -5): return with value from stack
-            #   The negative offset indicates where the return value is stored
-            # - RET(N) where N >= 0: void return with stack cleanup of N words
-            elif instr.mnemonic == "RET" and instr.instruction:
-                raw_instr = instr.instruction.instruction if hasattr(instr.instruction, 'instruction') else instr.instruction
-                ret_arg = raw_instr.arg1
-                # Convert unsigned to signed
-                if ret_arg >= 0x80000000:
-                    ret_arg = ret_arg - 0x100000000
-                if ret_arg < 0:
+            # RET arg1 is the STACK CLEANUP SIZE (number of dwords to pop),
+            # NOT a return value indicator. A function returns a value if there's
+            # an LLD [sp-3] instruction before the RET that stores to the return slot.
+            elif instr.mnemonic == "RET":
+                # Look backwards for LLD [sp-3] pattern (return value store)
+                found_return_value = False
+                for prev_idx in range(i - 1, max(0, i - 5), -1):
+                    prev_instr = ssa_instrs[prev_idx]
+                    if prev_instr.mnemonic == "LLD":
+                        if prev_instr.instruction and prev_instr.instruction.instruction:
+                            offset = prev_instr.instruction.instruction.arg1
+                            # Convert unsigned to signed
+                            if offset >= 0x80000000:
+                                offset = offset - 0x100000000
+                            if offset == -3:
+                                found_return_value = True
+                                break
+                    # Stop searching if we hit control flow
+                    elif prev_instr.mnemonic in {"JMP", "JZ", "JNZ", "CALL", "XCALL"}:
+                        break
+
+                if found_return_value:
                     has_value_return = True
                 else:
                     has_void_return = True
 
-    # Determine parameter count from detected parameter indices
-    # param_accesses now contains param_idx → is_float mappings
-    if param_accesses:
-        # Parameter count is max(param_idx) + 1
-        # This handles sparse access (e.g., only param_1 accessed means 2 params)
-        max_param_idx = max(param_accesses.keys())
-        sig.param_count = max_param_idx + 1
+    # Determine parameter count from detected stack offsets.
+    # Convert raw stack offsets to param indices.
+    # Offsets: [sp-3] = last param, [sp-4] = second-to-last, etc.
+    # The most negative offset determines param_count:
+    #   min_offset = -(param_count + 2)
+    #   param_count = -(min_offset) - 2
+    # Param index: param_idx = offset - min_offset (0-based from most negative)
+    if param_offset_accesses:
+        min_offset = min(param_offset_accesses.keys())  # Most negative offset
+        sig.param_count = (-min_offset) - 2  # e.g., -5 → 3 params, -4 → 2, -3 → 1
 
-        # Build parameter type list - iterate through all indices 0 to max
-        # This ensures we declare all parameters even if some aren't accessed
+        # Convert offsets to param indices (0-based, param_0 = most negative offset)
+        param_accesses: Dict[int, bool] = {}
+        for offset, is_float in param_offset_accesses.items():
+            param_idx = offset - min_offset  # most negative → 0, least negative → N-1
+            param_accesses[param_idx] = is_float
+
+        # Build parameter type list
         for param_idx in range(sig.param_count):
-            is_float = param_accesses.get(param_idx, False)  # Default to int if not accessed
+            is_float = param_accesses.get(param_idx, False)
             if is_float:
                 sig.param_types.append(f"float param_{param_idx}")
             else:

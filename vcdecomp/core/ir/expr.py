@@ -489,12 +489,23 @@ class ExpressionFormatter:
         # FIX 2: Variable name collision resolution (SSA value name → final name)
         self._rename_map = rename_map or {}
         # Build parameter offset -> name mapping
-        self._param_names = {}  # stack_offset (dword index) -> param_name
+        self._param_names = {}  # stack_offset (signed) -> param_name
         if func_signature and func_signature.param_types:
-            # Parameters are at negative stack offsets in dwords: -3, -4, -5, ...
-            # Extract actual parameter names from type strings like "float time"
+            # Parameters are at negative stack offsets in the callee.
+            # Calling convention: params pushed right-to-left, so:
+            #   param_0 (first) is at the deepest (most negative) offset
+            #   param_{N-1} (last) is at [sp-3]
+            #
+            # For N params:
+            #   param_0   at [sp-(N+2)]
+            #   param_1   at [sp-(N+1)]
+            #   ...
+            #   param_{N-1} at [sp-3]
+            #
+            # Formula: offset = -(N + 2 - i) for param_i
+            n_params = func_signature.param_count
             for i, param_type in enumerate(func_signature.param_types):
-                offset = -(i + 3)  # -3, -4, -5, ...
+                offset = -(n_params + 2 - i)  # param_0 → -(N+2), param_{N-1} → -3
                 # Extract name from "float time" -> "time", "dword *list" -> "list"
                 tokens = param_type.replace('*', ' * ').split()
                 param_name = None
@@ -2348,6 +2359,69 @@ class ExpressionFormatter:
                         except (ValueError, AttributeError):
                             pass
 
+            # Check if left is PNT(ADR, pnt_offset) — struct sub-field via pointer arithmetic
+            # Pattern: ADD(PNT(ADR(local_X), pnt_offset), const_offset) → local_X.field_{pnt_offset + const_offset}
+            # This handles: LADR [sp+0], PNT 20, GCP 4, ADD → hudinfo.field_24
+            if left.producer_inst and left.producer_inst.mnemonic == "PNT" and len(left.producer_inst.inputs) > 0:
+                pnt_inst = left.producer_inst
+                pnt_base = pnt_inst.inputs[0]
+
+                # Check if PNT base is ADR
+                if pnt_base.producer_inst and pnt_base.producer_inst.mnemonic in {"LADR", "GADR", "DADR"}:
+                    base_name = self._render_value(pnt_base)
+                    if base_name.startswith("&"):
+                        base_name = base_name[1:]
+
+                        try:
+                            # Get PNT offset from instruction arg1
+                            pnt_offset = 0
+                            if pnt_inst.instruction and pnt_inst.instruction.instruction:
+                                pnt_offset = pnt_inst.instruction.instruction.arg1
+
+                            # Get ADD right-hand constant offset
+                            outer_offset_str = self._render_value(right)
+                            outer_offset = int(outer_offset_str)
+
+                            total_offset = pnt_offset + outer_offset
+
+                            # Reasonable field offset range
+                            if 0 <= total_offset < 256:
+                                field_name = self._resolve_field_name(base_name, total_offset)
+                                display_name = self._get_field_base_name(base_name, field_name)
+                                result = f"{display_name}.{field_name}"
+                                return result
+                        except (ValueError, AttributeError):
+                            pass
+
+            # Check if left is DADR(ADR, dadr_offset) — pointer with fixed offset
+            # Pattern: ADD(DADR(LADR/GADR(base), dadr_offset), const_offset) → base.field_{dadr_offset + const_offset}
+            if left.producer_inst and left.producer_inst.mnemonic == "DADR" and len(left.producer_inst.inputs) > 0:
+                dadr_inst = left.producer_inst
+                dadr_base = dadr_inst.inputs[0]
+                if dadr_base.producer_inst and dadr_base.producer_inst.mnemonic in {"LADR", "GADR"}:
+                    base_name = self._render_value(dadr_base)
+                    if base_name.startswith("&"):
+                        base_name = base_name[1:]
+                    try:
+                        dadr_offset = 0
+                        if dadr_inst.instruction and dadr_inst.instruction.instruction:
+                            dadr_offset = dadr_inst.instruction.instruction.arg1
+                        outer_offset_str = self._render_value(right)
+                        outer_offset = int(outer_offset_str)
+                        total_offset = dadr_offset + outer_offset
+                        if 0 <= total_offset < 512:
+                            field_name = self._resolve_field_name(base_name, total_offset)
+                            display_name = self._get_field_base_name(base_name, field_name)
+                            # Use -> for pointer params, . for local structs
+                            clean_base = base_name.lstrip("&")
+                            if clean_base.startswith("param_") or clean_base == "info":
+                                result = f"{display_name}->{field_name}"
+                            else:
+                                result = f"{display_name}.{field_name}"
+                            return result
+                    except (ValueError, AttributeError):
+                        pass
+
             # Check if left is directly ADR (simpler pattern)
             if left.producer_inst and left.producer_inst.mnemonic in {"LADR", "GADR", "DADR"}:
                 base_name = self._render_value(left)
@@ -3044,7 +3118,8 @@ class ExpressionFormatter:
         if call_expr_override:
             rendered0 = call_expr_override
         elif source_val.alias and self._is_parametric_alias(source_val.alias):
-            rendered0 = source_val.alias
+            # Remap param_N alias through _param_names for correct parameter ordering
+            rendered0 = self._remap_param_alias(source_val.alias)
         elif preserve_compound and source_val.producer_inst:
             rendered0 = self._inline_expression(source_val)
         else:
@@ -3129,6 +3204,15 @@ class ExpressionFormatter:
         elif is_array0 and not is_array1:
             target = self._format_pointer_target(inst.inputs[0])
             source = rendered1
+        # Priority 1c: PNT result is always an address target (struct/array field write)
+        # PNT (pointer arithmetic) produces a computed address that's always a write target.
+        # This must come before address heuristics since PNT may render as a tmp name.
+        elif is_pnt1 and not is_pnt0:
+            target = self._format_pointer_target(inst.inputs[1])
+            source = rendered0
+        elif is_pnt0 and not is_pnt1:
+            target = self._format_pointer_target(inst.inputs[0])
+            source = rendered1
         # Priority 2: Standard heuristics
         # 1. If one is literal and other is address → address is target, literal is source
         # 2. If both are addresses → use alias/PNT heuristics
@@ -3151,10 +3235,6 @@ class ExpressionFormatter:
             source = rendered1
         elif alias1.startswith("&") and not alias0.startswith("&"):
             # inputs[1] is target address (by alias)
-            target = self._format_pointer_target(inst.inputs[1])
-            source = rendered0
-        elif is_pnt1 and not is_pnt0 and not alias0.startswith("&"):
-            # inputs[1] is PNT result (pointer), inputs[0] is value
             target = self._format_pointer_target(inst.inputs[1])
             source = rendered0
         else:
@@ -3328,6 +3408,35 @@ class ExpressionFormatter:
     @staticmethod
     def _is_parametric_alias(alias: str) -> bool:
         return alias.startswith("param_") or alias.startswith("info->")
+
+    def _remap_param_alias(self, alias: str) -> str:
+        """Remap a param_N alias to the correct parameter name using _param_names.
+
+        The stack lifter assigns param_N where N = abs(offset) - 3
+        (param_0 = [sp-3], param_1 = [sp-4], etc. - reversed order).
+        The function signature uses param_0 = first parameter (deepest offset).
+        This method converts the lifter's alias to the signature's name.
+        """
+        if not self._param_names:
+            return alias
+
+        # Handle &param_N (address-of parameter)
+        is_addr_of = alias.startswith("&")
+        clean_alias = alias[1:] if is_addr_of else alias
+
+        if clean_alias.startswith("param_"):
+            try:
+                # Lifter's N: param_N where N = abs(offset) - 3
+                lifter_idx = int(clean_alias[6:])
+                # Derive stack offset: offset = -(lifter_idx + 3)
+                stack_offset = -(lifter_idx + 3)
+                if stack_offset in self._param_names:
+                    result = self._param_names[stack_offset]
+                    return f"&{result}" if is_addr_of else result
+            except ValueError:
+                pass
+        return alias
+
 
     def _resolve_known_constant_for_variable(self, variable_expr: str, value: int) -> Optional[str]:
         """Resolve known SDK constants by variable name context."""
@@ -4173,11 +4282,12 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
 
     def _stack_alias_from_offset(offset: int) -> str:
         signed = _to_signed32(offset)
-        if signed < 0:
-            param_idx = signed + 4  # -4 -> 0, -3 -> 1, ...
-            if param_idx < 0:
-                return f"stack_{abs(signed)}"
+        if signed < 0 and signed <= -3:
+            # Match the stack lifter's param alias: param_N where N = abs(offset) - 3
+            param_idx = abs(signed) - 3
             return f"param_{param_idx}"
+        elif signed < 0:
+            return f"stack_{abs(signed)}"
         return f"local_{signed}"
 
     for inst in instructions:
