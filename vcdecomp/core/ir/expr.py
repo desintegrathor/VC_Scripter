@@ -1147,15 +1147,9 @@ class ExpressionFormatter:
         return var_name
 
     def _get_field_base_name(self, base_name: str, field_name: str) -> str:
-        """Return a display name for field access, avoiding renames for generic fields."""
-        if field_name.startswith("field_"):
-            is_address = base_name.startswith("&")
-            clean_name = base_name[1:] if is_address else base_name
-            for ssa_name, semantic_name in self._semantic_names.items():
-                if semantic_name == clean_name:
-                    clean_name = ssa_name
-                    break
-            return f"&{clean_name}" if is_address else clean_name
+        """Return a display name for field access, using semantic name when available."""
+        # Always use semantic name for the base variable (e.g., param_1 -> info)
+        # to maintain consistency between function signature and body usage
         return self._get_semantic_name(base_name)
 
     def _get_struct_field_for_local(self, alias: str) -> Optional[str]:
@@ -1522,6 +1516,12 @@ class ExpressionFormatter:
             elif value.alias.startswith("&data_"):
                 try:
                     offset = int(value.alias[6:])
+                    # FIX: Check if this address points to a string literal BEFORE
+                    # returning a global name. GADR data[X] where data[X] is a string
+                    # should render as "string" not &gVar.
+                    string_literal = self._check_string_literal(value)
+                    if string_literal:
+                        return string_literal
                     global_name = self._global_names.get(offset)
                     if global_name:
                         return f"&{global_name}"
@@ -2869,39 +2869,51 @@ class ExpressionFormatter:
 
         # FIX: Handle PNT instruction (pointer arithmetic) for field access
         # Pattern: PNT(base_addr, offset) → struct field access
+        # Also handles chained PNTs: PNT(PNT(base_addr, off1), off2) → field at off1+off2
         # This MUST come before _render_value to avoid getting tmp names
         if value.producer_inst and value.producer_inst.mnemonic == "PNT":
-            pnt_inst = value.producer_inst
-            if len(pnt_inst.inputs) > 0:
-                base_val = pnt_inst.inputs[0]
-                # Get field offset from PNT instruction
-                if pnt_inst.instruction and pnt_inst.instruction.instruction:
-                    field_offset = pnt_inst.instruction.instruction.arg1
+            # Chase through chained PNT instructions to find base and total offset
+            total_offset = 0
+            current = value
+            while current.producer_inst and current.producer_inst.mnemonic == "PNT":
+                pnt_inst = current.producer_inst
+                if not pnt_inst.instruction or not pnt_inst.instruction.instruction:
+                    break
+                total_offset += pnt_inst.instruction.instruction.arg1
+                if not pnt_inst.inputs:
+                    break
+                current = pnt_inst.inputs[0]
 
-                    # Check if base is an address (starts with &)
-                    base_rendered = self._render_value(base_val)
-                    if base_rendered.startswith("&"):
-                        base_name = base_rendered[1:]
-                        # Resolve field name and return direct field access
-                        field_name = self._resolve_field_name(base_name, field_offset)
+            # Now 'current' is the base value (before any PNT) and total_offset is accumulated
+            base_rendered = self._render_value(current)
+            if base_rendered.startswith("&"):
+                base_name = base_rendered[1:]
+                # Resolve field name and return direct field access
+                field_name = self._resolve_field_name(base_name, total_offset)
 
-                        # FALLBACK: If field_name is generic (field_N), try common struct types
-                        # This handles cases where struct type isn't tracked but offset matches known structs
-                        if field_name.startswith("field_"):
-                            # Try c_Vector3 (common 12-byte struct with x, y, z)
-                            if field_offset in (0, 4, 8):
-                                from ..structures import get_verified_field_name as struct_field_lookup
-                                vec3_field = struct_field_lookup("c_Vector3", field_offset)
-                                if vec3_field:
-                                    field_name = vec3_field  # x, y, or z
+                # FALLBACK: If field_name is generic (field_N), try c_Vector3 ONLY when
+                # the base variable has no known struct type (truly unknown struct)
+                # or when the struct type IS c_Vector3. Don't apply when we know the
+                # struct type is something else (e.g., s_SC_FlyOffCartridge offset 4
+                # is "from" not "y").
+                if field_name.startswith("field_"):
+                    base_struct_type = self._var_struct_types.get(base_name)
+                    if not base_struct_type and self._field_tracker:
+                        base_struct_type = self._field_tracker.var_struct_types.get(base_name)
+                    if not base_struct_type or base_struct_type in ('c_Vector3', 'c_vector3'):
+                        if total_offset in (0, 4, 8):
+                            from ..structures import get_verified_field_name as struct_field_lookup
+                            vec3_field = struct_field_lookup("c_Vector3", total_offset)
+                            if vec3_field:
+                                field_name = vec3_field  # x, y, or z
 
-                        # FIX (01-21): Use semantic name for struct field accesses
-                        display_name = self._get_field_base_name(base_name, field_name)
-                        # Determine operator: -> for pointer params, . for local structs
-                        clean_base = base_name.lstrip("&")
-                        if clean_base.startswith("param_") or clean_base == "info":
-                            return f"{display_name}->{field_name}"
-                        return f"{display_name}.{field_name}"
+                # FIX (01-21): Use semantic name for struct field accesses
+                display_name = self._get_field_base_name(base_name, field_name)
+                # Determine operator: -> for pointer params, . for local structs
+                clean_base = base_name.lstrip("&")
+                if clean_base.startswith("param_") or clean_base == "info":
+                    return f"{display_name}->{field_name}"
+                return f"{display_name}.{field_name}"
 
         rendered = self._render_value(value)
 

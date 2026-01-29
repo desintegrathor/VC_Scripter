@@ -1582,6 +1582,11 @@ class HierarchicalCodeEmitter:
                 target_id = block.goto_target.original_block_id
 
             if target_id is not None:
+                # Suppress goto when the target is the function exit/epilogue block
+                # that will be emitted as the next remaining block anyway.
+                # This avoids: "goto block_N; return 0;" → just "return 0;"
+                if self._is_function_epilogue_block(target_id):
+                    return lines
                 if target_id not in self.block_labels:
                     self.block_labels[target_id] = f"block_{target_id}"
                 lines.append(f"{indent}goto {self.block_labels[target_id]};")
@@ -1591,6 +1596,28 @@ class HierarchicalCodeEmitter:
                 lines.append(f"{indent}goto {label};")
 
         return lines
+
+    def _is_function_epilogue_block(self, block_id: int) -> bool:
+        """Check if a block is a function epilogue (only RET + stack cleanup)."""
+        cfg_block = self.cfg.blocks.get(block_id)
+        if not cfg_block:
+            return False
+        # Check that this block has no successors (it's a terminal block)
+        if getattr(cfg_block, 'successors', None):
+            return False
+        # Check that the last instruction is RET
+        if not cfg_block.instructions:
+            return False
+        last_instr = cfg_block.instructions[-1]
+        if not self.resolver.is_return(last_instr.opcode):
+            return False
+        # Check that the block only contains stack ops, constants, and RET
+        # (i.e., function epilogue pattern: SSP, GCP, LLD, RET)
+        for instr in cfg_block.instructions:
+            mnemonic = self.resolver.get_mnemonic(instr.opcode)
+            if mnemonic not in ('SSP', 'GCP', 'LLD', 'GLD', 'RET', 'LCP', 'PUSH'):
+                return False
+        return True
 
     def _extract_condition(
         self,

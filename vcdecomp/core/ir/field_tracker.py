@@ -134,10 +134,10 @@ class FieldAccessTracker:
         if not field_name:
             # Fallback: show offset
             field_name = f"field_{field_access.field_offset}"
-            base_name = base_var
-        else:
-            # Get semantic name for base variable (param_0 → info)
-            base_name = self.semantic_names.get(base_var, base_var)
+
+        # Always use semantic name for base variable (param_1 → info)
+        # to maintain consistency between function signature and body
+        base_name = self.semantic_names.get(base_var, base_var)
 
         # Choose operator: -> for pointers, . for values
         operator = "->" if field_access.is_pointer else "."

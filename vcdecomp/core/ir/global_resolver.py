@@ -255,6 +255,35 @@ class GlobalResolver:
                             self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
                         self.globals[byte_offset].write_count += 1
 
+                # ASGN with GADR target = write to global
+                # Pattern 1: GADR data[X] → ASGN (direct global write)
+                # Pattern 2: ADD(GADR data[X], offset) → ASGN (array element write)
+                elif mnemonic == "ASGN":
+                    if len(instr.inputs) >= 2:
+                        # ASGN inputs: [value_to_store, target_address]
+                        target_addr = instr.inputs[1] if len(instr.inputs) > 1 else None
+                        if target_addr and target_addr.producer_inst:
+                            prod = target_addr.producer_inst
+                            # Direct GADR target
+                            if prod.mnemonic == "GADR" and prod.instruction and prod.instruction.instruction:
+                                dword_offset = prod.instruction.instruction.arg1
+                                byte_offset = dword_offset * 4
+                                if byte_offset not in self.globals:
+                                    self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
+                                self.globals[byte_offset].write_count += 1
+                            # ADD(GADR, offset) target - array element write
+                            elif prod.mnemonic == "ADD" and len(prod.inputs) >= 2:
+                                for inp in prod.inputs:
+                                    if inp.producer_inst and inp.producer_inst.mnemonic == "GADR":
+                                        gadr = inp.producer_inst
+                                        if gadr.instruction and gadr.instruction.instruction:
+                                            dword_offset = gadr.instruction.instruction.arg1
+                                            byte_offset = dword_offset * 4
+                                            if byte_offset not in self.globals:
+                                                self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
+                                            self.globals[byte_offset].write_count += 1
+                                            break
+
                 # Detekuj operace na globálech
                 elif mnemonic in {"ADD", "SUB", "INC", "DEC"}:
                     # Pokud vstup je z GCP/GLD, je to modifikace globálky
