@@ -40,12 +40,20 @@ void func_0292(void) {
     SC_ZeroMem(&vec, 12);
     vec.z = -20000.0f;
     local_0 = 0;
-    local_1 = SC_P_GetBySideGroupMember(1, 9, 9);
-    SC_P_SetActive(local_1, FALSE);
-    SC_P_SetPos(local_1, &vec);
-block_7:
-    local_0 = i + 1;
-    return;
+    for (i = 0; i < 16; i++) {
+        local_1 = SC_P_GetBySideGroupMember(1, 9, 9);
+        if (! local_1) {
+            SC_P_SetActive(local_1, FALSE);
+            SC_P_SetPos(local_1, &vec);
+        } else {
+            local_0 = i + 1;
+        }
+    }
+    if (i >= 16) {
+        return;
+    }
+    if (! local_1 || ! SC_P_IsReady(local_1)) {
+    }
 }
 
 void func_0355(void) {
@@ -58,13 +66,10 @@ void func_0355(void) {
     local_0 = 0;
     local_2 = SC_P_GetBySideGroupMember(1, i, i);
     SC_P_SetActive(local_2, TRUE);
-block_16:
     local_0 = idx + 1;
-block_17:
     local_1 = i + 1;
     local_2 = SC_P_GetBySideGroupMember(3, 0, i);
     SC_P_SetActive(local_2, TRUE);
-block_22:
     local_1 = i + 1;
     return;
 }
@@ -80,11 +85,19 @@ int func_0458(int param_0, int param_1, int param_2) {
 
     local_1 = 0;
     local_0 = 0;
-    local_2 = SC_P_GetBySideGroupMember(1, param_0, param_0);
-    local_1++;
-block_29:
-    local_0 = i + 1;
-    return 0;  // FIX (06-05): Synthesized return value
+    for (i = 0; i < param_1; i++) {
+        local_2 = SC_P_GetBySideGroupMember(1, param_0, param_0);
+        if (! SC_P_IsReady(local_2)) {
+            local_1++;
+        } else {
+            local_0 = i + 1;
+        }
+    }
+    if (i >= param_1) {
+        return local_1;
+    }
+    if (SC_P_IsReady(local_2)) {
+    }
 }
 
 void func_0511(int param_0, int param_1) {
@@ -97,16 +110,27 @@ void func_0511(int param_0, int param_1) {
     SC_P_GetPos(param_0, &vec);
     SC_ZeroMem(&local_3, 8);
     local_6 = 0;
-    local_5 = SC_2VectorsDist(&vec, &g_will_pos[i]);
-    (&local_3) + 4 = tmp8;
-    param_1[1] = param_1[0];
-    local_3 = local_5;
-    param_1[0] = i;
-    (&local_3) + 4 = local_5;
-    param_1[1] = i;
-block_37:
-    local_6 = i + 1;
-    return;
+    for (i = 0; i < 4; i++) {
+        local_5 = SC_2VectorsDist(&vec, &g_will_pos[i]);
+        if (local_5 <= tmp5) {
+            (&local_3) + 4 = tmp8;
+            param_1[1] = param_1[0];
+            local_3 = local_5;
+            param_1[0] = i;
+            local_6 = i + 1;
+        } else {
+            (&local_3) + 4 = local_5;
+            param_1[1] = i;
+        }
+    }
+    if (i >= 4) {
+        return;
+    }
+    if (local_5 <= tmp5) {
+        if (local_5 > tmp20) {
+        }
+    } else {
+    }
 }
 
 void func_0612(float param_0) {
@@ -188,10 +212,8 @@ void func_0612(float param_0) {
     }
     t654_ret = SC_IsNear2D((&g_will_pos) + (&g_will_pos) * 12, &vec, 80.0f);
     (&g_vill_visited) + (&g_vill_visited) * 4 = 1;
-block_46:
     local_0 = t625_ret + 1;
     local_1++;
-block_51:
     local_0 = t625_ret + 1;
     return;
 }
@@ -269,10 +291,10 @@ int ScriptMain(s_SC_L_info *info) {
         if (local_23 && tmp4 <= 0.0f) {
             SC_MissionFailed();
         }
-        param_1->field_20 = 0.2f;
+        info->next_exe_time = 0.2f;
         if (g_showinfo_timer < 11.0f) {
             local_0 = g_showinfo_timer;
-            g_showinfo_timer += tmp10;
+            g_showinfo_timer += info->elapsed_time;
             if (local_0 < 4.0f && g_showinfo_timer >= 4.0f) {
                 local_63 = 0;
                 (&local_63) + 4 = 3490;
@@ -312,7 +334,7 @@ int ScriptMain(s_SC_L_info *info) {
             local_80.savename_id = 9136;
             local_80.description_id = 9137;
             SC_MissionSave(&local_80);  // 9137: "You are flying over the ricefields."
-            gStartMusicTime -= tmp108;
+            gStartMusicTime -= info->elapsed_time;
             g_music = 1;
             t1700_ret = SC_AGS_Set(0);
         }
@@ -481,7 +503,7 @@ int ScriptMain(s_SC_L_info *info) {
             local_0 += 0.6f;
             SC_P_Speech2(local_26, 3449, &local_0);
             local_0 += 0.3f;
-            param_1->field_20 = local_0 - 1.0f;
+            info->next_exe_time = local_0 - 1.0f;
             SC_P_Speech2(local_22, 3450, &local_0);
             break;
         case 5:
@@ -502,10 +524,10 @@ int ScriptMain(s_SC_L_info *info) {
                     SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
                 }
             }
-            func_0612(tmp180);
+            func_0612(info->elapsed_time);
             break;
         case 2:
-            func_0612(tmp183);
+            func_0612(info->elapsed_time);
             if (! local_23) break;
             if (! local_22) break;
             if (! SC_P_GetActive(local_23)) break;
@@ -533,10 +555,10 @@ int ScriptMain(s_SC_L_info *info) {
             break;
         case 5:
             if (gPilotCommTime > 0.0f) {
-                gPilotCommTime -= tmp203;
+                gPilotCommTime -= info->elapsed_time;
                 break;
             }
-            func_0612(tmp207);
+            func_0612(info->elapsed_time);
             SC_P_GetPos(local_23, &vec);
             // Loop header - Block 199 @2472
             for (local_20 = i; local_20 < 4; local_20++) {
@@ -559,11 +581,11 @@ int ScriptMain(s_SC_L_info *info) {
             }
             break;
         case 6:
-            func_0612(tmp242);
+            func_0612(info->elapsed_time);
             break;
         case 7:
             local_20 = 2;
-            g_final_enter_timer += tmp245;
+            g_final_enter_timer += info->elapsed_time;
             if (SC_P_IsInHeli(local_23)) {
                 local_20 = idx6 - 1;
             } else {
@@ -572,7 +594,7 @@ int ScriptMain(s_SC_L_info *info) {
                 } else {
                     func_0985(local_23);
                     SC_P_Ai_EnterHeli(local_23, "heli2", 4);
-                    param_1->field_20 = 4.0f;
+                    info->next_exe_time = 4.0f;
                 }
             }
             local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
@@ -582,7 +604,7 @@ int ScriptMain(s_SC_L_info *info) {
             if (idx6 != 0) break;
             SC_sgi(SGI_LEVELPHASE, 8);
             t2696_ret = SC_AGS_Set(1);
-            param_1->field_20 = 0.1f;
+            info->next_exe_time = 0.1f;
             gEndTimer = 15.0f;
             break;
         case 8:
@@ -609,7 +631,7 @@ int ScriptMain(s_SC_L_info *info) {
             local_0 += 0.5f;
             SC_P_SpeechMes2(local_22, 3457, &local_0, 11);
             gPilotCommTime = local_0 + 3.0f;
-            param_1->field_20 = 0.1f;
+            info->next_exe_time = 0.1f;
             SC_RadioBatch_End();
         }
         break;
@@ -647,11 +669,11 @@ int ScriptMain(s_SC_L_info *info) {
         func_0994(g_trashes_enabled);
         break;
     case 15:
-        if (tmp292 >= 20) {
-            param_1->field_12 = 0;
+        if ((param_1- > field_4) >= 20) {
+            info->param3 = 0;
         } else {
-            tmp302 = tmp300;
-            param_1->field_12 = 1;
+            param_1->field_8 = tmp300;
+            info->param3 = 1;
         }
         break;
     }

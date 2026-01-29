@@ -205,29 +205,72 @@ void func_0498(int param_0, int param_1) {
 
     local_4 = 0;
     local_3 = 0;
-    local_0 = 0;
-    local_1 = 0;
-    local_2 = 0;
-    local_1 = 1;
-    local_0 = 1;
-    local_2 = 1;
-    local_2 = 1;
-block_85:
-    SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
-block_91:
-block_96:
-    SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
-    SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
-    local_5[0].id = 0;
-    local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
-    local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
-    local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
-    local_5[-1].y = -1;
-    local_5[t712_].field_12 = t712_;
-    local_5[1065353216].z = 1.0f;
-    local_4++;
-    local_3 = i + 1;
-    return;
+    for (i = 0; i < 6; i++) {
+        local_0 = 0;
+        local_1 = 0;
+        local_2 = 0;
+        if ((i + 1) != param_1) {
+            local_1 = 1;
+            local_0 = 1;
+            local_2 = 1;
+            SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
+            SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
+            SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
+            local_5[0].id = 0;
+            local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
+            local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
+            local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
+            local_5[-1].y = -1;
+            local_5[t712_].field_12 = t712_;
+            local_5[1065353216].z = 1.0f;
+            local_4++;
+            local_3 = i + 1;
+        } else {
+            local_2 = 1;
+        }
+    }
+    if (i >= 6) {
+        SC_MP_FpvMapSign_Set(local_4, &local_5);
+        return;
+    }
+    if ((i + 1) != param_1) {
+        if (i < param_1) {
+        }
+    } else {
+        switch (g_FPV_UsFlag) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        }
+    }
+    if (tmp10) {
+        if (! t592_) {
+        } else {
+        }
+    }
+    if (tmp17) {
+        if (! local_1) {
+        } else {
+        }
+    }
+    if (tmp24) {
+        if (! local_2) {
+        } else {
+        }
+    }
+    if (! local_0) {
+        if (! local_1) {
+            if (local_2) {
+            }
+        } else {
+        }
+    } else {
+    }
+    if (tmp42) {
+    }
 }
 
 void func_0752(int param_0) {
@@ -282,7 +325,6 @@ void func_0852(void) {
     local_264 = local_266;
     local_264 = j + 1;
     local_264 = 0;
-block_156:
     t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
     local_8[j].id = 0;
     local_2 = i - 1;
@@ -299,7 +341,6 @@ void func_1028(void) {
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
     SC_MP_RecoverPlayer(t1084_);
-block_163:
     local_256 = i + 1;
     return;
 }
@@ -356,9 +397,9 @@ int ScriptMain(s_SC_NET_info *info) {
             func_0264(0);
             break;
         case MISSION_PHASE_INGAME:
-            gMission_afterstart_time += tmp85;
-            gMissionTime -= tmp88;
-            func_0264(tmp91);
+            gMission_afterstart_time += info->elapsed_time;
+            gMissionTime -= info->elapsed_time;
+            func_0264(info->elapsed_time);
             switch (info->elapsed_time) {
             case 0:
                 if (side6 != 1) {
@@ -408,13 +449,13 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         break;
     case 4:
-        gCLN_ShowInfo -= tmp128;
+        gCLN_ShowInfo -= info->elapsed_time;
         switch (gCLN_ShowWaitingInfo) {
         case 0:
             func_0498(SC_ggi(508) - 1, 2);
             switch (SC_ggi(503)) {
             case 1:
-                gCLN_MissionTime -= tmp161;
+                gCLN_MissionTime -= info->elapsed_time;
                 break;
             case 3:
                 local_299[local_11].z = 0;
@@ -432,8 +473,8 @@ int ScriptMain(s_SC_NET_info *info) {
         break;
     case 9:
         SC_sgi(GVAR_MP_MISSIONTYPE, 9);
-        gEndRule = tmp211;
-        gEndValue = tmp213;
+        gEndRule = param_1->field_4;
+        gEndValue = info->param2;
         gTime = 0;
         SC_MP_EnableBotsFromScene(0);
         break;
@@ -543,7 +584,7 @@ int ScriptMain(s_SC_NET_info *info) {
         case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
             for (j = 0; j < abl_lists; j++) {
-                if (tmp438 == tmp441) {
+                if ((param_1- > field_4) == tmp441) {
                     abl_lists--;
                     abl_list[j] = tmp446;
                 } else {
@@ -552,26 +593,26 @@ int ScriptMain(s_SC_NET_info *info) {
                 local_8 = j + 1;
             }
             if (j < abl_lists) {
-                param_1->field_20 = 0.1f;
+                info->fval1 = 0.1f;
             } else {
                 if (gNextRecover > t3474_ret) {
-                    param_1->field_20 = gNextRecover;
+                    info->fval1 = gNextRecover;
                 } else {
-                    param_1->field_20 = gNextRecover + t3487_ret;
+                    info->fval1 = gNextRecover + t3487_ret;
                 }
             }
             break;
         case MISSION_PHASE_NOACTIVE:
-            param_1->field_20 = 3.0f;
+            info->fval1 = 3.0f;
             break;
         default:
-            param_1->field_20 = -1.0f;
+            info->fval1 = -1.0f;
             break;
         }
         break;
     case 6:
-        local_13 = tmp469;
-        local_9 = tmp472;
+        local_13 = info->param2;
+        local_9 = param_1->field_4;
         if (gAttackingSide) {
             local_9 = 1 - idx;
         }
@@ -611,12 +652,12 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_ClearPlsStats();
         break;
     case 11:
-        gEndRule = tmp511;
-        gEndValue = tmp513;
+        gEndRule = param_1->field_4;
+        gEndValue = info->param2;
         gTime = 0;
         break;
     case 7:
-        func_0752(tmp516);
+        func_0752(param_1->field_4);
         break;
     default:
         // Loop header - Block 176 @1195
@@ -626,7 +667,7 @@ int ScriptMain(s_SC_NET_info *info) {
             }
             local_8 = j + 1;
         }
-        gMission_starting_timer -= tmp34;
+        gMission_starting_timer -= info->elapsed_time;
         if (tmp37 && tmp39) {
             SC_MP_SetInstantRecovery(0);
             if (gMission_phase == 0) {

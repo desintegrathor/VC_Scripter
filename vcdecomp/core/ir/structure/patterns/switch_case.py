@@ -976,7 +976,7 @@ def _detect_switch_patterns(
         # BFS state: blocks to visit with their depth
         visited_blocks = set()
         to_visit = [(block_id, 0)]  # (block_id, depth)
-        max_bfs_depth = 15  # Reasonable limit to avoid exploring too far
+        max_bfs_depth = 100  # Large switches (e.g., 31 cases) need depth > 60
         last_chain_block: Optional[int] = None  # Track last comparison/test block in chain
 
         # BFS exploration to find all comparison blocks
@@ -1110,12 +1110,36 @@ def _detect_switch_patterns(
 
                 # If producer is LCP (load from stack), search predecessor blocks for MOD
                 # This handles cases like: Block N: MOD -> Block N+1: LCP [sp+0] -> EQU
+                # IMPORTANT: Only match MOD if its result flows to the same stack location
                 if actual_producer and actual_producer.mnemonic == 'LCP':
+                    lcp_alias = var_value.alias  # e.g., "local_0"
                     # Search current block and predecessors for MOD instruction
                     mod_inst = _find_mod_in_predecessors(current_block, ssa_func, max_depth=2)
                     if mod_inst:
-                        actual_producer = mod_inst
-                        _switch_debug(f"  -> Found MOD in predecessor block")
+                        # Verify MOD result is stored to the same location as LCP loads
+                        # Check if the MOD has an output that gets assigned to the same alias
+                        mod_matches = False
+                        if mod_inst.outputs:
+                            for out in mod_inst.outputs:
+                                if out.alias == lcp_alias:
+                                    mod_matches = True
+                                    break
+                        # Also check if there's an ASGN after the MOD that stores to the same location
+                        if not mod_matches and mod_inst.address is not None:
+                            mod_block = ssa_func.instructions.get(current_block, [])
+                            for check_inst in mod_block:
+                                if (check_inst.mnemonic == 'ASGN' and
+                                    len(check_inst.inputs) >= 2 and
+                                    check_inst.inputs[1].alias and
+                                    check_inst.inputs[1].alias.startswith('&') and
+                                    check_inst.inputs[1].alias[1:] == lcp_alias):
+                                    mod_matches = True
+                                    break
+                        if mod_matches:
+                            actual_producer = mod_inst
+                            _switch_debug(f"  -> Found MOD in predecessor block (same variable {lcp_alias})")
+                        else:
+                            _switch_debug(f"  -> Found MOD in predecessor block but for different variable (MOD, not {lcp_alias})")
 
                 if actual_producer and actual_producer.mnemonic == "MOD":
                         # Extract: var % constant
@@ -1249,11 +1273,27 @@ def _detect_switch_patterns(
                     debug_print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}")
                 elif test_var != var_name:
                     # NESTED SWITCH FIX: Different variable = likely nested switch
-                    # EXCEPTION: If test_var is a MOD expression (contains %), and var_name is local_N,
+                    # EXCEPTION 1: If test_var is a MOD expression (contains %), and var_name is local_N,
                     # this is likely the same switch - the MOD result is stored on stack and reloaded.
                     # Pattern: Block N: MOD param_0, 4 -> Block N+1: LCP [sp+0] (becomes local_0)
                     is_mod_switch = '%' in test_var
                     is_stack_load = var_name.startswith('local_') or var_name.startswith('n')
+
+                    # EXCEPTION 2: If both SSA values load from the same stack location,
+                    # they're the same variable with different names (e.g., one traces to
+                    # SC_ggi() result, the other to local_1 which stores that result).
+                    same_source = False
+                    if test_ssa_value and var_value:
+                        def _get_lcp_alias(v):
+                            """Get the LCP alias (stack location) for an SSA value."""
+                            if v.producer_inst and v.producer_inst.mnemonic == 'LCP':
+                                return v.alias
+                            return None
+                        test_alias = _get_lcp_alias(test_ssa_value)
+                        var_alias = _get_lcp_alias(var_value)
+                        if test_alias and var_alias and test_alias == var_alias:
+                            same_source = True
+                            _switch_debug(f"Same stack source: {test_var} and {var_name} both from {test_alias}")
 
                     if is_mod_switch and is_stack_load:
                         # Same switch, different name - use the MOD-based name
@@ -1262,6 +1302,12 @@ def _detect_switch_patterns(
                         chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
                         debug_print(f"DEBUG SWITCH: MOD switch continuation - keeping {test_var}")
                         # Don't update test_var - keep the MOD-based name
+                    elif same_source:
+                        # Same stack variable, different traced names - keep the first (more descriptive) name
+                        _switch_debug(f"Same-source continuation: {test_var} vs {var_name} (treating as same variable)")
+                        chain_debug['variables_seen'].append(var_name)
+                        chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
+                        debug_print(f"DEBUG SWITCH: Same-source continuation - keeping {test_var}")
                     else:
                         # Skip this block - it will be processed when we analyze the case body
                         _switch_debug(f"Different variable seen: {test_var} -> {var_name} (skipping - likely nested switch)")

@@ -496,16 +496,21 @@ class ExpressionFormatter:
             #   param_0 (first) is at the deepest (most negative) offset
             #   param_{N-1} (last) is at [sp-3]
             #
-            # For N params:
+            # For non-entry functions (called via CALL):
             #   param_0   at [sp-(N+2)]
-            #   param_1   at [sp-(N+1)]
-            #   ...
             #   param_{N-1} at [sp-3]
+            #   Formula: offset = -(N + 2 - i) for param_i
             #
-            # Formula: offset = -(N + 2 - i) for param_i
+            # For entry point functions (ScriptMain, _init):
+            #   [sp-3] is the return value slot (not a parameter)
+            #   param_0   at [sp-(N+3)]
+            #   param_{N-1} at [sp-4]
+            #   Formula: offset = -(N + 3 - i) for param_i
+            is_entry_point = func_name in ("ScriptMain", "_init")
+            base_offset = 3 if is_entry_point else 2
             n_params = func_signature.param_count
             for i, param_type in enumerate(func_signature.param_types):
-                offset = -(n_params + 2 - i)  # param_0 → -(N+2), param_{N-1} → -3
+                offset = -(n_params + base_offset - i)
                 # Extract name from "float time" -> "time", "dword *list" -> "list"
                 tokens = param_type.replace('*', ' * ').split()
                 param_name = None
@@ -548,10 +553,20 @@ class ExpressionFormatter:
         self._field_tracker.analyze()
         # Phase 2: Transfer field tracker results to formatter's var_struct_types
         # This enables struct-typed variable declarations for locals
+        new_param_types = False
         for var_name, struct_type in self._field_tracker.var_struct_types.items():
             # Only store if not already set (preserve existing mappings)
             if var_name not in self._var_struct_types:
                 self._var_struct_types[var_name] = struct_type
+                if var_name.startswith("param_"):
+                    new_param_types = True
+        # Also transfer semantic names from field tracker
+        for var_name, sem_name in self._field_tracker.semantic_names.items():
+            if var_name not in self._semantic_names:
+                self._semantic_names[var_name] = sem_name
+        # Re-run parameter name assignment if field tracker found new param struct types
+        if new_param_types:
+            self._assign_parameter_names()
         # Initialize header database for function signatures
         self._header_db = get_header_database()
 
@@ -998,7 +1013,7 @@ class ExpressionFormatter:
             PARAM_STRUCT_TO_NAME = {
                 "s_SC_NET_info": "info",
                 "s_SC_OBJ_info": "obj_info",
-                "s_SC_L_info": "level_info",
+                "s_SC_L_info": "info",
                 "s_SC_P_getinfo": "plinfo",
             }
 

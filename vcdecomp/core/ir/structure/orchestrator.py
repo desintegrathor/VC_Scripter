@@ -625,6 +625,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # This replaces mechanical names like "param_0" with SDK names like "info".
     if func_sig and func_sig.param_types:
         param_name_overrides = {}  # "param_0" -> "info"
+        # For entry point functions (ScriptMain, _init), the return value slot
+        # occupies [sp-3] = param_0 in stack_lifter convention, so actual
+        # parameters start at param_1.  For non-entry functions, parameters
+        # start at param_0 as usual.
+        is_entry_point = func_name in ("ScriptMain", "_init")
+        param_offset = 1 if is_entry_point else 0
         for i, param_type in enumerate(func_sig.param_types):
             # Extract name from "s_SC_NET_info *info" -> "info"
             tokens = param_type.replace('*', ' * ').split()
@@ -634,7 +640,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                     param_name = token.lstrip('*')
                     break
             if param_name and not param_name.startswith("param_"):
-                param_name_overrides[f"param_{i}"] = param_name
+                param_name_overrides[f"param_{i + param_offset}"] = param_name
         # Apply overrides: any SSA value mapped to "param_0" becomes "info"
         if param_name_overrides:
             for ssa_name, current_name in list(rename_map.items()):

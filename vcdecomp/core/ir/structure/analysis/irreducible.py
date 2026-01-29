@@ -249,11 +249,14 @@ class SpanningTreeAnalysis:
                     y_root = self._find(y.block_id)
 
                     x_visit = self.visit_time.get(x.block_id, 0)
-                    x_desc = self.num_descendants.get(x.block_id, 0)
+                    x_finish = self.finish_time.get(x.block_id, 0)
                     y_visit = self.visit_time.get(y_root, 0)
+                    y_finish = self.finish_time.get(y_root, 0)
 
-                    # Check if y' is outside the natural loop of x
-                    if (x_visit > y_visit) or (x_visit + x_desc <= y_visit):
+                    # Check if y' is outside the DFS subtree of x
+                    # y is in x's subtree iff visit[x] <= visit[y] AND finish[y] <= finish[x]
+                    # y is outside iff visit[x] > visit[y] OR finish[y] > finish[x]
+                    if (x_visit > y_visit) or (y_finish > x_finish):
                         # Irreducible edge found!
                         self.edge_type[edge_key] = SpanningEdgeType.IRREDUCIBLE
                         self.irreducible_edges.add(edge_key)

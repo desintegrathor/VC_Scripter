@@ -173,18 +173,25 @@ class FieldAccessTracker:
         # For entry point functions, use automatic script type detection
         from ..script_type_detector import detect_script_type
         struct_type = detect_script_type(self.scr)
-        param_index = 0  # Entry points always have param_0
+
+        # Stack_lifter convention: [sp-3] = param_0 (return value slot),
+        # [sp-4] = param_1 (first actual parameter = info pointer).
+        # The info pointer is always at param_1 in this convention.
+        param_index = 1  # Info pointer is at [sp-4] = param_1
 
         # Map param_X to detected struct type
         param_var = f"param_{param_index}"
         self.var_struct_types[param_var] = struct_type
+        # Also map &param_X for LADR patterns
+        self.var_struct_types[f"&{param_var}"] = struct_type
 
-        # Assign semantic name (param_0 → info)
+        # Assign semantic name (param_1 → info)
         self.semantic_names[param_var] = "info"
+        self.semantic_names[f"&{param_var}"] = "info"
 
         # DEBUG: Log detected struct type
         import sys
-        debug_print(f"DEBUG FieldTracker: {self.func_name} param_0 detected as {struct_type}")
+        debug_print(f"DEBUG FieldTracker: {self.func_name} {param_var} detected as {struct_type}")
 
     def _detect_local_structs(self):
         """
