@@ -119,7 +119,8 @@ def _render_if_else_recursive(
     # FÁZE 1.3: Early return/break pattern detection
     early_returns: Optional[Dict[int, tuple]] = None,
     func_loops: Optional[List] = None,
-    global_map: Optional[Dict[int, str]] = None
+    global_map: Optional[Dict[int, str]] = None,
+    switch_exit_ids: Optional[Set[int]] = None,
 ) -> List[str]:
     """
     Recursively render if/else with nested structures.
@@ -326,11 +327,179 @@ def _render_if_else_recursive(
 
     lines.extend(header_lines)
 
+    # Normalize inverted conditions for more natural code.
+    # Case 1: `if (!expr)` with both branches → swap branches, remove negation
+    # Case 2: `if (cond) { /* empty */ } else { code }` → `if (!cond) { code }`
+    render_true_body = if_pattern.true_body
+    render_false_body = if_pattern.false_body
+    render_cond_text = cond_text
+
+    def _negate_condition(cond: str) -> str:
+        """Negate a condition expression, simplifying where possible."""
+        # Simple negation removal
+        if cond.startswith("!(") and cond.endswith(")"):
+            return cond[2:-1]
+        if cond.startswith("! "):
+            return cond[2:]
+        if cond.startswith("!"):
+            return cond[1:]
+        # Flip comparison operators
+        flip_ops = {
+            " < ": " >= ", " > ": " <= ",
+            " <= ": " > ", " >= ": " < ",
+            " == ": " != ", " != ": " == ",
+        }
+        for op, flipped in flip_ops.items():
+            if op in cond:
+                return cond.replace(op, flipped, 1)
+        # Fallback: wrap in !()
+        if ' ' in cond or '(' in cond:
+            return f"!({cond})"
+        return f"!{cond}"
+
+    def _true_body_is_empty() -> bool:
+        """Check if the true body has no real statements (only control flow)."""
+        if not if_pattern.true_body:
+            return True
+        for bid in if_pattern.true_body:
+            ssa_block_check = ssa_func.instructions.get(bid, [])
+            if not _is_control_flow_only(ssa_block_check, resolver):
+                return False
+        return True
+
+    should_swap = False
+    if if_pattern.false_body:
+        if cond_text.startswith("!"):
+            # Case 1: negated condition with both branches
+            should_swap = True
+        elif _true_body_is_empty():
+            # Case 2: empty true body with non-empty else → negate and swap
+            should_swap = True
+
+    if should_swap:
+        render_cond_text = _negate_condition(cond_text)
+        render_true_body = if_pattern.false_body
+        render_false_body = if_pattern.true_body
+
+    # Detect conditional break pattern: if one branch ends with JMP to switch exit,
+    # render as `if (cond) { body; break; }` + sequential code instead of if/else.
+    def _branch_ends_with_switch_exit(body: Set[int]) -> bool:
+        """Check if the last block in a branch ends with JMP to a switch exit block."""
+        if not body or not switch_exit_ids:
+            return False
+        # Find the last block by address
+        last_bid = max(body, key=lambda b: cfg.blocks[b].start if b in cfg.blocks else 0)
+        blk = cfg.blocks.get(last_bid)
+        if not blk or not blk.instructions:
+            return False
+        last_instr = blk.instructions[-1]
+        mnem = resolver.get_mnemonic(last_instr.opcode)
+        if mnem == "JMP":
+            jmp_target = start_to_block.get(last_instr.arg1)
+            return jmp_target in switch_exit_ids
+        return False
+
+    # Check if one branch ends with a break (JMP to switch exit)
+    true_has_break = _branch_ends_with_switch_exit(render_true_body)
+    false_has_break = _branch_ends_with_switch_exit(render_false_body)
+
+    if true_has_break and render_false_body and not false_has_break:
+        # True branch ends with break → emit as: if (cond) { body; break; }
+        # The false body will be emitted as sequential code after the if block.
+        lines.append(f"{indent}if ({render_cond_text}) {{")
+
+        true_body_sorted = sorted(render_true_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+        if func_loops:
+            lines.extend(_render_blocks_with_loops(
+                true_body_sorted, indent + "    ", ssa_func, formatter, cfg,
+                func_loops, start_to_block, resolver, block_to_if, visited_ifs,
+                emitted_blocks, global_map, early_returns
+            ))
+        else:
+            for body_block_id in true_body_sorted:
+                if body_block_id in emitted_blocks:
+                    continue
+                body_block = cfg.blocks.get(body_block_id)
+                if body_block:
+                    ssa_block = ssa_blocks.get(body_block_id, [])
+                    if not _is_control_flow_only(ssa_block, resolver):
+                        if SHOW_BLOCK_COMMENTS: lines.append(f"{indent}    // Block {body_block_id} @{body_block.start}")
+                    lines.extend(_format_block_lines(
+                        ssa_func, body_block_id, indent + "    ", formatter,
+                        block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                        early_returns
+                    ))
+
+        lines.append(f"{indent}    break;")
+        lines.append(f"{indent}}}")
+
+        # Mark header and true body as emitted, but NOT false body
+        emitted_blocks.add(if_pattern.header_block)
+        emitted_blocks.update(if_pattern.true_body)
+        emitted_blocks.update(if_pattern.false_body - render_false_body)
+        # Mark JMP-to-exit blocks in true body as emitted (they're control flow only)
+        for bid in render_true_body:
+            blk = cfg.blocks.get(bid)
+            if blk and blk.instructions:
+                last = blk.instructions[-1]
+                if resolver.get_mnemonic(last.opcode) == "JMP":
+                    jt = start_to_block.get(last.arg1)
+                    if jt in switch_exit_ids:
+                        emitted_blocks.add(bid)
+
+        return lines
+
+    elif false_has_break and render_true_body and not true_has_break:
+        # False branch ends with break → negate condition and swap
+        negated_cond = _negate_condition(render_cond_text)
+        lines.append(f"{indent}if ({negated_cond}) {{")
+
+        false_body_sorted = sorted(render_false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+        if func_loops:
+            lines.extend(_render_blocks_with_loops(
+                false_body_sorted, indent + "    ", ssa_func, formatter, cfg,
+                func_loops, start_to_block, resolver, block_to_if, visited_ifs,
+                emitted_blocks, global_map, early_returns
+            ))
+        else:
+            for body_block_id in false_body_sorted:
+                if body_block_id in emitted_blocks:
+                    continue
+                body_block = cfg.blocks.get(body_block_id)
+                if body_block:
+                    ssa_block = ssa_blocks.get(body_block_id, [])
+                    if not _is_control_flow_only(ssa_block, resolver):
+                        if SHOW_BLOCK_COMMENTS: lines.append(f"{indent}    // Block {body_block_id} @{body_block.start}")
+                    lines.extend(_format_block_lines(
+                        ssa_func, body_block_id, indent + "    ", formatter,
+                        block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
+                        early_returns
+                    ))
+
+        lines.append(f"{indent}    break;")
+        lines.append(f"{indent}}}")
+
+        # Mark header and false body as emitted, but NOT true body
+        emitted_blocks.add(if_pattern.header_block)
+        emitted_blocks.update(if_pattern.false_body)
+        emitted_blocks.update(if_pattern.true_body - render_true_body)
+        for bid in render_false_body:
+            blk = cfg.blocks.get(bid)
+            if blk and blk.instructions:
+                last = blk.instructions[-1]
+                if resolver.get_mnemonic(last.opcode) == "JMP":
+                    jt = start_to_block.get(last.arg1)
+                    if jt in switch_exit_ids:
+                        emitted_blocks.add(bid)
+
+        return lines
+
+    # Standard if/else rendering (no conditional break)
     # Render if statement
-    lines.append(f"{indent}if ({cond_text}) {{")
+    lines.append(f"{indent}if ({render_cond_text}) {{")
 
     # Render true branch (recursively)
-    true_body_sorted = sorted(if_pattern.true_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+    true_body_sorted = sorted(render_true_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
     if func_loops:
         lines.extend(_render_blocks_with_loops(
             true_body_sorted,
@@ -370,12 +539,22 @@ def _render_if_else_recursive(
                     if resolver.is_return(last_instr.opcode):
                         break  # Remaining blocks are unreachable
 
-    # Render false branch if exists
-    if if_pattern.false_body:
+    # Render false branch if exists (skip if all blocks are control-flow-only)
+    def _body_has_content(body_set):
+        """Check if any block in body has real statements."""
+        if not body_set:
+            return False
+        for bid in body_set:
+            ssa_blk = ssa_func.instructions.get(bid, [])
+            if not _is_control_flow_only(ssa_blk, resolver):
+                return True
+        return False
+
+    if render_false_body and _body_has_content(render_false_body):
         lines.append(f"{indent}}} else {{")
 
         # Render false branch (recursively)
-        false_body_sorted = sorted(if_pattern.false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
+        false_body_sorted = sorted(render_false_body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
         if func_loops:
             lines.extend(_render_blocks_with_loops(
                 false_body_sorted,
@@ -442,7 +621,8 @@ def _render_blocks_with_loops(
     early_returns: Optional[Dict[int, tuple]] = None,
     # FIX (01-24): Nested switch support
     block_to_switch: Optional[Dict[int, SwitchPattern]] = None,
-    render_switch_callback: Optional[Any] = None  # Callback to render nested switches
+    render_switch_callback: Optional[Any] = None,  # Callback to render nested switches
+    switch_exit_ids: Optional[Set[int]] = None,
 ) -> List[str]:
     """
     Render a sequence of blocks with loop detection support.
@@ -635,7 +815,8 @@ def _render_blocks_with_loops(
                             ssa_func, loop_body_id, indent + "    ", formatter,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
                             early_returns, guard_blocks,
-                            func_loops=func_loops, global_map=global_map
+                            func_loops=func_loops, global_map=global_map,
+                            switch_exit_ids=switch_exit_ids
                         ))
 
             # Close loop with appropriate syntax
@@ -667,7 +848,8 @@ def _render_blocks_with_loops(
                     ssa_func, body_block_id, indent, formatter,
                     block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
                     early_returns, guard_blocks,
-                    func_loops=func_loops, global_map=global_map
+                    func_loops=func_loops, global_map=global_map,
+                    switch_exit_ids=switch_exit_ids
                 ))
 
             # DEAD CODE ELIMINATION: Check if block terminates execution

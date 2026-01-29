@@ -49,17 +49,15 @@ int _init(s_SC_NET_info *info) {
     return;
 }
 
-int func_0050(float param_0) {
+void func_0050(float param_0) {
     switch (gEndRule) {
     case SC_MP_ENDRULE_TIME:
         if (gMission_phase > 0) {
             gTime += param_0;
         }
-        SC_MP_EndRule_SetTimeLeft(gTime, gMission_phase);
-        if (gTime > ((float)gEndValue)) {
-            SC_MP_LoadNextMap();
-            return TRUE;
-        }
+        if (gTime <= ((float)gEndValue)) break;
+        SC_MP_LoadNextMap();
+        return TRUE;
         break;
     case SC_MP_ENDRULE_POINTS:
         if (gSidePoints[0] >= gEndValue || gSidePoints[1] >= gEndValue) {
@@ -68,10 +66,10 @@ int func_0050(float param_0) {
         }
         break;
     }
-    return 0;  // FIX (06-05): Synthesized return value
+    return;
 }
 
-int func_0119(void) {
+void func_0119(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -88,7 +86,7 @@ int func_0119(void) {
     }
 }
 
-int func_0155(int param_0) {
+void func_0155(int param_0) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -112,7 +110,7 @@ int func_0155(int param_0) {
     }
 }
 
-int func_0213(void) {
+void func_0213(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
     int n;
@@ -161,7 +159,7 @@ void func_0294(void) {
     return;
 }
 
-int func_0334(int param_0) {
+void func_0334(int param_0) {
     if ((param_0 % 4) != 0) {
         if ((param_0 % 4) != 3) {
             return TRUE;
@@ -201,7 +199,7 @@ void func_0355(void) {
     return;
 }
 
-int func_0498(int param_0, int param_1) {
+void func_0498(int param_0, int param_1) {
     s_SC_FpvMapSign local_5[4];
     int idx;
     int local_2;
@@ -211,34 +209,32 @@ int func_0498(int param_0, int param_1) {
 
     local_4 = 0;
     local_3 = 0;
-    for (i = 0; i < 6; i++) {
-        local_0 = 0;
-        local_1 = 0;
-        local_2 = 0;
-        if ((i + 1) != param_0) {
-            local_1 = 1;
-            local_0 = 1;
-            local_2 = 1;
-            SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
-            SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
-            SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
-            local_5[0].id = 0;
-            local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
-            local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
-            local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
-            local_5[-1].y = -1;
-            local_5[t712_].field_12 = t712_;
-            local_5[1065353216].z = 1.0f;
-            local_4++;
-            local_3 = i + 1;
-        } else {
-            local_2 = 1;
-        }
-    }
-    return 0;  // FIX (06-05): Synthesized return value
+    local_0 = 0;
+    local_1 = 0;
+    local_2 = 0;
+    local_1 = 1;
+    local_0 = 1;
+    local_2 = 1;
+    local_2 = 1;
+block_85:
+    SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
+block_91:
+block_96:
+    SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
+    SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
+    local_5[0].id = 0;
+    local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
+    local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
+    local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
+    local_5[-1].y = -1;
+    local_5[t712_].field_12 = t712_;
+    local_5[1065353216].z = 1.0f;
+    local_4++;
+    local_3 = i + 1;
+    return;
 }
 
-int func_0752(int param_0, int param_1) {
+void func_0752(int param_0, int param_1) {
     int idx;
     dword local_1;
     int n;
@@ -246,23 +242,21 @@ int func_0752(int param_0, int param_1) {
 
     switch (local_2.field_8) {
     case 0:
-        if (local_0 > 0) {
-        } else {
+        if (local_0 <= 0) {
         }
         local_1 = 1;
         break;
     case 1:
-        if (local_0 < 0) {
-        } else {
+        if (local_0 >= 0) {
             return;
         }
         local_1 = 0;
         break;
     }
-    return 0;  // FIX (06-05): Synthesized return value
+    return;
 }
 
-int func_0852(void) {
+void func_0852(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
     int k;
@@ -288,22 +282,17 @@ int func_0852(void) {
     }
     local_265 = 64;
     t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, local_1);
-    for (i = 0; i != 0; i = i - 1) {
-        local_266 = rand() % local_265;
-        local_264 = local_266;
-        if (tmp15 == 0) {
-            t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
-            local_8[j].id = 0;
-            local_2 = i - 1;
-        } else {
-            local_264 = j + 1;
-            local_264 = 0;
-        }
-    }
-    return 0;  // FIX (06-05): Synthesized return value
+    local_266 = rand() % local_265;
+    local_264 = local_266;
+    local_264 = j + 1;
+    local_264 = 0;
+block_156:
+    t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
+    local_8[j].id = 0;
+    local_2 = i - 1;
 }
 
-int func_1028(void) {
+void func_1028(void) {
     s_SC_MP_EnumPlayers enum_pl;
     int idx;
     dword local_257;
@@ -315,14 +304,10 @@ int func_1028(void) {
     local_257 = 1 - t1037_ret;
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
-    for (i = 0; i < local_258; i++) {
-        if (side2 != 2) {
-            SC_MP_RecoverPlayer(t1084_);
-        } else {
-            local_256 = i + 1;
-        }
-    }
-    return 0;  // FIX (06-05): Synthesized return value
+    SC_MP_RecoverPlayer(t1084_);
+block_163:
+    local_256 = i + 1;
+    return;
 }
 
 int ScriptMain(s_SC_NET_info *info) {
@@ -370,12 +355,10 @@ int ScriptMain(s_SC_NET_info *info) {
         func_0050(info->elapsed_time);
         switch (gMission_phase) {
         case MISSION_PHASE_NOACTIVE:
-            gNoActiveTime += info->elapsed_time;
-            if (gMissionTime > -10.0f) {
-                gMissionTime = -10.0f;
-                gMissionTime_update = -1.0f;
-                func_0264(0);
-            }
+            if (gMissionTime <= -10.0f) break;
+            gMissionTime = -10.0f;
+            gMissionTime_update = -1.0f;
+            func_0264(0);
             break;
         case MISSION_PHASE_INGAME:
             gMission_afterstart_time += info->elapsed_time;
@@ -383,8 +366,7 @@ int ScriptMain(s_SC_NET_info *info) {
             func_0264(info->elapsed_time);
             switch (info->elapsed_time) {
             case 0:
-                if (side6 == 1) {
-                } else {
+                if (side6 != 1) {
                     local_8 = j + 1;
                 }
                 break;
@@ -420,15 +402,13 @@ int ScriptMain(s_SC_NET_info *info) {
         case MISSION_PHASE_WIN_DEFENDERS:
             break;
         case MISSION_PHASE_WIN_ATTACKERS:
-            gPhaseTimer -= info->elapsed_time;
-            if (gPhaseTimer < 0.0f) {
-                gNoActiveTime = 0;
-                gMission_phase = 0;
-                SC_sgi(503, gMission_phase);
-                func_0852();
-                SC_MP_SetInstantRecovery(1);
-                SC_MP_RecoverAllNoAiPlayers();
-            }
+            if (gPhaseTimer >= 0.0f) break;
+            gNoActiveTime = 0;
+            gMission_phase = 0;
+            SC_sgi(503, gMission_phase);
+            func_0852();
+            SC_MP_SetInstantRecovery(1);
+            SC_MP_RecoverAllNoAiPlayers();
             break;
         }
         break;
@@ -542,27 +522,25 @@ int ScriptMain(s_SC_NET_info *info) {
                     t3028_ret = swprintf(&local_315, t3021_ret, &local_379, gCLN_CurStep);
                     local_314 = &local_315;
                 }
-                local_8 = SC_PC_Get();
-                if (j) {
-                    SC_P_GetInfo(j, &player_info);
-                    t3057_ret = SC_ggi(502);
-                    func_0334(t3057_ret);
-                    if (local_413.field_8 == t3057_ret) {
-                        if (gCLN_CurStep == 1) {
-                            local_314 = SC_Wtxt(5111);
-                        } else {
-                            t3085_ret = SC_Wtxt(5110);
-                            t3093_ret = swprintf(&local_315, t3085_ret, gCLN_CurStep - 1);
-                            local_314 = &local_315;
-                        }
+                if (! j) break;
+                SC_P_GetInfo(j, &player_info);
+                t3057_ret = SC_ggi(502);
+                func_0334(t3057_ret);
+                if (local_413.field_8 == t3057_ret) {
+                    if (gCLN_CurStep == 1) {
+                        local_314 = SC_Wtxt(5111);
                     } else {
-                        if (gCLN_CurStep == 1) {
-                            local_314 = SC_Wtxt(5113);
-                        } else {
-                            t3121_ret = SC_Wtxt(5112);
-                            t3129_ret = swprintf(&local_315, t3121_ret, gCLN_CurStep - 1);
-                            local_314 = &local_315;
-                        }
+                        t3085_ret = SC_Wtxt(5110);
+                        t3093_ret = swprintf(&local_315, t3085_ret, gCLN_CurStep - 1);
+                        local_314 = &local_315;
+                    }
+                } else {
+                    if (gCLN_CurStep == 1) {
+                        local_314 = SC_Wtxt(5113);
+                    } else {
+                        t3121_ret = SC_Wtxt(5112);
+                        t3129_ret = swprintf(&local_315, t3121_ret, gCLN_CurStep - 1);
+                        local_314 = &local_315;
                     }
                 }
             }

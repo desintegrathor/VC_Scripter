@@ -239,10 +239,18 @@ def detect_function_signature(
 
                     param_accesses[param_idx] = is_float
 
-            # Check for RET instruction to detect return type
+            # Check for RET instruction to detect return type.
+            # RET arg1 encodes the stack cleanup/return mechanism:
+            # - RET(negative) (e.g., -3, -4, -5): return with value from stack
+            #   The negative offset indicates where the return value is stored
+            # - RET(N) where N >= 0: void return with stack cleanup of N words
             elif instr.mnemonic == "RET" and instr.instruction:
-                ret_count = instr.instruction.instruction.arg1
-                if ret_count > 0:
+                raw_instr = instr.instruction.instruction if hasattr(instr.instruction, 'instruction') else instr.instruction
+                ret_arg = raw_instr.arg1
+                # Convert unsigned to signed
+                if ret_arg >= 0x80000000:
+                    ret_arg = ret_arg - 0x100000000
+                if ret_arg < 0:
                     has_value_return = True
                 else:
                     has_void_return = True

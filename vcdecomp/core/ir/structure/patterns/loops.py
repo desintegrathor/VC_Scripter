@@ -717,9 +717,43 @@ def _detect_for_loop(
             else:
                 condition_text = condition_text.replace(cond_var, init_var)
 
+    # Fix self-referential init: if the init value is the same variable being
+    # initialized (e.g., "i = i"), look for the actual constant init value
+    # earlier in the preheader chain, or omit the init from the for-loop header
+    final_init = init_value
+    if init_value == display_var or init_value == init_var:
+        # Self-referential init — try to find the real value by looking at
+        # earlier preheader blocks for a constant assignment
+        found_real_init = False
+        for pred_id in preheader_blocks:
+            pred_ssa_block = ssa_func.instructions.get(pred_id, [])
+            for inst in reversed(pred_ssa_block):
+                if inst.outputs and len(inst.outputs) == 1:
+                    var_name = _normalize_loop_var_name(inst.outputs[0].alias or inst.outputs[0].name)
+                    if var_name == init_var or var_name == display_var:
+                        if inst.inputs:
+                            val_text = formatter.render_value(inst.inputs[0])
+                            if val_text != var_name and val_text != display_var:
+                                final_init = val_text
+                                found_real_init = True
+                                break
+                elif inst.mnemonic == "ASGN" and len(inst.inputs) >= 2:
+                    target_name = _normalize_loop_var_name(inst.inputs[1].alias or inst.inputs[1].name)
+                    if target_name == init_var or target_name == display_var:
+                        val_text = formatter.render_value(inst.inputs[0])
+                        if val_text != target_name and val_text != display_var:
+                            final_init = val_text
+                            found_real_init = True
+                            break
+            if found_real_init:
+                break
+        if not found_real_init:
+            # Couldn't find real init — use "0" as safe default for loop counter
+            final_init = "0"
+
     return ForLoopInfo(
         var=display_var,
-        init=init_value,
+        init=final_init,
         condition=condition_text,
         increment=increment_text,
         init_var=init_var,

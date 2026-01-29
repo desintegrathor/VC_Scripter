@@ -102,7 +102,8 @@ def _format_block_lines(
     early_returns: Optional[Dict[int, tuple]] = None,
     skip_early_return_blocks: Optional[Set[int]] = None,
     func_loops: Optional[List] = None,
-    global_map: Optional[Dict[int, str]] = None
+    global_map: Optional[Dict[int, str]] = None,
+    switch_exit_ids: Optional[Set[int]] = None,
 ) -> List[str]:
     """
     Format expressions for a block, with optional recursive structure detection.
@@ -175,7 +176,8 @@ def _format_block_lines(
         return _render_if_else_recursive(
             block_to_if[block_id], indent, ssa_func, formatter,
             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
-            early_returns, func_loops=func_loops, global_map=global_map
+            early_returns, func_loops=func_loops, global_map=global_map,
+            switch_exit_ids=switch_exit_ids
         )
 
     # Regular block formatting

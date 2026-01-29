@@ -310,7 +310,7 @@ class HierarchicalCodeEmitter:
                             lines.extend(body_lines)
                             self._emitted_as_loop_body.add(body_id)
 
-        # Then, emit any remaining uncollapsed blocks in address order
+            # Then, emit any remaining uncollapsed blocks in address order
         uncollapsed = self.graph.get_uncollapsed_blocks()
 
         # Filter out root and already emitted blocks
@@ -326,6 +326,20 @@ class HierarchicalCodeEmitter:
                 # Skip blocks covered by collapsed structures
                 if block.original_block_id in covered_by_structure:
                     continue
+            else:
+                # For structured blocks (BlockList, BlockIf, etc.), check if
+                # all their covered_blocks are already emitted or covered.
+                # This prevents duplicate emission of blocks that were rendered
+                # inside switch case bodies or other structures.
+                if hasattr(block, 'covered_blocks') and block.covered_blocks:
+                    all_covered = all(
+                        bid in self.emitted_blocks
+                        or bid in self._emitted_as_loop_body
+                        or bid in covered_by_structure
+                        for bid in block.covered_blocks
+                    )
+                    if all_covered:
+                        continue
             remaining.append(block)
 
         # Sort by original block address
@@ -377,13 +391,25 @@ class HierarchicalCodeEmitter:
             # PRIORITY: Check if this is a loop header FIRST, before covered_by_structure
             # filtering. Loop headers may be "covered" by the collapse engine but their
             # body blocks weren't properly emitted, so we need to detect and emit them here.
+            # HOWEVER: Only rescue loops whose body blocks are NOT already covered by
+            # structures (switch cases, etc.). If covered, they were already emitted.
             failed_headers = getattr(self, '_failed_loop_headers', set())
             if block_id in self._loop_header_map and block_id not in failed_headers:
                 loop = self._loop_header_map[block_id]
-                loop_lines = self._try_emit_natural_loop(loop, indent)
-                if loop_lines is not None:
-                    lines.extend(loop_lines)
-                    continue
+                # Check if this loop's body blocks are already covered/emitted
+                # by a parent structure (e.g., rendered inside a switch case body)
+                body_without_header = loop.body - {loop.header}
+                body_already_covered = body_without_header and all(
+                    bid in self.emitted_blocks
+                    or bid in self._emitted_as_loop_body
+                    or bid in covered_by_structure
+                    for bid in body_without_header
+                )
+                if not body_already_covered:
+                    loop_lines = self._try_emit_natural_loop(loop, indent)
+                    if loop_lines is not None:
+                        lines.extend(loop_lines)
+                        continue
                 else:
                     # Pattern detection failed - mark so body blocks are emitted flat
                     if not hasattr(self, '_failed_loop_headers'):
@@ -1440,7 +1466,7 @@ class HierarchicalCodeEmitter:
             if not flat_section:
                 return []
             result = self._emit_flat_block_section(
-                flat_section, case_stop_blocks, indent
+                flat_section, case_stop_blocks, indent, exit_ids
             )
             flat_section = []
             return result
@@ -1475,19 +1501,39 @@ class HierarchicalCodeEmitter:
         block_ids: List[int],
         case_stop_blocks: Set[int],
         indent: str,
+        switch_exit_ids: Optional[Set[int]] = None,
     ) -> List[str]:
         """Emit a section of flat (non-structured) blocks with if/else detection."""
         if not block_ids:
             return []
 
         from ..emit.code_emitter import _render_blocks_with_loops
-        from ..patterns.if_else import _detect_if_else_pattern
+        from ..patterns.if_else import _detect_if_else_pattern, _detect_early_return_pattern
+
+        # Detect early return/break patterns (conditional break inside switch case)
+        early_returns: Dict[int, tuple] = {}
+        if switch_exit_ids:
+            for body_block_id in block_ids:
+                for exit_id in switch_exit_ids:
+                    early_ret = _detect_early_return_pattern(
+                        self.cfg,
+                        body_block_id,
+                        self.start_to_block,
+                        self.resolver,
+                        switch_exit_block=exit_id,
+                    )
+                    if early_ret:
+                        early_returns[body_block_id] = early_ret
+                        break
 
         # Detect if/else patterns within this section
         block_to_if: Dict[int, Any] = {}
         visited_ifs: Set[int] = set()
         for body_block_id in block_ids:
             if body_block_id in block_to_if:
+                continue
+            # Skip blocks already detected as early returns
+            if body_block_id in early_returns:
                 continue
             temp_visited: Set[int] = set()
             if_pattern = _detect_if_else_pattern(
@@ -1517,6 +1563,8 @@ class HierarchicalCodeEmitter:
             visited_ifs,
             self.emitted_blocks,
             self.global_map,
+            early_returns=early_returns if early_returns else None,
+            switch_exit_ids=switch_exit_ids,
         )
 
     def _emit_goto(self, block: BlockGoto, indent: str) -> List[str]:

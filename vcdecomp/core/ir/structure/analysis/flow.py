@@ -279,6 +279,9 @@ def _find_case_body_blocks(
     body_blocks: Set[int] = set()
     worklist = [case_entry]
     visited: Set[int] = set()
+    # Track blocks that were skipped due to dominance/predecessor check
+    # so we can reclaim them in a second pass
+    deferred_blocks: Set[int] = set()
 
     # Combine stop_blocks with known_exit_blocks
     effective_stop = set(stop_blocks)
@@ -292,31 +295,11 @@ def _find_case_body_blocks(
             return True
         return dominates(cfg, case_entry, candidate)
 
-    while worklist:
-        block_id = worklist.pop(0)
-
-        if _debug_body:
-            import sys
-            print(f"DEBUG BODY: Processing block_id={block_id}, worklist={worklist}, visited={visited}", file=sys.stderr)
-
-        # Skip if already visited
-        if block_id in visited:
-            if _debug_body:
-                print(f"DEBUG BODY: Skipping {block_id} - already visited", file=sys.stderr)
-            continue
-
-        # Stop at barriers (other cases, exit, etc.)
+    def _should_include_block(block_id: int) -> bool:
+        """Check if a block should be included in the case body."""
         if block_id in effective_stop and block_id != case_entry:
-            if _debug_body:
-                print(f"DEBUG BODY: Stopping at {block_id} - in effective_stop {effective_stop}", file=sys.stderr)
-            continue
+            return False
 
-        # Dominance check: require that the block is dominated by the case entry,
-        # OR that all of its predecessors are already in the case body.
-        # The second condition handles blocks that are reachable from the case entry
-        # but not dominated by it in the global dominator tree (e.g., continuation
-        # blocks after nested if/else within a case that the dominator tree resolves
-        # to a dispatch chain block instead).
         if block_id != case_entry and not _is_dominated(block_id):
             predecessors = getattr(cfg.blocks.get(block_id), 'predecessors', [])
             all_preds_in_body = predecessors and all(
@@ -324,73 +307,81 @@ def _find_case_body_blocks(
                 for p in predecessors
             )
             if not all_preds_in_body:
-                if _debug_body:
-                    import sys
-                    print(f"DEBUG BODY: Skipping {block_id} - not dominated by case entry and has external preds", file=sys.stderr)
-                continue
+                return False
 
         block = cfg.blocks.get(block_id)
         if not block:
-            if _debug_body:
-                print(f"DEBUG BODY: Block {block_id} not found in CFG", file=sys.stderr)
-            continue
+            return False
 
-        # IMPROVED CONVERGENCE DETECTION (Ghidra-style):
-        # Only stop at true switch convergence points, NOT at if/else merges within a case.
-        #
-        # Key insight: If/else merges within a case have ALL predecessors from the same
-        # case body (blocks we've already visited). Switch exit convergence has predecessors
-        # from DIFFERENT cases (stop_blocks) or external blocks.
-        #
-        # Algorithm:
-        # 1. Count predecessors that are in body_blocks (same case)
-        # 2. Count predecessors that are in stop_blocks (different cases)
-        # 3. Count other predecessors (external blocks)
-        # 4. Only stop if we have predecessors from DIFFERENT cases (stop_blocks)
-        #    or multiple external predecessors
+        # Convergence detection
         if block_id != case_entry:
             predecessors = getattr(block, 'predecessors', [])
             if predecessors and len(predecessors) >= convergence_threshold:
                 preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
-                # FIX: Don't count case_entry as "from other cases" - it's OUR case's entry!
-                # Also don't count predecessors that are already in body_blocks/visited
                 preds_from_other_cases = sum(
                     1 for p in predecessors
                     if p in effective_stop
-                    and p != case_entry  # Our case's entry
-                    and p not in body_blocks  # Already part of our case
-                    and p not in visited  # Already part of our case
+                    and p != case_entry
+                    and p not in body_blocks
+                    and p not in visited
                 )
                 preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
 
-                if _debug_body:
-                    import sys
-                    print(f"DEBUG BODY: Convergence check for {block_id}: preds={predecessors}, in_body={preds_in_body}, from_other_cases={preds_from_other_cases}, external={preds_external}", file=sys.stderr)
-
-                # CRITICAL FIX: Only stop if there are predecessors from other cases/stop_blocks
-                # OR if there are multiple external predecessors (not from our case)
-                # This allows if/else merges within a case to pass through
                 if preds_from_other_cases > 0:
-                    # This block has predecessors from other switch cases - it's the switch exit
-                    if _debug_body:
-                        print(f"DEBUG BODY: Stopping at {block_id} - has preds from other cases", file=sys.stderr)
-                    continue
-
+                    return False
                 if preds_external >= convergence_threshold and preds_in_body == 0:
-                    # All predecessors are external (not from our case body) - likely switch exit
-                    if _debug_body:
-                        print(f"DEBUG BODY: Stopping at {block_id} - external preds >= threshold", file=sys.stderr)
-                    continue
+                    return False
 
-                # If all predecessors are from body_blocks/visited, this is an if/else merge
-                # within our case - DON'T stop, include this block in the case body
+        return True
+
+    while worklist:
+        block_id = worklist.pop(0)
+
+        if block_id in visited:
+            continue
+
+        # Stop at barriers (other cases, exit, etc.)
+        if block_id in effective_stop and block_id != case_entry:
+            continue
+
+        # Dominance check with predecessor fallback
+        if block_id != case_entry and not _is_dominated(block_id):
+            predecessors = getattr(cfg.blocks.get(block_id), 'predecessors', [])
+            all_preds_in_body = predecessors and all(
+                p in body_blocks or p in visited or p == case_entry
+                for p in predecessors
+            )
+            if not all_preds_in_body:
+                # Defer this block — it may become includable after more blocks
+                # are added to body_blocks in the second pass
+                deferred_blocks.add(block_id)
+                continue
+
+        block = cfg.blocks.get(block_id)
+        if not block:
+            continue
+
+        # Convergence detection (Ghidra-style)
+        if block_id != case_entry:
+            predecessors = getattr(block, 'predecessors', [])
+            if predecessors and len(predecessors) >= convergence_threshold:
+                preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
+                preds_from_other_cases = sum(
+                    1 for p in predecessors
+                    if p in effective_stop
+                    and p != case_entry
+                    and p not in body_blocks
+                    and p not in visited
+                )
+                preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
+
+                if preds_from_other_cases > 0:
+                    continue
+                if preds_external >= convergence_threshold and preds_in_body == 0:
+                    continue
 
         visited.add(block_id)
         body_blocks.add(block_id)
-
-        if _debug_body:
-            import sys
-            print(f"DEBUG BODY: Added {block_id} to body_blocks, successors={block.successors}", file=sys.stderr)
 
         # Check if block ends with return - don't follow after return
         if block.instructions:
@@ -399,11 +390,8 @@ def _find_case_body_blocks(
                 continue
 
             # Check for "break blocks"
-            # A break block is a single-instruction JMP to the exit block.
-            # We include it in the body but don't follow its successors.
             mnem = resolver.get_mnemonic(last_instr.opcode)
             if mnem == "JMP" and len(block.instructions) == 1:
-                # This is a potential break block - find where it jumps
                 target_addr = last_instr.arg1
                 target_block = None
                 for bid, b in cfg.blocks.items():
@@ -411,8 +399,6 @@ def _find_case_body_blocks(
                         target_block = bid
                         break
 
-                # If the target is a stop block (exit), this is a break
-                # Include the break block but don't traverse further
                 if target_block in effective_stop:
                     continue
 
@@ -420,6 +406,86 @@ def _find_case_body_blocks(
         for succ in block.successors:
             if succ not in visited:
                 worklist.append(succ)
+
+    # SECOND PASS: Reclaim deferred blocks whose predecessors are now all in body.
+    # This handles blocks that were skipped during BFS because not all their
+    # predecessors had been visited yet (common with deeply nested structures
+    # like inner switches inside outer switch cases).
+    # Repeat until no new blocks are added (fixpoint).
+    if deferred_blocks:
+        changed = True
+        while changed:
+            changed = False
+            still_deferred: Set[int] = set()
+            for block_id in deferred_blocks:
+                if block_id in body_blocks:
+                    continue
+                if block_id in effective_stop:
+                    continue
+                block = cfg.blocks.get(block_id)
+                if not block:
+                    continue
+                predecessors = getattr(block, 'predecessors', [])
+                # Include if ALL predecessors are in body or are the case entry
+                all_preds_ok = predecessors and all(
+                    p in body_blocks or p == case_entry
+                    for p in predecessors
+                )
+                if all_preds_ok:
+                    # Also check convergence: don't reclaim if it's a switch exit
+                    if len(predecessors) >= convergence_threshold:
+                        preds_from_other_cases = sum(
+                            1 for p in predecessors
+                            if p in effective_stop
+                            and p != case_entry
+                            and p not in body_blocks
+                        )
+                        if preds_from_other_cases > 0:
+                            continue
+
+                    body_blocks.add(block_id)
+                    changed = True
+                    # Also enqueue this block's successors for reclamation
+                    for succ in block.successors:
+                        if succ not in body_blocks and succ not in effective_stop:
+                            still_deferred.add(succ)
+                    # Follow successors through BFS
+                    sub_worklist = list(block.successors)
+                    sub_visited: Set[int] = set()
+                    while sub_worklist:
+                        sid = sub_worklist.pop(0)
+                        if sid in sub_visited or sid in body_blocks:
+                            continue
+                        if sid in effective_stop:
+                            continue
+                        sub_visited.add(sid)
+                        if _should_include_block(sid):
+                            body_blocks.add(sid)
+                            s_block = cfg.blocks.get(sid)
+                            if s_block:
+                                # Don't follow after return or break
+                                if s_block.instructions:
+                                    last_i = s_block.instructions[-1]
+                                    if resolver.is_return(last_i.opcode):
+                                        continue
+                                    mnem = resolver.get_mnemonic(last_i.opcode)
+                                    if mnem == "JMP" and len(s_block.instructions) == 1:
+                                        target_addr = last_i.arg1
+                                        target_block = None
+                                        for bid2, b2 in cfg.blocks.items():
+                                            if b2.start == target_addr:
+                                                target_block = bid2
+                                                break
+                                        if target_block in effective_stop:
+                                            continue
+                                for succ in s_block.successors:
+                                    if succ not in sub_visited:
+                                        sub_worklist.append(succ)
+                        else:
+                            still_deferred.add(sid)
+                else:
+                    still_deferred.add(block_id)
+            deferred_blocks = still_deferred
 
     return body_blocks
 

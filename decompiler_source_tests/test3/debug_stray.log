@@ -1,0 +1,162 @@
+pycparser not available, using regex fallback for parsing
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 1 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 4 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG FINAL-LOOP: header=2 @312 body=[2, 3, 4, 5, 6, 7]
+DEBUG FINAL-LOOP: emitted 9 lines for loop header=2
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 1 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG FINAL-LOOP: header=10 @362 body=[10, 11, 12, 13, 14, 15, 16, 17]
+DEBUG FINAL-LOOP: emitted 10 lines for loop header=10
+DEBUG FINAL-LOOP: header=19 @417 body=[19, 20, 21, 22]
+DEBUG FINAL-LOOP: emitted 8 lines for loop header=19
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 1 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 3 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG FINAL-LOOP: header=32 @527 body=[32, 33, 34, 35, 36, 37]
+DEBUG FINAL-LOOP: emitted 13 lines for loop header=32
+DEBUG ROOT: type=BlockSwitch covered=22 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG CASE-FLAT: case 0 body_block_ids=1 to_mark=1 exit_ids={41, 79} struct_ids=0
+DEBUG CASE-FLAT: case 1 body_block_ids=3 to_mark=3 exit_ids={41, 79} struct_ids=0
+DEBUG CASE-FLAT: case 2 body_block_ids=5 to_mark=5 exit_ids={41, 79} struct_ids=0
+DEBUG CASE-FLAT: case 4 body_block_ids=8 to_mark=8 exit_ids={41, 79} struct_ids=0
+DEBUG CASE-FLAT: case -1 body_block_ids=4 to_mark=4 exit_ids={41, 79} struct_ids=0
+DEBUG ROOT: emitted 74 lines, emitted_blocks=22
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 22 blocks
+DEBUG FINAL-LOOP: header=41 @633 body=[41, 42, 43, 44, 45, 46]
+DEBUG FINAL-LOOP: emitted 8 lines for loop header=41
+DEBUG FINAL-LOOP: header=48 @683 body=[48, 49, 50, 51]
+DEBUG FINAL-LOOP: emitted 7 lines for loop header=48
+DEBUG ROOT: type=BlockBasic covered=1 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 3 lines, emitted_blocks=1
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 1 blocks
+DEBUG ROOT: type=BlockList covered=7 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 9 lines, emitted_blocks=7
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 7 blocks
+DEBUG ROOT: type=BlockList covered=4 [111:NO] [114:NO] [117:NO] [120:NO]
+  blk 111 NOT in covered_by_structure
+  blk 114 NOT in covered_by_structure
+  blk 117 NOT in covered_by_structure
+  blk 120 NOT in covered_by_structure
+DEBUG ROOT: emitted 9 lines, emitted_blocks=4
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 4 blocks
+DEBUG ROOT: type=BlockSwitch covered=148 [111:YES] [114:YES] [117:YES] [120:YES]
+  blk 111 IS in covered_by_structure
+  blk 114 IS in covered_by_structure
+  blk 117 IS in covered_by_structure
+  blk 120 IS in covered_by_structure
+DEBUG CASE-FLAT: case 0 body_block_ids=1 to_mark=1 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 1 body_block_ids=3 to_mark=3 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 2 body_block_ids=3 to_mark=3 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 3 body_block_ids=3 to_mark=3 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 4 body_block_ids=3 to_mark=3 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 5 body_block_ids=1 to_mark=1 exit_ids={166} struct_ids=0
+DEBUG CASE-FLAT: case 1 body_block_ids=5 to_mark=5 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 2 body_block_ids=12 to_mark=12 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 3 body_block_ids=1 to_mark=1 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 4 body_block_ids=1 to_mark=1 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 5 body_block_ids=8 to_mark=8 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 6 body_block_ids=1 to_mark=1 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 7 body_block_ids=12 to_mark=12 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 8 body_block_ids=3 to_mark=3 exit_ids={226} struct_ids=0
+DEBUG CASE-FLAT: case 0 body_block_ids=116 to_mark=35 exit_ids={269} struct_ids=81
+  to_mark blocks: [95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 109, 110, 113, 116, 119, 122, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 138, 166, 227]
+  structured_cfg_ids: [111, 112, 114, 115, 117, 118, 120, 121, 139, 141, 142, 144, 145, 146, 147, 149, 150, 151, 152, 154, 155, 156, 157, 159, 160, 161, 162, 164, 165, 168, 169, 170, 171, 172, 173, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 189, 190, 192, 193, 195, 196, 197, 198, 199, 200, 201, 202, 203, 205, 206, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 222, 223, 224, 225, 226]
+  body_block_ids: [95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 138, 139, 141, 142, 144, 145, 146, 147, 149, 150, 151, 152, 154, 155, 156, 157, 159, 160, 161, 162, 164, 165, 166, 168, 169, 170, 171, 172, 173, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 189, 190, 192, 193, 195, 196, 197, 198, 199, 200, 201, 202, 203, 205, 206, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 222, 223, 224, 225, 226, 227]
+DEBUG CASE-FLAT: case 1 body_block_ids=4 to_mark=4 exit_ids={269} struct_ids=0
+DEBUG CASE-FLAT: case 2 body_block_ids=6 to_mark=6 exit_ids={269} struct_ids=0
+DEBUG CASE-FLAT: case 10 body_block_ids=1 to_mark=1 exit_ids={253} struct_ids=0
+DEBUG CASE-FLAT: case 667 body_block_ids=1 to_mark=1 exit_ids={253} struct_ids=0
+DEBUG CASE-FLAT: case 3 body_block_ids=1 to_mark=1 exit_ids={269} struct_ids=0
+DEBUG CASE-FLAT: case 7 body_block_ids=1 to_mark=1 exit_ids={269} struct_ids=0
+DEBUG CASE-FLAT: case 11 body_block_ids=1 to_mark=1 exit_ids={269} struct_ids=0
+DEBUG CASE-FLAT: case 15 body_block_ids=4 to_mark=4 exit_ids={269} struct_ids=0
+DEBUG ROOT: emitted 412 lines, emitted_blocks=144
+  after root: blk 111 NOT in emitted_blocks
+  after root: blk 114 NOT in emitted_blocks
+  after root: blk 117 NOT in emitted_blocks
+  after root: blk 120 NOT in emitted_blocks
+DEBUG EMIT: After root+rescue, emitted_blocks has 144 blocks
+DEBUG FINAL-LOOP: header=111 @1272 body=[111, 112]
+DEBUG FINAL-LOOP: emitted 8 lines for loop header=111
+DEBUG FINAL-LOOP: header=114 @1455 body=[114, 115]
+DEBUG FINAL-LOOP: emitted 7 lines for loop header=114
+DEBUG FINAL-LOOP: header=117 @1506 body=[117, 118]
+DEBUG FINAL-LOOP: emitted 4 lines for loop header=117
+DEBUG FINAL-LOOP: header=120 @1532 body=[120, 121]
+DEBUG FINAL-LOOP: emitted 5 lines for loop header=120
