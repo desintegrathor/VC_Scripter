@@ -38,6 +38,7 @@ class SwitchPattern:
     exit_block: Optional[int] = None     # Common exit point after switch
     all_blocks: Set[int] = None          # All blocks belonging to this switch
     nested_headers: Set[int] = None      # Blocks that are nested switch headers (test different variable)
+    dispatch_blocks: Set[int] = None    # All blocks in the comparison dispatch chain (if i==0, if i==1, etc.)
     _internal_type: str = "full"         # "full" (2+ cases) or "single_case" (1 case, renders as if)
 
     def __post_init__(self):
@@ -50,6 +51,8 @@ class SwitchPattern:
             self.default_body_blocks = {self.default_block}
         if self.nested_headers is None:
             self.nested_headers = set()
+        if self.dispatch_blocks is None:
+            self.dispatch_blocks = set()
 
 
 @dataclass

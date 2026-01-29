@@ -473,7 +473,9 @@ class FieldAccessTracker:
         # CRITICAL FIX: Determine if base is a pointer or structure
         # PNT can be used on both pointers and structures
         # If base is local_X, it's a structure; if param_X or info, it's a pointer
-        is_pointer_access = base_var.startswith("param_") or base_var == "info"
+        # Strip & prefix for checking (base_var may be "&param_0")
+        check_var = base_var.lstrip("&")
+        is_pointer_access = check_var.startswith("param_") or check_var == "info"
 
         return FieldAccess(
             base_var=base_var,
@@ -537,7 +539,9 @@ class FieldAccessTracker:
         # Pattern: LADR(&local_X) + DADR(offset) + DCP
         # If base is local_X (without &), it's a structure (not pointer)
         # If base is param_X or other parameter, it's a pointer
-        is_pointer_access = base_var.startswith("param_") or base_var == "info"
+        # Strip & prefix for checking (base_var may be "&param_0")
+        check_var = base_var.lstrip("&")
+        is_pointer_access = check_var.startswith("param_") or check_var == "info"
 
         return FieldAccess(
             base_var=base_var,

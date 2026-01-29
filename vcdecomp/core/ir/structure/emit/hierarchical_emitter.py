@@ -1105,6 +1105,21 @@ class HierarchicalCodeEmitter:
 
         return simplify_boolean_expression(combined)
 
+    def _has_structured_children(self, block: StructuredBlock) -> bool:
+        """Check if a block or any of its children is a non-basic structured block (switch, loop, etc.)."""
+        if isinstance(block, (BlockSwitch, BlockWhileDo, BlockDoWhile)):
+            return True
+        if isinstance(block, BlockList):
+            for child in block.components:
+                if self._has_structured_children(child):
+                    return True
+        if isinstance(block, BlockIf):
+            if block.true_block and self._has_structured_children(block.true_block):
+                return True
+            if block.false_block and self._has_structured_children(block.false_block):
+                return True
+        return False
+
     def _emit_switch(self, block: BlockSwitch, indent: str) -> List[str]:
         """Emit a switch-case structure."""
         lines = []
@@ -1157,8 +1172,14 @@ class HierarchicalCodeEmitter:
                 if const_name:
                     case_value = const_name
             lines.append(f"{indent}case {case_value}:")
-            # Prefer flat-mode rendering for case bodies to preserve nested if/else structure.
-            if case.body_block_ids:
+            # Prefer structured body_block when it contains nested switches or loops;
+            # fall back to flat-mode rendering for case bodies with if/else structure.
+            if case.body_block is not None and self._has_structured_children(case.body_block):
+                lines.extend(self._emit_block(case.body_block, indent + "    "))
+                # Mark body block IDs as emitted
+                if case.body_block_ids:
+                    self.emitted_blocks.update(set(case.body_block_ids) - set(exit_ids))
+            elif case.body_block_ids:
                 lines.extend(self._emit_switch_case_body_flat(case, block, exit_ids, indent + "    "))
             elif case.body_block is not None:
                 lines.extend(self._emit_block(case.body_block, indent + "    "))
@@ -1225,6 +1246,10 @@ class HierarchicalCodeEmitter:
         """
         Emit switch case body using flat-mode block rendering with if/else detection.
         This preserves conditional structure inside cases when collapse is incomplete.
+
+        Before doing flat rendering, checks if any body_block_ids correspond to
+        already-collapsed structured blocks (BlockSwitch, BlockWhileDo, etc.) in the
+        graph. Those are emitted structurally; remaining IDs use flat rendering.
         """
         if not case.body_block_ids:
             return []
@@ -1238,18 +1263,114 @@ class HierarchicalCodeEmitter:
             key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
         )
 
-        # Build stop blocks from other cases/default to prevent leakage
-        case_stop_blocks: Set[int] = set()
+        # Identify CFG block IDs that map to already-collapsed structured blocks
+        # (e.g., an inner switch or loop that was collapsed before the outer switch).
+        # These should be emitted via the structured path, not flat if/else detection.
+        #
+        # We use the graph's structured_map which was populated during collapse.
+        # This maps CFG IDs to their enclosing structured blocks (BlockSwitch, etc.)
+        structured_blocks_by_cfg_id: Dict[int, StructuredBlock] = {}
+        structured_cfg_ids: Set[int] = set()
+        body_id_set = set(case_body_sorted)
+        structured_map = getattr(self.graph, 'structured_map', {})
+
+        # Find structured blocks whose covered IDs overlap with this case body.
+        # Skip the switch_block itself and any block that IS the switch being emitted
+        # (to prevent infinite recursion).
+        current_switch_id = id(switch_block)
+        seen_structs: Set[int] = set()  # Track by id() to avoid duplicates
+        for bid in case_body_sorted:
+            if bid in structured_cfg_ids:
+                continue
+            struct_block = structured_map.get(bid)
+            if struct_block is None:
+                continue
+            if id(struct_block) in seen_structs:
+                continue
+            # Skip if this IS the current switch (prevent recursion)
+            if id(struct_block) == current_switch_id:
+                continue
+            overlap = struct_block.covered_blocks & body_id_set
+            if not overlap:
+                continue
+            seen_structs.add(id(struct_block))
+            # Map the first overlapping bid (by address) to this structured block
+            first_bid = min(overlap, key=lambda b: self.cfg.blocks[b].start if b in self.cfg.blocks else 9999999)
+            structured_blocks_by_cfg_id[first_bid] = struct_block
+            structured_cfg_ids.update(overlap)
+
+        # Filter out structured block IDs from the flat rendering list
+        flat_body_sorted = [bid for bid in case_body_sorted if bid not in structured_cfg_ids]
+
+        # Build stop blocks from other cases/default to prevent leakage.
+        # Also include structured_cfg_ids so flat if/else detection doesn't
+        # walk into inner switches/loops (they'll be emitted separately).
+        case_stop_blocks: Set[int] = set(structured_cfg_ids)
         for other_case in switch_block.cases:
             if other_case is not case and other_case.body_block_ids:
                 case_stop_blocks.update(other_case.body_block_ids)
         if switch_block.default_case and switch_block.default_case.body_block_ids:
             case_stop_blocks.update(switch_block.default_case.body_block_ids)
 
-        # Detect if/else patterns within this case body
+        lines: List[str] = []
+
+        # Emit blocks in address order, interleaving structured and flat sections
+        emitted_structured: Set[int] = set()  # Track which structured block IDs were emitted
+        flat_section: List[int] = []
+
+        def flush_flat_section():
+            """Emit accumulated flat blocks."""
+            nonlocal flat_section
+            if not flat_section:
+                return []
+            result = self._emit_flat_block_section(
+                flat_section, case_stop_blocks, indent
+            )
+            flat_section = []
+            return result
+
+        for bid in case_body_sorted:
+            if bid in structured_cfg_ids:
+                # This bid belongs to a structured block
+                struct_block = structured_blocks_by_cfg_id.get(bid)
+                if struct_block is not None and id(struct_block) not in emitted_structured:
+                    # Flush any pending flat blocks first
+                    lines.extend(flush_flat_section())
+                    # Emit the structured block (it will mark its own blocks as emitted internally)
+                    lines.extend(self._emit_block(struct_block, indent))
+                    emitted_structured.add(id(struct_block))
+                # else: skip (already emitted or covered by another structured block)
+            else:
+                flat_section.append(bid)
+
+        # Flush remaining flat blocks
+        lines.extend(flush_flat_section())
+
+        # Prevent residual case blocks from being emitted later as labels,
+        # but don't suppress the switch exit block(s) if present.
+        # Don't mark blocks handled by inner structured blocks - let those blocks
+        # manage their own emitted_blocks tracking.
+        to_mark = set(case.body_block_ids) - set(exit_ids) - structured_cfg_ids
+        self.emitted_blocks.update(to_mark)
+        return lines
+
+    def _emit_flat_block_section(
+        self,
+        block_ids: List[int],
+        case_stop_blocks: Set[int],
+        indent: str,
+    ) -> List[str]:
+        """Emit a section of flat (non-structured) blocks with if/else detection."""
+        if not block_ids:
+            return []
+
+        from ..emit.code_emitter import _render_blocks_with_loops
+        from ..patterns.if_else import _detect_if_else_pattern
+
+        # Detect if/else patterns within this section
         block_to_if: Dict[int, Any] = {}
         visited_ifs: Set[int] = set()
-        for body_block_id in case_body_sorted:
+        for body_block_id in block_ids:
             if body_block_id in block_to_if:
                 continue
             temp_visited: Set[int] = set()
@@ -1267,8 +1388,8 @@ class HierarchicalCodeEmitter:
             if if_pattern:
                 block_to_if[body_block_id] = if_pattern
 
-        lines = _render_blocks_with_loops(
-            case_body_sorted,
+        return _render_blocks_with_loops(
+            block_ids,
             indent,
             self.ssa_func,
             self.formatter,
@@ -1281,10 +1402,6 @@ class HierarchicalCodeEmitter:
             self.emitted_blocks,
             self.global_map,
         )
-        # Prevent residual case blocks from being emitted later as labels,
-        # but don't suppress the switch exit block(s) if present.
-        self.emitted_blocks.update(set(case.body_block_ids) - set(exit_ids))
-        return lines
 
     def _emit_goto(self, block: BlockGoto, indent: str) -> List[str]:
         """Emit a goto statement."""

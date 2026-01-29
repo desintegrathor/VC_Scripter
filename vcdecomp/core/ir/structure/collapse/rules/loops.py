@@ -156,6 +156,12 @@ class RuleBlockWhileDo(CollapseRule):
         # Update covered blocks
         while_block.covered_blocks = block.covered_blocks | body_block.covered_blocks
 
+        # Register in structured_map for emitter access (don't overwrite inner blocks)
+        if hasattr(graph, 'structured_map'):
+            for cfg_id in while_block.covered_blocks:
+                if cfg_id not in graph.structured_map:
+                    graph.structured_map[cfg_id] = while_block
+
         # Set parent references
         block.parent = while_block
         body_block.parent = while_block
@@ -284,6 +290,12 @@ class RuleBlockDoWhile(CollapseRule):
         # Update covered blocks
         dowhile_block.covered_blocks = block.covered_blocks | cond.covered_blocks
 
+        # Register in structured_map for emitter access (don't overwrite inner blocks)
+        if hasattr(graph, 'structured_map'):
+            for cfg_id in dowhile_block.covered_blocks:
+                if cfg_id not in graph.structured_map:
+                    graph.structured_map[cfg_id] = dowhile_block
+
         # Set parent references
         block.parent = dowhile_block
         cond.parent = dowhile_block
@@ -368,6 +380,12 @@ class RuleBlockInfLoop(CollapseRule):
 
         # Update covered blocks
         inf_loop.covered_blocks = set(block.covered_blocks)
+
+        # Register in structured_map for emitter access (don't overwrite inner blocks)
+        if hasattr(graph, 'structured_map'):
+            for cfg_id in inf_loop.covered_blocks:
+                if cfg_id not in graph.structured_map:
+                    graph.structured_map[cfg_id] = inf_loop
 
         # Set parent
         block.parent = inf_loop

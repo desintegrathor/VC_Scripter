@@ -227,23 +227,29 @@ def render_condition(
                     )
 
         cond_expr = None
-        call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
-        if call_expr and call_only:
-            cond_expr = call_expr
-        else:
-            if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
-                cond_expr = formatter._inline_expression(
-                    cond_value,
-                    context=ExpressionContext.IN_CONDITION
-                )
-            elif cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
-                for phi_input in cond_value.producer_inst.inputs:
-                    if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
-                        cond_expr = formatter._inline_expression(
-                            phi_input,
-                            context=ExpressionContext.IN_CONDITION
-                        )
-                        break
+        # Check for comparison operations FIRST - if the condition value is a
+        # comparison (ILT, EQU, etc.), always preserve the full comparison
+        # expression. This prevents `func() < 1` from being shortened to
+        # just `func()` when a function call is detected.
+        if cond_value.producer_inst and cond_value.producer_inst.mnemonic in COMPARISON_OPS:
+            cond_expr = formatter._inline_expression(
+                cond_value,
+                context=ExpressionContext.IN_CONDITION
+            )
+        elif cond_value.producer_inst and cond_value.producer_inst.mnemonic == "PHI":
+            for phi_input in cond_value.producer_inst.inputs:
+                if phi_input.producer_inst and phi_input.producer_inst.mnemonic in COMPARISON_OPS:
+                    cond_expr = formatter._inline_expression(
+                        phi_input,
+                        context=ExpressionContext.IN_CONDITION
+                    )
+                    break
+
+        # Fall back to function call shortcut only when condition is not a comparison
+        if cond_expr is None:
+            call_expr = _trace_value_to_function_call(ssa_func, cond_value, formatter)
+            if call_expr and call_only:
+                cond_expr = call_expr
 
         if cond_expr is None:
             cond_expr = formatter.render_value(

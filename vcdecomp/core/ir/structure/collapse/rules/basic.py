@@ -51,6 +51,17 @@ class RuleBlockCat(CollapseRule):
             if edge.target == successor and edge.edge_type == EdgeType.BACK_EDGE:
                 return False
 
+        # Don't merge into a switch header or dispatch block - these need to remain
+        # distinct BlockBasic nodes for the switch collapse rule to find them
+        from ...blocks.hierarchy import BlockBasic
+        if isinstance(successor, BlockBasic):
+            switch_headers = getattr(graph, '_switch_header_cfg_ids', set())
+            dispatch_blocks = getattr(graph, '_switch_dispatch_cfg_ids', set())
+            if successor.original_block_id in switch_headers:
+                return False
+            if successor.original_block_id in dispatch_blocks:
+                return False
+
         return True
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:

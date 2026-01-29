@@ -131,22 +131,33 @@ class RuleBlockSwitch(CollapseRule):
 
         # Search through ALL uncollapsed blocks for one that covers this CFG block
         # This handles the case where the entry block was collapsed into a larger
-        # structure (e.g., BlockIf, BlockList) that covers multiple CFG blocks
+        # structure (e.g., BlockIf, BlockList, BlockWhileDo) that covers multiple CFG blocks
         for struct_block in graph.get_uncollapsed_blocks():
             if entry_cfg_id in struct_block.covered_blocks:
                 return struct_block
 
-        # If still not found, search through ALL blocks in graph (including collapsed)
-        # to find one whose covered_blocks contains the entry CFG block ID.
-        # This is a fallback for complex collapse scenarios.
+        # If the entry block was collapsed, find the outermost uncollapsed container.
+        # Walk up the parent chain from the collapsed block to find its uncollapsed ancestor.
+        if entry_cfg_id in graph.cfg_to_struct:
+            block = graph.cfg_to_struct[entry_cfg_id]
+            if block.is_collapsed:
+                current = block
+                while current and current.is_collapsed and current.parent:
+                    current = current.parent
+                if current and not current.is_collapsed:
+                    return current
+
+        # Last resort: search ALL blocks (including collapsed) and walk up parents
         for struct_block in graph.blocks.values():
             if entry_cfg_id in struct_block.covered_blocks:
-                # Found it in a collapsed structure - check if it's the entry point
-                # of that structure (we want the outermost containing structure)
                 if not struct_block.is_collapsed:
                     return struct_block
-                # It's collapsed into something else - continue searching for
-                # the outermost uncollapsed container
+                # Walk up parent chain
+                current = struct_block
+                while current and current.is_collapsed and current.parent:
+                    current = current.parent
+                if current and not current.is_collapsed:
+                    return current
 
         return None
 
@@ -157,6 +168,10 @@ class RuleBlockSwitch(CollapseRule):
         Simplified approach: Just check that this is a detected switch header.
         The switch rule runs LAST in the order, so other patterns have already
         had a chance to collapse. We accept the switch as-is.
+
+        Important: inner (nested) switches must be collapsed before outer switches.
+        If this switch's case body contains an uncollapsed inner switch header,
+        we defer matching until the inner switch has been processed.
         """
         # Don't match if this is already a BlockSwitch
         if isinstance(block, BlockSwitch):
@@ -170,6 +185,19 @@ class RuleBlockSwitch(CollapseRule):
         pattern = self._get_pattern(cfg_block_id)
         if pattern is None:
             return False
+
+        # Check if any uncollapsed inner switch headers exist in this switch's blocks.
+        # If so, defer collapsing this outer switch until inner switches are processed.
+        for inner_pattern in self.switch_patterns:
+            if inner_pattern is pattern:
+                continue
+            if inner_pattern.header_block in pattern.all_blocks:
+                # Inner switch header is inside this switch's blocks
+                # Check if the inner header is still an uncollapsed BlockBasic
+                inner_block = graph.cfg_to_struct.get(inner_pattern.header_block)
+                if inner_block and isinstance(inner_block, BlockBasic) and not inner_block.is_collapsed:
+                    # Inner switch hasn't been processed yet - defer
+                    return False
 
         return True
 
@@ -307,6 +335,15 @@ class RuleBlockSwitch(CollapseRule):
                 last_instr = cfg_block.instructions[-1]
                 if resolver.is_return(last_instr.opcode):
                     switch_block.covered_blocks.discard(bid)
+
+        # Register in structured_map so the emitter can find this switch
+        # even after it's been removed from the graph by an outer switch.
+        # Don't overwrite existing entries - inner switches register first
+        # (due to innermost-first processing order) and should be preserved.
+        if hasattr(graph, 'structured_map'):
+            for cfg_id in switch_block.covered_blocks:
+                if cfg_id not in graph.structured_map:
+                    graph.structured_map[cfg_id] = switch_block
 
         # Set parent for header
         block.parent = switch_block

@@ -132,7 +132,8 @@ def _detect_binary_search_switch(
         cases=cases,
         default_block=None,
         exit_block=exit_block,
-        all_blocks=all_blocks
+        all_blocks=all_blocks,
+        dispatch_blocks=set(tree_blocks),
     )
 
     # Detect default case using Ghidra-inspired algorithm

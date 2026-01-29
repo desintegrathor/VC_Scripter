@@ -501,6 +501,11 @@ class BlockGraph:
         self.cfg_to_struct: Dict[int, StructuredBlock] = {}
         self.ssa_func: Optional["SSAFunction"] = ssa_func
 
+        # Mapping from CFG block IDs to enclosing structured blocks (switch, loop).
+        # Populated during collapse so the emitter can find inner structured blocks
+        # even after they've been removed from the graph.
+        self.structured_map: Dict[int, StructuredBlock] = {}
+
         # Optional analysis caches (filled by collapse engine)
         self.dom_analysis: Optional["DominatorAnalysis"] = None
         self.loop_analysis: Optional["LoopAnalysis"] = None

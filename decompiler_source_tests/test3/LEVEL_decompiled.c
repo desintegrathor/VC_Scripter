@@ -1,4 +1,4 @@
-// Structured decompilation of decompiler_source_tests/test3/LEVEL.SCR
+// Structured decompilation of decompiler_source_tests\test3\LEVEL.SCR
 // Functions: 10
 
 #include <inc\sc_global.h>
@@ -137,7 +137,7 @@ int func_0612(int param_0, float param_1) {
         }
         break;
     case 4:
-        if (SC_ggi(SGI_LEVELPHASE)) {
+        if (SC_ggi(SGI_LEVELPHASE) > 5) {
         } else {
             g_pilot_timer -= param_0;
         }
@@ -243,7 +243,7 @@ int ScriptMain(s_SC_L_info *info) {
         if (ptr && tmp3 <= 0.0f) {
             SC_MissionFailed();
         }
-        &param_0.next_exe_time = 0.2f;
+        param_0->next_exe_time = 0.2f;
         if (g_showinfo_timer < 11.0f) {
             local_0 = g_showinfo_timer;
             g_showinfo_timer += info->elapsed_time;
@@ -280,251 +280,23 @@ int ScriptMain(s_SC_L_info *info) {
             SC_InitSide(1, &local_4);
             local_20 = 0;
         } else {
-            if (local_88 == 1) {
-                local_20 = SC_ggi(SGI_LEVELPHASE);
-                if (g_save[0]) {
-                } else {
-                    local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                    if (ptr15 && SC_P_IsReady(ptr15)) {
-                        g_save[0] = 1;
-                        local_80.savename_id = 9136;
-                        local_80.description_id = 9137;
-                        SC_MissionSave(&local_80);  // 9137: "You are flying over the ricefields."
-                    }
-                }
-                if (tmp104) {
-                } else {
-                    if (gStartMusicTime > 0.0f && gStartMusicTime <= 0.0f) {
-                        g_music = 1;
-                        t1700_ret = SC_AGS_Set(0);
-                    }
-                }
-                if (local_89 == 0) {
-                    if (local_90 == 0) {
-                        local_0 = 0.5f;
-                        SC_SpeechRadio2(3400, &local_0);
-                        local_0 = obj + 0.3f;
-                        SC_SpeechRadio2(3401, &local_0);
-                        local_0 = tmp113 + 0.3f;
-                        SC_SpeechRadio2(3402, &local_0);
-                        local_0 += 0.5f;
-                        SC_SpeechRadio2(3403, &local_0);
-                        local_0 = local_0_v2 + 0.3f;
-                        SC_SpeechRadio2(3404, &local_0);
-                        local_0 = local_0_v3 + 0.5f;
-                        g_dialog = 1;
-                    } else {
-                        if (local_90 == 1) {
-                            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
-                            } else {
-                                local_24 = SC_P_GetBySideGroupMember(0, 0, 2);
-                                local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
-                                local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
-                                local_0 = 3.0f;
-                                SC_P_Speech2(ptr21, 3420, &local_0);
-                                local_0 = 3.2f;
-                                SC_P_Speech2(ptr22, 3421, &local_0);
-                                g_dialog = 2;
-                            }
-                        } else {
-                            if (local_90 == 2) {
-                                if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
-                                } else {
-                                    local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
-                                    local_0 = 1.0f;
-                                    SC_P_Speech2(ptr24, 3422, &local_0);
-                                    local_0 = tmp113 + 0.3f;
-                                    t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-                                    SC_P_Speech2(t1894_ret, 3423, &local_0);
-                                    local_0 += 0.4f;
-                                    SC_P_Speech2(ptr24, 3422, &local_0);
-                                    local_0 = local_0_v2 + 0.3f;
-                                    SC_SpeechRadio2(3416, &local_0);
-                                    local_0 = local_0_v3 + 0.5f;
-                                    SC_SpeechRadio2(3417, &local_0);
-                                    local_0 = local_0_v7 + 0.5f;
-                                    SC_SpeechRadio2(3418, &local_0);
-                                    local_0 = local_0_v8 + 0.5f;
-                                    SC_P_Speech2(ptr24, 3419, &local_0);
-                                    local_0 = local_0_v9 + 2.0f;
-                                    local_2 = local_0_v10 - 1.2f;
-                                    t1970_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-                                    SC_P_Speech2(t1970_ret, 3430, &local_2);
-                                    local_2 = ptr26 + 1.5f;
-                                    SC_P_Speech2(ptr22, 3431, &local_0);
-                                    SC_SpeechRadio2(3424, &local_0);
-                                    local_0 = local_0_v10 + 0.5f;
-                                    SC_SpeechRadio2(3425, &local_0);
-                                    local_0 = local_0_v11 + 0.5f;
-                                    SC_SpeechRadio2(3426, &local_0);
-                                    local_0 = local_0_v12 + 0.5f;
-                                    SC_SpeechRadio2(3427, &local_0);
-                                    local_0 = local_0_v13 + 0.5f;
-                                    SC_SpeechRadio2(3428, &local_0);
-                                    local_0 = local_0_v14 + 0.5f;
-                                    SC_SpeechRadio2(3429, &local_0);
-                                    local_0 = local_0_v15 + 0.5f;
-                                    g_dialog = 3;
-                                }
-                            } else {
-                                if (local_90 == 3) {
-                                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
-                                    } else {
-                                        local_0 = 0;
-                                        SC_SpeechRadio2(3440, &local_0);
-                                        local_0 = obj + 0.5f;
-                                        SC_SpeechRadio2(3441, &local_0);
-                                        local_0 = tmp113 + 0.5f;
-                                        SC_SpeechRadio2(3442, &local_0);
-                                        local_0 += 0.5f;
-                                        SC_SpeechRadio2(3443, &local_0);
-                                        local_0 = local_0_v2 + 0.5f;
-                                        SC_SpeechRadio2(3444, &local_0);
-                                        local_0 = local_0_v3 + 0.5f;
-                                        SC_SpeechRadio2(3445, &local_0);
-                                        local_0 = local_0_v7 + 0.5f;
-                                        SC_SpeechRadio2(3446, &local_0);
-                                        local_0 = local_0_v8 + 0.5f;
-                                        g_dialog = 4;
-                                    }
-                                } else {
-                                    if (local_90 == 4) {
-                                        if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK)) {
-                                        } else {
-                                            g_dialog = 5;
-                                            local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
-                                            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                                            local_0 = 0;
-                                            SC_P_Speech2(ptr24, 3447, &local_0);
-                                            local_0 += 0.3f;
-                                            SC_P_Speech2(ptr15, 3448, &local_0);
-                                            local_0 = local_0_v2 + 0.6f;
-                                            SC_P_Speech2(ptr24, 3449, &local_0);
-                                            local_0 = local_0_v3 + 0.3f;
-                                            /* invalid store: local_0_v7 - 1.0f = tmp165; */
-                                            SC_P_Speech2(ptr15, 3450, &local_0);
-                                        }
-                                    } else {
-                                        if (local_90 == 5) {
-                                            SC_PC_EnableExit(1);
-                                            g_dialog = 6;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (local_89 == 1) {
-                        if (g_dochange) {
-                            func_0292();
-                            func_0355();
-                            g_dochange = 0;
-                            if (g_save[1]) {
-                            } else {
-                                g_save[1] = 1;
-                                local_80.savename_id = 9138;
-                                local_80.description_id = 9139;
-                                SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
-                            }
-                        }
-                        func_0612(info->elapsed_time);
-                    } else {
-                        if (local_89 == 2) {
-                            func_0612(info->elapsed_time);
-                            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                            if (ptr && ptr15) {
-                                if (SC_P_GetActive(ptr)) {
-                                    if (SC_P_IsReady(ptr)) {
-                                        if (SC_P_IsReady(ptr15)) {
-                                            local_1 = SC_P_GetDistance(ptr, ptr15);
-                                            if (ptr28 < 10.0f) {
-                                                SC_sgi(SGI_LEVELPHASE, 3);
-                                                local_0 = 0;
-                                                SC_P_Speech2(ptr15, 3451, &local_0);
-                                                local_0 += 1.6f;
-                                                SC_P_Speech2(ptr, 3452, &local_0);
-                                                local_0 = local_0_v2 + 0.5f;
-                                                SC_P_Speech2(ptr15, 3453, &local_0);
-                                                local_0_v3 = tmp187;
-                                                local_83.text_id = 3471;
-                                                local_83.status = 2;
-                                                SC_SetObjectives(1, &local_83, 0.0f);  // 3471: "Find the pilot"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            if (local_89 == 3) {
-                                SC_Radio_Enable(20);
-                                SC_PC_EnableRadioBreak(1);
-                                SC_sgi(SGI_LEVELPHASE, 4);
-                            } else {
-                                if (local_89 == 4) {
-                                } else {
-                                    if (local_89 == 5) {
-                                        if (gPilotCommTime > 0.0f) {
-                                            gPilotCommTime -= info->elapsed_time;
-                                        } else {
-                                            func_0612(info->elapsed_time);
-                                            SC_P_GetPos(ptr, &vec);
-                                            local_20 = 0;
-                                        }
-                                    } else {
-                                        if (local_89 == 6) {
-                                            func_0612(info->elapsed_time);
-                                        } else {
-                                            if (local_89 == 7) {
-                                                local_20 = 2;
-                                                g_final_enter_timer += info->elapsed_time;
-                                                if (SC_P_IsInHeli(ptr)) {
-                                                    local_20 = ptr12 - 1;
-                                                } else {
-                                                    if (g_final_enter_timer > 30.0f) {
-                                                        SC_P_SetToHeli(ptr, "heli2", 3);
-                                                    } else {
-                                                        func_0985(ptr);
-                                                        SC_P_Ai_EnterHeli(ptr, "heli2", 4);
-                                                        &param_0.next_exe_time = 4.0f;
-                                                    }
-                                                }
-                                                local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-                                                if (SC_P_IsInHeli(ptr15)) {
-                                                    local_20 = ptr12 - 1;
-                                                }
-                                                if (ptr12 == 0) {
-                                                    SC_sgi(SGI_LEVELPHASE, 8);
-                                                    t2696_ret = SC_AGS_Set(1);
-                                                    &param_0.next_exe_time = 0.1f;
-                                                    gEndTimer = 15.0f;
-                                                }
-                                            } else {
-                                                if (local_89 == 8) {
-                                                    gEndTimer -= info->elapsed_time;
-                                                    if (gEndTimer < 0.0f) {
-                                                        func_1021();
-                                                        SC_TheEnd();
-                                                        SC_sgi(SGI_LEVELPHASE, 9);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            local_20 = SC_ggi(SGI_LEVELPHASE);
+            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+            g_save[0] = 1;
+            local_80.savename_id = 9136;
+            local_80.description_id = 9137;
+            SC_MissionSave(&local_80);  // 9137: "You are flying over the ricefields."
+            gStartMusicTime -= info->elapsed_time;
+            g_music = 1;
+            t1700_ret = SC_AGS_Set(0);
         }
-        // Loop header - Block 111 @1272
         for (local_20 = 0; local_20 < 12; local_20++) {
             idx.SideId = 1;
             idx.GroupId = obj;
             idx.MaxPlayers = 16;
             idx.NoHoldFireDistance = 100.0f;
             SC_InitSideGroup(&idx);
+            local_20 = obj + 1;
         }
         local_4.MaxHideOutsStatus = 2;
         local_4.MaxGroups = 2;
@@ -559,21 +331,24 @@ int ScriptMain(s_SC_L_info *info) {
         SC_sgi(SGI_LEVPILOT_S1G2, 0);
         SC_sgi(SGI_LEVPILOT_S1G3, 0);
         SC_sgi(SGI_LEVPILOT_S1G4, 0);
-        // Loop header - Block 114 @1455
+        local_20 = 0;
         for (local_20 = 0; local_20 < 4; local_20++) {
             SC_ZeroMem(t1464_, 12);
             local_43[obj] = 1.5f;
             local_43[obj].y = 5.0f;
             (&local_63) + obj * 4 = obj;
+            local_20 = obj + 1;
         }
-        // Loop header - Block 117 @1506
+        local_20 = 0;
         for (local_20 = 0; local_20 < 10; local_20++) {
             SC_Ai_SetPlFollow(1, obj, 0, &local_43, &local_63, &local_63, 4);
+            local_20 = obj + 1;
         }
-        // Loop header - Block 120 @1532
+        local_20 = 0;
         for (local_20 = 0; local_20 < 4; local_20++) {
             t1544_ret = sprintf(&local_67, "WP_will%d", obj + 1);
             t1556_ret = SC_GetWp(&local_67, &g_will_pos[obj]);
+            local_20 = obj + 1;
         }
         SC_sgi(SGI_LEVELPHASE, 0);
         SC_sgi(SGI_LEVPILOT_HELI3_ATTACK, 0);
@@ -585,24 +360,230 @@ int ScriptMain(s_SC_L_info *info) {
         SC_SetViewAnim("g\\camanims\\CAMERA\\Pilot_in.anm", 0, 350, 0);
         SC_FadeTo(1, 0.0f);
         SC_FadeTo(0, 3.0f);
-        // Loop header - Block 199 @2472
-        for (local_20 = obj; local_20 < 4; local_20++) {
-            if (SC_2VectorsDist( & vec, & g_will_pos[obj])) {
-                SC_sgi(SGI_LEVELPHASE, 6);
-                SC_sgi(SGI_LEVPILOT_EVACVILLID, obj);
-                vec.z += 1.5f;
-                vec2.x = tmp210 - tmp211;
-                /* invalid store: tmp215 - vec.y = tmp219; */
-                vec2.z = 0.0f;
-                t2542_ret = SC_VectorLen(&vec2);
-                local_0 = (SC_VectorLen(&vec2)) / 10.0f;
-                vec2.x /= t2551_;
-                /* invalid store: vec2.y / vec2.y = tmp228; */
-                vec2.z = 7.0f;
-                t2576_ret = SC_Item_Create2(147, &vec, &vec2);
+        switch (g_dialog) {
+        case 0:
+            local_0 = 0.5f;
+            SC_SpeechRadio2(3400, &local_0);
+            local_0 = obj + 0.3f;
+            SC_SpeechRadio2(3401, &local_0);
+            local_0 = tmp113 + 0.3f;
+            SC_SpeechRadio2(3402, &local_0);
+            local_0 += 0.5f;
+            SC_SpeechRadio2(3403, &local_0);
+            local_0 += 0.3f;
+            SC_SpeechRadio2(3404, &local_0);
+            local_0 += 0.5f;
+            g_dialog = 1;
+            break;
+        case 1:
+            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 1) {
             } else {
-                local_20 = obj + 1;
+                local_24 = SC_P_GetBySideGroupMember(0, 0, 2);
+                local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
+                local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
+                local_0 = 3.0f;
+                SC_P_Speech2(ptr21, 3420, &local_0);
+                local_0 = 3.2f;
+                SC_P_Speech2(ptr22, 3421, &local_0);
+                g_dialog = 2;
             }
+            break;
+        case 2:
+            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 2) {
+            } else {
+                local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                local_0 = 1.0f;
+                SC_P_Speech2(ptr24, 3422, &local_0);
+                local_0 = tmp113 + 0.3f;
+                t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                SC_P_Speech2(t1894_ret, 3423, &local_0);
+                local_0 += 0.4f;
+                SC_P_Speech2(ptr24, 3422, &local_0);
+                local_0 += 0.3f;
+                SC_SpeechRadio2(3416, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3417, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3418, &local_0);
+                local_0 += 0.5f;
+                SC_P_Speech2(ptr24, 3419, &local_0);
+                local_0 += 2.0f;
+                local_2 = local_0 - 1.2f;
+                t1970_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                SC_P_Speech2(t1970_ret, 3430, &local_2);
+                local_2 = ptr26 + 1.5f;
+                SC_P_Speech2(ptr22, 3431, &local_0);
+                SC_SpeechRadio2(3424, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3425, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3426, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3427, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3428, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3429, &local_0);
+                local_0 += 0.5f;
+                g_dialog = 3;
+            }
+            break;
+        case 3:
+            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 3) {
+            } else {
+                local_0 = 0;
+                SC_SpeechRadio2(3440, &local_0);
+                local_0 = obj + 0.5f;
+                SC_SpeechRadio2(3441, &local_0);
+                local_0 = tmp113 + 0.5f;
+                SC_SpeechRadio2(3442, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3443, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3444, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3445, &local_0);
+                local_0 += 0.5f;
+                SC_SpeechRadio2(3446, &local_0);
+                local_0 += 0.5f;
+                g_dialog = 4;
+            }
+            break;
+        case 4:
+            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 4) {
+            } else {
+                g_dialog = 5;
+                local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                local_0 = 0;
+                SC_P_Speech2(ptr24, 3447, &local_0);
+                local_0 += 0.3f;
+                SC_P_Speech2(ptr15, 3448, &local_0);
+                local_0 += 0.6f;
+                SC_P_Speech2(ptr24, 3449, &local_0);
+                local_0 += 0.3f;
+                /* invalid store: local_0 - 1.0f = tmp165; */
+                SC_P_Speech2(ptr15, 3450, &local_0);
+            }
+            break;
+        case 5:
+            SC_PC_EnableExit(1);
+            g_dialog = 6;
+            break;
+        }
+        switch (local_89) {
+        case 1:
+            if (g_dochange) {
+                func_0292();
+                func_0355();
+                g_dochange = 0;
+                if (g_save[1]) {
+                } else {
+                    g_save[1] = 1;
+                    local_80.savename_id = 9138;
+                    local_80.description_id = 9139;
+                    SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
+                }
+            }
+            func_0612(info->elapsed_time);
+            break;
+        case 2:
+            func_0612(info->elapsed_time);
+            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+            if (ptr && ptr15) {
+                if (SC_P_GetActive(ptr)) {
+                    if (SC_P_IsReady(ptr)) {
+                        if (SC_P_IsReady(ptr15)) {
+                            local_1 = SC_P_GetDistance(ptr, ptr15);
+                            if (ptr28 < 10.0f) {
+                                SC_sgi(SGI_LEVELPHASE, 3);
+                                local_0 = 0;
+                                SC_P_Speech2(ptr15, 3451, &local_0);
+                                local_0 += 1.6f;
+                                SC_P_Speech2(ptr, 3452, &local_0);
+                                local_0 += 0.5f;
+                                SC_P_Speech2(ptr15, 3453, &local_0);
+                                local_0 = tmp187;
+                                local_83.text_id = 3471;
+                                local_83.status = 2;
+                                SC_SetObjectives(1, &local_83, 0.0f);  // 3471: "Find the pilot"
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        case 3:
+            SC_Radio_Enable(20);
+            SC_PC_EnableRadioBreak(1);
+            SC_sgi(SGI_LEVELPHASE, 4);
+            break;
+        case 4:
+            break;
+        case 5:
+            if (gPilotCommTime > 0.0f) {
+                gPilotCommTime -= info->elapsed_time;
+            } else {
+                func_0612(info->elapsed_time);
+                SC_P_GetPos(ptr, &vec);
+                local_20 = 0;
+            }
+            // Loop header - Block 199 @2472
+            for (local_20 = obj; local_20 < 4; local_20++) {
+                if ((SC_2VectorsDist( & vec, & g_will_pos[obj])) < 40.0f) {
+                    SC_sgi(SGI_LEVELPHASE, 6);
+                    SC_sgi(SGI_LEVPILOT_EVACVILLID, obj);
+                    vec.z += 1.5f;
+                    vec2.x = tmp210 - tmp211;
+                    /* invalid store: tmp215 - vec.y = tmp219; */
+                    vec2.z = 0.0f;
+                    t2542_ret = SC_VectorLen(&vec2);
+                    local_0 = (SC_VectorLen(&vec2)) / 10.0f;
+                    vec2.x /= t2551_;
+                    /* invalid store: vec2.y / vec2.y = tmp228; */
+                    vec2.z = 7.0f;
+                    t2576_ret = SC_Item_Create2(147, &vec, &vec2);
+                } else {
+                    local_20 = obj + 1;
+                }
+            }
+            break;
+        case 6:
+            func_0612(info->elapsed_time);
+            break;
+        case 7:
+            local_20 = 2;
+            g_final_enter_timer += info->elapsed_time;
+            if (SC_P_IsInHeli(ptr)) {
+                local_20 = ptr12 - 1;
+            } else {
+                if (g_final_enter_timer > 30.0f) {
+                    SC_P_SetToHeli(ptr, "heli2", 3);
+                } else {
+                    func_0985(ptr);
+                    SC_P_Ai_EnterHeli(ptr, "heli2", 4);
+                    param_0->next_exe_time = 4.0f;
+                }
+            }
+            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+            if (SC_P_IsInHeli(ptr15)) {
+                local_20 = ptr12 - 1;
+            }
+            if (ptr12 == 0) {
+                SC_sgi(SGI_LEVELPHASE, 8);
+                t2696_ret = SC_AGS_Set(1);
+                param_0->next_exe_time = 0.1f;
+                gEndTimer = 15.0f;
+            }
+            break;
+        case 8:
+            gEndTimer -= info->elapsed_time;
+            if (gEndTimer < 0.0f) {
+                func_1021();
+                SC_TheEnd();
+                SC_sgi(SGI_LEVELPHASE, 9);
+            }
+            break;
         }
         break;
     case 1:
@@ -614,14 +595,14 @@ int ScriptMain(s_SC_L_info *info) {
             SC_P_Speech2(ptr15, 3454, &local_0);
             local_0 += 1.3f;
             SC_SpeechRadio2(3455, &local_0);
-            local_0 = local_0_v2 + 0.5f;
+            local_0 += 0.5f;
             SC_P_Speech2(ptr15, 3456, &local_0);
-            local_0 = local_0_v3 + 0.7f;
+            local_0 += 0.7f;
             SC_SpeechRadio2(3461, &local_0);
-            local_0 = local_0_v7 + 0.5f;
+            local_0 += 0.5f;
             SC_P_SpeechMes2(ptr15, 3457, &local_0, 11);
-            gPilotCommTime = local_0_v8 + 3.0f;
-            &param_0.next_exe_time = 0.1f;
+            gPilotCommTime = local_0 + 3.0f;
+            param_0->next_exe_time = 0.1f;
             SC_RadioBatch_End();
         }
         break;
@@ -634,11 +615,12 @@ int ScriptMain(s_SC_L_info *info) {
         }
         break;
     case 4:
-        if (local_88 == 10) {
+        switch (info->param1) {
+        case 10:
             func_0994(1);
-        } else {
-            if (local_88 == 667) {
-            }
+            break;
+        case 667:
+            break;
         }
         break;
     case 3:
@@ -659,10 +641,10 @@ int ScriptMain(s_SC_L_info *info) {
         break;
     case 15:
         if ((param_0- > field_4) >= 20) {
-            &param_0.param3 = 0;
+            param_0->param3 = 0;
         } else {
             param_0->field_8 = tmp293;
-            &param_0.param3 = 1;
+            param_0->param3 = 1;
         }
         break;
     }

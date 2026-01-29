@@ -47,6 +47,37 @@ from ..text_database import (
 )
 
 
+def _strip_ssa_version_suffix(name: str) -> str:
+    """
+    Strip SSA version suffixes (_vN) from local variable names.
+
+    The SSA variable renaming creates versioned names like local_0_v2, local_0_v7
+    for different definitions of the same stack slot. Since the decompiled scripts
+    don't have parallel control flow that would make same-named variables ambiguous,
+    all versions should render as the base name (e.g., local_0).
+
+    Also handles address-of prefix: &local_0_v3 → &local_0
+    """
+    if '_v' not in name:
+        return name
+
+    # Handle &prefix
+    prefix = ''
+    clean = name
+    if clean.startswith('&'):
+        prefix = '&'
+        clean = clean[1:]
+
+    # Only strip from local_N_vM and param_N_vM patterns
+    if clean.startswith(('local_', 'param_')):
+        # Split on _v and check that the suffix is a number
+        idx = clean.rfind('_v')
+        if idx > 0 and clean[idx+2:].isdigit():
+            return prefix + clean[:idx]
+
+    return name
+
+
 def _is_likely_float(val: int) -> bool:
     """
     Detekuje zda je hodnota pravděpodobně IEEE 754 float konstanta.
@@ -1559,7 +1590,7 @@ class ExpressionFormatter:
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
                 and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op
                 and not is_infix_op):
-            return self._rename_map[value.name]
+            return _strip_ssa_version_suffix(self._rename_map[value.name])
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
         string_literal = self._check_string_literal(value)
@@ -1733,10 +1764,10 @@ class ExpressionFormatter:
                 if inlined and inlined != value.alias:
                     return inlined
 
-            return value.alias
+            return _strip_ssa_version_suffix(value.alias)
         if self._can_inline(value):
             return self._inline_expression(value, context, parent_operator)
-        return value.name
+        return _strip_ssa_version_suffix(value.name)
 
     def _is_undefined_value(self, value: SSAValue) -> bool:
         """
@@ -2716,13 +2747,16 @@ class ExpressionFormatter:
                     if dadr_inst.instruction and dadr_inst.instruction.instruction:
                         field_offset = dadr_inst.instruction.instruction.arg1
 
-                        # CRITICAL FIX: Always use . operator for local structures
+                        # Determine operator based on whether base is a pointer parameter or local struct
                         # Pattern LADR(&local_X) + DADR(offset) means local_X is a structure (not pointer)
-                        # If we took its address with LADR, it's definitely a structure
-                        # Use . operator and return address of field
+                        # Pattern LADR(&param_X) + DADR(offset) means param_X is a pointer
                         field_name = self._resolve_field_name(base_name, field_offset)
                         # FIX (01-21): Use semantic name for struct field accesses
                         display_name = self._get_field_base_name(base_name, field_name)
+                        clean_base = base_name.lstrip("&")
+                        if clean_base.startswith("param_") or clean_base == "info":
+                            # Pointer parameter: use -> (no & prefix since -> dereferences)
+                            return f"{display_name}->{field_name}"
                         return f"&{display_name}.{field_name}"
 
         # FIX: Handle PNT instruction (pointer arithmetic) for field access
@@ -2755,6 +2789,10 @@ class ExpressionFormatter:
 
                         # FIX (01-21): Use semantic name for struct field accesses
                         display_name = self._get_field_base_name(base_name, field_name)
+                        # Determine operator: -> for pointer params, . for local structs
+                        clean_base = base_name.lstrip("&")
+                        if clean_base.startswith("param_") or clean_base == "info":
+                            return f"{display_name}->{field_name}"
                         return f"{display_name}.{field_name}"
 
         rendered = self._render_value(value)

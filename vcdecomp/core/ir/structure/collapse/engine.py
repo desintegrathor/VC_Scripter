@@ -27,6 +27,9 @@ from .rules import (
     SECONDARY_RULES,
     RuleBlockSwitch,
     RuleBlockOr,
+    RuleBlockProperIf,
+    RuleBlockIfElse,
+    RuleBlockIfNoExit,
 )
 from .trace_dag import TraceDAG
 from ..analysis.dominance import DominatorAnalysis, compute_dominators
@@ -88,6 +91,9 @@ class CollapseStructure:
         # Switch header blocks - these are reserved and should not be collapsed by other rules
         self.switch_header_cfg_ids: set = set()
 
+        # Switch dispatch chain blocks - protected from if/else collapse
+        self.switch_dispatch_cfg_ids: set = set()
+
         # Advanced analyses (computed on demand)
         self.dom_analysis: Optional[DominatorAnalysis] = None
         self.loop_analysis: Optional[LoopAnalysis] = None
@@ -95,17 +101,57 @@ class CollapseStructure:
         self.use_advanced_analysis = True  # Enable/disable for testing
 
     def set_switch_patterns(self, patterns):
-        """Set switch patterns for the switch rule."""
+        """Set switch patterns for the switch rule.
+
+        Patterns are sorted so that innermost (nested) switches are processed
+        before outer switches. This ensures inner switches collapse into proper
+        BlockSwitch nodes before they get consumed as case bodies of outer switches.
+        """
+        # Sort patterns: inner switches first (those whose header is inside another switch's all_blocks)
+        # Build a nesting depth for each pattern
+        sorted_patterns = self._sort_switch_patterns_innermost_first(patterns)
+
         # Update both rules list and primary_rules list
         for rule_list in [self.rules, self.primary_rules]:
             for rule in rule_list:
                 if isinstance(rule, RuleBlockSwitch):
-                    rule.set_patterns(patterns)
+                    rule.set_patterns(sorted_patterns)
 
-        # Track which CFG block IDs are switch headers
+        # Track which CFG block IDs are switch headers and dispatch chains
         self.switch_header_cfg_ids = set()
-        for pattern in patterns:
+        self.switch_dispatch_cfg_ids = set()
+        for pattern in sorted_patterns:
             self.switch_header_cfg_ids.add(pattern.header_block)
+            if pattern.dispatch_blocks:
+                self.switch_dispatch_cfg_ids.update(pattern.dispatch_blocks)
+        # Store on graph so rules can access it
+        self.graph._switch_header_cfg_ids = self.switch_header_cfg_ids
+        self.graph._switch_dispatch_cfg_ids = self.switch_dispatch_cfg_ids
+
+    def _sort_switch_patterns_innermost_first(self, patterns):
+        """Sort switch patterns so innermost (nested) switches come first.
+
+        A switch is 'inner' if its header block is contained in another switch's all_blocks.
+        Inner switches must be collapsed before outer switches so they become proper
+        BlockSwitch nodes instead of being consumed as raw case body blocks.
+        """
+        if len(patterns) <= 1:
+            return list(patterns)
+
+        # Build nesting depth: how many other switches contain this pattern's header
+        depths = {}
+        for i, pat in enumerate(patterns):
+            depth = 0
+            for j, other in enumerate(patterns):
+                if i != j and pat.header_block in other.all_blocks:
+                    depth += 1
+            depths[i] = depth
+
+        # Sort by depth descending (deepest nesting first), then by header_block for stability
+        sorted_indices = sorted(range(len(patterns)),
+                                key=lambda i: (-depths[i], patterns[i].header_block))
+
+        return [patterns[i] for i in sorted_indices]
 
     def collapse_all(self) -> Optional[StructuredBlock]:
         """
@@ -300,13 +346,22 @@ class CollapseStructure:
 
                     # Check if this block is a switch header (should only be collapsed by switch rule)
                     is_switch_header = False
+                    is_switch_dispatch = False
                     if isinstance(block, BlockBasic):
                         if block.original_block_id in self.switch_header_cfg_ids:
                             is_switch_header = True
+                        elif block.original_block_id in self.switch_dispatch_cfg_ids:
+                            is_switch_dispatch = True
 
                     for rule in self.primary_rules:
                         # Skip non-switch rules for switch headers
                         if is_switch_header and not isinstance(rule, RuleBlockSwitch):
+                            continue
+
+                        # Skip if/else rules for switch dispatch chain blocks
+                        # These blocks are part of a switch comparison chain (if i==0, if i==1, etc.)
+                        # and should not be collapsed into if/else structures before the switch rule runs
+                        if is_switch_dispatch and isinstance(rule, (RuleBlockProperIf, RuleBlockIfElse, RuleBlockIfNoExit)):
                             continue
 
                         if rule.matches(self.graph, block):
