@@ -1,0 +1,961 @@
+#54001: 	#ame Thunder over the jungle
+#54002: 	#ame Another day, another morning, another reconnaissance mission. Get up, you have a long journey ahead!
+#54003: 	#ame March 1, 1967, 0515 a.m.
+#54004: 	#ame Cambodia, near the Ho-Chi-Minh Trail 
+#54005: 	#ame March 1, 1967, 0530 a. m.
+#54006: 	#ame Jungle in South Vietnam, close to the Cambodian border
+#54007: 	#ame Thunder over the jungle
+#54008: 	#ame An American plane has crashed nearby. The pilot must be found before the Vietcong can get him. Go, go, go, soldiers!
+#54009: 	#ame Check the crash site
+#54010: 	#ame Find the pilot
+#54011: 	#ame Take the pilot to the landing zone
+#54012: 	#ame Fly with the entire team and the rescued pilot to the base
+#54014: 	#ame Rescue the captured pilot
+#54015: 	#ame Blow up the cache
+#54016: 	#ame to untie the pilot
+#54017: 	#ame Thunder over the jungle
+#54018: 	#ame Wrecked plane, pilot nowhere to be seen. He was parachuting nearby, look for him, soldiers!
+#54019: 	#ame Thunder over the jungle
+#54020: 	#ame The jungle is swarming with the Vietcong, this rescue mission will surely be interesting! Hurry or the enemy will get to the pilot first!
+#54021: 	#ame Thunder over the jungle
+#54022: 	#ame Charlie’s nest is here, all the VC have swarmed out of it like ants! But you still have to complete the task – find the pilot!
+#54023: 	#ame Thunder over the jungle
+#54024: 	#ame You found the parachute hanging on the tree but the pilot is nowhere to be seen. It looks like the enemy found him. You have to find and rescue him immediately!
+#54025: 	#ame Thunder over the jungle
+#54026: 	#ame The pilot of the shot-down Thunderchief is held captive by a Vietcong group. Do you know what that means, soldier? A rescue operation! You must rescue the pilot immediately!
+#54027: 	#ame Thunder over the jungle
+#54028: 	#ame Good job, the pilot is safe for now. Now you need to find a suitable spot for landing and call the chopper. So, get going, soldiers!
+#54029: 	#ame Thunder over the jungle
+#54030: 	#ame The pilot was rescued. You must now take him to the landing zone, wait for the chopper and the mission will be complete.
+#54031: 	#ame Thunder over the jungle
+#54032: 	#ame Charlie has a den in the jungle around here. But don’t let that distract you. Proceed to the landing zone.
+#54033: 	#ame Thunder over the jungle
+#54034: 	#ame You found a landing zone, now you need to wait for the chopper to pick you up!
+#54035: 	#ame to check the pilot
+	
+	
+	
+	
+	
+#54041: 	#ame Operation Golden Gift
+#54042: 	#ame The time to move from Pleiku and build your own camp has finally come.  The chopper will drop you at the village nearest the future base. Talk and introduce yourself to the Montagnards of the Jarai tribe, and then explore the area near the hill where your base will be located. Be careful and watch for any bad neighbors! 
+#54043: 	#ame March 18, 1967 - 0925 a.m.
+#54044: 	#ame Jarai Village close to Nui Pek hill
+#54045: 	#ame Visit the Jarai village
+#54046: 	#ame Talk to the village chief.
+#54047: 	#ame Explore the area around the village.
+#54048: 	#ame Operation Golden Gift
+#54049: 	#ame Villagers look quite friendly but the Vietcong supposedly came to their village and now it seems something is going to happen here. Is Charlie coming back?!
+#54050: 	#ame Assist villagers in protecting their village against the Vietcong!
+#54057: 	#ame Follow Lim the hunter to the enemy positions.
+#54051: 	#ame Operation Golden Gift
+#54052: 	#ame You have just been dropped near the Jarai village. Talk and introduce yourself to the Montagnards of the Jarai tribe, and then explore the area near the hill where your base will be located. Be on your guard and watch for any bad company! 
+#54053: 	#ame Operation Golden Gift
+#54054: 	#ame Charlie attacked the village with their typical impudence just as you showed up. You drove the first strike off with the help of the villagers but it seems it’s still not over! 
+#54055: 	#ame Operation Golden Gift
+#54056: 	#ame It's high time to check the jungle and find out where Charlie is creeping out from. Forward, soldiers!
+#54058: 	#ame to speak with Lim the hunter
+	
+	
+	
+	
+	
+	
+	
+	
+#54070: 	#ame to speak with Nguyen.
+#54071: 	#ame Assume positions on the other side of the gorge
+#54072: 	#ame Give Bronson the order to destroy the bridge
+#54073: 	#ame to give the order to detonate the bridge
+#54074: 	#ame Kill the Vietcong who prepared the ambush
+#54075: 	#ame Hanging Bridge
+#54076: 	#ame You are heading to the Vietcong position near the Jarai village. Lim the hunter will lead you. Go for it, soldiers!
+#54077: 	#ame Find the enemy position lead by the native guide.
+#54078: 	#ame Kill the enemy.
+#54079: 	#ame Move to LZ Echo Zulu and wait for the Slick. 
+#54080: 	#ame Hanging Bridge
+#54081: 	#ame The enemy is all over the jungle. So looking for them will not be a problem. But you will have to look harder to find the place that Lim the hunter talked about earlier.
+#54082: 	#ame Hanging Bridge
+#54083: 	#ame You are heading toward the Vietcong position near the Jarai village. Lim the hunter will lead you. Go for it, soldiers!
+#54084: 	#ame Hanging Bridge
+#54085: 	#ame The bridge has been stripped of all enemy defenses. Now it must be destroyed.
+#54086: 	#ame Hanging Bridge
+#54087: 	#ame The bridge is now at the bottom of the gorge. Now is the time to head to the LZ so the Slick can airlift you out!
+#54088: 	#ame Hanging Bridge
+#54089: 	#ame A group of Vietcong failed in their attempt to attack you. Now you need to transfer to LZ Echo Zulu and wait to be airlifted out!
+#54090: 	#ame Hanging Bridge
+#54091: 	#ame You are waiting near the LZ …. The Slick is on the way!
+	
+	
+	
+	
+#54101: 	#ame Operation Pandora's Box
+#54102: 	#ame The Vietcong supposedly have a small factory and storage area beneath the old temple. It’s time to remove Charlie from their den!
+#54103: 	#ame April 28, 1967 - 1900
+#54104: 	#ame Old temple in Ai Tu near the Cambodian border
+#54105: 	#ame Suppress enemy resistance from the chopper.
+#54106: 	#ame Explore the underground factory beneath the temple.
+#54107: 	#ame Eliminate all remaining VC.
+#54108: 	#ame Operation Pandora's Box
+#54109: 	#ame Charlie is confused and for the most part shot to hell by that deadly fire from heaven. It’s time to get down and clean up! We’ve landed so, let’s go!
+#54110: 	#ame Obtain intelligence information.
+#54111: 	#ame to take the pile of papers.
+#54112: 	#ame Operation Pandora's Box
+#54113: 	#ame The temple is clear, at least on the surface. Now you need to explore the underground section and then get out of there!
+#54114: 	#ame Operation Pandora's Box
+#54115: 	#ame The temple is clean, the mission completed and you have plenty of documents stashed in your pockets. The Slick's are on their way, so adios!
+#54116: 	#ame Blow the temple gate with C4
+#54117: 	#ame to place C4 on the gate
+	
+	
+	
+#54130: 	#ame Nui Pek under attack
+#54131: 	#ame It looks like Charlie’s preparing to pay us a visit even though we’re not fully prepared for his welcome. But I don’t think he’ll be disappointed. Hold your position! They won’t pass!
+#54132: 	#ame May 15, 1967, 0430
+#54151: 	#ame Special Forces Nui Pek base
+#54133: 	#ame Hold your position, do not let the enemy inside the base.
+#54134: 	#ame As soon as the cover mortar shelling starts, retreat back to the base.
+#54135: 	#ame Get ready. As soon as shells start falling in front of your bunker it’s time to get your ass back to base.
+#54136: 	#ame Nui Pek under attack
+#54137: 	#ame The forward post can’t be held any longer, the VC have their mortars targeted on it. Prepare for covering fire and quickly retreat back to base.
+#54138: 	#ame Walk with Bronson through the mine field.
+#54139: 	#ame Destroy enemy mortars in the forest.
+#54140: 	#ame Nui Pek under attack
+#54141: 	#ame Enemy mortars hidden somewhere at the foot of the hill are taking their toll. It’s time to destroy them. You’ll walk with Bronson through the mine field, walk around the enemy and get behind them. MOVE IT, MOVE IT!
+#54142: 	#ame Slowly follow Bronson's path, otherwise you may step on a mine!
+#54143: 	#ame You have placed C4 explosives which will detonate in thirty seconds. You’d better move!
+#54144: 	#ame Bronson has placed C4 explosives which will detonate in thirty seconds. You’d better stay clear of the mortar!
+#54145: 	#ame Nui Pek under attack
+#54146: 	#ame You made it through the mine field. You now need to carefully crawl to the mortar post's and destroy them.
+#54147: 	#ame Kill the retreating enemy.
+#54148: 	#ame Retreat back to the base to captain Rosenfield.
+#54149: 	#ame Nui Pek under attack
+#54150: 	#ame The mortars have been destroyed. The enemy is exhausted by their futile attacks, and the destruction of the mortars behind their own backs has demoralized them, so much so, that they’re starting to retreat. Take up positions and make Charlie pay for his impudence.
+#54152: 	#ame to place the c4 in the mortar
+	
+	
+	
+#54160: 	#ame Death valley
+#54161: 	#ame We have a big day ahead of us men. The time has come to pay Charlie a visit at his own house and kick his ass! Enemy artillery positions hidden in the jungle already await you. And unless we make our move now they are going to blow our base to bits!
+#54162: 	#ame May 16, 1967, 1530
+#54163: 	#ame Near a hidden North-Vietnamese army base in Cambodia 
+#54164: 	#ame May 16, 1967, 1700
+#54165: 	#ame Near the North-Vietnamese cannon firing position 
+#54166: 	#ame Take out the radio in the command bunker
+#54167: 	#ame Don’t get caught until the radio is destroyed 
+#54168: 	#ame to destroy Vietnamese radio
+#54169: 	#ame Destroy howitzer no. 1 
+#54170: 	#ame Destroy howitzer no. 2
+#54171: 	#ame The C4 charge is set to explode in 30 seconds. It would be wise to stand back unless you want to lose a body part!
+#54172: 	#ame The C4 charge must be placed exactly right to destroy the cannon. Bronson knows how and where. Order him to come and then by clicking again on the cannon order him to place the explosive. 
+#54173: 	#ame Field guns battery
+#54174: 	#ame Okay, you are near your target - the firing positions of two NVA howitzers. First you must sneak up to their headquarters and destroy their radio, for obvious reasons.
+#54175: 	#ame Field guns battery
+#54176: 	#ame The radio guarding the howitzers has been destroyed. With a bit of luck the VC will not report this to the others. So it’s time to blast those cannons.
+#54177: 	#ame Field guns battery
+#54178: 	#ame One howitzer is destroyed. Now it’s time to destroy the second. So move soldiers! You ain’t got much time!
+#54179: 	#ame Move to where the final strike is going to take place 
+#54180: 	#ame Field guns battery
+#54181: 	#ame Both howitzers have been destroyed. The enemy is confused and doesn’t know what is going on. But we still have one more surprise for Charlie! Move carefully and quietly to the main body of the base. The final strike draws near.
+#54182: 	#ame to give Bronson the order to place the explosive
+#54183: 	#ame Get close to the artillery post.
+#54184: 	#ame Do not let the enemy sound the alarm.
+#54185: 	#ame Preventive strike
+#54186: 	#ame Carefully and quietly go through the jungle filled with enemy troops to the artillery post. You must not be seen!
+	
+	
+	
+	
+	
+	
+#54190: 	#ame Kill the enemy operating the machine gun posts.
+#54191: 	#ame Kill the enemy operating the anti-aircraft machine guns.
+#54192: 	#ame Do not sound the alarm!
+#54193: 	#ame Burn the jungle
+#54194: 	#ame The cannons are destroyed. Let’s get ready for some fun! But first you have to destroy the enemy operating the machine gun posts.
+#54195: 	#ame to place the C4 explosives on the tanker
+#54196: 	#ame to take the papers from the desk
+#54198: 	#ame Retreat and join the others at the LZ.
+#54199: 	#ame Two weeks after this very successful mission for which SFC Douglas was awarded the Silver Star, team A-216 completed an important mission against the Vietcong tax collectors.
+#54200: 	#ame The mission was successful however, sergeant Douglas was shot and killed by a Vietcong sniper.
+#54201: 	#ame Burn the jungle
+#54202: 	#ame The machine gun posts are clean. It’s time to storm in, kill the commander, and see if he had anything interesting in his office. Then blow it all up.
+#54203: 	#ame Kill the commander
+#54204: 	#ame Collect intelligence materials from the NVA commander’s office
+#54205: 	#ame Blow up the fuel storage
+#54206: 	#ame Burn the jungle
+#54207: 	#ame The chopper is on its way, you have to wait for it.
+#54208: 	#ame Wait for the evacuation chopper and fly away.
+#54209: 	#ame Burn the jungle
+#54210: 	#ame The chopper is landing! Hang on!
+	
+	
+#54500: 	#ame Nguyen
+#54501: 	#ame Lim the hunter
+#54502: 	#ame Soldier
+	
+#53100: 	#ame Thunder over the jungle
+#53101: 	#ame A non-eventful patrol around the jungle changes to intense action when bomber crashes nearby!
+#53102: 	#ame Operation Golden Gift
+#53103: 	#ame The visit to the montagnard village seems peaceful at the first, but the Vietcong is hidden somewhere near for sure.
+#53104: 	#ame Hanging Bridge
+#53105: 	#ame The Vietcong has a nest nearby, possibly located near the bridge across the gorge. Find and Destroy!
+#53106: 	#ame Operation Pandora's Box
+#53107: 	#ame The Vietcong have a nice small factory under an old temple, this is where they're busy constructing more damned traps. Storm the temple, kill the Vietcong and destroy the factory.
+#53108: 	#ame Nui Pek under attack
+#53109: 	#ame Charlie is bringing the fight to us and has decided to attack our base. Hold positions and do not let the base fall to the enemy!
+#53110: 	#ame Death valley
+#53111: 	#ame Lead your team through the jungle of the Cambodian border.
+#53112: 	#ame Field guns battery
+#53113: 	#ame You are now near the NVA howitzers. Destroy their radio communications and plant some C4 on the howitzers!
+#53114: 	#ame Burn the jungle
+#53115: 	#ame 
+You are in the centre of the enemy base. Deploy your soldiers, sneak inside, kill the NVA colonel and raise everything to the ground!
+
+#53116: 	#ame Prologue
+#53117: 	#ame Cinematics: F105 flying over the jungle.
+#53118: 	#ame Day in Plei Ku
+#53119: 	#ame Cinematics: Briefing for "Golden Gift"
+#53120: 	#ame Day on Nui Pek
+#53121: 	#ame Cinematics: Briefing for "Pandora's Box"
+#53122: 	#ame Nui Pek after attack
+#53123: 	#ame Cinematics: Briefing for "Fist Alpha"
+#53124: 	#ame Operation Fist Alpha
+#53125: 	#ame Cinematics: Insertion into the Cambodian border
+#53126: 	#ame Night Guard
+#53127: 	#ame Get ready for the night guard shift.
+	
+#53150: 	#ame SF B-Team base at Pleiku 
+#53151: 	#ame March 17, 1967, 1600
+#53152: 	#ame Nui Pek Hill
+#53153: 	#ame March 18, 1967, 0855
+#53154: 	#ame SF Camp under construction at Nui Pek
+#53155: 	#ame April 27, 1967, 1430
+#53156: 	#ame SF Camp under construction at Nui Pek
+#53157: 	#ame May 14, 1967, 2100
+#53160: 	#ame SF Camp under construction at Nui Pek
+#53161: 	#ame May 16. 1967, 1300
+#53158: 	#ame Go to see the captain with Nguyen
+#53159: 	#ame Go to the guard post and take over from Hornster on guard duty.
+	
+#51500: 	#ame Another swamp area for you to kill anyone in your sight!
+#51501: 	#ame Another swamp area for you to grease any enemy you come in contact with!
+#51502: 	#ame Another swamp area, another downed American chopper, and another pilot to rescue or to kill. It just depends if you are SF or VC.
+#51503: 	#ame One of our chopper's has crashed in the swamp. Find the pilot and bring him to the LZ. Watch out for the Vietcong!
+#51504: 	#ame We have shot down an American chopper and it crashed in the swamp. Find it's pilot and kill him! Watch out, there are Americans near for sure.
+#51505: 	#ame Another swamp area, another place to conquer! Occupy whole area by claiming all flags to win!
+#51506: 	#ame You must claim all the flags in the swamp to win.
+#51507: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51508: 	#ame 
+#51509: 	#ame 
+#51510: 	#ame Another muddy area we have to cross. And there's an enemy behind every tree! Sweep the area and take them out.
+#51511: 	#ame One team attacks, while the other defends. The attackers must capture a number of flags in order, while the defenders must stop them for as long as they can. The flags also act as re-spawn points for the attacking team, so it is essential that the defending team stop the attackers from getting a foothold. Once the last flag has been turned, the defenders will become attackers. After the two rounds, the team who took the least amount of time to turn all the flags takes the point.
+#51512: 	#ame A big muddy hill, littered with craters and bodies. There are enemies everywhere. You have to reach the top of the hill!
+#51513: 	#ame A big muddy hill, littered with craters and bodies. The defenders base is at the top. One team attacks, while the other defends. The attackers must capture a number of flags in order, while the defenders must stop them for as long as they can. The flags also act as re-spawn points for the attacking team, so it is essential that the defending team stop the attackers from getting a foothold. Once the last flag has been turned, the defenders will become attackers. After the two rounds, the team who took the least amount of time to turn all the flags takes the point.
+#51514: 	#ame This picturesque stream in the middle of the Vietnamese jungle used to be peaceful place, but no longer. The U.S. and the Vietcong are locked in a battle over this jungle territory. Stealing enemy's flag and defending yours is your goal!
+#51515: 	#ame The VC has a base somewhere in this valley. Marked by a flag. Steal their flag and bring it back to our own flag! But be careful; don't let the enemy to steal ours!
+#51516: 	#ame The U.S. has built a base somewhere nearby. Find them, kill them and get bring their flag back here! But be careful, do not let them steal our flag.
+#51517: 	#ame A crystal clear stream flows through a small rocky valley in the Vietnamese jungle. A man with an AK47 shoots dead his enemy just before he sets off a boobytrap, ripping away his lower body. It's death match, kill or be killed!
+#51518: 	#ame This small rocky valley has been chosen as a camp for both the U.S. Special Forces and the VC guerrillas. The valley is too small for both teams, so some room has to be made. Kill the enemy!
+#51519: 	#ame A U.S plane has crashed in a small valley. The pilot survived, but there's a group of VC trying to track him down. American Special Forces are near by and need to rescue the pilot before the Vietcong find him and kill him.
+#51520: 	#ame This is a Search and rescue mission for downed pilot. You will need to lead the pilot to the LZ while making sure Charlie doesn't send you all home in a box!
+#51521: 	#ame An American plane was shot down and crashed. Go to the wreck and make sure the pilot is dead. Watch out for the U.S, they are here for sure!
+#51522: 	#ame This small rocky valley plays host to a bloody battle. The team who occupies the whole area by claiming all of the flags wins!
+#51523: 	#ame The small Jarai village has become a battleground for the Vietnamese and American soldiers. Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51524: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51525: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51526: 	#ame An American helicopter crashed near the Jarai village. American headquarters sent a rescue squad to find the pilot. There is a cell of Vietcong operating nearby so it won't be easy for them.
+#51527: 	#ame Hurry, guys, we have to find the pilot before Charlie gets him; he's around here for sure. When you find the pilot, bring him to the LZ and a chopper will pick you up.
+#51528: 	#ame Time is of the essence! Although we managed to shot down one of the damned American flying machines, we have to the pilot is dead! Go go go!
+#51529: 	#ame The small village of the Jarai tribe has changed into a killing zone! It's death match, kill or be killed!
+#51530: 	#ame The small Jarai village has become unfortunate enough to host a confrontation between the Green Berets and Vietcong. Eliminate the enemy!  
+#51531: 	#ame The Vietcong have taken the Jarai village. Your aim is to take the village back!
+#51532: 	#ame 
+#51533: 	#ame Some call this the bridge of death and you'll see why.. It's death match!!
+#51534: 	#ame Find the enemy and eliminate them - take no prisoners!
+#51535: 	#ame One side of the gorge is held by the Green Berets, the other by the VC. Each team has to capture the others flag and at the same time defend their own.
+#51536: 	#ame The bridge across the gorge is very important strategic area, which must be either held, or destroyed. 
+#51537: 	#ame The enemy is trying to destroy our bridge! Defend it at all cost!
+#51538: 	#ame The enemy is holding a strategically important bridge across the gorge. We have to destroy it!
+#51539: 	#ame Sweep across the bridge like an arrow of fire and destroy all enemies you find. 
+#51540: 	#ame One team attacks, while the other defends. The attackers must capture a number of flags in order, while the defenders must stop them for as long as they can. The flags also act as re-spawn points for the attacking team, so it is essential that the defending team stop the attackers from getting a foothold. Once the last flag has been turned, the defenders will become attackers. After the two rounds, the team who took the least amount of time to turn all the flags takes the point.
+#51541: 	#ame A deserted temple is an ideal place for hiding ammo stores. The enemy wants to destroy it.
+#51542: 	#ame We have an ammo store hidden in the tunnels underneath the old temple. The enemy have found out, defend it at all cost and don’t let them blow it up!
+#51543: 	#ame The enemy have built an ammo store in the tunnels underneath the old temple. Your mission is simple blow it up!
+#51544: 	#ame This deserted temple is an ideal place for a shootout! Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51545: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag.
+#51546: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51547: 	#ame A deserted temple is an ideal place for a shootout! 
+#51548: 	#ame This deserted temple has a curse that makes a man want to kill anything, even your own brothers in arms. It's death match, kill or be killed!
+#51549: 	#ame The VC guerrillas are hiding in this old deserted temple. The Americans have to drive them out!
+#51550: 	#ame The VC is attacking the American base! They have no chance of making it into the inner perimeter, so they will try to blow up the advance bunker. 
+#51551: 	#ame Charlie is attacking our base! And are trying to blow up the advance bunker at the outer perimeter; stop them!
+#51552: 	#ame Comrades, today, the imperialists will pay for their crimes! We will invade their base and kill them all! But before we can do that, we must blow up their advance bunker!
+#51553: 	#ame The unfinished outer perimeter of the American base and adjacent jungle turns into another battlefield. The team who occupies the whole area by claiming all of the flags wins!
+#51554: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51555: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51556: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51557: 	#ame 
+The Vietcong have attacked an American base. The U.S. knows that only quick counterattack can save the base. So go show the VC who is boss.
+
+#51558: 	#ame An American chopper has crashed near an NVA base in Cambodia. The Vietnamese have sent out a team to kill the pilot, it's your job to rescue him.
+#51559: 	#ame Rescue the pilot before the VC kill him.
+#51560: 	#ame  We must capture the American pilot and kill him!
+#51561: 	#ame A merciless battle rages in the Cambodian jungle near the Vietnamese border! The team who occupies the whole area by claiming all of the flags wins!
+#51562: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51563: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51564: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51565: 	#ame It's death match, kill or be killed!
+#51566: 	#ame Work as a team and kill your enemy to win.
+#51567: 	#ame This small well-hidden NVA camp in Cambodia is a place the Americans have to erase off the map. Eliminate all remaining resistance in the area!
+#51568: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51569: 	#ame One team attacks, while the other defends. The attackers must capture a number of flags in order, while the defenders must stop them for as long as they can. The flags also act as re-spawn points for the attacking team, so it is essential that the defending team stop the attackers from getting a foothold. Once the last flag has been turned, the defenders will become attackers. After the two rounds, the team who took the least amount of time to turn all the flags takes the point.
+#51570: 	#ame Work as a team and kill your enemy to win.
+#51571: 	#ame It's death match, kill or be killed!
+#51572: 	#ame A small training range, the team's task is to blow up the target or to defend it respectively.
+#51573: 	#ame Blow up the enemy box!
+#51574: 	#ame Don't let the enemy blow up the box!
+#51575: 	#ame The team who occupies the whole area by claiming all of the flags wins!
+#51576: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51577: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51578: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51579: 	#ame There is an artillery outpost in the jungle with a radio in the underground bunker; this has to be destroyed before attackers can continue with their mission. Attackers are to get into the underground bunker and destroy the radio; defenders have to stop them.
+#51580: 	#ame Stop the enemy destroying our radio in the underground bunker. 
+#51581: 	#ame Destroy the enemy's radio communications that is located somewhere in the underground bunker.
+#51582: 	#ame The team who occupies the whole area by claiming all of the flags wins!
+#51583: 	#ame Location: NVA artillery outpost in Cambodia. Objective: eliminate the enemy. 
+#51584: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51585: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51586: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51587: 	#ame Hamburger Hill
+#51588: 	#ame It's death match, kill or be killed!
+#51589: 	#ame The team who occupies the whole area by claiming all of the flags wins!
+#51590: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51591: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51592: 	#ame Both teams have their own flag. Stealing enemy's flag and defending yours is your goal!
+#51593: 	#ame Find the Vietcong flag and bring it to where our flag is, but watch out they don't do they same with our flag. 
+#51594: 	#ame Find the American flag. Steal it and defend our own and we shall be victorious.
+#51595: 	#ame The team who occupies the whole area by claiming all of the flags wins!
+#51596: 	#ame Location: Jarai tribe. Orders: Defend the village, clear the area around the village and kill the remains of the enemy forces.
+#51597: 	#ame Swamp
+#51598: 	#ame There are strong Vietcong forces in the area. Fight your way to the LZ and hope the slick arrives in time.
+	
+	
+#54600: 	#ame Claymore
+#54601: 	#ame DP2
+#54602: 	#ame DP Pan magazine
+#54603: 	#ame M14
+#54604: 	#ame M14 magazine
+#54605: 	#ame M14 with optics
+#54606: 	#ame Scorpion
+#54607: 	#ame Scorpion magazine
+#54608: 	#ame Sten II s
+#54609: 	#ame Sten magazine
+#54610: 	#ame Tokarev SVT40
+#54611: 	#ame SVT40 magazine
+#54612: 	#ame SVT40 with optics
+#54620: 	#ame Swamp
+	
+	
+	
+#53200: 	#ame Golden gift\n
+	5 SF, A-216 team\n
+	\n\n
+	Location: area surrounding the Nui Pek hill and the Jarai tribe village, \n
+ Plei Ku prov., II. CTZ\n
+	\n
+	Mission start date: \n
+\t March 18, 1967, time: 0900\n\n
+	Assumed mission completion date: \n
+\t March 18, 1967, time: 1900\n
+	\n
+	Primary mission objective: \n
+Establish closer and friendly contact with the Montagnards at all costs \n 
+Final reconnaissance of the area chosen for the base.\n\n
+	Secondary mission objective: \n
+\t Battle reconnaissance, determine the strength of the enemy units in the area.\n
+	\n
+	Team: \n
+SFC Douglas, SFC Defort, SSGT Crocker, sgt Nguyen Nham, SFC Bronson\n
+	\n
+	Call sign: Viper One\n
+	\n
+	Situation:\n
+	\t Upon evaluating all the information and data supplied by intelligence, command has issued an order to build a new camp designed to train the Montagnards for the CIDG project in the Nui Pek area. The primary mission objective is to contact the Jarai tribe mountaineers in the nearby village and persuade them to cooperate. At the same time, the team should try to determine the strength of the enemy in the area. It is assumed that at least one branch of the Ho-Chi-Minh trail from Cambodia to this part of Vietnam leads through the area. The scanty information obtained by the LLBD’s reconnaissance shows there is relatively weak guerilla unit activity, who also seem to steer clear of the local residents as the locals are hostile towards them. Upon establishing contact with the villagers, the team surveys the area and transfers to the landing zone and waits for the chopper.\n
+	\n
+	Course of action: \n
+	\t The team lead by SFC Douglas will be dropped off at 0855 and 0900 in the “Michigan” landing zone, coordinates Alpha – Tango – Charlie, 500 meters southeast of the village. Following the reconnaissance and scouting for possible traces of the enemy, the team will transfer to the village where they will try to accomplish the primary mission objective. If they run into the enemy, they should kill them and possibly collect intelligence information.\n
+	
+	
+	
+	
+#53205: 	#ame Operation “Pandora’s Box”\n
+	5 SF, A-216 team\n
+	\n\n
+	Location: deserted village and temple in Ai Tu, \n
+Plei Ku prov., II. CTZ\n
+	\n
+	Mission execution date:\n
+	\t  April 28, 1967\n\n
+	Assumed mission execution time:\n
+\t 1900 – 2000\n
+	\n
+	Primary mission objective:\n
+Destroy the underground ammunition factory \n
+\t Kill the North Vietnamese overseeing the manufacturing process in the factory.\n
+	\n
+	Secondary mission objective: \n
+Disrupt the logistic structure of the VC in the area where the A-216 team operates \n
+Kill as many enemies as possible.\n
+	\n
+	Team: \n
+SFC Douglas, SFC Defort, SSGT Crocker, sgt Nguyen Nham, SFC Bronson, SFC Hornster\n
+	                6 CIDG members – future commanders of individual CIDG training platoons\n
+	\n
+	Call sign: “Hammer 1” and “Hammer 2”.\n
+	\n
+	Situation: \n
+	\t Intelligence has informed the A-216 commander about the existence of a VC underground factory manufacturing ammunition and explosives for enemy guerilla units operating in the area. According to intelligence the NVA across the border are facing serious problems in their supply chain and are on the verge of total disintegration, as the American air force intensively attacks their supply convoys on the Ho-Chi-Minh trail. Thus, the NVA have been unable to supply ammunition to their VC units. For that reason, the North has transferred several specialists from the Democratic Republic of Vietnam to this area who have launched the production of ammunition and explosives from stolen materials. Intelligence indicates a successful strike against this factory could seriously disrupt and possibly, completely paralyze (if only temporarily) the guerilla’s ability to conduct massive offensive activities in the area. However, the South Vietnamese reconnaissance information is rather sketchy, incomplete and inaccurate, so the strike will be conducted with a certain amount of risk.\n
+	\n
+	Course of action:\n
+	\t The mission must be precisely timed. An F-4 (call sign “Buffalo 2” will attack the target area at 1900. At 1905 sharp, three UH-1s will appear above the area carrying an assault group. In one pass the gunners on board will try to kill as many surviving guerilla troops as possible who are defending the building where the North Vietnamese experts are located.\n
+	\t The drop will take place immediately after. Speed will be critical. Only Hammer 1 will go into the building itself. The remaining Hammer 2 members will secure the path to the landing zone, the area surrounding the building and keep guerilla reinforcements at bay with gunfire. The assault team will thus gain the time required for successful task completion. The most important task is to kill the North Vietnamese experts, destroy the manufacturing machines and put the factory out of operation, rendering it irreparable. As soon as the primary mission objectives are completed, the entire unit must be rapidly evacuated as fierce enemy retaliation is expected.\n
+	
+	
+#53210: 	#ame Operation "Fist Alpha"\n
+	5 SF, A-216 team.\n
+	\n\n
+	Location: a series of camps and encampments about 10 kilometers inside the Cambodian boarder. \n
+	            (Details on destination are top secret.)\n
+	\n
+	Mission execution date and time: \n
+\t May 16, 1967, 1530 - 1830\n
+	\n
+	Primary mission objective: \n
+\t retaliation attack on the 32nd regiment of the 1st NVA division’s camp. \n
+	\t Destroy the NVA’s artillery equipment
+\t Destroy fuel supplies of the 32nd regiment of the 1st NVA division.\n
+	\n
+	\n
+	Secondary mission objective: \n
+\t Kill high ranking officers of the 32nd regiment of the 1st NVA division \n
+\tAcquire intelligence documents.\n
+	\n
+	\n
+	Team: entire.\n
+	\n
+	Call sign: “Fist Alpha”.\n
+	\n
+	Co-operating units: \n
+\t A-263 (“Fist Sigma”), A-278 (“Fist Omega”) and 115th CIDG company (“Fist Gamma”).\n
+	\n
+	Situation: \n
+#53211: 	#ame \t When interrogating the guerillas captured during the assault on Nui Pek on May 9, the LLDB intelligence officers learned the precise location of the extensive camp complex serving as the base for the units of the 32nd regiment of the 1st NVA division in Cambodia. In addition, this regiment provides logistic and military support to the guerillas on the other side of the border, where the A-216 team operates. A battery of M-46 130 mm field cannons, is located in this camp which the North Vietnamese employ for shelling targets on the South Vietnamese side of the border. \n
+	\t It was thus decided to carry out a top secret mission called “Fist Alpha” and attack this battery, render it non-functional, destroy the regiment’s fuel supplies used for supply vehicles, try to kill any high-ranking officers from the regiment’s command and obtain intelligence information and documents.\n
+	\t Teams A-253 and A-278 will attack different targets in the same complex within this operation and the 115th CIDG platoon in conjunction with USAF aircraft will launch diversionary attacks before the mission begins on less important targets. The final task, once the above primary tasks have been completed, is to guide the USAF aircraft to the entire complex so it can be bombed.\n
+	\n
+	Course of action: \n
+	\t Individual teams will be dropped by choppers several kilometers from their targets at 1530. The drop off will be synchronized with the commencement of diversionary USAF aircraft action. They will take off from bases in Thailand and bomb less important targets in and around the base complex. Simultaneously, the 115th CIDG platoon will attack the complex from the opposite (north) side. The combination of these actions should divert the North Vietnamese’s attention from the primary targets.\n
+	\t Team A-216, entrusted with the most difficult task, must destroy the M-46 cannon battery. Only its approximate location is known, as it is thoroughly camouflaged and air reconnaissance has not yet been able to detect it and confirm its presence. We presume, that whole area around cannon battery is heavily guarded and has its own radio station Team must first eliminate the guards and destroy the radio, to prevent NVA regimental command being alarmed. Then the actual destruction of the field guns may begin \n
+#53212: 	#ame 
+\t. Afterwards, the team will focus on the 32nd regimental command center. This is located approximately one klick from the battery position. Primary target are obviously the guards around the base. We can presume, that their concentration will be partly disrupted by cover actions of Gamma and USAF. After elimination of guards the team will secure the base surroundings and SFC Douglas will infiltrate inside the complex, directly to the regimental command center. Here if possible, he will kill any high ranking officers, especially the regimental commander, colonel Lu Van Hao. Needed is also retrieval of any strategically important documents. \n
+\t Then SFC Douglas will destroy the fuel supplies the North Vietnamese desperately need. Next, they will guide the bombers in and quickly evacuate. Radio navigation of B-52 bombers will be done by team Sigma.\n
+	\n
+#53213: 	#ame Appendix: commander of 32nd regiment of 1st NVA division, colonel Lu Van Hao, brief characterization:\n
+	One of the most able North Vietnamese professional soldiers\n
+	Born on November 15 in Phat Diem in Annam\n
+	He was one of the first members of Vietnamese party, in age of 19\n
+	Friend of Ho Chi Minh and Giap, true communist\n
+	Member of resistance against French, for which he was punished in 1939. He run out to China, where he fought alongside the Mao's Red Army\n
+	After the founding of Viet Minh volunteered for Vietnam fight, but Ho Chi Ming let him in the China, to gain more experience\n
+	In the year 1943 returned to Vietnam and fought against Japanese and French colonial administration. He had connections with American OSS\n
+	After the end of the World War II he fought against french expeditional forces. Viet Minh units under his command were well known for their high battle morale, iron discipline and fanatical resolution. They were also known for the cruelty against civilians, especially in areas inhabited by Catholics. Hao is absolutely ruthless, when he needs to be, he has no respects for lives of his soldiers, let alone for life of prisoners or civilians. He often commands his troops to do absolutely crazy and suicidal attacks. There is only one punishment for not obeying his orders: bullet. \n
+	Veteran from Dien Bien Phu, where he commanded assault battalion moving in the first line against french battlements.\n
+	Awarded by several North Vietnamese and China military medals.\n
+	After the french defeat attended military schools in the Soviet Union.\n
+	In the yearly sixties refused high position in the general staff and chose command in the battle unit.\n
+	\n
+	\n
+	IMPORTANT NOTICE: NO EVIDENCE REVEALING THE PRESENCE OF AMERICAN TROOPS IN CAMBODIA MAY BE LEFT ON CAMBODIAN SOIL!!!\n
+	
+	
+	
+	
+	
+	
+#53215: 	#ame Mission name: \n
+\t Without name (ordinary reconnaissance)\n
+	\n
+	Mission start date and time: \n
+\t Feb. 27, 1967, 0300.\n\n
+	Assumed mission completion date and time: March 3, 1967, 12:00.\n
+	Actual mission completion date and time: \n
+\t March 1, 1967, 0937.\n
+	\n
+	Location: \n
+\t Area alongside the Cambodian border near Nui Pek hill, \n
+\t sector 6-23 Delta, \n
+\t Plei Ku prov., II. CTZ\n
+	\n
+	\t While executing routine mission, its primary goal being to find a suitable location to build a CIDG training camp and establish contact with local residents, the team established visual contact with the US aircraft damaged over the Ho Chi Minh Trail, whose pilot managed to eject before the aircraft crashed. The Thunderchief crashed several hundred meters away in the jungle.\n
+	\t The team immediately began searching for the pilot and radioed captain Rosenfield to call off the USAF’s rescue operation, as they were in the area and would carry out the search. They also requested airlift by chopper, should there be a need to quickly evacuate.\n
+	\t Pilot, lieutenant Francis Bradley, was found unconscious, but only with mild injuries. The team ran into a small VC unit operating in that area. The enemy immediately came to the crash area, in attempt to capture the pilot and acquire materials from the wreckage. After the pilot was found and treated initially, the team made for the landing zone under constant fire. The chopper extracted them.\n
+	
+	
+#53220: 	#ame Mission name: \n
+\t “Golden Gift”\n
+	\n
+	Mission start date: \n
+\t March 18, 1967, 0600.\n\n
+	Actual mission completion date: \n
+\t March 18, 1967, 1331.\n
+	\n
+	Location: \n
+\t Canyon near the Jarai village, the village itself.\n
+	\n
+	\t The A-216 team lead by SFC Douglas’ task was to explore the Jarai village and establish friendly contact with the tribe in order to convince them to join the CIDG project and guard the border areas.\n
+	\t After they were dropped off near the village and met with the elders, their negotiations were suddenly disrupted by a local guard reporting several guerillas units approaching.\n
+	\t The team immediately took up positions in front of the village as SFC. Douglas was worried about casualties among villagers, should the battle take place in the middle of the Montagnard village. Following a short fire-fight, the team killed the guerillas who probably came to steal food from the villagers.\n
+	\t This event broke the ice and the villagers promised help and support especially after Sgt. Douglas let them keep the guns from the dead communists. One of the villagers who spoke broken English, said he could take the team to a place which is used by the VC. Thus they found an unexpected target – a secret guerilla hanging bridge over a gorge. Its importance was clear from the fact it was guarded by machine gun post. After these were destroyed, sapper Bronson blew up the bridge using the C-4 explosives and the team transferred to landing zone “Echo Zulu”, from which they were airlifted.\n
+	
+	
+	
+	
+#53225: 	#ame Mission name: \n
+\t “Pandora’s Box”\n
+	\n
+	Mission execution date: \n
+\t April 28, 1964\n\n
+	\n
+	Mission execution time: \n
+\t 1900 – 1955.\n
+	\n
+	Location: \n
+\t Deserted village and a Buddhist temple in Ai Tu.\n
+	\n
+	\t The A-216 team’s task was to destroy the ammunition factory supplying the local VC units which were located by South Vietnamese reconnaissance in the underground area under the Buddhist temple near the deserted Ai Tu village.\n
+	\t Just before they were dropped off, a USAF F-4 Phantom II attacked the target area. Afterwards, the A-216 team accompanied by several mountaineers from CIDG, were dropped off by three UH-1. They encountered relatively strong resistance from the enemy on the ground. Despite that, the selected men were able to get into the temple and underground spaces where they successfully completed their tasks. The North Vietnamese experts were killed and sapper Bronson placed C-4 explosive throughout the entire structure whose detonation was set to 1955. In the meantime, the cover team on the surface kept the enemy at a distance with constant fire. Afterwards, the entire team was evacuated under heavy fire.\n
+	\t The explosives detonated at 1955 sharp, right before the evacuation choppers left the area. A strong explosion was seen followed by a chain of smaller secondary explosions. The building was completely destroyed.\n
+	
+	
+	
+	
+#53230: 	#ame Mission name: \n
+\t none.\n
+	\n
+	Date: May 15, 1967\n
+	\n
+	Location: \n
+\t Nui Pek camp and its immediate surroundings.\n
+	\n
+	\t The VC attacked the Nui Pek base under construction on May 9 at 0500, possibly in retaliation for their ammunition factory which was destroyed and as a reaction to the strong presence of SF in the area. Since the unit was notified beforehand about a possible attack, and command took this warning seriously, the defense of the base was quickly intensified by newly built machinegun posts and barricades.\n
+	\t Following the initial intense enemy attack, the unit managed to slow the enemy down and eventually stop him. The enemy responded with mortar-fire which were destroyed by the brave action of SFC Douglas and SFC Bronson. After this successful counter attack, the enemy was completely weakened and the attack on Nui Pek was ended at: 1000 as stated in the report to Plei Ku.\n
+	\t During the cleaning operations there was a strong explosion nearby the base. It was probably a howitzer shell, luckily it didn't hit the base and there was no further damage from the explosion, but it is only matter of time till the howitzer battery hidden probably in the jungle at the border with Cambodia improves it's aim and destroys the SF camp. Finding and elimination of this howitzer battery is now mission of maximal priority. Survival of the Nui Pek camp depends on it.
+	
+	
+	
+#53235: 	#ame Mission name: \n
+\t “Fist Alpha”\n
+	\n
+	Mission execution date: \n
+\t 16.5.1967\n
+	\n
+	Mission execution time: \n
+\t 1530 – 1900.\n
+	\n
+	Location: \n
+\t Border area inside Cambodia, called “Acapulco” (as it is top secret).\n
+	\n
+	\n
+	\t The A-216 team lead by Sgt. Douglas participated in an extensive secret mission across the Cambodia border. The team was dropped off in the jungle, 4 kilometers from a cannon battery (spot height “Clove”) which they were to destroy. Upon quietly approaching and destroying the anti-aircraft gun post, the team members shot the cannon operators and using the C-4 explosives, blew up the cannons. After destroying the battery, the team made their way to the command of the 32nd NVA regiment, about 5 kilometers away, where their fuel storage was located. Under cover, the team killed the machine gunners in their posts and then attacked the anti-aircraft gun posts killing several officers and placed C-4 explosives. Afterwards, the team members retreated to landing zone “Alligator” from which they were airlifted by two UH-1s. \n
+	\t This was followed by a massive combined air raid which set the entire base complex on fire.\n
+	
+#53240: 	#ame Nguyen Van Coc
+#53241: 	#ame Le Thanh Dao
+#53242: 	#ame Vu Ngoc Dinh
+#53243: 	#ame Nguyen Ngoc Do
+#53244: 	#ame Dang Ngoc Ngu
+#53245: 	#ame Nguyen Duc Soat
+#53246: 	#ame Pham Ngoc Loan
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#53250: 	#ame TECHNICAL EQUIPMENT AND VEHICLE DESCRIPTION \n
+	\n
+#53251: 	#ame AIRCRAFT AND HELICOPTERS\n
+	\n
+#53259: 	#ame B-52
+#53260: 	#ame Boeing B-52 Stratofortress \n
+#53261: 	#ame It began service in 1952 as a strategic bomber. The USAF deployed its D and F versions in Vietnam. It is a conventional bomber, used for strategic bombing of the Democratic Republic of Vietnam, as well as for tactical bombing purposes when needed to support allied assault missions. These eight-engine monsters could be seen over the Ho-Chi-Minh trail, Hanoi and Haiphong, or in the sky over the South Vietnamese jungle, as well as the Mu Gia pass. The Stratofortresses were deployed from the Andersen base in Guam and U-Tapao in Thailand.\n
+	                Crew:…....…….............6 men\n
+	                Length:………………..47.85 meters\n
+	                Wingspan:…………...56.39 meters\n
+	                Height:……………….12.4 meters\n
+	                Maximum speed:….…1,014 km/h at an altitude of 12,200 meters\n
+	                Weapons: \n
+	- 20 mm caliber cannon located in the remotely controlled and radar guided tail shooting area\n
+	                        - up to 24,000 kg of bombs\n
+	
+#53269: 	#ame F-4
+#53270: 	#ame McDonnell Douglas F-4 Phantom II. \n
+#53271: 	#ame One of the most successful and important fighter jets of the 60’s. Originally designed as a naval deck fighter, was used by air force units in all sections of the US Military. This large two-seater aircraft was originally armed with only air-to-air guided missiles, which was the norm at the end of the 50’s and beginning of the 60’s in the west. Eventually, drawing from experience in battle with the North Vietnamese MiGs, they were additionally armed with M-61 A six-barrel rotary cannons. It was deployed in Vietnam as a full fledged “thoroughbred” fighter jet and also used for tactical bombing raids and support for allied ground troops.\n
+	           Length:…………………………...17.77 meters\n
+	           Wingspan:………………………11.71 meters\n
+	           Height:…………………………..4.95 meters\n
+	           Maximum speed:………………..2,413 km/h \n
+	(Mach=2.27) at an altitude of 13,715 meters.\n
+	\n
+	           Flight range (with four anti-aircraft guided Sparrow missiles and \n
+	a 2,270 liter additional tank): 2,860 km\n
+	           Empty aircraft weight:…..12,654 kg\n
+	           Maximum takeoff weight:….24,857 kg\n
+	 \n
+	The Phantom II version E could be nicknamed the “child of Vietnam”. In comparison to other versions, it was improved significantly, the most important improvements being the installation of special wing flaps, providing better maneuverability while fully loaded, as well as the standard mounting of the M-61 A1 cannon:\n
+	Length:……………………..…19,20 meters\n
+	Wingspan:……………………..11.70 meters\n
+	Height:……………………….…5.03 meters\n
+	Maximum speed:……………….2,369 km/h (Mach=2,23) at an altitude of 12,190 meters\n
+	flight range (with one 2,270 liter and two 1,400 liter auxiliary tanks): ………………………..2,596 kilometers\n
+	Empty aircraft weight:…….13,757 kg\n
+	Maximum takeoff weight:……28,030 kg\n
+	\n
+	
+	
+#53279: 	#ame F-105D
+#53280: 	#ame Republic F-105D Thunderchief\n
+#53281: 	#ame The famous Thud. The USAF obtained the Thunderchief version D on Sept. 28, 1960. However, they didn’t get it into service with the first operation unit – 4th TFW – until the summer of the following year. Even though the F-4 Phantom II became the symbol of American supremacy in southeast Asia, it is an known fact the Thud was the “workhorse” of the bombing offensive against the Democratic Republic of Vietnam. The EF-105F version of the two-seater Thunderchief proved to be efficient during the dangerous “Wild Weasel” missions, where their crews over North Vietnam would detect SAM anti-aircraft missile batteries and attract their fire, ahead of bomber or fighter raids.\n
+	This large, all-weather fighter aircraft was originally designed as a one-seater and was able to bomb with conventional bombs as well as attack with tactical nuclear weapons. In addition, it was efficient in traditional dog-fights with enemy fighter jets. For this reason it was equipped with the M-61 A1 20 mm cannon. It can be said it met all the requirements but it was relatively vulnerable to anti-aircraft machine gun fire.\n
+	            Length:…………………………19.63 meters\n
+	            Wingspan:…………………….10.64 meters\n
+	            Height:…………………………5.99 meters\n
+	            Maximum speed:……………...2,208 km/h (Mach=2,08) at an altitude of 11,000 meters\n
+	                                            .…………..1,345 km/h (Mach=1,1) \n
+	at sea level\n
+	            Flight range:…………………..3,552 kilometers\n
+	            Empty aircraft weight:….12,181 kg\n
+	            Maximum takeoff speed:…23,967 kg\n
+	
+#53289: 	#ame Ch-47
+#53290: 	#ame Boeing CH-47 Chinook\n
+#53291: 	#ame One of the most widely used universal fighter helicopters. This two-rotary monster won recognition and admiration due for its multi-purpose use. The American Army received the first Chinooks in the late 1962. Supposedly their first mission was the battle in the Ia Drang valley near the Cambodian border, which the Americans fought in the fall of 1965. In Vietnam, the Chinooks served to transport large ally units, heavy loads and was additionally armed with machine guns and cannons similar to a “gunship”.\n
+	           Length:…………………30.18 meters\n
+	           Rotor diameter:………..18.29 meters\n
+	           Maximum speed:….…..256 km/h\n
+	           Range:………………….370 km\n
+	           Dead weight:………...44 soldiers or 12,700 kg load\n
+#53299: 	#ame UH-1 Huey
+#53300: 	#ame Bell UH-1 Iroquois/Huey\n
+#53301: 	#ame Bell’s Iroquois versions B, C, D and H is one-engine, versatile helicopter with a traditional design utilizing a two-blade supporting and stabilizing rotor. It was designed to be a maneuverable craft for the transportation of personnel as well as material to front lines. The quality of this chopper is attested to by the fact that various versions of it are still used by numerous countries all over the world. The US Army used it for transportation, evacuation, rescue, the transfer of injured soldiers, as well as an attack aircraft. In addition, it was used as a supply aircraft equipped with spray bars for spraying defoliants and proved to be useful in transporting special units as well as CIA agents. It’s impossible to say how many soldiers the UH-1 has transported into missions, how many injured soldiers it saved or how many dead soldiers flew on board. This machine, more than anything else, is a symbol of the Vietnam war. Its very well known factory name – Iroquois – has been almost forgotten, as the public know it by only one name, “Huey”.\n
+	           Length:………………………..17.6 meters\n
+	           Main rotor diameter:………...14.6 meters\n
+	           Maximum speed:………….…204 km/h\n
+	           Range:………………………...512 km\n
+	           Dead weight:……………..….1,950 kg\n
+	
+	
+#53350: 	#ame TECHNICAL SURFACE EQUIPMENT\n
+	
+#53359: 	#ame M-151
+#53360: 	#ame Ford M-151 Mutt \n
+#53361: 	#ame Light and lively terrain vehicle of the US Army and Marines. A dignified successor of the Willis Jeep. Equipped with a gas four-cylinder engine whose output is 53 kW at 4,000 rev/min. It provided a 60% climb and a range of 480 km, with an off-road cargo load of 363 kg. In Vietnam, in addition to their primary function as quick transport, the Mutts also served as radio and armored vehicles equipped with heavy machine guns which accompanied military convoys and were also used by the American MPs. Mutts with Browning M-2 gun-carriages are a powerful and efficient weapon when fighting the enemy.\n
+	
+#53369: 	#ame M-35
+#53370: 	#ame REO M-35 \n
+#53371: 	#ame This multi-purpose vehicle developed right after the WWII was originally manufactured by REO and later by Kaiser Jeep Co. The vehicle had a diesel engine and a 4-speed manual transmission. The M-35 was highly reliable and easy to maintain. Its numerous versions were manufactured as: a traditional transport vehicle, a tanker, construction vehicle, etc. The Vietnam era model was equipped with an M-60 machine gun placed over the passenger seat.\n
+	           Weight:……………………….…….5.9 tons\n
+	           Length:……………………………...6.7 meters\n
+	           Transport load weight:……………..4.5 tons\n
+	           Maximum speed:……………..……90 km/h\n
+	           Range:…………………………..…480 km\n
+	
+#53379: 	#ame M-46
+#53380: 	#ame M-46 field cannon (Chinese copy: 59 type) \n
+#53381: 	#ame This cannon was developed in the 1950’s. Its 58 caliber barrel provides an unusually long range of 27 kilometers! In addition to the Soviet Red Army and the Chinese Communist Army, this cannon was used in almost all wars and local conflicts during the late 20th century. This type is widely used by armies of various countries over the world. During the Vietnam conflict this cannon was popular with the North Vietnamese Army, which thanks to its outstanding range, was able to shell both American and South Vietnamese targets located within the wide border area, while remaining safely stationed inside Cambodia.\n
+	           Crew:………………………..…..9 men\n
+	           Ammo:………………………….130 mm\n
+	           Weight:………………………….8,400 kg\n
+	           Barrel length:…………………..7.6 meters\n
+	           Traditional cartridge weight:…….33.4 kg\n
+	           Range:……………………………27,150 meters\n
+	           Rate of fire:………………………….6 shots/min.\n
+	
+#53389: 	#ame ZIL-157
+#53390: 	#ame ZIL-157\n
+#53391: 	#ame This is a medium-class three-axle off-road vehicle. This versatile truck was manufactured in various modifications – a tanker, dray, box, radio vehicle, etc. It’s excellent off-road driving abilities made it perfect for transporting materials and supplies on the Ho-Chi-Minh trail. The NVA also used it to transport SA-2 rockets. The vehicle was equipped with a six-cylinder gas engine whose output at 2,800 rev/min is 80 kW.\n
+	           Length:……………………………….6.70 meters\n
+	           Width:………………………………..2.32 meters\n
+	           Load weight – on road:……………...4,500 kg\n
+	                                 - off road:…..……...….2,500 kg\n
+	           Maximum speed:…………………...65 km/h\n
+	
+#53399: 	#ame GAZ-67
+#53400: 	#ame GAZ-67 \n
+#53401: 	#ame Also known as the “Chapayev”. Essentially, this is a copy of the American Willis Jeep (version A) which were provided to the Soviet Army by the USA during WWII, before its more famous B version.\n
+	Soviet industry however, was not able to copy the American original with the necessary precision or use quality materials, thus the copy, type 67, was indeed no match for its original. In reality, the GAZ was highly defective. Its only advantage is that it has a simple to drive unit with undemanding requirements for fuel quality.\n
+	
+	
+#53440: 	#ame Infantry weapons\n
+#53449: 	#ame Browning M2
+#53450: 	#ame Browning M-2 \n
+#53451: 	#ame            Ammo:…………….0.5 inch Browning (12.7 mm)\n
+	           Weight:…………...39.1 kg/ 49.4 kg\n
+	           Length:…………...1,653 mm\n
+	           Rate of fire:……….…450-600 shots/min.\n
+	           Effective range:…...2,000 meters\n
+	One of the most feared weapons used by the infantry. This has been one of the most successful guns and it’s hard to believe that it was introduced some 40 years ago. The American soldiers like it for its reliability, range and devastating effect on its target. Various modifications of this weapon are used as positional weapons on tripods or in gun-carriages mounted on military vehicles or as anti-aircraft missiles. The firing ability of this air-cooled machine gun is so versatile that it can be used not only against enemy infantry targets far away, efficiently ruling out the danger from return fire, but when specialized ammunition is utilized, light fortifications, buildings or even military vehicles can be destroyed.\n
+	
+#53460: 	#ame Degtaryev DSK 1938 \n
+#53461: 	#ame            Ammo:……………..12.7 mm\n
+	           Weight:……………..35.5 kg\n
+	           Rate of fire:…………...550 shots/min.\n
+	This Soviet, air-cooled heavy machine gun, used as an anti-artillery weapon, was employed by the Soviet Red Army, their satellites, as well as the Chinese Communist Army. It is a massive and efficient weapon, unpopular with some guerilla groups due to its weight, which significantly restricts mobility. Despite that it is a dangerous defensive weapon, highly efficient and deadly.\n
+	
+#53470: 	#ame M-14 \n
+#53471: 	#ame            Ammo:………………….7.62 mm x 51 (.308“)\n
+	           Weight:………………….5.1 kg\n
+	           Length:………….……...1,120 mm\n
+	           Barrel length:……..……559 mm\n
+	           Rate of fire:…………….....700 shots/min.\n
+	           Magazine capacity:……..20 bullets\n
+	An automatic weapon whose construction was based on the successful M-1 Garand. In the 50’s the US Army refused to follow international trends in the assault weapon industry, which were turning toward the development of light weapons utilizing smaller caliber bullets. Even though the M-14 is a very precise, top-quality, sturdy weapon with automatic and semi-automatic firing capabilities, it will be soon replaced by new weapon. In Vietnam, it is used by snipers but those were specially picked top-quality models, the most accurate ones equipped with optics.\n
+#53472: 	#ame Ammo:………………….7.62 mm x 51 (.308“)\n
+	Magazine capacity:……..20 bullets\n
+	Rate of fire:…………….....700 shots/min.\n
+	An automatic weapon whose construction was based on the successful M-1 Garand. M-14 is a very precise, top-quality, sturdy weapon with automatic and semi-automatic firing capabilities, model with sniperscopre is often used by snipers.\n
+	
+#53480: 	#ame 61 Scorpion\n
+#53481: 	#ame            Caliber………………….7.65 mm\n
+	           Weight:…………………2 kg\n
+	           Length:…………….…..270 mm\n
+	           Rate of fire:……………….840 shots/min\n
+	           Magazine capacity:……10 – 20 bullets\n
+	The 61 Scorpion machine gun was developed and manufactured in Czechoslovakia for tank crews, police and the needs of special units. When using 7.65 caliber ammo, the narrow breech was not able to absorb the recoil, therefore counterweights were added to reduce it. Despite this modification, the weapon was virtually impossible to target accurately with while firing continuously. It is still popular all over the world, unfortunately and especially with various terrorist groups because of its small size. It is said Ho-Chi-Min’s bodyguards were armed with these weapons.\n
+#53482: 	#ame Ammo: 7.65 mm\n
+	Magazine capacity: 10 – 20 bullets\n
+	Rate of fire: 840 shots/min\n
+	The 61 Scorpion machine gun was developed and manufactured in Czechoslovakia for tank crews, police and the needs of special units. It is popular all over the world, unfortunately and especially with various terrorist groups because of its small size. It is said Ho-Chi-Min’s bodyguards were armed with these weapons.\n
+#53489: 	#ame SVT1940
+#53490: 	#ame TOKAREV SVT1940\n
+#53491: 	#ame Caliber..................................7.62 x 54\n
+	Weight....……………..........3.95 kg\n
+	Length..........………….........1,226 mm\n
+	Magazine capacity...….........20 bullets\n
+	Tokarev SVT1938 and its successor were developed during WWII in the Soviet Union. Type 1938 of this semiautomatic weapon was criticized for numerous flaws which were corrected in the 1940 type, of which over two million were produced. It was also manufactured as a special sniper gun equipped with PU optics with a 3.5 x zoom, although wasn’t as popular as other types, such as Mosin 1891/30.\n
+#53492: 	#ame Ammo: 7.62 x 54R\n
+	Magazine capacity: 20 bullets\n
+	Tokarev SVT1940 was developed during WWII in the Soviet Union. SVT 1940, unlike it's predecessor SVT 1938, offered the automatic feature. It was also manufactured as a special sniper gun equipped with PU optics with a 3.5 x zoom.\n
+	
+#53500: 	#ame MAT – 49 \n
+#53501: 	#ame             Ammo:…………………..9 mm Parabellum\n
+	            Weight:…………………..3.5 kg\n
+	            Length:……………..……460 mm\n
+	            Rate of fire:………………...400 shots/min.\n
+	            Magazine capacity:…..…..20 – 30 bullets\n
+	A very effective French machine gun which became popular in the colonial wars in Indochina and Algeria. The magazine may be tilted forward under the barrel so this weapon is suitable for assault vehicle crews or paratroopers. In North Vietnam this weapon was slightly modified and was produced for the NVA with an extended barrel and adapted to use Soviet 7.62 TT bullets.\n
+	
+#53510: 	#ame Sten MK IIs\n
+	\n
+#53511: 	#ame      Ammo:…………………9 mm Parabellum\n
+	     Weight:……………3.1 kg\n
+	     Length:………………..762mm ( 908mm with silencer)\n
+	     Rate of fire:……………..550 rpm (450 rpm with silencer)\n
+	     Magazine capacity:….32 rounds\n
+	     This submachine gun was designed as a cheap, durable and easy to manufacture gun by British designers Sheppard and Turpin during the World War II in Enfield armory (this is the reason for the name 'Sten'). Price of the gun was incredibly low, only 2.5 pounds, so the gun was manufactured in big numbers. It was used by paratroopers and vehicle crews. Also many guerilla fighters from the western Europe used this gun for it's durability.\n
+	     Although the Sten is very durable gun, capable of working in both cold and dirty conditions, it has one big disadvantage - it's magazine and feeding system, since those were prone to failures to feed. It is not recommended to hold the gun by the magazine, since it could cause the jamming of the gun easily.\n
+	     The Sten is used in Vietnam mainly by Australian advisors, Green Beret and Seal, especially the version with a silencer.\n
+#53512: 	#ame Ammo: 9 mm Parabellum\n
+	Rate of fire: 550 rpm (450 rpm with silencer)\n
+	Magazine capacity: 32 rounds\n
+	This sub-machine gun was designed during the World War II in England. It was used by paratroopers and vehicle crews. The Sten is used in Vietnam mainly by Australian advisors, Green Beret and NAVY SEALs, especially the version IIs with a silencer.\n
+	
+#53520: 	#ame M-14 mine\n
+#53521: 	#ame Anti-artillery mine developed in the 1950’s. It inflicts injury or death by explosion. The casing is plastic. Detonation is achieved by applying foot pressure.\n
+	
+#53530: 	#ame M-18 Claymore mine\n
+#53531: 	#ame “Directional mine”. When detonated, the explosion hurls a shower of steel fragments to a distance of 250 meters with a 60 degree dispersion rate. The mine is composed of a plastic casing and a curved panel of explosive, on which hundreds of projectiles are arranged and fused in plastic. It can also be used as an automatic explosive or be detonated remotely. It was a very efficient weapon in Vietnam.\n
+	
+#53540: 	#ame Montagnard’s weapons \n
+#53541: 	#ame The mountaineer tribes along the Vietnamese and Cambodian border were equipped with both traditional weapons, as well as weapons supplied by the American Green Berets. Their traditional armament mainly included bow and arrows, hand-made knifes and machetes of all shapes, as well as primitive firearms. These comprised home-made, single-action matchlock pistols. It may seem these weapons are not too dangerous, but many a Vietcong who crossed over to their area had the chance to witness the mountaineers operate these matchlock pistols or bow and arrows with great precision, often repelling their Kalashnikov-armed units. \n
+	Numerous guerilla fighters and North Vietnamese didn’t survive such encounters with the locals. Occasionally, these mountaineers were also equipped with confiscated enemy weapons, guns used by the French colonial army, hunting guns, weapons they stole from the Japanese and now the communists. The Montagnards incorporated into the CIDG project were armed with American weapons. The M-1 carbine seemed to be the most suitable weapon for them.\n
+	
+	
+#53550: 	#ame Vietcong traps \n
+#53551: 	#ame The allies in South Vietnam would often run into “falling holes”. These were the most primitive but also feared traps. Sharp bamboo poles, often contaminated with excrements, were stuck into the bottom of the trap. The trap itself was usually covered with a mat and camouflaged with vegetation. Bamboo easily penetrated the soles of military boots and caused terrible injuries. These were seldom deadly, however the psychological impact of such an injury was great as soldiers watched their friends double up in pain.\n
+	Other, more dangerous types of traps were the numerous forms of “hedgehogs” hooked to various mechanisms which upon being activated by an enemy soldier walking on them, would literally throw and nail his body down. It is very sad that the Vietcong often commissioned women and children to produce these inhumane weapons.\n
+	Very frequently, traps utilizing ammunition were used. Unlike the NVA, the Vietcong seldom possessed special anti-artillery mines, thus they had to improvise. Also armed grenades in cans or mines made out of artillery mortars of various calibers could be found. Artillery mortars were usually placed upright in holes. A metal point was positioned under a match and a small board was placed on the grenade camouflaged with leaves. If a soldier stepped on this mechanism, the pressure of his foot pushed it down, the point lit the match and an explosion occurred.\n
+	
+#53552: 	#ame Machete\n
+#53553: 	#ame Machete is very important and useful tool in the jungle. It could be used as a very effective weapon in melee fight, but it is also superfluous for bushwhacking in thick growth.\n
+#53554: 	#ame DP\n
+#53555: 	#ame      Ammo:…………………7.62x54R\n
+	     Weight:……………8.4 kg\n
+	     Length:………………..1266mm\n
+	     Rate of fire:……………..600 rpm\n
+	     Magazine capacity:….47 rounds in pan magazine\n
+	Degtaryev Pechotnyi (Infantry Degtaryev) was adopted as a standard light machine gun for the Red Army in the year 1928. This rugged and reliable weapon was used till the fifties, when it was replaced by a modernized version, DPM. This older type was widely exported to many countries, especially for communist sympatizants. It uses pan magazine placed horizontally on the top of the weapon.\n
+#55556: 	#ame Ammo:7.62x54R\n
+	Rate of fire: 600 rpm\n
+	Magazine capacity:47 rounds in pan magazine\n
+	Degtaryev Pechotnyi (Infantry Degtaryev) was adopted as a standard light machine gun for the Red Army in the year 1928. This rugged and reliable weapon was used till the fifties, when it was replaced by a modernized version, DPM. This older type was widely exported to many countries, especially for communist sympatizants. It uses pan magazine placed horizontally on the top of the weapon.\n
+#55557: 	#ame ZB37
+	
+	
+	
+#55600: 	#ame This is an ingame hint, which can give you some advice about playing the game.
+#55601: 	#ame You can turn off hints from within the game settings.
+#55602: 	#ame If you find yourself lost, you can go to your pointman point your cursor at him and press the USE key.
+#55603: 	#ame Pointmen will try to find the way and lead the team, or he will tell you what is going on or why he cannot continue.
+#55604: 	#ame The blinking radio icon of the means that something has happened and you need to contact your HQ or another team.
+#55605: 	#ame If you have radio in you inventory, just switch your current item to the radio, or go to your radioman Defort, point your cursor at him and press the USE key.
+#55606: 	#ame You have to watch your ammo when on a mission - if you're running low, you can search the bodies of your enemies and take some of theirs, but only if it's usable for your current gun.
+#55607: 	#ame Or you can throw away your weapon and take one of the enemies.
+#55608: 	#ame If you have your engineer Bronson with you on the mission, he can provide you with ammo - if he is not near just call him over and point your cursor at him. Now press the USE key. Note: hr only gives out ammo for weapons of American origin.
+#55609: 	#ame If you are wounded, you can heal yourself with a medikit (just select the medikit in your inventory and use it), or you can have your medic Crocker heal you, point your crosshair at him until it turns to a circle and press the USE key.
+	
+	
+	
+	
+#54700: 	#ame to use mounted ZB-37
+#54701: 	#ame to leave mounted ZB-37
+#54702: 	#ame to use mounted M2 Cal .50
+#54703: 	#ame to leave mounted M2 Cal .50
+	
+#54704: 	#ame There are several Vietcong platoons operating in the area of an old temple in Ai Tu. Your mission is to eliminate them all.
+#54705: 	#ame Your basecamp was attacked. The enemies are invading and trying to destroy your ammo bunker. Do your best to stop them.
+	
+#54706: 	#ame Black Pajama
+#54707: 	#ame Douglas 
+#54708: 	#ame NVA Colonel
+	
+#54709: 	#ame Commie hat
+#54710: 	#ame Beret hat
+#54711: 	#ame Mexico
+	
+#54712: 	#ame SFC Douglas
+	
+	
+	
+	
+#6247: 	#ame Difficulty
+#6267: 	#ame AI difficulty for the Cooperative Mission
+	
+	
+#6360: 	#ame Hradba anticheat
+#6361: 	#ame User map upload
+#6362: 	#ame Enable
+#6363: 	#ame Enable the use of HradBa Anti-Cheat
+#6364: 	#ame Auto update
+#6365: 	#ame Enable automatic update of Hradba when the server is running 
+#6368: 	#ame Usermap upload
+#6369: 	#ame Enable clients to download a running user-map if they do not have it
+	
+#6390: 	#ame Secured
+#6391: 	#ame Unsecured
+#6434: 	#ame Hradba
+#6435: 	#ame Password-free
+#6448: 	#ame Filter server list depending on Hradba anticheat
+#6449: 	#ame Check if you don't want to see a password protected game in the list
+	
+#8208: 	#ame Bayonet
+#8209: 	#ame Set or hide bayonet on current weapon
+	
+	
+#7366: 	#ame by USE key
+#7367: 	#ame by shoot when not aiming
+	
+	
+#7390: 	#ame Bayonet usage
+#7391: 	#ame Select mode of control to attach or un-attach the bayonet
+#6392: 	#ame default
+#6393: 	#ame 7
+#6394: 	#ame 15
+#6395: 	#ame Low
+#6396: 	#ame Hi
+#6372: 	#ame TT Mode
+#6373: 	#ame Mission time
+#6374: 	#ame Time for playing one mission
+#6375: 	#ame Respawn time
+#6376: 	#ame Time to respawn player after death
+#6377: 	#ame Voice speech
+#6378: 	#ame Select voice speech quality (or disable all)
+#6386: 	#ame Change map voting
+#6387: 	#ame Enable clients to start voting to change the map 
+#6388: 	#ame Restart map voting
+#6389: 	#ame Enable clients to start voting for the restart of the map 
+	
+#6105: 	#ame Mode settings
+	
+#6366: 	#ame Upload limit
+#6367: 	#ame Limit for upload of HradBa to all clients that have no current version (in KB/sec)
+#6370: 	#ame Upload limit
+#6371: 	#ame Limit for upload of user-map's to all clients (in KB/sec)
+	
+	
+#1121: 	#ame Data :
+#1122: 	#ame kBytes
+#1123: 	#ame Time :
+#1124: 	#ame Press ENTER to stop download, ESC to continue.
+#1125: 	#ame Download stopped by user.
+#1126: 	#ame Downloading HradBa version %d
+#1127: 	#ame Downloading user-created map
+#1128: 	#ame Downloading Pterodon map
+#1129: 	#ame bayonet
+#1130: 	#ame Enemy flag is stolen by %S !
+#1131: 	#ame %S - cheating %S detected. Penalty: %s
+#1132: 	#ame kill
+#1133: 	#ame kick
+#1134: 	#ame ban
+#1135: 	#ame ban I.P
+#1136: 	#ame %S (%s) captured flag %d.
+#1137: 	#ame This may be false cheat detection because of %S high ping %d ms
+	
+	
+	
+#1162: 	#ame Different version found: 
+#1163: 	#ame Initialization failed:
+	
+#1164: 	#ame HradBa anticheat initialization failed
+	
+	
+#2225: 	#ame Claymore
+#2226: 	#ame Claymore switch
+	
+#1138: 	#ame %S - bad connection detected %S, HradBa cannot work. Penalty: %s
+	
+	
+#5100: 	#ame TurnTable
+#5101: 	#ame %s captured the last flag. US win and score.
+#5102: 	#ame %s captured the last flag. VC win and score.
+#5103: 	#ame %s captured the last flag. US win. VC must now capture all the flags in less time than the US team did!
+#5104: 	#ame %s captured the last flag. VC win. US must now capture all the flags in less time than the VC team did!
+#5105: 	#ame US defenders win and score.
+#5106: 	#ame VC defenders win and score.
+#5107: 	#ame Attacker %s captured the flag %d.
+#5108: 	#ame Capture the flags one by one!
+#5109: 	#ame Defend the flags! If the attackers seize one, defend the next! 
+#5110: 	#ame Capture flag %d !
+#5111: 	#ame Capture the last flag!
+#5112: 	#ame Defend flag %d !
+#5113: 	#ame Defend the last flag!
+	
+#293: 	#ame One team attacks, while the other defends. The attackers must capture a number of flags in order, while the defenders must stop them for as long as they can. The flags also act as re-spawn points for the attacking team, so it is essential that the defending team stop the attackers from getting a foothold. Once the last flag has been turned, the defenders will become attackers. After the two rounds, the team who took the least amount of time to turn all the flags takes the point.
+	
+#7416: 	#ame Graphic Details
+#7417: 	#ame This is the setting of the graphic details.
+#7418: 	#ame Grass
+#7419: 	#ame This checkbox enables rendering of detail grass objects in the game.
+#54211: 	#ame Two weeks after this very successful mission for which SFC Douglas was awarded the Silver Star,\nteam A-216 completed an important mission against the Vietcong tax collectors.\nThe mission was successful however, sergeant Douglas was shot dead from behind by a Vietcong sniper. \n \n \n \n \n \n \n
+	
+#54713: 	#ame ZB-37
+#54714: 	#ame Machete

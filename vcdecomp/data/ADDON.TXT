@@ -1,0 +1,1972 @@
+#50001: 	#ame Shit, flak! This is Condor Three, heavy ground fire! 
+#50002: 	#ame This is Condor Three! I’m hit, I repeat, I’m hit! Over!
+#50003: 	#ame Condor Three, this is Mountain Den! What is your position and status? Over.
+#50004: 	#ame This is Condor Three! I am at five dash twenty two delta, course one hundred and sixty five, status critical, this piece of junk is falling apart! Over.
+#50005: 	#ame Condor Three, try to get to position six dash twenty three delta. JRCC in Tan Son Nhut report a Green Beret team is operating in the area. Do you copy? Over.
+#50006: 	#ame Copy that, Mountain Den, I'll try. I'm dumping my payload and changing course. Condor Three over and out.
+	
+	
+	
+	
+#50007: 	#ame Another day on patrol. We’ve been wandering through the jungle like ghosts for three days, mapping the area where our base will be built. Occasionally we find old traces of Charlie but so far, we haven’t run into him and if everything goes well we won't. Nguyen will find us an LZ tonight and a chopper will get us out of here and back to Pleiku for a few days...
+#50008: 	#ame Defort, come on. Get up. We gotta go!
+	
+#50009: 	#ame Come on man, what's the hurry? We’ve got plenty of time.
+#50010: 	#ame We go now, trung-si, long way. 
+	
+	
+#50011: 	#ame Hell, do you hear that? I figure it must be a fighter approaching. What’s it doing here?
+	
+#50012: 	#ame They either want to drop a bomb on us or land on us...
+	
+	
+#50013: 	#ame I can’t hold her any longer. Condor Three, ejecting now...
+	
+	
+	
+	
+#50014: 	#ame Okay, we'll try it later, now let's move to the crash site quickly. Let’s go! Ready? Lock and load!
+#50015: 	#ame Hurry up, but be careful. If any Vietcong are in the area, they'll be searching for the pilot.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50016: 	#ame Take us to the crash site, we’ll start searching there. But be careful. It could get pretty hot in there.
+#50017: 	#ame Yes, trung-si. We go!
+	
+#50018: 	#ame Nguyen, lead us to the crash site.
+	
+#50019: 	#ame Go on to the crash, Nguyen.
+#50020: 	#ame Take us to the wreck.
+#50021: 	#ame Take us to the crash site, Nguyen.
+#50022: 	#ame Search for the plane, Nguyen.
+	
+#50023: 	#ame I go, trung-si. Follow.
+#50024: 	#ame Sure, trung-si. Go!
+#50025: 	#ame Plane close. We go carefully!
+#50026: 	#ame I search for plane!
+	
+#50027: 	#ame Take the lead, Nguyen.
+#50028: 	#ame Okay, trung-si, we keep much quiet.
+	
+#50029: 	#ame Well, the pilot should be close. Try to find him, Nguyen.
+#50030: 	#ame But we must search quick Vietcong be here soon.
+	
+#50031: 	#ame Find the pilot, Nguyen.
+#50032: 	#ame The pilot must be close. Find him.
+#50033: 	#ame Nguyen, find the pilot.
+	
+	
+	
+#50034: 	#ame Contact! Enemy over there! 
+#50035: 	#ame Damn, watch out!
+	
+#50036: 	#ame Kill them!
+#50037: 	#ame Shoot 'em! Quick!
+	
+	
+	
+#50038: 	#ame Enemy! Take cover!
+	
+	
+	
+#50039: 	#ame Wreck here!
+	
+#50040: 	#ame Oh, shit. What a piles of scrap. Right, we have to find the pilot. Give me the radio, Defort, let's try to contact him. 
+	
+	
+	
+	
+	
+	
+#50151: 	#ame Pilot seat! 
+#50152: 	#ame The ejection seat...
+	
+	
+#50041: 	#ame Parachute here! 
+#50042: 	#ame The pilot should be near here!
+	
+	
+#50043: 	#ame Pilot here! 
+#50044: 	#ame Crocker, come here, he is hurt!
+#50045: 	#ame It's okay, he's not badly hurt. Come on, get up, man!
+#50046: 	#ame Christ... guys. Shit, I feel bad.
+#50047: 	#ame Don’t worry, you’re gonna make it.
+#50048: 	#ame Yeah I know, I've had hangovers worse than this. What are you doing here?
+#50049: 	#ame We’ve been surveying the area here. You're damn lucky, we were just round the corner. Charlie is everywhere. We need to get out of here. And I mean quick! Defort, give me the radio!
+	
+	
+	
+#50050: 	#ame Damn it, where is he? Nguyen? Check it out.
+	
+#50051: 	#ame Seems commies took away, footprints here!
+#50052: 	#ame He either found a better place or Charlie caught him!
+#50053: 	#ame I hope we can find him quickly!
+#50054: 	#ame Defort, try to contact him.
+	
+	
+	
+#50055: 	#ame Pilot there! Vietcong have him! 
+#50056: 	#ame That's what I was afraid of!  We need to rescue him! Damn!
+	
+	
+	
+	
+	
+	
+#50057: 	#ame This Vietcong camp!
+#50058: 	#ame That's why there are so many of them here!
+	
+#50059: 	#ame It’s like the Hilton!
+	
+#50060: 	#ame I wish there were some cute maids in here! Man, when was the last time I went to Saigon...
+#50061: 	#ame Get focused and give me the radio!
+	
+#50062: 	#ame Defort! Give me the radio!
+	
+	
+	
+#50063: 	#ame Look what uncle Ho left here... what about giving them a present?
+	
+#50064: 	#ame Sorry, Charlie. You shouldn’t have left it here! 
+	
+	
+#50065: 	#ame The plane has crashed nearby, towards the southeast.
+	
+	
+#50066: 	#ame Hey, man. Sorry to bother you but we thought you might want to have a beer with a couple of your friends?
+#50067: 	#ame That’s an offer I can’t refuse. Oh, man, am I happy to see you, I thought my number was up there.
+#50068: 	#ame You're safe now. But we need to get out of here. Let’s go now… Come on now. The chopper should be coming. Defort!
+#50069: 	#ame I’m coming!
+	
+	
+	
+	
+	
+	
+	
+#50070: 	#ame What were you doing round here, man? Your plane looks like it took some serious flak.
+#50071: 	#ame We were bombing the Ho-Chi-Minh Trail. But it's becoming harder every day. Some parts are so well defended that it's almost suicide to approach!
+#50072: 	#ame They really got you good, that's for sure!
+#50073: 	#ame Yeah. Haiphong must be packed! I've never seen so many anti-aircraft guns and cannons before... But that's just the way it is, I've been there before, but today I was unlucky.
+#50074: 	#ame I was flying low and some sharp-eyed William Tell had a lucky shot.
+#50075: 	#ame Well, I’m glad I got as far as here...
+#50076: 	#ame Don’t worry, you’re safe with us! From Saigon to Hanoi, the Vietcong know better than to mess with us.
+#50077: 	#ame Especially you, Defort, they shit themselves as soon as they catch a glimpse of you. Now shut up, Charlie is all around here! You can gas all you want when we're airborn.
+	
+	
+#50078: 	#ame This a good spot. We call the chopper?
+#50079: 	#ame Yeah, this looks good. We’ll be gone in no time, boys. But keep on your toes!
+	
+#50080: 	#ame The chopper will be able to land here. Let’s call the base. We’ll be gone in no time, boys. 
+	
+#50081: 	#ame About time. I don’t understand how you can survive in this damn jungle, guys. Mud, mould, mosquitoes, and the VC... Give me a plane any day of the week.
+#50082: 	#ame Just so long as you don't let them shoot you down again. Next time you might not be so lucky and we might not be around to save your ass.
+#50083: 	#ame Once is enough, thanks. I’ll be more careful next time.
+	
+	
+	
+	
+#50084: 	#ame Find a landing zone for us. 
+#50085: 	#ame We need to find an LZ for the chopper. 
+#50086: 	#ame Lead us to a landing zone. 
+#50087: 	#ame Let’s get out of here. Lead us to a clearing. 
+#50088: 	#ame Look for a clearing so we can be airlifted by the chopper.
+	
+	
+	
+	
+	
+	
+	
+#50089: 	#ame We have to find a suitable landing zone. According to the map, there are two likely spots around here.
+	
+	
+#50090: 	#ame Enemy! Shit! Charlie wants to come along! 
+#50091: 	#ame Commies coming! 
+#50092: 	#ame They’re coming to get us, let’s give them a warm welcome! 
+	
+#50093: 	#ame This is Buzzard Two. Fist Alpha, we see yellow smoke. Over.
+	
+	
+#50094: 	#ame Get on, boys! Let's get out of here!
+	
+	
+#50095: 	#ame This is Buzzard Two. Tiger Den, we’ve loaded your tiger and his young one and are on our way back now. Over.
+#50096: 	#ame Good job, Buzzard Two! Be careful and bring them back in one piece.
+#50097: 	#ame I'll sure try. Buzzard Two out.
+	
+#50155: 	#ame Something ain't right here…
+	
+	
+	
+#50098: 	#ame Tiger Den, this is Fist Alpha, a plane just crashed nearby, the pilot bailed out. Over.
+#50099: 	#ame Fist Alpha, this is Tiger Den, we’ve just received a message informing us about a Thunderchief pilot who was across the border and his aircraft was damaged by the enemy anti-aircraft weapons. He managed to get to your area and bail out before he crashed. How far is he from you? Over.
+#50100: 	#ame Not too far, Tiger Den, just a few hundred meters. He was quite low when he ejected and the wind carried him towards us. We’re gonna pick him up. Over.
+#50101: 	#ame Roger, Fist Alpha, head toward him. We’re sending a chopper for immediate extraction. Find the pilot and secure an LZ. His call sign is Condor Three. Over.
+#50102: 	#ame Roger, Fist Alpha out. 
+#50103: 	#ame Defort, the emergency radio frequency. At once.
+#50104: 	#ame Right, it’s there.
+#50105: 	#ame Condor Three, this is Fist Alpha, do you read me? Over.
+	
+#50106: 	#ame Condor Three, this is Fist Alpha, I repeat, do you read me? Over.
+	
+#50107: 	#ame Condor Three, this is Fist Alpha, do you read me? Over.
+	
+#50108: 	#ame Nothing yet. Tune it to the Command, Defort.
+#50153: 	#ame Done.
+	
+#50109: 	#ame Tiger Den, this is Fist Alpha, we’re at the crash site. The pilot’s not here and we weren’t able to establish radio communication with him either. Over.
+#50110: 	#ame Fist Alpha, this is Tiger Den, roger that. You're requested to search and rescue. Watch out for Charlie, they'll have seen the plane go down and will be on their way to find the pilot. Over.
+	
+#50111: 	#ame Tiger Den, this is Fist Alpha, we’re at the crash site. The pilot’s not here and we weren’t able to establish radio communication with him either. Over.
+#50112: 	#ame Fist Alpha, this is Tiger Den, roger that, look for him, he must be somewhere around. You’d better hurry and get to him before Charlie find him. Over.
+	
+#50113: 	#ame Tiger Den, this is Fist Alpha, we’re at the crash site.  The pilot’s not here and we weren’t able to establish radio communication with him. Charlie is in the area, we got in a fire fight. Over.
+#50114: 	#ame Fist Alpha, this is Tiger Den, roger that, look for him, he must be somewhere around. And hurry, he doesn't stand a chance if the Vietcong find him before you do. Good luck, boys. Over.
+	
+#50115: 	#ame Roger, Tiger Den. Fist Alpha out.
+	
+#50116: 	#ame Tiger Den, this is Fist Alpha, we’ve made enemy contact. They’re either dead or still running. No trace of the pilot, we’re still searching. Over.
+#50117: 	#ame Fist Alpha, Tiger Den, roger that. Hurry, boys, and good hunting. Over.
+#50118: 	#ame Roger, Tiger Den. Fist Alpha out.
+	
+#50119: 	#ame Tiger Den, this is Fist Alpha, we found a Vietcong night camp. A whole bunch of 'em were sleeping here and we made sure they'd never wake up. There are some supply crates left here. Over.
+	
+#50120: 	#ame We didn't want to leave them for Charlie and Bronson made sure they don't just rot. Over.
+#50121: 	#ame Fist Alpha, this is Tiger Den, good job, what about the pilot, have you found him? Over.
+	
+#50122: 	#ame What should we do with them? Should we blow them up, Tiger Den? Over.
+#50123: 	#ame Fist Alpha, this is Tiger Den, good job, use some C4 there, if you still have any left. How about the pilot, have you found him? Over.
+	
+#50124: 	#ame Negative. We’re still looking. We'll take care of the supplies, Fist Alpha out.
+	
+#50125: 	#ame Condor Three, this is Fist Alpha, do you read us? Over.
+	
+#50126: 	#ame Damn, Charlie must have him. Get me Command, Defort.
+#50127: 	#ame You got it.
+#50128: 	#ame Tiger Den, this is Fist Alpha, we found the spot where the pilot landed. Looks like the Vietcong got him. We’re following their tracks, we’ll get him back. Over.
+#50129: 	#ame Fist Alpha, this is Tiger Den, roger that, good luck, boys. The choppers are on their way, as soon as you've got him, they'll pick you up. Over.
+#50130: 	#ame Roger, Fist Alpha out.
+	
+#50154: 	#ame Tiger Den, this is Fist Alpha, the pilot was captured by the Vietcong. We’re going after them, we’ll get him back. Over.
+#50131: 	#ame Fist Alpha, this is Tiger Den, roger that, good luck, boys. Hurry. Over.
+#50132: 	#ame This is Fist Alpha, roger that, out.
+	
+#50133: 	#ame Tiger Den, this is Fist Alpha, we found the pilot. He’s injured but it doesn’t look serious. We’re taking him with us and are heading to the landing zone. What’s the position of the chopper? Over.
+#50134: 	#ame Fist Alpha, this is Tiger Den, Buzzard Two is on his way. Get back to me when you arrive at their LZ. Over.
+#50135: 	#ame Fist Alpha roger that, out.
+	
+#50136: 	#ame Tiger Den, this is Fist Alpha, we’ve rescued the pilot, he’s okay. We’re moving to the landing zone. Tell the chopper to hurry, it’s pretty hot here. Over.
+#50137: 	#ame Fist Alpha, this is Tiger Den, roger that. Buzzard Two is on his way. Call me when you get to the landing zone. Over.
+#50138: 	#ame This is Fist Alpha, roger that, out.
+	
+#50139: 	#ame Tiger Den, this is Fist Alpha, we found a Vietcong night camp. A whole bunch of them were sleeping. We made sure they'll never wake up. There are some supply crates here, over.
+	
+#50140: 	#ame Bronson made sure they won't rot here. Over.
+#50141: 	#ame Fist Alpha, this is Tiger Den, good job. Proceed to the landing zone, the chopper is nearby. Over.
+	
+#50142: 	#ame What should we do with those, should we destroy them, Tiger Den? Over.
+#50143: 	#ame Fist Alpha, this is Tiger Den, good job, use your explosives there, if you have any left. After that proceed immediately to the landing zone. Over.
+	
+#50144: 	#ame Roger, Fist Alpha over and out.
+	
+#50145: 	#ame Tiger Den, this is Fist Alpha, we’ve reached the landing zone. Where’s the chopper? Over.
+#50146: 	#ame Fist Alpha, this is Tiger Den. Buzzard Two should be in your area. Buzzard Two, this is Tiger Den, do you read me? Over.
+#50147: 	#ame This is Buzzard Two, roger. Fist Alpha, we’re close, throw a smoke grenade and hang on. Over.
+#50148: 	#ame This is Fist Alpha, roger that, Buzzard, we’re throwing a smoke grenade. Over.
+	
+	
+#50149: 	#ame Fist Alpha, confirming yellow smoke. Buzzard, you’d better hurry, we have company. Over.
+#50150: 	#ame This is Buzzard Two, hang on kittens, we’re on our way! We've got your milk onboard. Over.
+	
+#52130: 	#ame 
+#52131: 	#ame 
+#52132: 	#ame 
+#52133: 	#ame 
+#52134: 	#ame 
+#52135: 	#ame 
+#52136: 	#ame 
+#52137: 	#ame 
+#52138: 	#ame 
+#52139: 	#ame 
+#52140: 	#ame 
+#52141: 	#ame 
+#52142: 	#ame 
+#52143: 	#ame 
+#52144: 	#ame 
+	
+#52145: 	#ame 
+#52146: 	#ame 
+#52147: 	#ame 
+#52148: 	#ame 
+#52149: 	#ame 
+#52150: 	#ame 
+#52151: 	#ame 
+	
+#52152: 	#ame 
+#52153: 	#ame 
+#52154: 	#ame 
+#52155: 	#ame 
+	
+#52156: 	#ame 
+#52157: 	#ame 
+#52158: 	#ame 
+#52159: 	#ame 
+#52160: 	#ame 
+#52161: 	#ame 
+#52162: 	#ame 
+#52163: 	#ame 
+#52164: 	#ame 
+#52165: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+#52001: 	#ame All right, guys. We have to get our asses in gear and move from Pleiku to our own place. I bet you can’t wait to get away from all these bars and girls, am I right?
+#52002: 	#ame Well, I spent all my money in three days. But I'd rather stay here, we'll be bored to tears there...
+#52003: 	#ame Don’t worry about that, Defort. You can believe me when I tell you that we’ll have more work there than we want.
+#52004: 	#ame Well, that’s just great.
+#52005: 	#ame Bullshit, it's better than doing nothing man, at least there will be some action. We’ll be sitting right at Charlie's ass and kicking him there, that's got to piss him off.
+#52006: 	#ame Well put, Hornster. I'm very glad you're so enthusiastic, but now, be so kind as to shut up.
+#52007: 	#ame Sure, sorry, boss.
+#52008: 	#ame You all know the mission you were chosen for. We’ll train the Montagnards for the CIDG program and choke the last breath out of the Vietcong.
+#52009: 	#ame The area is strategically important. We’ll operate on one of the branches of the Ho-Chi-Minh trail and do what we can to make life hell for the Vietcong. You’re pretty familiar with the area already...
+#52010: 	#ame We sure are. Lately, we’ve spent more time there than here.
+#52011: 	#ame Looks like we’ll be moving next week. The final preparations are underway...
+#52012: 	#ame In other words, it’s a big mess here, the place is cluttered with supply crates and the HQ commanders are running all over the place.
+#52013: 	#ame Well, it’s a good thing they’re giving us so much. But back to the point. The base will be at the top of Nui Pek hill. There’s an old road, which hasn't been used in a long time, left over from the Japanese, or French, or who knows who. It was used to transport supplies to bases all along the border. 
+#52014: 	#ame There are several Montagnard villages near there who we’ll try to recruit and train for the first CIDG in the area. They hate the Vietcong even more than they hate the government in Saigon. 
+#52015: 	#ame So, it's up to us to convince them to join us. It should be easy enough to get them to cooperate. You will visit one of these villages today, a Jarai tribe village.
+#52016: 	#ame I know you're all familiar with how it works. Doug, you'll be dropped off near the village and Nguyen will act as a guide and an interpreter. 
+#52017: 	#ame You’ll make a visit to the mountaineers and give gifts and salt to the older ones, women and children, ask how they have been and then survey the area. This is the closest village to where our base will be so we should be as friendly with them as possible. Is that clear? Don’t piss them off.
+#52018: 	#ame There are several landing zones marked on the map. If you don’t bump into Charlie, map the area around the village and the helicopter will pick you up tonight. Any questions?
+#52019: 	#ame What happens if we run into a problem?
+#52020: 	#ame The choppers will be ready for a quick extraction if necessary. We’re still not completely sure what it looks like in there, so be very careful. Go pack and get some sleep now. You’ll be leaving at 0830 hours. 
+#52021: 	#ame Good luck.
+	
+#52022: 	#ame So, that's the hole you're going to live in… Enjoy it boys, it really is in the middle of nowhere.
+#52023: 	#ame Give me a break. We'll be living here in comfort, you'll be the one getting shot at flying in our supplies of booze and girlie magazines.
+#52024: 	#ame I doubt it. There'll be Charlie's flag on this hill in a few days, man.
+#52025: 	#ame Bullshit, don't you know who the Green Berets are?
+#52026: 	#ame Geez, just get us to the damn village. I could go for a beer right now.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50201: 	#ame Okay! Enjoy it and don’t get too plastered on that rice shit of theirs!
+#50202: 	#ame And you’d better watch out you don’t hit any trees with that metal crap on your way back!
+	
+#50203: 	#ame Defort, radio, we should report.
+	
+	
+	
+#50212: 	#ame This road leads to village. Chief there. 
+#50213: 	#ame Fine, go on. 
+	
+	
+#50214: 	#ame Right, let’s go to the village. Lead on. 
+#50215: 	#ame Village not far. 
+	
+#50216: 	#ame Let’s go to the village.
+#50217: 	#ame Take us to the village.
+#50218: 	#ame To the village.
+	
+	
+#50219: 	#ame We need to talk to the village chief. 
+#50220: 	#ame We wait one minute, an elder certainly show up if we go to centre of village. 
+	
+#50221: 	#ame We have to find the chief. 
+#50222: 	#ame Where's the chief?
+#50223: 	#ame I need to talk to their chief. 
+	
+	
+#50224: 	#ame We go to centre of village and wait.
+#50225: 	#ame We go to village and wait.
+	
+#50226: 	#ame We wait a moment.
+#50227: 	#ame Wait, trung-si. The chief coming.
+	
+#50228: 	#ame 
+#50229: 	#ame They say go, Chief will talk to us. 
+#50204: 	#ame 
+#50205: 	#ame 
+#50206: 	#ame 
+	
+#50207: 	#ame They say we go find Chief. 
+#50208: 	#ame Should go see Chief. 
+#50209: 	#ame Chief will talk, he in village center. 
+	
+#50210: 	#ame I thought it would be bigger. 
+#50211: 	#ame This only small part. Rest of village near jungle - away from here. 
+	
+#50230: 	#ame Welcome, Americans, I Lim. This our powerful Chief Tran.
+#50231: 	#ame Uh, hello. I am Sergeant Douglas from the US Army.
+#50232: 	#ame 
+#50233: 	#ame Chief ask what Americans want here? 
+#50234: 	#ame We have come to introduce ourselves to our new neighbours. We are going to build a base nearby, on Nui Pek hill. We can be useful to each other. We can help you with many things and if you would like, we can give you weapons and teach you how to use them, so that you can protect yourselves against the Vietcong.
+#50235: 	#ame Vietcong filthy dog!
+#50302: 	#ame 
+#50236: 	#ame 
+#50237: 	#ame Chief say elders must decide if we and Americans friends. But the chief say that I tell you about Vietcong.
+#50238: 	#ame They here, not far from road, often come, carry things, to make road short they build bridge over gorge - they have very bad weapon there. They came not long ago, wanting rice but Jarai chase Vietcong away!  We strong, we not afraid of any enemy!
+#50239: 	#ame Uh, damn. Don't let them fool you. They'll be back to take what they want, one way or another. When were they here? 
+	
+#50240: 	#ame It was yesterday... 
+#50241: 	#ame 
+	
+#50242: 	#ame Vietcong attacking!
+#50243: 	#ame Okay this is it boys, you know what to do. Take up positions around the village, we must secure the perimeter or they'll overrun us. Defort, call the base!
+	
+#50244: 	#ame Hotel Six, this is Viper One, Charlie is attacking the village! We’re right in the middle of it. We're gonna help the villagers! They don't stand a chance without us.
+#50245: 	#ame Roger, Viper One, maintain radio contact. Over!
+#50246: 	#ame Copy that, Viper One out.
+	
+	
+#50247: 	#ame Hmm, there is no point in going this way, the village isn't around here. 
+#50248: 	#ame I think I should head towards the village. 
+#50249: 	#ame I should probably give it up and find the chief.
+#50250: 	#ame Hey, Doug, where are you going? Shouldn't we go to the village?
+#50251: 	#ame Aren't we going to the village?
+#50252: 	#ame Where are you climbing?
+#50253: 	#ame Come on now! Are we going to the village or not?
+#50254: 	#ame I thought we were going to the village first? 
+#50255: 	#ame Hey, Douglas, aren’t you gonna go with us to that village?
+#50256: 	#ame Trung-si, no village here.
+#50257: 	#ame Trung-si, we go to village?
+	
+#50258: 	#ame The village is near here. I must head east. 
+	
+	
+	
+	
+	
+	
+	
+#50259: 	#ame 
+#50260: 	#ame He said he too busy.
+	
+#50261: 	#ame 
+#50262: 	#ame He said he have good catch.
+	
+#50263: 	#ame 
+#50264: 	#ame He said he busy.
+	
+	
+#50265: 	#ame 
+#50266: 	#ame 
+#50267: 	#ame 
+#50268: 	#ame 
+#50269: 	#ame 
+	
+	
+	
+#50270: 	#ame They all not here. When they hear fight - others come!
+#50271: 	#ame Looks like there are more of them than we thought. Damn, you'd better hold your positions. Defort, come here.
+	
+	
+	
+	
+	
+	
+#50272: 	#ame Vietcong here, close to the road. More will come. 
+#50273: 	#ame A Vietcong path? Excellent. What else do you know about them?
+#50274: 	#ame Long hole in ground there, they have bridge so they do not have to walk around much. I see it two days ago when hunting. I go close! Vietnamese blind! They no see Lim!
+#50275: 	#ame  A bridge? Will you take us there, Lim?
+#50276: 	#ame Lim will take! Follow!
+#50277: 	#ame Let’s follow him, guys. He'll lead us to Charlie. 
+	
+	
+#50278: 	#ame 
+#50279: 	#ame Chief ask - can we keep guns of Vietcong?
+#50280: 	#ame Sure, keep them - you'll definitely need them. But do you know how to use them?
+#50281: 	#ame Lim thanks! Chief too! We use any gun, you no worry!
+#50282: 	#ame 
+#50283: 	#ame 
+	
+	
+	
+#50284: 	#ame 
+#50285: 	#ame 
+#50286: 	#ame 
+	
+#50287: 	#ame 
+#50288: 	#ame 
+#50289: 	#ame 
+#50290: 	#ame 
+#50291: 	#ame 
+	
+	
+#50303: 	#ame We go through here!
+	
+	
+#50292: 	#ame Hotel Six, this is Viper One. The drop went OK, we are on route to the village. Over. 
+#50293: 	#ame Copy that, Viper One. Good luck. Over. 
+#50294: 	#ame Viper One out.
+#50295: 	#ame OK, guys, let’s head to the village. 
+	
+#50296: 	#ame Hotel Six, this is Viper One. We had it out with Charlie. The Vietcong attacked the village. We helped the villagers see them off, but I'd say there are more of them around and they'll be back. Over. 
+#50297: 	#ame Copy that, Viper One. Any casualties? Over. 
+#50298: 	#ame Viper One, everybody is OK. There is a lot of enemy activity around here, we'll try and find out what's going on. Viper One out. 
+	
+#50299: 	#ame Hotel Six, this is Viper One. No more enemy in sight but one of the villagers says they have a camp around here. We're searching the area now. Over.
+#50300: 	#ame Copy that, Viper One. Report back immediately at first contact. Over. 
+#50301: 	#ame Copy that, Hotel Six. We'll check around the village and then head to the target area. We will report any enemy contact. Viper One out.
+#52166: 	#ame 
+#52167: 	#ame 
+#52168: 	#ame 
+#52169: 	#ame 
+#52170: 	#ame 
+#52171: 	#ame 
+	
+#52172: 	#ame 
+	
+#52173: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50401: 	#ame Lim take you to Vietcong?
+	
+	
+	
+	
+#50402: 	#ame There deep and long hole here. Can’t climb over. Must go very far. Go left for while, there is Vietcong bridge, like Lim said.
+#50403: 	#ame So let’s go look at that bridge.
+	
+	
+	
+	
+	
+#50404: 	#ame Bridge there. Only place you can cross big long hole. Or, you must walk much around.
+#50405: 	#ame It's swarming with soldiers there. Defort, hand me the radio.
+	
+	
+#50406: 	#ame Contact!
+	
+#50407: 	#ame Advance and cover!
+	
+	
+#50408: 	#ame According to the map, there should be a long gorge around here somewhere....
+	
+	
+#50409: 	#ame The gorge is shown on the map. It is pretty long…
+	
+#50410: 	#ame Villager lead us now.
+#50411: 	#ame Villager know it here better than me.
+#50412: 	#ame I’m bringing up the rear, the hunter is better point now.
+	
+	
+#50413: 	#ame So take us to the Vietcong, Lim.
+	
+#50414: 	#ame Take us to the Vietcong, Lim.
+#50415: 	#ame Lead us, Lim.
+#50416: 	#ame You will lead us, Lim.
+#50417: 	#ame Take us to the enemy post.
+	
+#50418: 	#ame Take us back to the bridge, Lim.
+	
+#50419: 	#ame  Lim lead!
+#50420: 	#ame  Follow me!
+#50421: 	#ame  Lim go first!
+#50422: 	#ame  You follow Lim!
+#50423: 	#ame  Yeah!
+#50424: 	#ame  Lim go!
+	
+	
+	
+#50425: 	#ame OK, no one around. What about the bridge?
+#50426: 	#ame Destroy it!
+#50427: 	#ame Why did I ask? Defort, the radio.
+	
+#50428: 	#ame It'd be best to destroy it. Defort, the radio.
+	
+	
+	
+#50429: 	#ame Okay, let's blow the bridge to kingdom come. They'll have another one built in a week or so but we'll make their lives miserable at least for a few days.
+	
+#50430: 	#ame I’m going to place the explosives!
+#50431: 	#ame Good, get going. The others will take position.
+	
+#50432: 	#ame Bronson! Come here!
+	
+#50433: 	#ame Should I place the explosives on the bridge?
+#50434: 	#ame Do it. You others, get over the bridge and take your positions!
+	
+#50435: 	#ame Lim go with you, OK? Chief said so and Lim don't like Vietnamese.
+#50436: 	#ame Sure, we'd be glad to have you along.
+	
+#50437: 	#ame Ready!
+	
+	
+#50438: 	#ame Blast it, Bronson!
+	
+#50439: 	#ame We should wait until the others get over here, shouldn’t we?
+	
+#50440: 	#ame My pleasure! Click!
+	
+	
+	
+#50441: 	#ame Ahh, so this is where they sleep, or rather, slept.
+	
+	
+	
+	
+	
+#50442: 	#ame I have to give myself a pat on the back again! That was a damn fine piece of work! You just don't know how brilliant I am.
+#50443: 	#ame Some people are easily pleased... okay, get up, we’re moving on! Defort, the radio!
+	
+	
+	
+	
+#50444: 	#ame We need to get to the landing zone. It is on a barren hill not far from here. Can you take us there?
+#50445: 	#ame Yes, Lim know where is. Let us go.
+	
+#50446: 	#ame We need to get to the landing zone. Lead us.
+#50447: 	#ame Take us to the landing zone, Lim.
+#50448: 	#ame We need to get to the landing zone now, Lim.
+	
+	
+	
+#50449: 	#ame Vietcong just here. Careful. Lim think they hiding.
+#50450: 	#ame Shit! What does it look like further on?
+#50451: 	#ame Hills. They hide up there, maybe shoot us when we on path. But Lim knows how we get around!
+#50452: 	#ame OK. Let's mess up their plans a bit. Lead us, Lim.
+	
+#50453: 	#ame Lim think Vietcong hide near. Lim feel it.
+	
+	
+	
+#50454: 	#ame Watch out, something stinks here.
+#50455: 	#ame Is it Bronson?
+#50456: 	#ame Just shut up.
+	
+	
+#50457: 	#ame Take us to the enemy. But be careful.
+#50458: 	#ame Lead us to the enemy, Lim. But be quiet.
+#50459: 	#ame We need to get up behind them, Lim.
+	
+	
+	
+	
+	
+	
+#50460: 	#ame Take cover, it’s an ambush!
+#50461: 	#ame Shit! Enemy!
+#50462: 	#ame Take cover!
+#50463: 	#ame Enemy!
+	
+	
+	
+#50464: 	#ame Vietcong!
+#50465: 	#ame They are over there. Get ready, I don't want you to miss!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50466: 	#ame So, landing zone Echo Zulu is nearby.  
+	
+	
+	
+	
+	
+	
+	
+	
+#50467: 	#ame I go back to village now. You no need me anymore.
+#50468: 	#ame OK. Thanks for your help. When we build a base here, we will recruit soldiers to fight the Vietcong. Would you like to join us?
+#50469: 	#ame I think about it - Lim may say yes. But have to go back now.
+#50470: 	#ame Thanks again. I'll see you later.
+#50471: 	#ame Right, let's get out of here!
+	
+	
+#50472: 	#ame You go home, trung-si. We talk later.
+	
+	
+	
+	
+	
+	
+#50473: 	#ame Hotel Six, this is Viper One. We are heading through the jungle with a native guide towards the enemy positions. Over. 
+#50474: 	#ame Roger, Viper One. Report any developments immediately. Over. 
+#50475: 	#ame Roger, Viper One out.
+	
+	
+	
+	
+#50476: 	#ame Hotel Six, this is Viper One. We ran into Charlie again and found a trail that they're using as a transport route. We have no casualties to report. Over. 
+#50477: 	#ame Roger, Viper One. Keep going. Over. 
+#50478: 	#ame Viper One out.
+	
+	
+	
+#50479: 	#ame Hotel Six, this is Viper One. We found a bridge, which Charlie has put up across a long gorge near the village. It’s heavily guarded and the Vietcong are using it to move supplies across the valley. Over. 
+#50480: 	#ame This is Hotel Six. I copy, Viper One. Destroy the damn bridge and continue toward the target destination. If you run into trouble, radio. The helicopter is already on its way to you. Over. 
+#50481: 	#ame Roger, Viper One out.
+	
+	
+	
+#50482: 	#ame Hotel Six, this is Viper One. We just wiped out a Vietcong group protecting the bridge over the gorge. We will cross to the other side, destroy the bridge and move on to Echo Zulu as planned. Over. 
+#50483: 	#ame Hotel Six, I copy. Be careful, Viper One. Over. 
+#50484: 	#ame Roger, Viper One out.
+	
+	
+	
+	
+#50485: 	#ame Hotel Six, this is Viper One. We have destroyed the Vietcong bridge over the gorge. We're heading toward Echo Zulu as planned. Over. 
+#50486: 	#ame Roger, Viper One. Good job. Over. 
+#50487: 	#ame Roger, Viper One out.
+	
+	
+	
+#50488: 	#ame Hotel Six, this is Viper One. Charlie was planning to ambush us, but we got to them first. Over. 
+#50489: 	#ame Roger, Viper One. Any losses? Over. 
+#50490: 	#ame Everyone’s okay, commander. We are heading toward Echo Zulu. We’ll be there in a minute. What’s up with the helicopter? Over.
+#50491: 	#ame Red Dragonfly, this is Hotel Six, where are you? Over.
+#50492: 	#ame This is Red Dragonfly. I'm not a Phantom. We are about five minutes away from the target area. Viper One, transfer to the landing zone. Over.
+#50493: 	#ame Viper One copies. We are heading to the landing zone. Viper One out.
+	
+	
+	
+#50494: 	#ame Hotel Six, this is Viper One. We just had a pretty intense run in with Charlie but we fought him off. Over. 
+#50495: 	#ame Roger, Viper One. Report your current position and status. Over. 
+#50496: 	#ame Everyone is okay, Hotel Six. We are at Echo Zulu landing zone. What’s up with the damn helicopter? Over.
+#50497: 	#ame Red Dragonfly, this is Hotel Six, where are you? Over.
+#50498: 	#ame This is Red Dragonfly. We are nearly there, but I'm no Phantom. Over.
+#50499: 	#ame Viper One copies. We are waiting for the helicopter. Viper One out.
+	
+	
+#52174: 	#ame 
+#52175: 	#ame 
+#52176: 	#ame 
+#52177: 	#ame 
+#52178: 	#ame 
+#52179: 	#ame 
+#52180: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#52030: 	#ame Okay guys, I know how much you all love being at the construction site and patrolling the perimeter, but I've got something else for you to do now.
+#52031: 	#ame About time, god damn it. I don’t want to ever see another shovel again.
+#52032: 	#ame Well, I guess I could do with a change too. I could use a stretch...
+#52033: 	#ame Shit, man, stupid shovelling and patrolling in the damned night isn't enough stretch for you?
+#52034: 	#ame Well…will you let me finish?
+#52035: 	#ame Sure boss, sorry.
+#52036: 	#ame We have a report from military intelligence that the Vietcong have built a factory in an abandoned temple not far from here in Ai Tu.
+#52037: 	#ame A factory?
+#52038: 	#ame A factory. It seems that between us and the fly boys the Ho-Chi-Minh trail just ain't what it used to be for moving ammunition. Since the Vietcong can't cart it along the trail anymore, they've decided to make their own.
+#52039: 	#ame So they built an ammunition factory right under the temple and right under our noses. It's been built using some of our own supplies that they've stolen. They are making grenades, booby traps and other explosive stuff. A couple of Ho-Chi-Minh’s dog-boys from Hanoi are supposedly overseeing the whole process.
+#52040: 	#ame Shit! That's just like Charlie to use our own goddamn kit against us.
+#52041: 	#ame So the old Ho sent us some visitors. Well, we’ll just rip their arms right off!
+#52042: 	#ame If the intelligence we have is correct then we have a chance to shut down their little enterprise and really piss them off.
+#52043: 	#ame It's the perfect opportunity for us to work alongside the villagers and show them that we mean business.
+#52044: 	#ame Just before we go in a Phantom will sprinkle the area and we'll follow in the helicopters. You and the CIDG will be divided into two teams. The team who goes underground will be Hammer One. The remaining team providing cover for them will be Hammer Two.
+#52045: 	#ame Don't forget our main weapons are the element of surprise and speed. You’ll run in, kill everything that moves, secure the underground entrance or entrances and then get inside. The factory should be underground but unfortunately we don’t have a detailed plan so we'll just have to play it by ear once we're there. 
+#52046: 	#ame So, is that clear?
+#52047: 	#ame Fine, we’re gonna blow it up! Along with everyone we find there.
+#52048: 	#ame Look for documents, kill everything that moves and mine the entire place. There will be enough explosives there so you don't have to cart tons of C4 with you. We might as well use what we find there to do the job for us.
+#52049: 	#ame Guys, just be careful! Seriously. There will be a lot of ammunition and explosives down there and we've no idea how well protected they'll be.
+#52050: 	#ame Any other questions? No? 
+#52051: 	#ame There's a detailed briefing in your papers. Study them and return them before you pack for the mission. Tomorrow we storm the place. Leave your personal belongings here. 
+#52052: 	#ame Okay, that's it guys... you’re dismissed!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50601: 	#ame This is Falcon One, I'm approaching the target area. Target in view, I'm attacking… now!
+#52306: 	#ame 
+#52400: 	#ame 
+#52401: 	#ame 
+#52402: 	#ame 
+#52403: 	#ame 
+#52404: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50602: 	#ame Hotel Six, this is Dragonfly One, the target is dead-ahead. Commencing our attack. There’s a lot to hit down there. We might have to make another pass. Over.
+#50603: 	#ame Roger, Dragonfly One. Be thorough. Hotel Six over.
+#50604: 	#ame This is Dragonfly One, don't worry, I've got a score to settle with Charlie, out.
+#50605: 	#ame Let them have it, boys.
+#50606: 	#ame Damn, what a mess! Next time I’ll operate the machine gun!
+	
+#50607: 	#ame Hotel Six, this is Dragonfly One, we’ll finish our pass and land. Out.
+#50608: 	#ame You boys in the back, get ready!
+#50609: 	#ame We’re always ready!
+#50610: 	#ame The last one on the ground buys the drinks!
+	
+	
+	
+#50611: 	#ame Get out!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50765: 	#ame The gate is blocked!
+#50766: 	#ame Take cover, I'll blow it!
+	
+	
+	
+	
+	
+#50612: 	#ame  So, this is the way to their den. Don’t go in there just yet, Defort, give me the radio.
+#50613: 	#ame  I’m not in a hurry to go in there, no way man. I hate their damn tunnels.
+	
+	
+	
+	
+#50614: 	#ame  I should go back to the temple.
+#50615: 	#ame  I won’t find the underground factory here.
+#50616: 	#ame  I shouldn’t leave the boys by themselves.
+#50617: 	#ame  Where the hell am I going?
+	
+	
+	
+#50618: 	#ame  Where are you leading us?
+#50619: 	#ame  Hey? Where are you going?
+#50620: 	#ame  Doug, we have to seize the temple!
+#50621: 	#ame  Doug, where are you going? The temple isn't here!
+#50622: 	#ame  Where are you going? This is our target!
+#50623: 	#ame  Do you want us to do this job by ourselves?
+#50624: 	#ame  Damn, they're all inside!
+#50625: 	#ame  Screw that, come back!
+	
+	
+	
+	
+	
+#50626: 	#ame That was something a lot stronger than just a grenade explosion!
+#50627: 	#ame Man, they've set booby traps all around here!
+	
+	
+	
+#50628: 	#ame They've got a good supply of explosives here! I can set charges to blow the place sky high. Doug, take a look and see if there are any papers lying around! You have a few minutes.
+#50629: 	#ame I’ll help you, boss!
+	
+	
+	
+#50630: 	#ame I found one of them bastards hiding here!
+	
+	
+	
+#50631: 	#ame Our intelligence boys will love that!
+	
+	
+#50632: 	#ame I’m done, we can get the hell out of here, commander!
+	
+#50633: 	#ame Yeah, let’s get out of here! On the double!
+	
+	
+	
+#50634: 	#ame I want to look around to see if I can find anything for the boys in intelligence.
+	
+	
+	
+#50635: 	#ame Hey, Doug! I found something!
+	
+	
+#50636: 	#ame Shit, we’re done here, let’s get the hell out of this joint.
+	
+	
+	
+	
+	
+	
+#50637: 	#ame Let’s get in, boys!
+	
+	
+#50638: 	#ame Doug, this isn’t your chopper, get away from here!
+#50639: 	#ame This is Dragonfly Two, Dragonfly One is over there!
+#50640: 	#ame Not here, man! Get your asses in the other chopper!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50641: 	#ame Hotel Six, this is Hammer One. The place is ours. We found the entrance leading below ground. It must be their damn factory. Over. 
+#50642: 	#ame Roger, Hammer One. Survey the area around the entrance and keep some of your men above ground. Over. 
+#50643: 	#ame Roger, Hammer One out.
+	
+	
+#50644: 	#ame Okay, Hornster, Bronson, with me, the rest cover us. 
+#50645: 	#ame Sure!
+#50654: 	#ame Okay, Hornster, Bronson, with me, the rest cover us. 
+	
+	
+#50646: 	#ame That was a blast!
+	
+	
+	
+#50647: 	#ame Hotel Six, this is Hammer One. We found the factory. Intelligence was right. We blew the whole place using Charlie's own explosives. Over. 
+#50648: 	#ame Excellent job, Hammer One. It's time you got out of there. I’m sending the choppers. Over. 
+#50649: 	#ame Roger, Hotel Six. We’re ready to get back. Bronson is craving ice cream. Hammer One out.
+	
+	
+	
+#50650: 	#ame Dragonflies One and Two, this is Hotel Six, our boys are done, get to the landing zone ASAP! Move it, they're my boys. Over.
+#50651: 	#ame Roger Dragonfly One. Over.
+#50652: 	#ame Roger, Dragonfly Two, we’re landing. Over.
+#50653: 	#ame OK, Hotel Six out. 
+	
+#52181: 	#ame 
+#52182: 	#ame 
+#52183: 	#ame 
+#52184: 	#ame 
+#52185: 	#ame 
+#52186: 	#ame 
+#52187: 	#ame 
+#52188: 	#ame 
+#52189: 	#ame 
+#52190: 	#ame 
+	
+#52191: 	#ame 
+#52192: 	#ame 
+#52193: 	#ame 
+#52194: 	#ame 
+#52195: 	#ame 
+	
+#52196: 	#ame 
+#52197: 	#ame 
+#52198: 	#ame 
+	
+	
+#52199: 	#ame 
+#52200: 	#ame 
+#52201: 	#ame 
+#52202: 	#ame 
+#52203: 	#ame 
+	
+#52204: 	#ame 
+#52205: 	#ame 
+#52206: 	#ame 
+#52207: 	#ame 
+#52208: 	#ame 
+	
+#52209: 	#ame 
+#52210: 	#ame 
+#52211: 	#ame 
+#52212: 	#ame 
+	
+	
+#52213: 	#ame 
+#52214: 	#ame 
+#52215: 	#ame 
+#52216: 	#ame 
+#52217: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#52060: 	#ame Trung-si, you go to captain.
+#52061: 	#ame Yeah, I know. Did he send you to get me?
+#52062: 	#ame Yes, he say you and me guard together tonight.
+#52063: 	#ame That's what I wanted to hear, damn… Jeez, not because of you, it's because of that damn guard duty. OK, let’s go Nguyen... 
+	
+	
+#52064: 	#ame We here, captain.
+#52065: 	#ame I hope you got enough sleep because you’ll be there the whole night. You should take turns on watch and change every two hours. 
+#52066: 	#ame Sure. I slept. Captain, do you really think they’ll come? They can’t be that stupid.
+#52067: 	#ame Who knows…Our LLDB interrogated the prisoner and he says they'll come. It's better to lose a few hours sleep than to risk Charlie getting through. You know the perimeter defences aren't finished yet, if they manage to get close, we’re all screwed.
+#52068: 	#ame Maybe it’ll rain...
+#52069: 	#ame Shut up, Doug. You can bullshit with Hornster but not me. Get your weapon and go to the nest with Nguyen. Hornster will be bitching about you being late, get over there now or you'll never hear the end of it.
+#52070: 	#ame Yeah, you're right. I can do without his moaning. I’m on my way.
+#52071: 	#ame And no sleeping!
+#52072: 	#ame But boss…
+#52073: 	#ame I mean it! If they’re going to come they'll go through you, that’s for sure. It’s the only sector that’s dug out, the others are mined with Bronson’s toys and they know it. You won't be the only one not sleeping tonight. I'll be awake worrying that you're asleep. So don't let me down. Now go.
+#52074: 	#ame Okay, good night. Let’s go, Nguyen.
+	
+	
+#52075: 	#ame Where the hell have you been? You should have relieved me twenty minutes ago! Just because this is you're last mission doesn't mean that you don't need to pull your weight. You haven't left the army yet, goddamit!
+#52076: 	#ame Get off my ass, Hornster, I’m in no mood for you tonight. Just get lost.
+#52077: 	#ame Damn guard duty… 
+#52078: 	#ame Why you mad, trung-si?
+#52079: 	#ame The captain is panicking and I don't like it. It’s gonna be a long night. 
+#52080: 	#ame You really leave army, trung-si?
+#52081: 	#ame Yeah, I'm thinking about it. But don't worry about that for now.
+#52082: 	#ame Damn! I left my new girlie mag in the bunker because of you… Okay, you take the first watch. Wake me up in two hours or else you’ll fall asleep too…And no smoking! I don’t want to be woken up by an RPG!  
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50700: 	#ame Nguyen, wake up, I heard something.
+#50701: 	#ame Quiet! They’re coming! Check your aim. The more of them we get the easier it will be for the boys in the back. Get them, Nguyen! 
+	
+	
+#50702: 	#ame Eye One, come back and hold your position!
+#50703: 	#ame Eye One, I don’t remember giving you the order to retreat!
+#50704: 	#ame Eye One, this is Six, where the hell are you going?
+#50705: 	#ame Eye One, go back immediately!
+	
+	
+#50706: 	#ame Trung-si, come back!
+#50707: 	#ame Trung-si, need you here!
+#50708: 	#ame I can’t hold them on my own!
+#50709: 	#ame Trung-si, where you going?
+	
+	
+#50710: 	#ame I should hold position... 
+	
+	
+	
+	
+	
+	
+	
+#50711: 	#ame This is Six. The attack is going as expected, they’re trying to get through you, Eye One. There have been explosions in the mine fields in other sectors but we have no visual contact. They were probably just testing us.
+#50712: 	#ame If it continues this way, listen out for the order to retreat. Six, out!
+#50713: 	#ame Eye One, this is Six. Prepare for retreat. Do you copy? I repeat, be prepared for immediate retreat!
+	
+	
+	
+#50714: 	#ame Mortars! They’re targeting us! 
+	
+#50715: 	#ame Eye One, this is Six. Retreat! They’re turning their mortars on you, they're zeroing in! Christ, get out of there!
+#50716: 	#ame We’ll cover you! We’ll fire a few mortars in front of you and as soon as the explosions start run over here! 
+	
+#50717: 	#ame Nguyen, get ready! Let’s get out of here! Now!
+#50719: 	#ame Commie pigs... 
+	
+	
+	
+	
+	
+	
+#50720: 	#ame We run! 
+	
+#50721: 	#ame Eye One, retreat!
+	
+	
+	
+#50722: 	#ame Move it!
+#50723: 	#ame Here, boys!
+	
+	
+	
+#50724: 	#ame These mortars are killing us, we have to stop them. They must be in the trees and we have got nothing to reach them with!
+#50725: 	#ame Doug, Bronson, you have to take care of those mortars.
+#50726: 	#ame Damn, Sir! With all due respect, should we dig a tunnel to them or what? Charlie isn't gonna let us just walk right in there.
+#50727: 	#ame That's an order soldier! The only way is through our mine field. Bronson, I hope you remember where you put your toys.
+#50728: 	#ame No problem, sir. I have a system in placing them.
+#50729: 	#ame Get through the mines and find those mortars. Take them out and get back here. Is that clear?
+#50730: 	#ame Get going then. And good luck, boys!
+	
+	
+	
+	
+	
+	
+	
+	
+#50731: 	#ame I think I remember well enough, follow me closely! 
+#50732: 	#ame It’s in you best interest to remember. You’re walking first. 
+	
+	
+	
+	
+	
+#50733: 	#ame Ugh. We’re out of that mess. 
+#50734: 	#ame I’ll call the captain and we’ll show them... 
+	
+	
+	
+	
+	
+	
+	
+#50735: 	#ame Enemy! Let them have it! 
+	
+	
+	
+	
+#50736: 	#ame Watch out, it’s gonna be a blast!
+#50737: 	#ame Placing explosives!
+#50738: 	#ame Another mortar down!
+	
+	
+	
+	
+	
+	
+#50739: 	#ame It’ll explode soon!
+#50740: 	#ame Watch out!
+#50741: 	#ame Placing explosives, watch out!
+	
+	
+	
+	
+	
+#50742: 	#ame Looks like we got them all!
+	
+	
+	
+	
+	
+#50743: 	#ame I think they'll think twice before trying to mess with us again anytime soon! Let’s get back to base!
+	
+	
+#50744: 	#ame No way, man! I'm not going back there. We still have a bit of work ahead of us.
+	
+	
+#50745: 	#ame Shit, it’s not the best idea to go into a mine field...
+	
+	
+#50746: 	#ame Home, sweet home! We’re back!
+	
+	
+	
+	
+	
+	
+	
+	
+#50747: 	#ame Good job, boys! Seriously. I was worried about you that time.
+#50748: 	#ame Well, I apologize, Sir. You were right. I mean about the attack. I just didn't think they'd come.
+#50749: 	#ame I didn't believe it either until they started shooting.
+#50750: 	#ame Thankfully we were ready for them, but even so, a lot of good men died tonight.
+#50751: 	#ame Nguyen? Shit!
+#50752: 	#ame I saw him, he stuck his neck out a bit too far. Charlie was retreating and he got caught in their covering fire as they ran. There was nothing I could do. He never stood a chance. 
+#50753: 	#ame They just kept on shooting, even after he was dead.
+#50754: 	#ame Shit!
+#50755: 	#ame At least we drove them off. What the hell is that?
+#50756: 	#ame Sir! I'd say it's a howitzer shell.
+	
+	
+	
+#50757: 	#ame Hotel Six, this is Eye One. We’ve made it through the mine field and are in position to counterattack. Over. 
+#50758: 	#ame Roger, Eye One. Good luck. Over. 
+#50759: 	#ame We’ll do our best, Six. Eye One out.
+	
+	
+	
+	
+	
+#50760: 	#ame Hotel Six, this is Eye One. We’ve found and destroyed three mortar positions. Over. 
+#50761: 	#ame Excellent job, Eye One. That's good news. What is Charlie doing now? Over. 
+#50762: 	#ame Not much, Six. There are a few running around still but there's not so many of them now. Over.
+#50763: 	#ame Looks like they're pulling out. Take up position and let's give them a send off to remember. Can you make it? Over.
+#50764: 	#ame I'll give it a damn good try. Eye One out.
+	
+	
+#52218: 	#ame 
+#52219: 	#ame 
+#52220: 	#ame 
+#52221: 	#ame 
+#52222: 	#ame 
+	
+#52223: 	#ame 
+#52224: 	#ame 
+#52225: 	#ame 
+	
+#52226: 	#ame 
+#52227: 	#ame 
+#52228: 	#ame 
+	
+#52229: 	#ame 
+#52230: 	#ame 
+#52231: 	#ame 
+#52232: 	#ame 
+#52233: 	#ame 
+#52234: 	#ame 
+#52235: 	#ame 
+#52236: 	#ame 
+#52237: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#52090: 	#ame OK boys, we have an unpleasant situation on our hands.     
+#52091: 	#ame I’d say field cannons of that caliber firing on the base is more then an “unpleasant situation”. We're just lucky they don't have enough ammo to put us down right away.
+#52092: 	#ame No shit! We have to stop those bastards!
+#52093: 	#ame Command says it's up to us to do something about it...
+#52094: 	#ame What the hell is the air force doing? Let them storm in there with their napalm and that will be that! I can’t stand those fly boys when I see them in the bar, they’re always so arrogant, but in the field…  Wimps!
+#52095: 	#ame The air force will bomb the nest, Hornster. They’re sending a few B-52's from Guam to clear the area.
+#52096: 	#ame Oh, man... That’ll teach the old Ho! Yeah!
+#52097: 	#ame But there's a hitch. We've got information from a captured NVA sergeant, by the way, he was the forward lookout for the troops that are shelling us…
+#52098: 	#ame It’s a damn good thing we got him then!
+#52099: 	#ame Anyway, he said the base was huge, it’s over the border in Cambodia, only twenty kilometers from here. The Vietcong are hiding out in mile upon mile of jungle, the prisoner says there is a whole regiment out there. There will be a cannon in one place, then several buildings in another, all neatly camouflaged. The LLRP have tried to get in there, but the ones that weren't killed were caught and nailed to trees. Charlie really doesn't want guests out there so we've no way of knowing where exactly they are.
+#52100: 	#ame So, the air force can’t do the job alone.  Somebody has to mark the targets for them.
+#52101: 	#ame And I suppose that somebody is us.
+#52102: 	#ame That’s right, Doug. After all, they will be saving our asses too.
+#52103: 	#ame There will be more teams in addition to ours. Shortly before we start the operation, the air force will carry out a diversionary raid close to the base. They will bomb some buildings that the NVA sappers have constructed. From the air, they look like a residential complex, but in reality, there’s nothing there except for a termite hill. They're meant to confuse our eyes in the sky.
+#52104: 	#ame So, Charlie will think that the dumb Americans have fallen for their subterfuge and that they're safe in their jungle base.
+#52105: 	#ame But the shit will hit the fan!
+#52106: 	#ame Correct. You and three other teams will go in. Since the base is so spread out, each team will take up position on one side of the base. As soon as the B-52 gets close, you will have to mark the target. The smoke bombs are good, but probably not good enough in this case, so you should look to find something big to set on fire. Then radio the Phantoms and their pilots will take care of guiding in the B-52.
+#52107: 	#ame But watch out, boys. Nothing's ever that easy. First our team will have to quietly destroy the Howitzers. The helicopter will drop you off relatively far away from the target, so you’ll have to get there on foot. With any luck you should get in there unnoticed. Make sure you mark the target well. You know what the fly boys are like, if anything goes wrong with the mission they'll blame you.
+#52108: 	#ame The air force will make a smokescreen, so Charlie should be busy. If you are spotted a few shots will easily get lost in all that commotion. The first thing you need to do is destroy the radio station, that’s absolutely essential, shoot it to bits, including the radio operator. Like we used to say in Europe: “Sicher ist sicher.”
+#52109: 	#ame The prisoner was very cooperative. The reconnaissance team from Pleiku got back this morning and they confirmed that at least part of what that NVA guy told us is true. One of them, Nhut, will go with you.
+#52110: 	#ame He’ll be your guide now that Nguyen is dead. He’s a damn good soldier and he knows his way around this part of the jungle.
+#52111: 	#ame Yeah, we walk around camp, but from far distance. Look like Charlie was right.   
+#52112: 	#ame So, once you destroy the radio, go after the cannons. There should be two large 130's. Bronson will place C4 on the breech of each of them. That should do it. 
+#52113: 	#ame That’s true, they won’t be able to fix the breeches in the jungle.
+#52114: 	#ame The bombing would probably take care of the cannons but I want to be sure they're out of commision before the bombers turn up just in case someone gets a lucky shot with one as soon as he sees our planes.
+#52115: 	#ame After taking care of the cannons proceed to your main target. It’s a small valley where the regiment's logistic center and command should be. You’ll have to be quiet as a ghosts in there.
+#52116: 	#ame There are a few machine gun posts located around the valley, as well as several anti-aircraft cannons. You’ll have to split up and quickly kill the machine gun operators.
+#52117: 	#ame Next, Doug will quietly go down. This shack should be the camp commander's. According to our information colonel Lu Van Hao should be there. He's a big fish and the intelligence boys want you to bring back anything he has there that looks like it could be important. You'll find some some notes on him in your briefing materials. So, Doug, when you get there take a look around and then get out of there before the bombers arrive. You'll have plenty of time, but don’t waste it.
+#52118: 	#ame How about Lu Van Hao? Are we to bring him back?
+#52119: 	#ame If he’s there, you know what to do. You don't need any excess baggage. 
+#52120: 	#ame How about the signal for the planes?
+#52121: 	#ame There should be a fuel storage area right there. With barrels and possibly a truck with a tanker. Put the explosives there. I think that should be a pretty visible signal.
+#52122: 	#ame That sure will!
+#52123: 	#ame As soon as the whole operation gets going, you’ll throw coloured smoke grenades into the valley.  Each of you will get an extra load. Then, you’ll run here, on this deck, where the helicopter will pick you up. The Phantoms and the B-52 will take care of the rest.
+#52124: 	#ame It’s an important mission and it isn't without its risks. But that's why the colonel is sending you, his best men. Just mentioning the word Cambodia had the brass in Saigon running round with their heads in their hands at the thought of fighting across the border. So this mission is off the books.
+#52125: 	#ame I think we're all professionals here so leave your personal belongings, papers, tags and letters with me. I don't have to remind you that dead or alive if you're caught in Cambodia Washington or Saigon will deny all knowledge of the mission.
+#52126: 	#ame Any questions?
+#52127: 	#ame All right, go get your weapons. And good luck, boys.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#52405: 	#ame 
+#52406: 	#ame 
+#52407: 	#ame 
+#52408: 	#ame 
+	
+	
+#50801: 	#ame Fist Alpha, Dragonfly One, Six here. Another artillery round has just landed on our base. They're getting closer everytime. So move your butts men! Over.
+#50802: 	#ame Six, Dragonfly One here. We are ready for landing. Over.
+#50803: 	#ame Six here. Roger. Operation Smoke Screen has just started so they shouldn’t notice you. But be careful. You're entering the cobra's nest. Hotel Six out.
+	
+	
+#50804: 	#ame Good luck boys. Now get moving, you’re only about four kilometers from your destination. That's nothing for you Green Beret heroes.
+#50805: 	#ame Shit man, get the hell out of here before you draw anymore attention to us. Just be ready to get us out of that mess when it all goes up in smoke!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#51000: 	#ame They know we here…
+	
+#51001: 	#ame Shit, they found out about us.
+	
+#51002: 	#ame Shit!
+	
+#51003: 	#ame We're screwed!
+	
+#51004: 	#ame Damn! Why didn't you shoot him? We're screwed now.
+	
+	
+	
+	
+	
+#51005: 	#ame Nhut, carefully towards the cannons.
+	
+	
+#51006: 	#ame Nhut, take us to the post.
+#51007: 	#ame Lead us but keep an eye out for Charlie.
+#51008: 	#ame Go on. But be very quiet and don't let them see you.
+	
+	
+	
+	
+	
+#51009: 	#ame We should go this way where the long arrow is to get to the cannons. Hopefully there won't be so many patrols there.
+	
+	
+	
+	
+#51010: 	#ame Not possible. Many enemy there. We must go around.
+#51011: 	#ame OK, take the lead.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#51012: 	#ame Hotel Six, this is Fist Alpha. We're near the enemy post. We're going into it. Over.
+#51013: 	#ame Fist Alpha, this is Six, roger that. Be careful, it's up to you now! Good luck, boys. Over.
+#51014: 	#ame Six, this is Fist Alpha, copy. We'll be careful, Sir, out.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50886: 	#ame This is the way to the underground, radio there, trung-si. You go alone.
+#50887: 	#ame Stay here and stay down! I'm going in!
+	
+	
+	
+	
+	
+#50806: 	#ame If we go this way we will get to the central part of the base, but first we must destroy those cannons.
+#50807: 	#ame We need to destroy those damn howitzers before we can go on.
+#50808: 	#ame If I remember it correctly from the map, this way leads to the central part of the base.
+	
+#50809: 	#ame We really can’t go this way yet.
+	
+#50810: 	#ame Damn it! Why am I here again? I really need a holiday after this mission.
+	
+	
+#50811: 	#ame Not there yet, trung.
+#50812: 	#ame We first destroy cannons, trung.
+#50813: 	#ame Where you go, trung?
+	
+#50814: 	#ame Where you going?
+#50815: 	#ame We must destroy that garbage first!
+	
+#50816: 	#ame Douglas? Where you going?
+#50817: 	#ame We’re not finished here yet...
+	
+#50818: 	#ame Shouldn’t we destroy those cannons first?
+#50819: 	#ame Hey! Don’t go there yet... we still have work to do.
+	
+#50820: 	#ame Where ya goin’, blockhead? We gotta destroy them damn things. Let’s go…
+#50821: 	#ame Shit, Douglas, move back...
+	
+	
+	
+	
+	
+	
+	
+#50822: 	#ame 
+#50823: 	#ame 
+#50824: 	#ame 
+	
+	
+	
+	
+#50885: 	#ame Shit, the alarm's been sounded…we're really screwed up.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50825: 	#ame Nhut, take us to the radio.
+#50826: 	#ame Take us to the radio.
+#50827: 	#ame We must get to that radio hut.
+#50828: 	#ame Go on. We have to destroy the radio.
+	
+	
+	
+	
+#50888: 	#ame Wait for me, I am going for the radio.
+	
+	
+	
+	
+#50829: 	#ame Unless the prisoner was talkin’ bullshit the radio hut should be here. On the place marked with a circle.
+	
+	
+	
+	
+	
+	
+	
+#50830: 	#ame Bronson, place the explosives!
+	
+#50831: 	#ame Bronson, just this last one and we can get out of here!
+	
+#50832: 	#ame What a bang that’s gonna be! 
+	
+#50833: 	#ame Bye-bye, artillerymen! 
+	
+	
+	
+	
+#50834: 	#ame Boom! Gun dead.
+#50835: 	#ame Gun destroyed. Big boom!
+	
+#50836: 	#ame Nice!
+#50837: 	#ame Must give myself another pat on the back!
+	
+#50838: 	#ame Right, cannon destroyed...
+#50839: 	#ame It’s gonna get real hot real soon!
+	
+#50840: 	#ame Great! You wanna report to base, Sarge?
+#50841: 	#ame Cannon down!
+	
+#50842: 	#ame No more shelling us with that baby!
+#50843: 	#ame OK. Now all we have to do is shoot the rest of them damn VC...
+	
+	
+	
+#50844: 	#ame I’d rather Bronson did this. Let me get him...
+#50845: 	#ame Bronson, where are you when I need you?
+#50846: 	#ame Where are you, Bronson?
+#50847: 	#ame If I set it off by myself Bronson will kill me. I'd rather leave it to him. 
+#50848: 	#ame I need to get Bronson to do this job.
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50849: 	#ame Now we have to get to those cannon batteries. Lead us! 
+	
+	
+#50850: 	#ame Go on to the cannons. 
+#50851: 	#ame We must get to those cannons. Go! 
+#50852: 	#ame Lead us to the cannon batteries. 
+	
+	
+	
+#50853: 	#ame We have one cannon off our backs. Now let’s move onto the other one. Let's go. 
+	
+	
+#50854: 	#ame Go first. Lead us to the second cannon. 
+#50855: 	#ame Now find the other piece of crap. 
+#50856: 	#ame Go first, Nhut. 
+	
+	
+	
+	
+#50857: 	#ame So the cannons should be here. Here, where the red crosses are.
+	
+	
+	
+	
+#50858: 	#ame Quietly now...
+	
+	
+	
+	
+#50859: 	#ame We have the cannons off our backs. Now find the way to the regiment headquarters. 
+	
+	
+#50860: 	#ame Find the way to the main target. 
+#50861: 	#ame Continue carefully on your way to the main target. 
+#50862: 	#ame Go first, Nhut. We’ll move over to the main target. 
+	
+	
+	
+#50863: 	#ame We must follow this arrow...
+	
+	
+	
+	
+#50864: 	#ame Hotel Six, Fist Alpha here. We are near first target. Over. 
+#50865: 	#ame Fist Alpha, Six here. Roger. Operation Smoke Screen has just begun. The air force is scattering bombs over the decoy hill and Charlie is laughing for sure. So stick it to him. Good luck, men. 
+#50866: 	#ame Six, Fist Alpha here. We’re going in. Out. 
+	
+#50867: 	#ame Right men, get ready. Time to burst Charlie’s bubble. Lock and load!
+#50868: 	#ame This is going to be so much fun. I wish I could see the look on Charlie's face when they realize what's happening.
+#50869: 	#ame Stay focused, Hornster. It's not over yet.
+	
+	
+	
+#50870: 	#ame Hotel Six, Fist Alpha here. The radio has been destroyed. 
+	
+	
+#50871: 	#ame We have been able to do things nice and quiet like. The rest of the camp have no idea we are here. Over. 
+#50872: 	#ame Good work, men. Now get to those cannons and report back when they are out of commision. The other teams also report a problem-free advance. The mission is progressing well. Over.
+	
+	
+#50873: 	#ame We got into a fire fight with Charlie but we took care of them before they had a chance to alert the rest of the camp. Over. 
+#50874: 	#ame Try to avoid any further contact. The other teams report a problem-free advance, so destroy those damn cannons and move to the target area. Over.
+	
+#50875: 	#ame Roger, Six. Fist Alpha out. 
+	
+	
+	
+#50876: 	#ame Hotel Six. Fist Alpha here. First cannon destroyed! Over. 
+#50877: 	#ame Good work, Fist Alpha! Keep it up! Over.
+#50878: 	#ame We’re on to the next cannon, Hotel Six. Fist Alpha out.
+	
+	
+#50879: 	#ame Hotel Six. Fist Alpha here. We have destroyed both cannons. They ain’t gonna bother us no more. Over.
+#50880: 	#ame Great! You’ve made my day, men. The other teams are waiting at their stations. The air force is in position. Move to main target. Over.
+#50881: 	#ame Hotel Six. Fist Alpha here. Roger. We’re off. Out.
+	
+	
+#50882: 	#ame Let’s have a smoke, men. Get your grenades ready and let's go.
+#50883: 	#ame Damn, commander, I’d love a cigarette...
+#50884: 	#ame Ya want some fire? Ask Charlie. 
+	
+	
+	
+#52238: 	#ame 
+#52239: 	#ame 
+#52240: 	#ame 
+#52241: 	#ame 
+#52242: 	#ame 
+#52243: 	#ame 
+	
+#52244: 	#ame 
+#52245: 	#ame 
+#52246: 	#ame 
+#52247: 	#ame 
+#52248: 	#ame 
+	
+#52249: 	#ame 
+#52250: 	#ame 
+#52251: 	#ame 
+#52252: 	#ame 
+#52253: 	#ame 
+#52254: 	#ame 
+#52255: 	#ame 
+#52256: 	#ame 
+#52257: 	#ame 
+#52258: 	#ame 
+#52259: 	#ame 
+	
+	
+#52260: 	#ame 
+#52261: 	#ame 
+#52262: 	#ame 
+#52263: 	#ame 
+	
+	
+#52264: 	#ame 
+#52265: 	#ame 
+#52266: 	#ame 
+#52267: 	#ame 
+#52268: 	#ame 
+#52269: 	#ame 
+#52270: 	#ame 
+#52271: 	#ame 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50901: 	#ame Hotel Six, this is Fist Alpha. We’re near the main target, everything's going as planned so far. Over. 
+#50902: 	#ame Roger, Fist Alpha.  Get working or you'll miss the fireworks. Over. 
+#50948: 	#ame Roger, Fist Alpha out.
+	
+	
+#50903: 	#ame Everyone knows what they're to do, so let’s get going. 
+#50904: 	#ame Defort, Bronson and Nhut to the right, me, Hornster and Crocker to the left. 
+#50905: 	#ame And don’t screw it up. 
+	
+	
+	
+#50906: 	#ame  Doug, where are you going?
+#50907: 	#ame  Doug, we’re supposed to go in the other direction!
+#50908: 	#ame  Where the hell are you going? We’re supposed to go the other way!
+#50909: 	#ame  Come back, commander!
+	
+	
+	
+#50910: 	#ame I'm taking my position, move on. And be careful!
+	
+#50911: 	#ame  I’ll stay here, move on, Doug.
+	
+	
+#50912: 	#ame  Where have you been?
+	
+	
+	
+#50913: 	#ame We’re screwed now, by the time the planes get here Charlie will be hiding or run away.... 
+	
+	
+	
+	
+	
+	
+	
+#50914: 	#ame That's how I like you. Good night. 
+	
+	
+	
+#50915: 	#ame Shut up, damn it! 
+	
+	
+	
+	
+#50916: 	#ame Might as well take it all.
+#50917: 	#ame Are there any more papers? 
+#50918: 	#ame Might as well take it all.
+	
+#50919: 	#ame Finally, I think I have it all. Now I can take care of the tankers.
+	
+	
+#50920: 	#ame Shit, it’s gonna get tough now, I should have been more careful... 
+	
+	
+	
+#50921: 	#ame Hot damn! Now I have to join the rest quickly. 
+	
+	
+#50922: 	#ame I ought to kill the commander first. 
+#50923: 	#ame The commander first, then the fuel. 
+#50924: 	#ame Not now, I still have something else to do. 
+	
+	
+	
+#50925: 	#ame Here you go, assholes! 
+	
+	
+	
+	
+	
+	
+#50926: 	#ame Fist Alpha, this is Dragonfly One, mark your position, over. 
+	
+	
+	
+	
+#50927: 	#ame  Let’s get in now! Move it!
+#50928: 	#ame  Shut up and get in!
+	
+	
+	
+	
+	
+	
+	
+	
+	
+#50929: 	#ame Hotel Six, this is Dragonfly One, team is onboard. We’re heading home! Over.
+#50930: 	#ame Roger, Dragonfly One. Dragonfly Three, what’s your status? Over.
+#50931: 	#ame Hotel Six, this is Dragonfly Three, we’re taking off, we’ll be out of this shit in no time! Over!
+#50932: 	#ame Excellent, Dragonflies. Carpet Cleaner, this is Hotel Six, do you read me? Over.
+#50933: 	#ame Hotel Six, this is Carpet Cleaner. Has there been any change in the situation?
+#50934: 	#ame Cleaner, this is Hotel Six. Our teams will be clear of the target zone in six zero seconds. Begin your approach at will, the target is marked. Over.
+#50935: 	#ame Roger, Hotel Six. Approaching target. We'll be delivering our payload in four minutes. That'll be for you, old Ho! Carpet Cleaner over and out.
+	
+	
+	
+#50936: 	#ame It looks like it was all worth it. 
+#50937: 	#ame After the north Vietnamese base was destroyed, the Vietcong's activities died down significantly. All of a sudden, Charlie isn't hiding behind every tree, only occasionally does he bother the villages of our new mountaineer friends and allies, but we usually take care of that quickly. Yeah, dear uncle Ho, the Green Berets have arrived! 
+	
+#50938: 	#ame We just may win this war after all...
+	
+	
+	
+	
+	
+#50939: 	#ame Hotel Six, this is Fist Alpha. The first stage is complete. I’m about to enter, kill the commander and blow it all sky high. Asking for permission to continue. Over. 
+#50940: 	#ame Roger, Fist Alpha. Other teams are ready and the planes are on their way. Continue as planned. Over. 
+#50941: 	#ame Roger, Fist Alpha out.
+	
+	
+	
+#50942: 	#ame Hotel Six, this is Fist Alpha. Everything went okay, we’re waiting at the landing zone for the chopper. It’s getting hot here, tell him to move it. Over. 
+#50943: 	#ame Roger, Fist Alpha. Great job, Dragonfly One is on its way to pick you up. They’ll contact you. Over. 
+#50944: 	#ame Roger, Fist Alpha out.
+	
+	
+	
+#50945: 	#ame Hotel Six, this is Fist Alpha. Move it, boys. Can you see our smoke? Over. 
+#50946: 	#ame This is Dragonfly One, Fist Alpha, there’s tons of smoke everywhere but I can see your yellow. I’m approaching and will land in a moment. Over. 
+#50947: 	#ame All right, move it, man. I'm starting to sweat here. Fist Alpha out.
+	
+	
+#52272: 	#ame 
+#52273: 	#ame 
+#52274: 	#ame 
+#52275: 	#ame 
+#52276: 	#ame 
+#52277: 	#ame 
+#52278: 	#ame 
+#52279: 	#ame 
+	
+#52280: 	#ame 
+#52281: 	#ame 
+#52282: 	#ame 
+#52283: 	#ame 
+#52284: 	#ame 
+#52285: 	#ame 
+	
+#52286: 	#ame 
+#52287: 	#ame 
+#52288: 	#ame 
+#52289: 	#ame 
+#52290: 	#ame 
+#52291: 	#ame 
+#52292: 	#ame 
+	
+#52293: 	#ame 
+#52294: 	#ame 
+#52295: 	#ame 
+#52296: 	#ame 
+#52297: 	#ame 
+	
+	
+#52298: 	#ame 
+#52299: 	#ame 
+#52300: 	#ame 
+#52301: 	#ame 
+#52302: 	#ame 
+#52303: 	#ame 
+#52304: 	#ame 
+#52305: 	#ame 
+	
+#52409: 	#ame 
+#52410: 	#ame 
+#52411: 	#ame 
+#52412: 	#ame 
+	
+	
+	
+	
+#53001: 	#ame Sure, trung-si. We go!
+#53002: 	#ame We go!
+#53003: 	#ame I lead!
+#53004: 	#ame Understand, trung-si. We go!
+#53005: 	#ame OK, follow me!
+#53006: 	#ame I wait for others.
+#53007: 	#ame I wait for rest of soldiers.
+#53008: 	#ame We go when we all here.
+	
+#53010: 	#ame I wait for others.
+#53011: 	#ame We not all here.
+#53012: 	#ame We wait for others.
+	
+#black: 	#ame 
+	
+#52310: 	#ame Some notes scribbled in Vietnamese...
+#52311: 	#ame Hey, South Vietnamese money. Charlie was planning to do some shopping.
+#52312: 	#ame Hmm, I’m sure there’s something interesting in the packet. I’d better wait and open it back at camp...
+	
+#52313: 	#ame The poor guy kept a diary. Probably nothing interesting, but you never know.
+#52314: 	#ame South Vietnamese ID card, probably fake.
+	
+#52315: 	#ame An ID card...
+#52316: 	#ame Mao Tse-Tung, the Big Bad China Man.... why would a Vietnamese guy carry this around?
+#52317: 	#ame Money. But it won’t buy much for this Charlie anymore. War is a bitch, ain’t it?
+	
+#52318: 	#ame A family photo, probably useless, but I’ll take it.
+#52319: 	#ame A diploma, but I have no idea for what...
+#52320: 	#ame Hmm, some plans, they may be important.
+	
+#52321: 	#ame A letter…it’ll never get to its destination, off to intelligence instead. The boys will enjoy reading it.
+#52322: 	#ame A document, probably propaganda...
+	
+#52323: 	#ame A great picture. If it wasn’t for these two, I could be enjoying myself somewhere on the beach right now.
+	
+	
+#52324: 	#ame I’ve never seen and ID card like this. Taking it with me.
+#52325: 	#ame North Vietnamese money, it won’t buy me anything.
+#52326: 	#ame A medal. And what did you get this for, you son-of-a-bitch?
+#52327: 	#ame Look here, this officer must have been a real bastard.
+	
+	
+#55556: 	#ame Bronson, can you clear the way for us?
+#55555: 	#ame Fire in a hole!

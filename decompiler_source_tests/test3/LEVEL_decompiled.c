@@ -1,4 +1,5 @@
-// Structured decompilation of decompiler_source_tests/test3/LEVEL.SCR
+pycparser not available, using regex fallback for parsing
+// Structured decompilation of decompiler_source_tests\test3\LEVEL.SCR
 // Functions: 11
 
 #include <inc\sc_global.h>
@@ -385,15 +386,15 @@ int ScriptMain(s_SC_L_info *info) {
         switch (g_dialog) {
         case 0:
             local_0 = 0.5f;
-            SC_SpeechRadio2(3400, &local_0);
+            SC_SpeechRadio2(3400, &local_0);  // 3400: "Red Bird, this is Hotel Six, what's your Lima Oscar Charlie? Over."
             local_0 = i + 0.3f;
-            SC_SpeechRadio2(3401, &local_0);
+            SC_SpeechRadio2(3401, &local_0);  // 3401: "Hotel Six, this is Red Bird. We are about five klicks south of the target. Over."
             local_0 = tmp114 + 0.3f;
-            SC_SpeechRadio2(3402, &local_0);
+            SC_SpeechRadio2(3402, &local_0);  // 3402: "Red Bird, this is Six. Have you seen any enemy down there? Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3403, &local_0);
+            SC_SpeechRadio2(3403, &local_0);  // 3403: "Six, this is Red Bird. That�s a negative. Area is clear. Over."
             local_0 += 0.3f;
-            SC_SpeechRadio2(3404, &local_0);
+            SC_SpeechRadio2(3404, &local_0);  // 3404: "This is Six, roger that, Red Bird, stay in contact. Out."
             local_0 += 0.5f;
             g_dialog = 1;
             break;
@@ -403,65 +404,65 @@ int ScriptMain(s_SC_L_info *info) {
             local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
             local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
             local_0 = 3.0f;
-            SC_P_Speech2(local_24, 3420, &local_0);
+            SC_P_Speech2(local_24, 3420, &local_0);  // 3420: "Shit."
             local_0 = 3.2f;
-            SC_P_Speech2(local_25, 3421, &local_0);
+            SC_P_Speech2(local_25, 3421, &local_0);  // 3421: "Fuck!"
             g_dialog = 2;
             break;
         case 2:
             if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 2) break;
             local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
             local_0 = 1.0f;
-            SC_P_Speech2(local_26, 3422, &local_0);
+            SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
             local_0 = tmp114 + 0.3f;
             t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-            SC_P_Speech2(t1894_ret, 3423, &local_0);
+            SC_P_Speech2(t1894_ret, 3423, &local_0);  // 3423: "Blue Bird's been hit!"
             local_0 += 0.4f;
-            SC_P_Speech2(local_26, 3422, &local_0);
+            SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
             local_0 += 0.3f;
-            SC_SpeechRadio2(3416, &local_0);
+            SC_SpeechRadio2(3416, &local_0);  // 3416: "Red Bird, this is Blue bird. We've been hit by ground fire. Controls are going... Shit!"
             local_0 += 0.5f;
-            SC_SpeechRadio2(3417, &local_0);
+            SC_SpeechRadio2(3417, &local_0);  // 3417: "Blue Bird, this is Red Bird. I see flames on your tail. Get that thing on the deck, before she blows! Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3418, &local_0);
+            SC_SpeechRadio2(3418, &local_0);  // 3418: "Fuck! Red, I'm trying. Controls have gone... Can't hold her... Call Six..."
             local_0 += 0.5f;
-            SC_P_Speech2(local_26, 3419, &local_0);
+            SC_P_Speech2(local_26, 3419, &local_0);  // 3419: "Damn! We need to get the hell outta here, too much ground fire!"
             local_0 += 2.0f;
             local_2 = local_0 - 1.2f;
             t1970_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-            SC_P_Speech2(t1970_ret, 3430, &local_2);
+            SC_P_Speech2(t1970_ret, 3430, &local_2);  // 3430: "Fucking gooks."
             local_2 = tmp141 + 1.5f;
-            SC_P_Speech2(local_25, 3431, &local_0);
-            SC_SpeechRadio2(3424, &local_0);
+            SC_P_Speech2(local_25, 3431, &local_0);  // 3431: "Are these choppers made of fucking cardboard or what?"
+            SC_SpeechRadio2(3424, &local_0);  // 3424: "Hotel Six, this is Red Bird. Blue Bird has taken hits, and is attempting emergency landing. Say again, Blue Bird is going down. Ground fire is too heavy. We're leaving the area. Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3425, &local_0);
+            SC_SpeechRadio2(3425, &local_0);  // 3425: "Red Bird, this is Six. Where did this happen? Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3426, &local_0);
+            SC_SpeechRadio2(3426, &local_0);  // 3426: "Six, this is Red Bird. Over some rice fields. Grid ref 25 dash 13. We�ve seen group of VC on the paddy fields. Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3427, &local_0);
+            SC_SpeechRadio2(3427, &local_0);  // 3427: "Red Bird, this is Six. Can you assist Blue Bird? Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3428, &local_0);
+            SC_SpeechRadio2(3428, &local_0);  // 3428: "Six, this is Red Bird. I will draw a circle and attack with my fifty cal. Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3429, &local_0);
+            SC_SpeechRadio2(3429, &local_0);  // 3429: "This is Six. OK, Red Bird, be careful. Over."
             local_0 += 0.5f;
             g_dialog = 3;
             break;
         case 3:
             if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 3) break;
             local_0 = 0;
-            SC_SpeechRadio2(3440, &local_0);
+            SC_SpeechRadio2(3440, &local_0);  // 3440: "Red Bird, this is Six. Can you see the crew of the downed chopper? Over."
             local_0 = i + 0.5f;
-            SC_SpeechRadio2(3441, &local_0);
+            SC_SpeechRadio2(3441, &local_0);  // 3441: "Six, this is Red Bird. Seems only one pilot made it out alive. He's running for cover. The rest are KIA or WIA. Over."
             local_0 = tmp114 + 0.5f;
-            SC_SpeechRadio2(3442, &local_0);
+            SC_SpeechRadio2(3442, &local_0);  // 3442: "Red Bird, this is Six. Can you pick him up? Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3443, &local_0);
+            SC_SpeechRadio2(3443, &local_0);  // 3443: "Six, this is Red Bird. Negative, there are too many gooks around. Can�t land safely. Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3444, &local_0);
+            SC_SpeechRadio2(3444, &local_0);  // 3444: "Red Bird, this is Six. Move to sector 24 dash 11 and insert Hawkins there. Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3445, &local_0);
+            SC_SpeechRadio2(3445, &local_0);  // 3445: "Six, this is Red Bird. What, insert only one soldier? What about the rest? Over."
             local_0 += 0.5f;
-            SC_SpeechRadio2(3446, &local_0);
+            SC_SpeechRadio2(3446, &local_0);  // 3446: "Red, this is Six. I don�t want too many people down there. Hawkins is experienced enough. The rest will support them from the air. Over."
             local_0 += 0.5f;
             g_dialog = 4;
             break;
@@ -471,14 +472,14 @@ int ScriptMain(s_SC_L_info *info) {
             local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
             local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
             local_0 = 0;
-            SC_P_Speech2(local_26, 3447, &local_0);
+            SC_P_Speech2(local_26, 3447, &local_0);  // 3447: "This is Six. OK, Hawkins, take a radio with you so that we can stay in touch, use call sign Fox One. Over."
             local_0 += 0.3f;
-            SC_P_Speech2(local_22, 3448, &local_0);
+            SC_P_Speech2(local_22, 3448, &local_0);  // 3448: "Roger Six, of course. Over."
             local_0 += 0.6f;
-            SC_P_Speech2(local_26, 3449, &local_0);
+            SC_P_Speech2(local_26, 3449, &local_0);  // 3449: "Fox One, this is Six. Good luck Hawkins, bring us back that pilot."
             local_0 += 0.3f;
             info->next_exe_time = local_0 - 1.0f;
-            SC_P_Speech2(local_22, 3450, &local_0);
+            SC_P_Speech2(local_22, 3450, &local_0);  // 3450: "This is Fox One. I'll let you know how we're doing, Six. Over."
             break;
         case 5:
             SC_PC_EnableExit(1);
@@ -510,11 +511,11 @@ int ScriptMain(s_SC_L_info *info) {
             if (local_1 >= 10.0f) break;
             SC_sgi(SGI_LEVELPHASE, 3);
             local_0 = 0;
-            SC_P_Speech2(local_22, 3451, &local_0);
+            SC_P_Speech2(local_22, 3451, &local_0);  // 3451: "Thank God, we found you! Are you alright? Any injuries?"
             local_0 += 1.6f;
-            SC_P_Speech2(local_23, 3452, &local_0);
+            SC_P_Speech2(local_23, 3452, &local_0);  // 3452: "I'm OK. The team I had with me are screwed, though. Gooks have probably got there by now..."
             local_0 += 0.5f;
-            SC_P_Speech2(local_22, 3453, &local_0);
+            SC_P_Speech2(local_22, 3453, &local_0);  // 3453: "I'll request extraction, we'll call in support to pick up the guys at the downed slick when we're on the chopper."
             local_0 = tmp192;
             local_83.text_id = 3471;
             local_83.status = 2;
@@ -595,15 +596,15 @@ int ScriptMain(s_SC_L_info *info) {
             SC_RadioBatch_Begin();
             local_0 = 0;
             local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-            SC_P_Speech2(local_22, 3454, &local_0);
+            SC_P_Speech2(local_22, 3454, &local_0);  // 3454: "Red Bird, this is Fox One, we've found the pilot. Over."
             local_0 += 1.3f;
-            SC_SpeechRadio2(3455, &local_0);
+            SC_SpeechRadio2(3455, &local_0);  // 3455: "This is Red Bird. Good work Fox One. Over."
             local_0 += 0.5f;
-            SC_P_Speech2(local_22, 3456, &local_0);
+            SC_P_Speech2(local_22, 3456, &local_0);  // 3456: "Red Bird, this is Fox One. Thanks, we need extraction now. Over."
             local_0 += 0.7f;
-            SC_SpeechRadio2(3461, &local_0);
+            SC_SpeechRadio2(3461, &local_0);  // 3461: "Fox One, this is Red Bird. Roger that extraction. Move near one of farms and pop some smoke! Over."
             local_0 += 0.5f;
-            SC_P_SpeechMes2(local_22, 3457, &local_0, 11);
+            SC_P_SpeechMes2(local_22, 3457, &local_0, 11);  // 3457: "Red Bird, this is Fox One, wilco, out."
             gPilotCommTime = local_0 + 3.0f;
             info->next_exe_time = 0.1f;
             SC_RadioBatch_End();
@@ -611,7 +612,7 @@ int ScriptMain(s_SC_L_info *info) {
         break;
     case 2:
         if (local_88 == 11) {
-            SC_message(&data_759);
+            SC_message("Break");
             if (gPilotCommTime > 3.0f) {
                 gPilotCommTime = 3.0f;
             }
@@ -643,10 +644,10 @@ int ScriptMain(s_SC_L_info *info) {
         func_0994(g_trashes_enabled);
         break;
     case 15:
-        if (param_1->field_4 >= 20) {
+        if (info->field_4 >= 20) {
             info->param3 = 0;
         } else {
-            param_1->field_8 = tmp300;
+            info->field_8 = tmp300;
             info->param3 = 1;
         }
         break;

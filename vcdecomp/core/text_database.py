@@ -1,7 +1,10 @@
-"""Parser for Vietcong INGAME_TEXT.TXT database.
+"""Parser for Vietcong text databases.
 
-This module parses the game's text database and provides text ID to string mapping.
+This module parses the game's text databases and provides text ID to string mapping.
 Used for annotating decompiled code with human-readable text strings.
+
+Loads and merges four text files (later files override earlier on ID conflict):
+  INGAME_TEXT.TXT, ADDON.TXT, ADDON_INGAME.TXT, SPEECH.TXT
 """
 
 from __future__ import annotations
@@ -11,9 +14,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-# Path to bundled database
+# Path to bundled databases (loaded in order; later files override earlier on ID conflict)
 _DATA_DIR = Path(__file__).parent.parent / 'data'
-_DEFAULT_TEXT_DB = _DATA_DIR / 'INGAME_TEXT.TXT'
+_ALL_TEXT_DBS = [
+    _DATA_DIR / 'INGAME_TEXT.TXT',
+    _DATA_DIR / 'ADDON.TXT',
+    _DATA_DIR / 'ADDON_INGAME.TXT',
+    _DATA_DIR / 'SPEECH.TXT',
+]
 
 # Cached database singleton
 _cached_database: Optional[Dict[int, str]] = None
@@ -53,21 +61,25 @@ def parse_ingame_text(path: str | Path) -> Dict[int, str]:
 
 
 def get_text_database() -> Dict[int, str]:
-    """Load the bundled INGAME_TEXT.TXT database (cached).
+    """Load and merge all bundled text databases (cached).
+
+    Loads INGAME_TEXT.TXT, ADDON.TXT, ADDON_INGAME.TXT, and SPEECH.TXT
+    in order, merging their entries. Later files override earlier ones
+    on ID conflict.
 
     Returns:
         Dictionary mapping text ID to text string.
-        Empty dict if database file not found.
+        Empty dict if no database files found.
     """
     global _cached_database
 
     if _cached_database is not None:
         return _cached_database
 
-    if _DEFAULT_TEXT_DB.exists():
-        _cached_database = parse_ingame_text(_DEFAULT_TEXT_DB)
-    else:
-        _cached_database = {}
+    _cached_database = {}
+    for db_path in _ALL_TEXT_DBS:
+        if db_path.exists():
+            _cached_database.update(parse_ingame_text(db_path))
 
     return _cached_database
 
