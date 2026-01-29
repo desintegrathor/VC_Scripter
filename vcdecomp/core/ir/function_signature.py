@@ -344,7 +344,12 @@ def get_function_signature_string(
         from ..script_type_detector import detect_script_type
         scr = ssa_func.scr
         script_type = detect_script_type(scr)
-        ret_type = "int" if scr.header.ret_size > 0 else "void"
+        # _init is an initialization callback that never returns a value;
+        # only ScriptMain/main uses the script-level ret_size.
+        if func_name == "_init":
+            ret_type = "void"
+        else:
+            ret_type = "int" if scr.header.ret_size > 0 else "void"
         return f"{ret_type} {func_name}({script_type} *info)"
 
     # Plan 07-06a: Use type inference for parameter types and return type if available

@@ -145,8 +145,12 @@ def is_simple_expression(expr: str) -> bool:
 
     expr = expr.strip()
 
+    # Remove arrow operators before scanning for comparison operators,
+    # so that "->" is not misclassified as containing ">".
+    expr_no_arrow = expr.replace("->", "")
+
     # Expressions with comparison/logical operators are not simple.
-    if any(op in expr for op in ("==", "!=", "<=", ">=", "<", ">", "&&", "||")):
+    if any(op in expr_no_arrow for op in ("==", "!=", "<=", ">=", "<", ">", "&&", "||")):
         return False
 
     # Literal number
@@ -158,8 +162,7 @@ def is_simple_expression(expr: str) -> bool:
         return True
 
     # If expression contains operators, it's not simple.
-    # Ignore pointer field access arrows when scanning for operators.
-    expr_no_arrow = expr.replace("->", "")
+    # (expr_no_arrow already has "->" stripped above)
     operator_tokens = [
         "==", "!=", "<=", ">=", "<", ">", "&&", "||",
         "+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>",

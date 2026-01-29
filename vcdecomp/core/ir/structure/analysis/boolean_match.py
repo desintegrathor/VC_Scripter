@@ -200,9 +200,13 @@ class BooleanMatch:
         # Remove leading/trailing whitespace
         expr = expr.strip()
 
-        # Normalize whitespace around operators
+        # Normalize whitespace around operators.
+        # Protect pointer-arrow operators ("->") from being split.
         expr = re.sub(r'\s+', ' ', expr)
+        _ARROW_PLACEHOLDER = '\x00ARROW\x00'
+        expr = expr.replace('->', _ARROW_PLACEHOLDER)
         expr = re.sub(r'\s*([<>=!&|]+)\s*', r' \1 ', expr)
+        expr = expr.replace(_ARROW_PLACEHOLDER, '->')
         expr = re.sub(r'\s+', ' ', expr)
 
         # Remove redundant outer parentheses

@@ -4,32 +4,6 @@
 #include <inc\sc_global.h>
 #include <inc\sc_def.h>
 
-// Global variables
-dword gVar = 0;
-dword gVar1 = 0;
-int gphase = 0;
-int g_dialog = 0;
-dword g_will_group[4] = {0};
-int g_dochange = 1;
-float g_final_enter_timer = 0.0f;
-c_Vector3 g_will_pos[4] = {0};
-dword g_vill_visited[4] = {0};
-int g_pilot_phase = 0;
-float g_pilot_timer = 0.0f;
-int g_pilot_vill_nr = 255;
-float g_showinfo_timer = 0.0f;
-int g_trashes_enabled = 0;
-dword gShot_pos[3] = {0};
-float gEndTimer = 0.0f;
-float gPilotCommTime = 0.0f;
-dword g_save[2] = {0};
-dword g_music[2] = {0};
-float gStartMusicTime = 0.0f;
-
-int _init(s_SC_L_info *info) {
-    return;
-}
-
 void func_0292(void) {
     int j;
     int k;
@@ -669,7 +643,7 @@ int ScriptMain(s_SC_L_info *info) {
         func_0994(g_trashes_enabled);
         break;
     case 15:
-        if ((param_1- > field_4) >= 20) {
+        if (param_1->field_4 >= 20) {
             info->param3 = 0;
         } else {
             param_1->field_8 = tmp300;

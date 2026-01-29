@@ -759,7 +759,9 @@ def cmd_structure(args):
         return dimensions if len(dimensions) > 1 else None
 
     # Generate global variable declarations
-    if globals_usage:
+    # Skip entirely if the SCR file has zero global pointers — any entries
+    # returned by GlobalResolver are spurious data-segment artefacts.
+    if globals_usage and scr.global_pointers.gptr_count > 0:
         print("// Global variables")
         # Sort by offset for consistent output
         for offset in sorted(globals_usage.keys()):

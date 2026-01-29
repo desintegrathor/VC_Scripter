@@ -4,51 +4,6 @@
 #include <inc\sc_global.h>
 #include <inc\sc_def.h>
 
-// Global variables
-int gSteps = 0;
-dword gRecs[2][6];
-dword gVar = 0;
-dword gVar1 = 0;
-s_SC_MP_Recover gRec[2][6][32];
-dword gVar2 = 0;
-dword gRecTimer[2][6][32] = {0};
-s_sphere gStepSwitch[6] = {0};
-int gEndRule = 0;
-int gEndValue = 0;
-float gTime = 0.0f;
-dword gSidePoints[2] = {0};
-dword gCLN_SidePoints[2] = {0};
-int gCLN_gamephase = 0;
-int gMainPhase = 0;
-int gAttackingSide = 0;
-int gCurStep = 0;
-int gMission_phase = 0;
-float gNoActiveTime = 0.0f;
-float gPhaseTimer = 0.0f;
-float gMissionTime_update = 10.0f;
-float gMissionTime = 0.0f;
-float gMissionTimePrev = 0.0f;
-float gMissionTimeToBeat = 0.0f;
-int gCLN_MissionTimePrevID = 0;
-float gCLN_MissionTime = 0.0f;
-int gCLN_CurStep = 0;
-float gCLN_ShowInfo = 0.0f;
-float gCLN_ShowStartInfo = 0.0f;
-float gCLN_ShowWaitingInfo = 0.0f;
-float gMission_starting_timer = 0.0f;
-float gMission_afterstart_time = 0.0f;
-float gNextRecover = 0.0f;
-dword gFlagNod[6][3] = {0};
-c_Vector3 gFlagPos[6] = {0};
-dword gRespawn_id[2][6] = {0};
-dword g_FPV_UsFlag = 0;
-dword g_FPV_VcFlag = 0;
-dword g_FPV_NeFlag = 0;
-
-int _init(s_SC_NET_info *info) {
-    return;
-}
-
 int func_0050(float param_0, int param_1) {
     switch (gEndRule) {
     case SC_MP_ENDRULE_TIME:
@@ -584,7 +539,7 @@ int ScriptMain(s_SC_NET_info *info) {
         case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
             for (j = 0; j < abl_lists; j++) {
-                if ((param_1- > field_4) == tmp441) {
+                if (param_1->field_4 == tmp441) {
                     abl_lists--;
                     abl_list[j] = tmp446;
                 } else {
