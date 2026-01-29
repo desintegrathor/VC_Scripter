@@ -10,15 +10,12 @@
 !README.md
 !CLAUDE.md
 !agents.md
-!GHIDRA_ANALYSIS.md
-!PHASE1_COMPLETE.md
-!PHASE2_COMPLETE.md
-!IMPLEMENTATION_COMPLETE.md
 !requirements.txt
 !pyproject.toml
 !setup.py
 !ghidra-decompiler-src/
 !ghidra-decompiler-src/**
+!run_vcdecomp_gui.bat
 
 # Always ignore these (even if inside vcdecomp)
 __pycache__/
