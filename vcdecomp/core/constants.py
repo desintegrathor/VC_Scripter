@@ -15,6 +15,14 @@ from typing import Optional, Dict
 _CONSTANTS_LOADED = False
 
 # =============================================================================
+# Mission-specific constant tables (populated from mission headers)
+# =============================================================================
+GP_CONSTANTS: Dict[int, str] = {}   # Game Phase (GP_CREATE, GP_INIT, etc.)
+ACT_CONSTANTS: Dict[int, str] = {}  # Action flags (ACT_STOP, ACT_RUN, etc.)
+EVT_CONSTANTS: Dict[int, str] = {}  # Events (EVT_PRISLI, etc.)
+GR_CONSTANTS: Dict[int, str] = {}   # Groups (GR_VC_1, GR_US_0, etc.)
+
+# =============================================================================
 # Script Messages (SCM_*)
 # Zprávy mezi skripty - používané v S_Mes() a info->message
 # =============================================================================
@@ -309,6 +317,17 @@ def get_known_constant_for_variable(variable_expr: str, value: int) -> Optional[
     return KNOWN_SDK_CONSTANTS_BY_VARIABLE.get(normalized, {}).get(value)
 
 
+def _reset_constants() -> None:
+    """
+    Reset the loaded-constants flag so they will be reloaded on next use.
+
+    Called after loading a mission header to force re-population of
+    constant tables with mission-specific values.
+    """
+    global _CONSTANTS_LOADED
+    _CONSTANTS_LOADED = False
+
+
 def load_constants_from_headers() -> None:
     """
     Load constants dynamically from parsed header files.
@@ -407,6 +426,12 @@ def load_constants_from_headers() -> None:
             except (ValueError, TypeError):
                 pass
 
+        # Load mission-specific constant prefixes (GP_, ACT_, EVT_, GR_)
+        _load_prefix_constants(db, 'GP', GP_CONSTANTS)
+        _load_prefix_constants(db, 'ACT', ACT_CONSTANTS)
+        _load_prefix_constants(db, 'EVT', EVT_CONSTANTS)
+        _load_prefix_constants(db, 'GR', GR_CONSTANTS)
+
         _CONSTANTS_LOADED = True
 
     except Exception as e:
@@ -414,6 +439,22 @@ def load_constants_from_headers() -> None:
         import warnings
         warnings.warn(f"Could not load constants from headers: {e}")
         _CONSTANTS_LOADED = True  # Don't retry
+
+
+def _load_prefix_constants(db, prefix: str, target_table: Dict[int, str]) -> None:
+    """Load constants with given prefix from header database into target table."""
+    constants = db.get_constants_by_prefix(prefix)
+    for name, data in constants.items():
+        try:
+            value_str = data.get('value', '')
+            if value_str.startswith('0x'):
+                value = int(value_str, 16)
+            else:
+                value = int(value_str)
+            if value not in target_table:
+                target_table[value] = name
+        except (ValueError, TypeError):
+            pass
 
 
 def get_constant_name(prefix: str, value: int) -> Optional[str]:
@@ -444,6 +485,10 @@ def get_constant_name(prefix: str, value: int) -> Optional[str]:
         "MISSION": MISSION_CONSTANTS,
         "BESID": BESID_CONSTANTS,
         "BOOL": BOOL_CONSTANTS,
+        "GP": GP_CONSTANTS,
+        "ACT": ACT_CONSTANTS,
+        "EVT": EVT_CONSTANTS,
+        "GR": GR_CONSTANTS,
     }
 
     table = tables.get(prefix.upper())

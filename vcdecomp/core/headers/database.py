@@ -7,7 +7,7 @@ Now enhanced with SDK integration for improved type inference and constant resol
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass
 
 
@@ -68,6 +68,10 @@ class HeaderDatabase:
         self.structures: Dict = {}
         self._constant_value_map: Dict[int, List[str]] = {}  # value → [names]
         self.struct_fields: Dict[str, Dict[int, FieldInfo]] = {}  # struct_type → {offset: FieldInfo}
+
+        # Mission header support
+        self._mission_functions: Dict = {}  # func_name -> FunctionSignature dict
+        self._mission_header_name: Optional[str] = None  # e.g., "LEVEL_H.H"
 
         # SDK integration
         self.use_sdk = use_sdk
@@ -169,6 +173,81 @@ class HeaderDatabase:
             # Add to front of list (SDK constants are prioritized)
             if const_name not in self._constant_value_map[const_value]:
                 self._constant_value_map[const_value].insert(0, const_name)
+
+    def load_mission_header(self, header_path: Path):
+        """
+        Load a mission-specific header file (e.g., LEVEL_H.H).
+
+        Adds parsed constants, struct fields, and function signatures
+        to the database without overriding existing SDK data.
+
+        Args:
+            header_path: Path to the mission header file
+        """
+        from .parser import HeaderParser
+
+        parser = HeaderParser()
+        data = parser.parse_mission_header(header_path)
+
+        self._mission_header_name = header_path.name
+
+        # Add constants (mission constants don't override existing SDK constants)
+        for name, const_data in data.get('constants', {}).items():
+            if name not in self.constants:
+                self.constants[name] = const_data
+
+        # Rebuild reverse lookup to include mission constants
+        self._build_constant_value_map()
+        if self.sdk_db:
+            self._merge_sdk_constants()
+
+        # Store mission function signatures
+        self._mission_functions = data.get('functions', {})
+
+        # Parse struct field definitions from mission header structs
+        for struct_name, struct_data in data.get('structures', {}).items():
+            if struct_name not in self.struct_fields:
+                # Parse fields into FieldInfo with computed offsets
+                fields_list = struct_data.get('fields', [])
+                field_map = {}
+                current_offset = 0
+
+                for field_data in fields_list:
+                    field_type = field_data.get('type', 'dword')
+                    field_name = field_data.get('name', '')
+
+                    field_size = self._get_type_size(field_type)
+
+                    # Handle array notation in type (e.g., "dword[4]")
+                    array_match = re.match(r'(.+)\[(\d+)\]$', field_type)
+                    if array_match:
+                        base_type = array_match.group(1).strip()
+                        array_size = int(array_match.group(2))
+                        field_size = self._get_type_size(base_type) * array_size
+
+                    field_map[current_offset] = FieldInfo(
+                        name=field_name,
+                        type=field_type,
+                        offset=current_offset,
+                        size=field_size
+                    )
+                    current_offset += field_size
+
+                    # 4-byte alignment
+                    if current_offset % 4 != 0:
+                        current_offset += (4 - current_offset % 4)
+
+                self.struct_fields[struct_name] = field_map
+
+    @property
+    def mission_functions(self) -> Dict:
+        """Get mission-defined function signatures."""
+        return self._mission_functions
+
+    @property
+    def mission_header_name(self) -> Optional[str]:
+        """Get the name of the loaded mission header, if any."""
+        return self._mission_header_name
 
     def get_function_signature(self, name: str) -> Optional[Dict]:
         """
@@ -332,11 +411,13 @@ class HeaderDatabase:
 
             # Parse field declaration: type name; or type name[size];
             # Examples: "float x;", "dword message;", "char *name;", "int array[10];"
-            field_match = re.match(r'(\w+(?:\s*\*)?)\s+(\w+)(?:\[(\d+)\])?\s*;', line)
+            field_match = re.match(r'(\w+(?:\s+\w+)*?)\s+(\*?)(\w+)(?:\[(\d+)\])?\s*;', line)
             if field_match:
                 field_type = field_match.group(1).strip()
-                field_name = field_match.group(2)
-                array_size_str = field_match.group(3)
+                if field_match.group(2):
+                    field_type += ' *'
+                field_name = field_match.group(3)
+                array_size_str = field_match.group(4)
 
                 # Calculate field size
                 field_size = self._get_type_size(field_type)

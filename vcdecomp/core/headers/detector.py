@@ -27,6 +27,28 @@ class HeaderDetector:
         Returns:
             List of header include paths in order of inclusion
         """
+        # Check if a mission header is loaded — if so, it already includes
+        # sc_global.h and sc_def.h, so we only need the mission header.
+        from .database import get_header_database
+        db = get_header_database()
+        mission_header = db.mission_header_name
+
+        if mission_header:
+            # Mission header includes sc_global.h and sc_def.h itself
+            ordered = [f'"{mission_header}"']
+
+            # Still detect additional headers (equips, briefing, etc.)
+            self._detect_from_xfn()
+            self._detect_from_script_type()
+
+            # Add any additional detected headers (not the base ones)
+            for header in sorted(self.headers):
+                if header not in ("<inc\\sc_global.h>", "<inc\\sc_def.h>"):
+                    ordered.append(header)
+
+            return ordered
+
+        # Standard detection (no mission header)
         # Always include base headers
         self.headers.add("<inc\\sc_global.h>")
         self.headers.add("<inc\\sc_def.h>")

@@ -320,6 +320,12 @@ Příklady:
         default=False,
         help='Enable debug output for type inference'
     )
+    p_structure.add_argument(
+        '--header', '-H',
+        default=None,
+        help='Mission-specific header file (e.g., LEVEL_H.H) for constant/function resolution. '
+             'If not specified, auto-detects *_H.H in the same directory as the .SCR file.'
+    )
     _add_variant_option(p_structure)
 
     # symbols
@@ -517,6 +523,44 @@ def cmd_expr(args):
                 print(expr.text)
 
 
+def _resolve_mission_header(args) -> Optional[Path]:
+    """
+    Resolve mission header path from --header arg or auto-detect.
+
+    Auto-detection: looks for *_H.H files in the same directory as the .SCR file.
+    Only auto-uses if exactly one is found.
+
+    Returns:
+        Path to header file or None
+    """
+    header_arg = getattr(args, 'header', None)
+
+    if header_arg:
+        header_path = Path(header_arg)
+        if header_path.exists():
+            return header_path
+        print(f"Warning: Header file not found: {header_path}", file=sys.stderr)
+        return None
+
+    # Auto-detect: look for *_H.H in same directory as .SCR file
+    scr_path = Path(args.file)
+    scr_dir = scr_path.parent
+    candidates = list(scr_dir.glob("*_H.H")) + list(scr_dir.glob("*_h.h"))
+    # Deduplicate (case-insensitive filesystem)
+    seen = set()
+    unique_candidates = []
+    for c in candidates:
+        key = str(c).lower()
+        if key not in seen:
+            seen.add(key)
+            unique_candidates.append(c)
+
+    if len(unique_candidates) == 1:
+        return unique_candidates[0]
+
+    return None
+
+
 def cmd_structure(args):
     """Strukturovaný výstup - dekompilace všech funkcí"""
     from .core.loader import SCRFile
@@ -549,6 +593,18 @@ def cmd_structure(args):
     # Use RET-based function detection to prevent unreachable code
     func_bounds = disasm.get_function_boundaries_v2()
 
+    # Mission header support: resolve --header path or auto-detect
+    header_path = _resolve_mission_header(args)
+    if header_path:
+        from .core.headers.database import get_header_database as _get_hdb
+        from .core.constants import _reset_constants
+        hdb = _get_hdb()
+        hdb.load_mission_header(header_path)
+        # Reset constants so they reload with mission-specific data
+        _reset_constants()
+        if debug_mode:
+            print(f"// Mission header loaded: {header_path.name}", file=sys.stderr)
+
     # Build SSA - use incremental (best quality) by default, --legacy-ssa for old algorithm
     use_legacy_ssa = getattr(args, 'legacy_ssa', False)
     heritage_metadata = None
@@ -565,6 +621,23 @@ def cmd_structure(args):
         ssa_func = build_ssa_all_blocks(scr)
         if debug_mode:
             print(f"// Using legacy single-pass SSA construction", file=sys.stderr)
+
+    # Mission header: match decompiled functions to header-defined functions
+    if header_path:
+        from .core.ir.function_detector import match_header_functions
+        # Read header source for XCALL fingerprinting
+        header_source_text = header_path.read_text(encoding='latin-1')
+        from .core.headers.database import get_header_database as _get_hdb2
+        hdb2 = _get_hdb2()
+        rename_map = match_header_functions(
+            scr, func_bounds, hdb2.mission_functions, header_source_text
+        )
+        # Apply renames to func_bounds
+        for old_name, new_info in rename_map.items():
+            if old_name in func_bounds:
+                func_bounds[new_info['name']] = func_bounds.pop(old_name)
+        if debug_mode and rename_map:
+            print(f"// Renamed {len(rename_map)} functions from header", file=sys.stderr)
 
     print(f"// Structured decompilation of {args.file}")
     print(f"// Functions: {len(func_bounds)}")

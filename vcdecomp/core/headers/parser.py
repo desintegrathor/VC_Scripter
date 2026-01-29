@@ -74,7 +74,10 @@ class HeaderParser:
 
     STRUCT_START_PATTERN = re.compile(r'typedef\s+struct\s*\{')
     STRUCT_END_PATTERN = re.compile(r'\}\s*(\w+)\s*;')
-    STRUCT_FIELD_PATTERN = re.compile(r'\s*(\w+(?:\s+\w+)*\s*\*?)\s+(\w+)(?:\[(\d+)\])?\s*;')
+    # Matches struct field declarations like:
+    #   dword action;   char *wpName;   c_Vector3 shoot;   dword ai[4];
+    # Group 1: type (everything before the name), Group 2: pointer star, Group 3: name, Group 4: array size
+    STRUCT_FIELD_PATTERN = re.compile(r'\s*(\w+(?:\s+\w+)*?)\s+(\*?)(\w+)(?:\[(\d+)\])?\s*;')
 
     def __init__(self):
         self.functions: Dict[str, FunctionSignature] = {}
@@ -190,6 +193,254 @@ class HeaderParser:
                 prefix=prefix
             )
 
+    # Pattern for named struct: struct name { ... };
+    NAMED_STRUCT_START_PATTERN = re.compile(r'struct\s+(\w+)\s*\{')
+
+    # Pattern for function definition with body: ReturnType FuncName(params) {
+    FUNC_DEF_PATTERN = re.compile(
+        r'^(\w+)\s+\*?\s*'    # return type; optional pointer star after
+        r'(\w+)\s*'           # function name
+        r'\(([^)]*)\)\s*$',   # parameters
+        re.MULTILINE
+    )
+
+    def parse_mission_header(self, header_path: Path) -> Dict:
+        """
+        Parse a mission-specific header file (e.g., LEVEL_H.H).
+
+        Extracts:
+        - #define constants (reuses _parse_defines)
+        - Named struct definitions (struct name { fields };)
+        - Function definitions with bodies (extracts signature, skips body)
+
+        Returns:
+            Dict with keys: 'constants', 'structures', 'functions'
+        """
+        # Reset state for fresh parse
+        self.functions = {}
+        self.constants = {}
+        self.structures = {}
+
+        with open(header_path, 'r', encoding='latin-1') as f:
+            content = f.read()
+
+        # Parse #define constants
+        self._parse_defines(content)
+
+        # Parse typedef struct definitions (existing)
+        self._parse_structures(content)
+
+        # Parse named struct definitions (struct name { ... };)
+        self._parse_named_structures(content)
+
+        # Parse function definitions with bodies
+        self._parse_function_definitions(content)
+
+        return {
+            'functions': {name: asdict(func) for name, func in self.functions.items()},
+            'structures': {name: asdict(struct) for name, struct in self.structures.items()},
+            'constants': {name: asdict(const) for name, const in self.constants.items()},
+        }
+
+    def _parse_named_structures(self, content: str):
+        """Parse named struct definitions: struct name { fields };"""
+        for match in self.NAMED_STRUCT_START_PATTERN.finditer(content):
+            struct_name = match.group(1)
+            # Skip if already parsed as typedef struct
+            if struct_name in self.structures:
+                continue
+
+            # Find matching closing brace
+            brace_count = 1
+            pos = match.end()
+            struct_start = match.start()
+
+            while pos < len(content) and brace_count > 0:
+                if content[pos] == '{':
+                    brace_count += 1
+                elif content[pos] == '}':
+                    brace_count -= 1
+                pos += 1
+
+            # Verify it ends with };
+            rest = content[pos:pos + 20].strip()
+            if not rest.startswith(';'):
+                continue
+
+            struct_body = content[match.end():pos - 1]
+
+            # Parse fields
+            fields = []
+            for line in struct_body.split('\n'):
+                line = line.strip()
+                if not line or line.startswith('//') or line.startswith('/*'):
+                    continue
+
+                # Remove inline comments
+                if '//' in line:
+                    line = line[:line.index('//')]
+
+                field_match = self.STRUCT_FIELD_PATTERN.match(line)
+                if field_match:
+                    field_type = field_match.group(1).strip()
+                    pointer_star = field_match.group(2)
+                    if pointer_star:
+                        field_type += ' *'
+                    field_name = field_match.group(3).strip()
+                    array_size = field_match.group(4)
+
+                    if array_size:
+                        field_type += f'[{array_size}]'
+
+                    fields.append(StructField(
+                        name=field_name,
+                        type=field_type
+                    ))
+
+            if fields:
+                self.structures[struct_name] = StructDef(
+                    name=struct_name,
+                    fields=fields
+                )
+
+    def _parse_function_definitions(self, content: str):
+        """
+        Parse function definitions with bodies.
+
+        Extracts signature, skips body via brace counting.
+        Ignores #define macros, extern declarations, and struct definitions.
+        """
+        lines = content.split('\n')
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # Skip preprocessor, comments, struct blocks, extern declarations
+            if (not line or line.startswith('#') or line.startswith('//')
+                    or line.startswith('/*') or line.startswith('extern')
+                    or line.startswith('typedef') or line.startswith('struct ')):
+                i += 1
+                continue
+
+            # Look for function definition: ReturnType FuncName(params)
+            # The opening brace may be on same line or next line
+            func_match = self.FUNC_DEF_PATTERN.match(line)
+            if func_match:
+                return_type = func_match.group(1).strip()
+                func_name = func_match.group(2).strip()
+                params_str = func_match.group(3).strip()
+
+                # Check if next non-empty line is '{'
+                j = i + 1
+                while j < len(lines) and not lines[j].strip():
+                    j += 1
+
+                if j < len(lines) and lines[j].strip().startswith('{'):
+                    # This is a function definition - extract signature
+                    # Parse parameters
+                    parameters = []
+                    is_variadic = False
+
+                    if params_str and params_str != 'void':
+                        for param in params_str.split(','):
+                            param = param.strip()
+                            if param == '...':
+                                is_variadic = True
+                                continue
+
+                            param_no_star = param.replace('*', ' * ')
+                            tokens = [t for t in param_no_star.split() if t]
+
+                            if tokens:
+                                param_name = tokens[-1] if tokens[-1] != '*' else ''
+                                param_type_tokens = tokens[:-1] if param_name else tokens
+                                param_type = ' '.join(param_type_tokens)
+
+                                if param_name and not param_type:
+                                    param_type = param_name
+                                    param_name = ''
+
+                                parameters.append((param_type.strip(), param_name.strip()))
+
+                    self.functions[func_name] = FunctionSignature(
+                        name=func_name,
+                        return_type=return_type,
+                        parameters=parameters,
+                        is_variadic=is_variadic
+                    )
+
+                    # Skip the function body by counting braces
+                    brace_count = 0
+                    k = j
+                    while k < len(lines):
+                        for ch in lines[k]:
+                            if ch == '{':
+                                brace_count += 1
+                            elif ch == '}':
+                                brace_count -= 1
+                        if brace_count <= 0:
+                            break
+                        k += 1
+                    i = k + 1
+                    continue
+
+            # Also handle: ReturnType FuncName(params) {  (brace on same line)
+            # Check if line ends with '{'
+            if '{' in line and '(' in line and ')' in line:
+                # Try to parse as function def with brace on same line
+                brace_idx = line.index('{')
+                sig_part = line[:brace_idx].strip()
+                sig_match = self.FUNC_DEF_PATTERN.match(sig_part)
+                if sig_match:
+                    return_type = sig_match.group(1).strip()
+                    func_name = sig_match.group(2).strip()
+                    params_str = sig_match.group(3).strip()
+
+                    parameters = []
+                    is_variadic = False
+
+                    if params_str and params_str != 'void':
+                        for param in params_str.split(','):
+                            param = param.strip()
+                            if param == '...':
+                                is_variadic = True
+                                continue
+
+                            param_no_star = param.replace('*', ' * ')
+                            tokens = [t for t in param_no_star.split() if t]
+
+                            if tokens:
+                                param_name = tokens[-1] if tokens[-1] != '*' else ''
+                                param_type_tokens = tokens[:-1] if param_name else tokens
+                                param_type = ' '.join(param_type_tokens)
+
+                                if param_name and not param_type:
+                                    param_type = param_name
+                                    param_name = ''
+
+                                parameters.append((param_type.strip(), param_name.strip()))
+
+                    self.functions[func_name] = FunctionSignature(
+                        name=func_name,
+                        return_type=return_type,
+                        parameters=parameters,
+                        is_variadic=is_variadic
+                    )
+
+                    # Skip body
+                    brace_count = line.count('{') - line.count('}')
+                    if brace_count > 0:
+                        k = i + 1
+                        while k < len(lines):
+                            brace_count += lines[k].count('{') - lines[k].count('}')
+                            if brace_count <= 0:
+                                break
+                            k += 1
+                        i = k + 1
+                        continue
+
+            i += 1
+
     def _parse_structures(self, content: str):
         """Parse all typedef struct definitions."""
         # Find all struct blocks
@@ -234,8 +485,11 @@ class HeaderParser:
                 field_match = self.STRUCT_FIELD_PATTERN.match(line)
                 if field_match:
                     field_type = field_match.group(1).strip()
-                    field_name = field_match.group(2).strip()
-                    array_size = field_match.group(3)
+                    pointer_star = field_match.group(2)
+                    if pointer_star:
+                        field_type += ' *'
+                    field_name = field_match.group(3).strip()
+                    array_size = field_match.group(4)
 
                     if array_size:
                         field_type += f'[{array_size}]'
