@@ -1527,7 +1527,26 @@ class ExpressionFormatter:
         is_cast_op = value.producer_inst and value.producer_inst.mnemonic in CAST_OPS
         # FIX Issue 5: Skip rename_map for INFIX_OPS (ADD, SUB, MUL, etc.) that can be inlined
         # These should render as expressions like "gSteps - 1", not "tmp"
-        is_infix_op = value.producer_inst and value.producer_inst.mnemonic in INFIX_OPS
+        # BUT: only bypass when the rename_map gives a generic temp name (tmpN, ptrN, objN).
+        # If the renamed value is meaningful (local_X, param_X, gVarName), keep it.
+        is_infix_op = False
+        if value.producer_inst and value.producer_inst.mnemonic in INFIX_OPS:
+            if self._rename_map and value.name in self._rename_map:
+                renamed = self._rename_map[value.name]
+                # Only bypass for generic temp names that would be less readable
+                # than the inlined expression (e.g., "tmp5" → "gSteps - 1")
+                # Patterns: tmpN, ptrN, objN, tNNN_ (raw SSA names), single letters (i, j, k)
+                if re.match(r'^(tmp|ptr|obj)\d*$', renamed):
+                    is_infix_op = True
+                elif re.match(r'^t\d+_$', renamed):
+                    # Raw SSA name like t290_ - bypass to inline expression
+                    is_infix_op = True
+                elif re.match(r'^[a-z]$', renamed):
+                    is_infix_op = True
+                # Otherwise keep the meaningful renamed value
+            else:
+                # No rename entry - will fall through to inline rendering anyway
+                is_infix_op = True
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1998,6 +2017,72 @@ class ExpressionFormatter:
             return True
         return False
 
+    def _is_valid_lvalue(self, target: str) -> bool:
+        """Check if target is a valid C lvalue expression.
+
+        Valid lvalues: variable names, array subscripts (x[i]), struct fields (x.y),
+        pointer dereferences (*x), and pointer arithmetic to struct fields.
+        Invalid: arithmetic expressions on non-pointer values (x - 1.0f, x / y).
+        """
+        if not target:
+            return False
+        s = target.strip()
+        if not s:
+            return False
+
+        # Pointer dereference: *expr - valid lvalue
+        if s.startswith('*'):
+            return True
+
+        # Check for bare arithmetic operators outside of brackets/parens
+        depth_bracket = 0
+        depth_paren = 0
+        has_toplevel_arith = False
+        has_toplevel_div = False
+        has_toplevel_sub = False
+        i = 0
+        while i < len(s):
+            ch = s[i]
+            if ch == '[':
+                depth_bracket += 1
+            elif ch == ']':
+                depth_bracket -= 1
+            elif ch == '(':
+                depth_paren += 1
+            elif ch == ')':
+                depth_paren -= 1
+            elif depth_bracket == 0 and depth_paren == 0:
+                if ch == '/':
+                    has_toplevel_div = True
+                    has_toplevel_arith = True
+                elif ch == '+':
+                    has_toplevel_arith = True
+                elif ch == '-':
+                    if i + 1 < len(s) and s[i + 1] == '>':
+                        i += 1  # skip '->'
+                    else:
+                        has_toplevel_sub = True
+                        has_toplevel_arith = True
+            i += 1
+
+        # Division at top level is never a valid lvalue (e.g., vec2.y / vec2.y)
+        if has_toplevel_div:
+            return False
+
+        # Subtraction at top level is never a valid lvalue (e.g., local_0_v7 - 1.0f)
+        if has_toplevel_sub:
+            return False
+
+        # Addition with pointer base (&x + offset, name + offset) is valid pointer arithmetic
+        # that represents struct field or array access - allow it
+        # Only reject addition without any pointer/address context
+        if has_toplevel_arith and not has_toplevel_div and not has_toplevel_sub:
+            # Allow: (&x) + N (pointer arithmetic for struct/array)
+            # Reject: plain variable + value without address context
+            pass  # Allow pointer arithmetic stores
+
+        return True
+
     def _is_numeric_literal_text(self, rendered: str) -> bool:
         """Check if a rendered string is a numeric literal (int/float/hex)."""
         if self._is_string_literal(rendered):
@@ -2447,6 +2532,16 @@ class ExpressionFormatter:
                     if base_is_array and base_element_size and size_val != base_element_size:
                         size_val = base_element_size
                     index_expr = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
+                    # Fix: If index rendered as address of the base array (e.g., &g_will_pos),
+                    # the SSA has wrong aliasing. Try the rename_map for a better name.
+                    if index_expr:
+                        stripped = index_expr.lstrip("&")
+                        if stripped == base_name:
+                            alt = self._rename_map.get(index_operand.name) if self._rename_map else None
+                            if alt and alt != base_name and not alt.startswith("&"):
+                                index_expr = alt
+                            else:
+                                index_expr = None  # Can't resolve valid index
                 elif base_is_array and base_element_size:
                     index_operand = mul_left if self._get_constant_int(mul_right) == base_element_size else mul_right
                     index_expr = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
@@ -2516,6 +2611,24 @@ class ExpressionFormatter:
                         index_expr = index_rendered
 
             if index_expr:
+                # Validate: index expression should not be an address of the base array
+                # or contain the base name as an address (e.g., &g_will_pos[&g_will_pos])
+                stripped_idx = index_expr.lstrip('&')
+                if stripped_idx == base_name or index_expr == f"&{base_name}":
+                    # Index resolved to the base array address - this is a misidentification.
+                    # Try to use the rename_map for the index operand instead.
+                    if index_expr.startswith("&") and hasattr(self, '_rename_map') and self._rename_map:
+                        # Look for a rename for the index operand's SSA value
+                        for inp in (right.producer_inst.inputs if right.producer_inst else []):
+                            if inp.name in self._rename_map:
+                                alt_name = self._rename_map[inp.name]
+                                if alt_name != base_name and not alt_name.startswith("&"):
+                                    index_expr = alt_name
+                                    break
+                        else:
+                            return None  # Can't resolve valid index - skip array notation
+                    else:
+                        return None  # Can't resolve valid index
                 result = f"{base_name}[{index_expr}]"
                 # Notify type tracker of array usage (for runtime pattern collection)
                 if self._type_tracker:
@@ -2997,6 +3110,12 @@ class ExpressionFormatter:
         if self._is_literal_value(target):
             # This is likely a broken store - skip it entirely
             return None
+
+        # Validate lvalue: target must be a valid C lvalue (variable, array subscript,
+        # struct field, or pointer dereference). Arithmetic expressions are NOT valid lvalues.
+        if not self._is_valid_lvalue(target):
+            # Emit as comment instead of invalid C code
+            return f"/* invalid store: {target} = {source}; */"
 
         # FLOAT CONSTANT FIX: If target is a known float field (e.g., vec.x, vec.z),
         # re-render the source value with float type hint

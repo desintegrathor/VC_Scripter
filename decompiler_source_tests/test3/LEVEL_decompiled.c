@@ -1,4 +1,3 @@
-pycparser not available, using regex fallback for parsing
 // Structured decompilation of decompiler_source_tests/test3/LEVEL.SCR
 // Functions: 10
 
@@ -52,11 +51,14 @@ int func_0355(void) {
 
     local_1 = 0;
     for (local_1 = 0; local_1 < 12; local_1++) {
-        local_0 = 0;
-        local_2 = SC_P_GetBySideGroupMember(1, obj, obj);
-        SC_P_SetActive(ptr, TRUE);
-        local_0 = i + 1;
-        local_1 = obj + 1;
+        if (obj == 9) {
+            local_0 = 0;
+            local_2 = SC_P_GetBySideGroupMember(1, obj, obj);
+            SC_P_SetActive(ptr, TRUE);
+            local_0 = i + 1;
+        } else {
+            local_1 = obj + 1;
+        }
     }
 block_18:
     local_1 = 0;
@@ -145,16 +147,22 @@ int func_0612(int param_0, float param_1) {
     }
     goto block_61;
     for (local_4 = 0; local_4 < 4; t667_0 = t625_ret) {
-        t654_ret = SC_IsNear2D(&g_will_pos[&g_will_pos], &vec, 80.0f);
-        g_vill_visited[&g_vill_visited] = 1;
-        local_0 = t625_ret + 1;
+        if (! tmp4) {
+            local_0 = t625_ret + 1;
+        } else {
+            t654_ret = SC_IsNear2D((&g_will_pos) + (&g_will_pos) * 12, &vec, 80.0f);
+            (&g_vill_visited) + (&g_vill_visited) * 4 = 1;
+        }
     }
 block_47:
     local_1 = 0;
     local_0 = 0;
     for (t625_ret = 0; t625_ret < 3; t625_ret++) {
-        local_1 = ptr + 1;
-        local_0 = t625_ret + 1;
+        if (! tmp14) {
+            local_1 = ptr + 1;
+        } else {
+            local_0 = t625_ret + 1;
+        }
     }
 block_61:
 block_68:
@@ -393,7 +401,7 @@ int ScriptMain(s_SC_L_info *info) {
                                             local_0 = local_0_v2 + 0.6f;
                                             SC_P_Speech2(ptr24, 3449, &local_0);
                                             local_0 = local_0_v3 + 0.3f;
-                                            local_0_v7 - 1.0f = tmp165;
+                                            /* invalid store: local_0_v7 - 1.0f = tmp165; */
                                             SC_P_Speech2(ptr15, 3450, &local_0);
                                         }
                                     } else {
@@ -417,7 +425,7 @@ int ScriptMain(s_SC_L_info *info) {
                                 g_save[1] = 1;
                                 local_80.savename_id = 9138;
                                 local_80.description_id = 9139;
-                                SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed hel..."
+                                SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
                             }
                         }
                         func_0612(info->elapsed_time);
@@ -582,14 +590,14 @@ int ScriptMain(s_SC_L_info *info) {
             if (SC_2VectorsDist( & vec, & g_will_pos[obj])) {
                 SC_sgi(SGI_LEVELPHASE, 6);
                 SC_sgi(SGI_LEVPILOT_EVACVILLID, obj);
-                vec.z + 1.5f += 1.5f;
+                vec.z += 1.5f;
                 vec2.x = tmp210 - tmp211;
-                tmp215 - vec.y = tmp219;
+                /* invalid store: tmp215 - vec.y = tmp219; */
                 vec2.z = 0.0f;
                 t2542_ret = SC_VectorLen(&vec2);
                 local_0 = (SC_VectorLen(&vec2)) / 10.0f;
                 vec2.x /= t2551_;
-                vec2.y / vec2.y /= vec2.y;
+                /* invalid store: vec2.y / vec2.y = tmp228; */
                 vec2.z = 7.0f;
                 t2576_ret = SC_Item_Create2(147, &vec, &vec2);
             } else {

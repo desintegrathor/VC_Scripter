@@ -480,7 +480,12 @@ class HierarchicalCodeEmitter:
             key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
         )
 
+        # Emit body blocks with control flow awareness
+        body_set = set(loop.body)
+        emitted_in_body = set()
         for body_id in body_blocks:
+            if body_id in emitted_in_body:
+                continue
             # Skip the increment block if it's a separate block
             # (typically the block that jumps back to header)
             is_back_edge_source = any(
@@ -491,12 +496,19 @@ class HierarchicalCodeEmitter:
                 # This block contains the increment - emit non-increment statements only
                 body_lines = self._emit_body_block_without_increment(body_id, indent + "    ", for_info)
                 lines.extend(body_lines)
+                emitted_in_body.add(body_id)
             else:
-                # Regular body block - emit directly by ID since it may not be in graph
-                # Use force=True because we pre-marked body blocks as emitted to prevent
-                # duplicate detection, but we still need to emit their content here
-                body_lines = self._emit_body_block_by_id(body_id, indent + "    ", force=True)
-                lines.extend(body_lines)
+                # Check if this block has a conditional branch to other body blocks
+                cond_lines = self._try_emit_body_block_with_condition(
+                    body_id, body_set, emitted_in_body, loop, for_info, indent + "    "
+                )
+                if cond_lines is not None:
+                    lines.extend(cond_lines)
+                else:
+                    # Regular body block - emit directly
+                    body_lines = self._emit_body_block_by_id(body_id, indent + "    ", force=True)
+                    lines.extend(body_lines)
+                    emitted_in_body.add(body_id)
 
         lines.append(f"{indent}}}")
         return lines
@@ -569,6 +581,164 @@ class HierarchicalCodeEmitter:
                 lines.append(f"{indent}{line}")
 
         return lines
+
+    def _try_emit_body_block_with_condition(
+        self, block_id: int, body_set: set, emitted_in_body: set,
+        loop, for_info, indent: str
+    ) -> Optional[List[str]]:
+        """
+        Try to emit a body block that ends with a conditional branch as an if/else.
+
+        If the block has a conditional jump and at least one target is inside the loop body,
+        emit as if(...){...} [else {...}] instead of flat blocks.
+
+        Returns lines if handled, None otherwise.
+        """
+        cfg_block = self.cfg.blocks.get(block_id)
+        if cfg_block is None:
+            return None
+
+        # Check if block has exactly 2 successors (conditional branch)
+        successors = list(cfg_block.successors)
+        if len(successors) != 2:
+            return None
+
+        # Both successors should be in the loop body (or one is the loop header/exit)
+        true_id, false_id = successors[0], successors[1]
+
+        # At least one target must be in the body set and not yet emitted
+        true_in_body = true_id in body_set and true_id != loop.header
+        false_in_body = false_id in body_set and false_id != loop.header
+
+        if not true_in_body and not false_in_body:
+            return None
+
+        # Extract the condition from this block
+        cond_result = render_condition(
+            self.ssa_func, block_id, self.formatter, self.cfg, self.resolver
+        )
+        condition_text = cond_result.text if cond_result else None
+        if not condition_text or condition_text == "true":
+            return None
+
+        lines = []
+
+        # Emit this block's statements first (excluding the branch)
+        from ..emit.code_emitter import _render_block_statements
+        block_lines = _render_block_statements(
+            self.ssa_func, block_id, self.formatter, self.resolver, self.global_map
+        )
+        for line in block_lines:
+            lines.append(f"{indent}{line}")
+        emitted_in_body.add(block_id)
+
+        # Determine which blocks go in if-body vs else-body
+        # The "true" branch is taken when condition is true (JZ: false_id is the fall-through)
+        # We need to check the actual jump instruction
+        cond_jump = _find_condition_jump(self.cfg.blocks[block_id], self.resolver)
+        if cond_jump:
+            # JZ jumps to target when condition is ZERO (false)
+            # So: JZ target → if(cond) { fall-through } else { target }
+            jump_target = cond_jump.arg1 if hasattr(cond_jump, 'arg1') else None
+            if jump_target is not None:
+                # Find which successor corresponds to the jump target
+                for sid in successors:
+                    if sid in self.cfg.blocks and self.cfg.blocks[sid].start == jump_target:
+                        false_id = sid
+                        true_id = [s for s in successors if s != sid][0]
+                        break
+
+        # Collect blocks that belong to the true branch
+        # (blocks between true_id and the merge point, within the loop body)
+        true_blocks = self._collect_branch_blocks(true_id, false_id, body_set, loop, emitted_in_body)
+        false_blocks = self._collect_branch_blocks(false_id, true_id, body_set, loop, emitted_in_body)
+
+        # Emit if statement
+        if true_blocks:
+            lines.append(f"{indent}if ({condition_text}) {{")
+            for bid in true_blocks:
+                if bid not in emitted_in_body:
+                    is_back_edge = any(
+                        be.source == bid and be.target == loop.header
+                        for be in loop.back_edges
+                    )
+                    if is_back_edge and for_info:
+                        bl = self._emit_body_block_without_increment(bid, indent + "    ", for_info)
+                    else:
+                        bl = self._emit_body_block_by_id(bid, indent + "    ", force=True)
+                    lines.extend(bl)
+                    emitted_in_body.add(bid)
+            lines.append(f"{indent}}}")
+
+            # Emit else block if it has unique blocks
+            if false_blocks:
+                # Check that false blocks aren't already covered
+                unvisited_false = [b for b in false_blocks if b not in emitted_in_body]
+                if unvisited_false:
+                    lines[-1] = f"{indent}}} else {{"
+                    for bid in unvisited_false:
+                        is_back_edge = any(
+                            be.source == bid and be.target == loop.header
+                            for be in loop.back_edges
+                        )
+                        if is_back_edge and for_info:
+                            bl = self._emit_body_block_without_increment(bid, indent + "    ", for_info)
+                        else:
+                            bl = self._emit_body_block_by_id(bid, indent + "    ", force=True)
+                        lines.extend(bl)
+                        emitted_in_body.add(bid)
+                    lines.append(f"{indent}}}")
+        elif false_blocks:
+            # Only false branch has blocks - negate condition
+            neg_cond = simplify_boolean_expression(f"!({condition_text})")
+            lines.append(f"{indent}if ({neg_cond}) {{")
+            for bid in false_blocks:
+                if bid not in emitted_in_body:
+                    bl = self._emit_body_block_by_id(bid, indent + "    ", force=True)
+                    lines.extend(bl)
+                    emitted_in_body.add(bid)
+            lines.append(f"{indent}}}")
+
+        return lines if lines else None
+
+    def _collect_branch_blocks(
+        self, start_id: int, other_branch_id: int, body_set: set, loop, emitted: set
+    ) -> List[int]:
+        """
+        Collect blocks reachable from start_id within the loop body,
+        stopping at the other branch, loop header, or already-emitted blocks.
+        Returns sorted list of block IDs.
+        """
+        if start_id not in body_set or start_id == loop.header or start_id in emitted:
+            return []
+
+        collected = []
+        visited = set()
+        worklist = [start_id]
+
+        while worklist:
+            bid = worklist.pop(0)
+            if bid in visited or bid == loop.header or bid == other_branch_id:
+                continue
+            if bid not in body_set:
+                continue
+            if bid in emitted:
+                continue
+            visited.add(bid)
+            collected.append(bid)
+
+            # Follow successors within the loop body
+            cfg_block = self.cfg.blocks.get(bid)
+            if cfg_block:
+                for succ in cfg_block.successors:
+                    if succ not in visited and succ in body_set and succ != loop.header:
+                        worklist.append(succ)
+
+        # Sort by address
+        collected.sort(
+            key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
+        )
+        return collected
 
     def _emit_natural_while_loop(self, loop, while_info, indent: str) -> List[str]:
         """Emit a natural loop as a while loop."""

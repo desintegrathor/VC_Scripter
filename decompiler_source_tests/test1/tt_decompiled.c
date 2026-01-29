@@ -1,4 +1,3 @@
-pycparser not available, using regex fallback for parsing
 // Structured decompilation of decompiler_source_tests/test1/tt.scr
 // Functions: 15
 
@@ -300,8 +299,11 @@ int func_1028(void) {
 block_159:
     local_256 = 0;
     for (local_256 = 0; local_256 < ptr1; local_256++) {
-        SC_MP_RecoverPlayer(t1084_);
-        local_256 = obj + 1;
+        if (side2 != 2) {
+            SC_MP_RecoverPlayer(t1084_);
+        } else {
+            local_256 = obj + 1;
+        }
     }
 block_164:
     return;
@@ -594,14 +596,14 @@ int ScriptMain(s_SC_NET_info *info) {
             local_9 = 0;
             local_8 = 0;
             t2484_ret = sprintf(&local_0, "TT_%c%d_%d", ptr50, ptr29, "TT_%c%d_%d");
-            if (SC_NET_FillRecover( & gRec[3072] + ptr29 * 512 + tmp287 * 16, & local_0)) {
+            if (SC_NET_FillRecover(t3600_0, & local_0)) {
                 gRecs[ptr40] + ptr29 * 4++;
             } else {
                 local_8 = obj + 1;
             }
             if (tmp311) {
                 local_8 = 32 - tmp316;
-                SC_MP_GetRecovers(t2595_, &gRec[3072] + ptr29 * 512 + tmp330 * 16, &local_8);
+                SC_MP_GetRecovers(t2595_, t3600_0, &local_8);
                 gRecs[ptr40] + ptr29 * 4 += obj;
             } else {
                 local_9 = ptr29 + 1;
@@ -622,7 +624,7 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         SC_ZeroMem(&gRecTimer, 1536);
         // Loop header - Block 310 @2745
-        for (local_8 = 0; local_8 < (gSteps - 1; local_8++) {
+        for (local_8 = 0; local_8 < idx2; local_8++) {
             t2757_ret = sprintf(&local_0, "TTS_%d", t2757_ret);
             if (SC_GetScriptHelper( & local_0, & gStepSwitch[t2757_ret])) {
             } else {
@@ -835,7 +837,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 local_10 = gSteps - 1;
             }
         }
-        local_8 = SC_MP_SRV_GetBestDMrecov(&gRec[3072] + ptr40 * 512, t3610_, &gRecTimer[768] + ptr40 * 128, 3.0f);
+        local_8 = SC_MP_SRV_GetBestDMrecov(t3600_0, t3610_, &gRecTimer[768] + ptr40 * 128, 3.0f);
         gRecTimer[768] + ptr40 * 128 + obj * 4 = 3.0f;
         ptr56 = tmp492;
         break;
