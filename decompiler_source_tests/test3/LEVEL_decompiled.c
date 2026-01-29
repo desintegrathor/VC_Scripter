@@ -1,5 +1,5 @@
 // Structured decompilation of decompiler_source_tests/test3/LEVEL.SCR
-// Functions: 10
+// Functions: 11
 
 #include <inc\sc_global.h>
 #include <inc\sc_def.h>
@@ -69,8 +69,23 @@ block_22:
     return;
 }
 
-void func_0448(int param_0) {
+void func_0448(void) {
     return SC_P_GetBySideGroupMember(2, 0, 1);
+}
+
+void func_0458(int param_0) {
+    int j;
+    int k;
+    int local_2;
+    int stack_5;
+
+    local_1 = 0;
+    local_0 = 0;
+    local_2 = SC_P_GetBySideGroupMember(1, stack_5, stack_5);
+    local_1++;
+block_29:
+    local_0 = i + 1;
+    return;
 }
 
 void func_0511(int param_0, int param_1) {

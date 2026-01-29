@@ -9,7 +9,7 @@ This fixes the issue where multiple separate functions are merged together,
 causing unreachable code to appear after return statements in decompiled output.
 """
 
-from typing import Dict, Tuple, Set, Optional
+from typing import Dict, List, Tuple, Set, Optional
 import logging
 
 from vcdecomp.core.loader.scr_loader import SCRFile
@@ -17,6 +17,48 @@ from vcdecomp.core.disasm.opcodes import OpcodeResolver
 from .debug_output import debug_print
 
 logger = logging.getLogger(__name__)
+
+
+def _find_reachable_ret_boundary(
+    instructions, func_start: int, func_end: int,
+    return_opcodes: Set[int], jump_opcodes: Set[int]
+) -> int:
+    """
+    Find the actual end of a function by walking RET instructions.
+
+    For each RET in [func_start, func_end], check if any instruction
+    in [func_start, ret_addr] jumps to an address in (ret_addr, func_end].
+    If yes, the RET is an early return — keep scanning.
+    If no, the RET ends the function.
+
+    Returns the address of the first RET that ends the function,
+    or func_end if no splitting point is found.
+    """
+    for instr in instructions:
+        if instr.address < func_start or instr.address > func_end:
+            continue
+        if instr.opcode not in return_opcodes:
+            continue
+
+        ret_addr = instr.address
+
+        # Check if any instruction in [func_start, ret_addr] jumps past this RET
+        has_forward_jump = False
+        for check_instr in instructions:
+            if check_instr.address < func_start or check_instr.address > ret_addr:
+                continue
+            if check_instr.opcode in jump_opcodes:
+                target = check_instr.arg1
+                if ret_addr < target <= func_end:
+                    has_forward_jump = True
+                    break
+
+        if not has_forward_jump:
+            # No code before this RET jumps past it — this RET ends the function
+            return ret_addr
+
+    # No splitting RET found
+    return func_end
 
 def _load_saveinfo_function_names(scr: SCRFile) -> Dict[int, str]:
     """
@@ -150,30 +192,42 @@ def detect_function_boundaries_v2(
     function_starts = sorted(set(function_starts))
     logger.debug(f"Function starts (CALL-based): {function_starts}")
 
-    # Step 4: Determine function end boundaries
-    # NEW STRATEGY: Use next function start as boundary instead of first RET.
-    # This prevents functions with early returns from being truncated and
-    # leaving orphaned code that contains switch statements.
-    used_names: Set[str] = set()
-    for i, start in enumerate(function_starts):
-        # End is just before next function starts, or end of code segment
-        if i + 1 < len(function_starts):
-            end = function_starts[i + 1] - 1
+    # Step 4: Split at RET boundaries where code after RET is unreachable
+    jump_opcodes = resolver.jump_opcodes
+
+    # Resolve entry point for name assignment
+    entry_point_resolved = None
+    if entry_point is not None:
+        if entry_point < 0:
+            entry_point_resolved = len(instructions) + entry_point
         else:
-            # Last function extends to end of code segment
-            end = len(instructions) - 1
+            entry_point_resolved = entry_point
 
-        # Validation: Check if function ends with RET instruction
-        end_instr = instructions[end]
-        if end_instr.opcode not in return_opcodes:
-            # Function doesn't end with RET - may have fall-through or be truncated
-            # This is just a warning, not an error (some functions may legitimately not return)
-            logger.debug(
-                f"Function at {start} doesn't end with RET (ends at {end} with {end_instr.opcode})"
+    used_names: Set[str] = set()
+    final_ranges: List[Tuple[int, int]] = []
+
+    for i, start in enumerate(function_starts):
+        if i + 1 < len(function_starts):
+            initial_end = function_starts[i + 1] - 1
+        else:
+            initial_end = len(instructions) - 1
+
+        # Iteratively split this range at unreachable RET boundaries
+        current_start = start
+        while current_start <= initial_end:
+            actual_end = _find_reachable_ret_boundary(
+                instructions, current_start, initial_end,
+                return_opcodes, jump_opcodes
             )
+            final_ranges.append((current_start, actual_end))
 
-        # Assign name (prefer SaveInfo, otherwise generic)
-        if start == entry_point:
+            if actual_end >= initial_end:
+                break
+            current_start = actual_end + 1
+
+    # Step 5: Assign names
+    for start, end in sorted(final_ranges):
+        if start == entry_point_resolved:
             func_name = "ScriptMain"
         elif start == 0 and start not in call_targets:
             func_name = "_init"
