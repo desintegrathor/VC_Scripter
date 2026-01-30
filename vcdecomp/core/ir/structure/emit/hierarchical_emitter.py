@@ -76,6 +76,10 @@ class HierarchicalCodeEmitter:
         # Track emitted blocks to avoid duplication
         self.emitted_blocks: Set[int] = set()
 
+        # For-loop increment suppression: variable names whose last assignment
+        # should be filtered out of body blocks (set during for-loop emission)
+        self._for_loop_skip_vars: Set[str] = set()
+
         # Label counter for goto targets
         self.label_counter = 0
         self.block_labels: Dict[int, str] = {}
@@ -159,9 +163,15 @@ class HierarchicalCodeEmitter:
             walk_block(self.graph.root)
 
         # ALSO walk all blocks in graph.blocks (may include disconnected structures)
-        # This catches blocks that got collapsed but aren't reachable from root
+        # This catches blocks that got collapsed but aren't reachable from root.
+        # IMPORTANT: Only walk blocks that are NOT uncollapsed top-level blocks.
+        # Uncollapsed blocks should remain available for emission, not be marked
+        # as covered. Only blocks that are children of collapsed structures
+        # (e.g., switch case bodies) should be considered covered.
+        uncollapsed_set = set(id(b) for b in self.graph.get_uncollapsed_blocks())
         for block in self.graph.blocks.values():
-            walk_block(block)
+            if id(block) not in uncollapsed_set:
+                walk_block(block)
 
         return covered
 
@@ -267,12 +277,26 @@ class HierarchicalCodeEmitter:
         if self.graph.root is not None:
             lines.extend(self._emit_block(self.graph.root, indent))
 
+        # Dead code elimination: check if the root structure ends with a return.
+        # If so, subsequent unlabeled blocks are unreachable dead code.
+        _root_ends_with_return = False
+        for _rl in reversed(lines):
+            _stripped = _rl.strip()
+            if not _stripped or _stripped.startswith("//"):
+                continue
+            if _stripped == "return;" or _stripped.startswith("return "):
+                _root_ends_with_return = True
+            break
+
         # LOOP RESCUE PASS: Detect loops whose headers were emitted during
         # root emission but whose body blocks were NOT emitted. This happens
         # when the collapse engine doesn't fully collapse a loop into a
         # BlockWhileDo/BlockDoWhile, so the header gets emitted as a plain
         # BlockBasic but the body blocks are orphaned.
         for loop in self.func_loops:
+            # Dead code elimination: skip loop rescue if root ends with return
+            if _root_ends_with_return:
+                break
             header_emitted = loop.header in self.emitted_blocks
             if not header_emitted:
                 continue
@@ -354,6 +378,12 @@ class HierarchicalCodeEmitter:
 
         # Emit remaining blocks - check for loop headers first
         for block in remaining:
+            # Dead code elimination: skip remaining uncollapsed blocks
+            # if root ends with return and block has no goto label
+            if _root_ends_with_return:
+                if isinstance(block, BlockBasic) and block.original_block_id not in needed_labels:
+                    continue
+
             if isinstance(block, BlockBasic):
                 block_id = block.original_block_id
 
@@ -451,6 +481,11 @@ class HierarchicalCodeEmitter:
             # Blocks with actual statements should still be emitted even without goto targets,
             # as they may contain code that wasn't collapsed into structures.
             if block_id not in needed_labels:
+                # Dead code elimination: if the function already ends with a return,
+                # skip unlabeled (unreachable) blocks
+                if _root_ends_with_return:
+                    self.emitted_blocks.add(block_id)
+                    continue
                 # Check if block has actual statements (not just control flow)
                 ssa_instrs = self.ssa_func.instructions.get(block_id, [])
                 from ..utils.helpers import _is_control_flow_only
@@ -466,6 +501,24 @@ class HierarchicalCodeEmitter:
                     self.block_labels[block_id] = f"block_{block_id}"
                 lines.append(f"{self.block_labels[block_id]}:")
             lines.extend(self._emit_basic_by_id(block_id, indent))
+
+        # Post-processing: Dead code elimination
+        # Find the last return statement and truncate everything after it
+        # (except labeled blocks which may be goto targets)
+        last_return_idx = -1
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped == "return;" or stripped.startswith("return "):
+                last_return_idx = i
+        if last_return_idx >= 0 and last_return_idx < len(lines) - 1:
+            # Check if anything after the return is a labeled block (goto target)
+            has_labeled = any(
+                lines[j].strip().endswith(":")
+                for j in range(last_return_idx + 1, len(lines))
+                if lines[j].strip()
+            )
+            if not has_labeled:
+                lines = lines[:last_return_idx + 1]
 
         return lines
 
@@ -993,6 +1046,22 @@ class HierarchicalCodeEmitter:
             self.global_map,
         )
 
+        # Filter out for-loop increment assignments from body blocks
+        if self._for_loop_skip_vars:
+            filtered = []
+            for line in block_lines:
+                stripped = line.strip().rstrip(';')
+                skip = False
+                for skip_var in self._for_loop_skip_vars:
+                    if (stripped.startswith(f"{skip_var} =") or
+                        stripped == f"{skip_var}++" or stripped == f"{skip_var}--" or
+                        stripped == f"++{skip_var}" or stripped == f"--{skip_var}"):
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(line)
+            block_lines = filtered
+
         for line in block_lines:
             lines.append(f"{indent}{line}")
 
@@ -1003,7 +1072,16 @@ class HierarchicalCodeEmitter:
         lines = []
 
         for component in block.components:
-            lines.extend(self._emit_block(component, indent))
+            component_lines = self._emit_block(component, indent)
+            lines.extend(component_lines)
+            # Dead code elimination: stop emitting after unconditional return
+            for cl in reversed(component_lines):
+                stripped = cl.strip()
+                if not stripped or stripped.startswith("//"):
+                    continue
+                if stripped == "return;" or stripped.startswith("return "):
+                    return lines
+                break
 
         return lines
 
@@ -1097,28 +1175,39 @@ class HierarchicalCodeEmitter:
             condition = "/* condition */"
 
         # Check if this is a for loop (already detected by collapse rules)
+        skip_var = None
         if block.is_for_loop:
             init = block.for_init or ""
             incr = block.for_increment or ""
             lines.append(f"{indent}for ({init}; {condition}; {incr}) {{")
+            # Extract loop variable from init (e.g., "local_10 = 0" -> "local_10")
+            if "=" in init:
+                skip_var = init.split("=")[0].strip()
         else:
             # Try to detect for-loop pattern at emit time (matching flat pattern mode)
             for_info = self._try_detect_for_loop(block)
             if for_info:
                 lines.append(f"{indent}for ({for_info.var} = {for_info.init}; "
                            f"{for_info.condition}; {for_info.increment}) {{")
-                # Emit body - the for_info tells us which blocks to skip
+                skip_var = for_info.init_var or for_info.var
+                # Emit body with increment suppression
                 if block.body_block is not None:
+                    self._for_loop_skip_vars.add(skip_var)
                     lines.extend(self._emit_block(block.body_block, indent + "    "))
+                    self._for_loop_skip_vars.discard(skip_var)
                 lines.append(f"{indent}}}")
                 return lines
 
             # Fallback: emit as while loop
             lines.append(f"{indent}while ({condition}) {{")
 
-        # Emit body
+        # Emit body (with increment suppression for for-loops)
         if block.body_block is not None:
+            if skip_var:
+                self._for_loop_skip_vars.add(skip_var)
             lines.extend(self._emit_block(block.body_block, indent + "    "))
+            if skip_var:
+                self._for_loop_skip_vars.discard(skip_var)
 
         lines.append(f"{indent}}}")
 

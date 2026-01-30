@@ -18,7 +18,6 @@ void func_0292(void) {
             SC_P_SetActive(local_1, FALSE);
             SC_P_SetPos(local_1, &vec);
         }
-        local_0 = i + 1;
     }
     return;
 }
@@ -36,10 +35,8 @@ void func_0355(void) {
                 if (local_2) {
                     SC_P_SetActive(local_2, TRUE);
                 }
-                local_0 = idx + 1;
             }
         }
-        local_1 = i + 1;
     }
     local_1 = 0;
     for (i = 0; i < 16; i++) {
@@ -47,7 +44,6 @@ void func_0355(void) {
         if (local_2) {
             SC_P_SetActive(local_2, TRUE);
         }
-        local_1 = i + 1;
     }
     return;
 }
@@ -61,12 +57,11 @@ int func_0458(int param_0, int param_1, int param_2) {
 
     local_1 = 0;
     local_0 = 0;
-    for (i = 0; i < param_1; i++) {
-        local_2 = SC_P_GetBySideGroupMember(1, param_0, param_0);
+    for (i = 0; i < param_2; i++) {
+        local_2 = SC_P_GetBySideGroupMember(1, param_1, param_1);
         if (SC_P_IsReady(local_2)) {
             local_1++;
         }
-        local_0 = i + 1;
     }
     return local_1;
 }
@@ -93,7 +88,6 @@ void func_0511(int param_0, int param_1) {
             local_3 = local_5;
             param_1[0] = i;
         }
-        local_6 = i + 1;
     }
     return;
 }
@@ -173,11 +167,24 @@ void func_0612(float param_0) {
         }
         break;
     }
-    t654_ret = SC_IsNear2D((&g_will_pos) + (&g_will_pos) * 12, &vec, 80.0f);
-    (&g_vill_visited) + (&g_vill_visited) * 4 = 1;
-    local_0 = t625_ret + 1;
-    local_1++;
-    local_0 = t625_ret + 1;
+    for (local_4 = 0; local_4 < 4; t667_0 = t625_ret) {
+        if (! tmp4) {
+            local_0 = t625_ret + 1;
+        } else {
+            t654_ret = SC_IsNear2D((&g_will_pos) + (&g_will_pos) * 12, &vec, 80.0f);
+            (&g_vill_visited) + (&g_vill_visited) * 4 = 1;
+        }
+    }
+    local_1 = 0;
+    local_0 = 0;
+    for (t625_ret = 0; t625_ret < 3; t625_ret++) {
+        if (! tmp14) {
+            local_1++;
+        } else {
+        }
+    }
+    g_pilot_phase = 1;
+    g_pilot_timer = 30.0f + frnd(10.0f);
     return;
 }
 
@@ -301,7 +308,6 @@ int ScriptMain(s_SC_L_info *info) {
             idx.MaxPlayers = 16;
             idx.NoHoldFireDistance = 100.0f;
             SC_InitSideGroup(&idx);
-            local_20 = i + 1;
         }
         local_4.MaxHideOutsStatus = 2;
         local_4.MaxGroups = 2;
@@ -342,18 +348,15 @@ int ScriptMain(s_SC_L_info *info) {
             local_43[i] = 1.5f;
             local_43[i].y = 5.0f;
             (&local_63) + i * 4 = i;
-            local_20 = i + 1;
         }
         local_20 = 0;
         for (i = 0; i < 10; i++) {
             SC_Ai_SetPlFollow(1, i, 0, &local_43, &local_63, &local_63, 4);
-            local_20 = i + 1;
         }
         local_20 = 0;
         for (i = 0; i < 4; i++) {
             t1544_ret = sprintf(&local_67, "WP_will%d", i + 1);
             t1556_ret = SC_GetWp(&local_67, &g_will_pos[i]);
-            local_20 = i + 1;
         }
         SC_sgi(SGI_LEVELPHASE, 0);
         SC_sgi(SGI_LEVPILOT_HELI3_ATTACK, 0);
@@ -633,6 +636,6 @@ int ScriptMain(s_SC_L_info *info) {
         }
         break;
     }
-    return 0;  // FIX (06-05): Synthesized return value
+    return TRUE;
 }
 

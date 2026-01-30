@@ -489,28 +489,18 @@ class ExpressionFormatter:
         # FIX 2: Variable name collision resolution (SSA value name → final name)
         self._rename_map = rename_map or {}
         # Build parameter offset -> name mapping
-        self._param_names = {}  # stack_offset (signed) -> param_name
+        self._param_names = {}  # frame_base_offset (signed) -> param_name
+        self._param_names_by_index = {}  # signature_index (0-based) -> param_name
+        self._param_count = 0  # Number of parameters
+        self._func_returns_value = False  # Whether function returns a value
         if func_signature and func_signature.param_types:
-            # Parameters are at negative stack offsets in the callee.
-            # Calling convention: params pushed right-to-left, so:
-            #   param_0 (first) is at the deepest (most negative) offset
-            #   param_{N-1} (last) is at [sp-3]
-            #
-            # For non-entry functions (called via CALL):
-            #   param_0   at [sp-(N+2)]
-            #   param_{N-1} at [sp-3]
-            #   Formula: offset = -(N + 2 - i) for param_i
-            #
-            # For entry point functions (ScriptMain, _init):
-            #   [sp-3] is the return value slot (not a parameter)
-            #   param_0   at [sp-(N+3)]
-            #   param_{N-1} at [sp-4]
-            #   Formula: offset = -(N + 3 - i) for param_i
-            is_entry_point = func_name in ("ScriptMain", "_init")
-            base_offset = 3 if is_entry_point else 2
             n_params = func_signature.param_count
+            self._param_count = n_params
+            # Determine if function returns a value (affects stack layout)
+            self._func_returns_value = (
+                func_signature.return_type != "void"
+            )
             for i, param_type in enumerate(func_signature.param_types):
-                offset = -(n_params + base_offset - i)
                 # Extract name from "float time" -> "time", "dword *list" -> "list"
                 tokens = param_type.replace('*', ' * ').split()
                 param_name = None
@@ -519,7 +509,17 @@ class ExpressionFormatter:
                         param_name = token.lstrip('*')
                         break
                 if param_name:
-                    self._param_names[offset] = param_name
+                    self._param_names_by_index[i] = param_name
+                    # Stack frame layout (offsets from frame base):
+                    #   [sp-1], [sp-2] = reserved (return addr, frame info)
+                    #   [sp-3] = return value slot (if non-void) OR last param (if void)
+                    #   Parameters in REVERSE order from there:
+                    #     void:     [sp-(3+n-1-i)] = param at sig_index i
+                    #     non-void: [sp-(4+n-1-i)] = param at sig_index i
+                    # Heritage SSA names: param_K where K = abs(frame_offset) - 3
+                    base = 4 if self._func_returns_value else 3
+                    frame_offset = -(base + n_params - 1 - i)
+                    self._param_names[frame_offset] = param_name
         # Track variable -> structure type mapping
         self._var_struct_types: Dict[str, str] = {}
         # Track structure ranges: base_var -> (start_index, end_index, struct_name)
@@ -1148,9 +1148,13 @@ class ExpressionFormatter:
 
     def _get_field_base_name(self, base_name: str, field_name: str) -> str:
         """Return a display name for field access, using semantic name when available."""
-        # Always use semantic name for the base variable (e.g., param_1 -> info)
-        # to maintain consistency between function signature and body usage
-        return self._get_semantic_name(base_name)
+        # First try semantic name lookup
+        result = self._get_semantic_name(base_name)
+        # If semantic name didn't remap, also try parameter alias remapping
+        # This handles param_0 -> pinfo when the function signature names the param
+        if result == base_name:
+            result = self._remap_param_alias(base_name)
+        return result
 
     def _get_struct_field_for_local(self, alias: str) -> Optional[str]:
         """
@@ -2032,12 +2036,22 @@ class ExpressionFormatter:
 
     def _is_address_expression(self, rendered: str) -> bool:
         """Check if rendered value is an address/pointer expression (valid lvalue)."""
+        import re
         # String literal address is NOT a writable address (it's a string pointer value)
         if self._is_string_literal(rendered):
             return False
         # FIX #3: Float literals are NOT addresses (even though they contain '.')
         # Check this BEFORE struct field access detection
         if rendered.endswith('f') and rendered.replace('.', '').replace('-', '').replace('e', '').replace('+', '')[:-1].isdigit():
+            return False
+        # Function call expressions are NEVER addresses/lvalues
+        # Detect: name(...) or name(...)  at top level
+        if re.match(r'^[A-Za-z_]\w*\(', rendered):
+            return False
+        # Arithmetic expressions containing function calls are never addresses
+        # e.g. "3.0f + frnd(3.0f)"
+        if '(' in rendered and re.search(r'[A-Za-z_]\w*\(', rendered):
+            # Contains a function call somewhere - not an address
             return False
         # Direct address reference (but not string address)
         if rendered.startswith("&"):
@@ -2046,7 +2060,7 @@ class ExpressionFormatter:
         if rendered.startswith("*"):
             return True
         # Contains address operator (complex expression like ((&local + 4) + 0))
-        # But not if it's just a string address
+        # But not if it's just a string address, and not inside a function call
         if "&" in rendered and not rendered.startswith('&"'):
             return True
         # Variable name (local_X, param_X, etc.) - valid lvalue
@@ -2054,7 +2068,6 @@ class ExpressionFormatter:
         if rendered.startswith("local_") or rendered.startswith("param_"):
             # Check that this is a simple variable name, not an expression
             # containing arithmetic operators at the top level
-            import re
             if re.match(r'^(?:local|param)_\w+$', rendered):
                 return True
             # Could be a subscript or field access: local_0[i], local_0.field
@@ -2071,8 +2084,26 @@ class ExpressionFormatter:
                 return False
             # Contains arithmetic operators - this is an expression, not an lvalue
             return False
-        # Struct field access (contains .)
+        # Struct field access (contains .) but NOT float arithmetic
+        # Must look like identifier.field, not "3.0f + something"
         if "." in rendered and not rendered.startswith('"'):
+            # Reject if it contains top-level arithmetic operators (+ - * /)
+            # outside of brackets/parens, suggesting it's an expression not a field access
+            depth = 0
+            has_toplevel_arith = False
+            for i, ch in enumerate(rendered):
+                if ch in '([':
+                    depth += 1
+                elif ch in ')]':
+                    depth -= 1
+                elif depth == 0 and ch in '+-*/' and i > 0:
+                    # Skip -> (arrow operator)
+                    if ch == '-' and i + 1 < len(rendered) and rendered[i + 1] == '>':
+                        continue
+                    has_toplevel_arith = True
+                    break
+            if has_toplevel_arith:
+                return False
             return True
         return False
 
@@ -3439,12 +3470,11 @@ class ExpressionFormatter:
     def _remap_param_alias(self, alias: str) -> str:
         """Remap a param_N alias to the correct parameter name using _param_names.
 
-        The stack lifter assigns param_N where N = abs(offset) - 3
-        (param_0 = [sp-3], param_1 = [sp-4], etc. - reversed order).
-        The function signature uses param_0 = first parameter (deepest offset).
-        This method converts the lifter's alias to the signature's name.
+        Heritage SSA assigns param_N where N = abs(runtime_offset) - 3.
+        Runtime offset = -(N + 3). We look up _param_names[-(N+3)] which was
+        populated with both entry and runtime offsets.
         """
-        if not self._param_names:
+        if not self._param_names_by_index:
             return alias
 
         # Handle &param_N (address-of parameter)
@@ -3453,12 +3483,28 @@ class ExpressionFormatter:
 
         if clean_alias.startswith("param_"):
             try:
-                # Lifter's N: param_N where N = abs(offset) - 3
-                lifter_idx = int(clean_alias[6:])
-                # Derive stack offset: offset = -(lifter_idx + 3)
-                stack_offset = -(lifter_idx + 3)
-                if stack_offset in self._param_names:
-                    result = self._param_names[stack_offset]
+                heritage_k = int(clean_alias[6:])
+                # Heritage SSA: param_K where K = abs(frame_offset) - 3.
+                # Frame offset = -(K + 3).
+                # Direct lookup in _param_names (keyed by frame offset):
+                frame_offset = -(heritage_k + 3)
+                if frame_offset in self._param_names:
+                    result = self._param_names[frame_offset]
+                    return f"&{result}" if is_addr_of else result
+
+                # Fallback: compute sig_index from heritage K.
+                # Void functions:     sig_index = n_params - 1 - K
+                # Non-void functions: K=0 is return slot, params at K>=1
+                #                     sig_index = n_params - K
+                n_params = self._param_count
+                if self._func_returns_value:
+                    if heritage_k == 0:
+                        return alias  # K=0 is return value, not a param
+                    sig_index = n_params - heritage_k
+                else:
+                    sig_index = n_params - 1 - heritage_k
+                if 0 <= sig_index < n_params and sig_index in self._param_names_by_index:
+                    result = self._param_names_by_index[sig_index]
                     return f"&{result}" if is_addr_of else result
             except ValueError:
                 pass
