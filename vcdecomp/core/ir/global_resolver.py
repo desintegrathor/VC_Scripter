@@ -77,7 +77,7 @@ class GlobalResolver:
     - Struct reconstruction support
     """
 
-    def __init__(self, ssa_func: SSAFunction, aggressive_typing: bool = False, infer_structs: bool = True, symbol_db=None):
+    def __init__(self, ssa_func: SSAFunction, aggressive_typing: bool = False, infer_structs: bool = True, symbol_db=None, cross_file_context=None):
         self.ssa_func = ssa_func
         self.scr = ssa_func.scr
         self.globals: Dict[int, GlobalUsage] = {}  # offset -> usage
@@ -93,6 +93,9 @@ class GlobalResolver:
 
         # Symbol database from header parser (NEW)
         self.symbol_db = symbol_db
+
+        # Cross-file context for multi-file decompilation (optional)
+        self.cross_file_context = cross_file_context
 
         # SGI index → data offset mapping (built during analysis)
         self.sgi_to_offset: Dict[int, int] = {}
@@ -163,6 +166,10 @@ class GlobalResolver:
         # Filter spurious globals: variables that exist ONLY in _init scratch space
         # (only written in _init, never read/written by any other function)
         self._filter_init_only_globals()
+
+        # Cross-file context enrichment (between filtering and initializers)
+        if self.cross_file_context:
+            self._apply_cross_file_context()
 
         # Populate initializers from data segment (after types are inferred)
         self._apply_data_segment_initializers()
@@ -1628,6 +1635,65 @@ class GlobalResolver:
                         usage, is_array_access, element_size = self._get_global_usage_from_value(compare_input)
                         if usage:
                             self._apply_bool_usage(usage, is_array_access, element_size)
+
+    def _apply_cross_file_context(self) -> None:
+        """
+        Enrich globals with evidence from cross-file context (other scripts
+        in the same mission folder).
+
+        Only overrides synthetic names/types — keeps same-file save_info names.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        ctx = self.cross_file_context
+
+        for byte_offset, usage in self.globals.items():
+            # --- Names ---
+            # Only override synthetic names (gVar0, gArray, etc.)
+            # Keep names that already have a strong source from THIS file
+            if usage.source in ("save_info", "SGI_constant", "SGI_runtime", "read_only_constant"):
+                pass  # keep local strong name or read-only constant marker
+            else:
+                cross_name = ctx.get_global_name(byte_offset)
+                if cross_name and cross_name != usage.name:
+                    cross_source = ctx.get_global_name_source(byte_offset)
+                    # Only propagate SGI-based names (truly shared across files).
+                    # Data-segment globals (save_info) are per-file: the same
+                    # byte offset in different .scr files refers to different
+                    # variables, so propagating those names causes incorrect renames.
+                    if cross_source in ("SGI_constant", "SGI_runtime"):
+                        usage.name = cross_name
+                        usage.source = cross_source or "cross_file"
+                        logger.debug(
+                            f"Global {byte_offset}: cross-file name '{cross_name}' "
+                            f"(source={usage.source})"
+                        )
+
+            # --- Types ---
+            cross_type = ctx.get_global_type(byte_offset)
+            if cross_type and not usage.inferred_type:
+                usage.inferred_type = cross_type
+                usage.type_confidence = max(usage.type_confidence, 0.5)
+                logger.debug(
+                    f"Global {byte_offset}: cross-file type '{cross_type}'"
+                )
+
+            # --- Array / SaveInfo metadata ---
+            if not usage.saveinfo_size_dwords:
+                cross_size = ctx.get_saveinfo_size(byte_offset)
+                if cross_size:
+                    usage.saveinfo_size_dwords = cross_size
+
+            if not usage.array_dimensions:
+                cross_dims = ctx.get_array_dimensions(byte_offset)
+                if cross_dims:
+                    usage.array_dimensions = cross_dims
+
+            if not usage.array_element_size:
+                cross_elem = ctx.get_array_element_size(byte_offset)
+                if cross_elem:
+                    usage.array_element_size = cross_elem
+                    usage.is_array_base = True
 
     def _apply_data_segment_initializers(self) -> None:
         if not self.scr or not self.scr.data_segment:

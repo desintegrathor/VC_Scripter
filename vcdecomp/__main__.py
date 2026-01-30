@@ -328,6 +328,27 @@ Příklady:
     )
     _add_variant_option(p_structure)
 
+    # structure-folder
+    p_sf = subparsers.add_parser('structure-folder',
+                                 help='Decompile all .SCR files in a mission folder with cross-file context')
+    p_sf.add_argument('directory', help='Path to mission folder containing .SCR files')
+    p_sf.add_argument('-o', '--output', default=None,
+                      help='Output directory for .c files (default: print to stdout)')
+    # Reuse all structure flags
+    p_sf.add_argument('--debug', '-d', action='store_true', default=False)
+    p_sf.add_argument('--verbose', '-v', action='store_true', default=False)
+    p_sf.add_argument('--legacy-ssa', action='store_true', default=False)
+    p_sf.add_argument('--no-collapse', action='store_true', default=False)
+    p_sf.add_argument('--no-simplify', action='store_true', default=False)
+    p_sf.add_argument('--debug-simplify', action='store_true', default=False)
+    p_sf.add_argument('--no-array-detection', action='store_true', default=False)
+    p_sf.add_argument('--debug-array-detection', action='store_true', default=False)
+    p_sf.add_argument('--no-bidirectional-types', action='store_true', default=False)
+    p_sf.add_argument('--debug-type-inference', action='store_true', default=False)
+    p_sf.add_argument('--header', '-H', default=None,
+                      help='Mission-specific header file (auto-detected if not specified)')
+    _add_variant_option(p_sf)
+
     # symbols
     p_symbols = subparsers.add_parser('symbols', help='Export global variable symbol table')
     p_symbols.add_argument('file', help='Cesta k SCR souboru')
@@ -401,6 +422,8 @@ Příklady:
             cmd_expr(args)
         elif args.command == 'structure':
             cmd_structure(args)
+        elif args.command == 'structure-folder':
+            cmd_structure_folder(args)
         elif args.command == 'symbols':
             cmd_symbols(args)
         elif args.command == 'validate':
@@ -563,478 +586,21 @@ def _resolve_mission_header(args) -> Optional[Path]:
 
 def cmd_structure(args):
     """Strukturovaný výstup - dekompilace všech funkcí"""
-    from .core.loader import SCRFile
-    from .core.ir.structure import format_structured_function_named
-    from .core.ir.ssa import build_ssa_all_blocks, build_ssa_incremental
-    from .core.headers.detector import generate_include_block
-    from .core.ir.global_resolver import GlobalResolver
-    from .core.ir.debug_output import set_debug_enabled
+    from .core.ir.decompile_file import decompile_single_scr
 
-    # Debug output: OFF by default, enable with --debug or --verbose
-    debug_mode = getattr(args, 'debug', False) or getattr(args, 'verbose', False)
-    set_debug_enabled(debug_mode)
-
-    scr = SCRFile.load(args.file, variant=args.variant)
-
-    # Set simplification flags
-    scr.enable_simplify = not getattr(args, 'no_simplify', False)
-    scr.debug_simplify = getattr(args, 'debug_simplify', False)
-
-    # Set array detection flags
-    scr.enable_array_detection = not getattr(args, 'no_array_detection', False)
-    scr.debug_array_detection = getattr(args, 'debug_array_detection', False)
-
-    # Set type inference flags
-    scr.enable_bidirectional_types = not getattr(args, 'no_bidirectional_types', False)
-    scr.debug_type_inference = getattr(args, 'debug_type_inference', False)
-
-    disasm = Disassembler(scr)
-
-    # Use RET-based function detection to prevent unreachable code
-    func_bounds = disasm.get_function_boundaries_v2()
-
-    # Mission header support: resolve --header path or auto-detect
-    header_path = _resolve_mission_header(args)
-    if header_path:
-        from .core.headers.database import get_header_database as _get_hdb
-        from .core.constants import _reset_constants
-        hdb = _get_hdb()
-        hdb.load_mission_header(header_path)
-        # Reset constants so they reload with mission-specific data
-        _reset_constants()
-        if debug_mode:
-            print(f"// Mission header loaded: {header_path.name}", file=sys.stderr)
-
-    # Build SSA - use incremental (best quality) by default, --legacy-ssa for old algorithm
-    use_legacy_ssa = getattr(args, 'legacy_ssa', False)
-    heritage_metadata = None
-    if not use_legacy_ssa:
-        # Default: Use multi-pass heritage SSA for improved quality
-        ssa_func, heritage_metadata = build_ssa_incremental(scr, return_metadata=True)
-        if debug_mode:
-            print(f"// Using incremental heritage SSA construction", file=sys.stderr)
-            print(f"// Heritage: {len(heritage_metadata.get('variables', {}))} variables, "
-                  f"{sum(len(v) for v in heritage_metadata.get('phi_blocks', {}).values())} PHI nodes",
-                  file=sys.stderr)
-    else:
-        # Legacy: Traditional SSA construction (faster but lower quality)
-        ssa_func = build_ssa_all_blocks(scr)
-        if debug_mode:
-            print(f"// Using legacy single-pass SSA construction", file=sys.stderr)
-
-    # Mission header: match decompiled functions to header-defined functions
-    if header_path:
-        from .core.ir.function_detector import match_header_functions
-        # Read header source for XCALL fingerprinting
-        header_source_text = header_path.read_text(encoding='latin-1')
-        from .core.headers.database import get_header_database as _get_hdb2
-        hdb2 = _get_hdb2()
-        rename_map = match_header_functions(
-            scr, func_bounds, hdb2.mission_functions, header_source_text
-        )
-        # Apply renames to func_bounds
-        for old_name, new_info in rename_map.items():
-            if old_name in func_bounds:
-                func_bounds[new_info['name']] = func_bounds.pop(old_name)
-        if debug_mode and rename_map:
-            print(f"// Renamed {len(rename_map)} functions from header", file=sys.stderr)
-
-    print(f"// Structured decompilation of {args.file}")
-    print(f"// Functions: {len(func_bounds)}")
-    print()
-
-    # Generate #include block
-    include_block = generate_include_block(scr)
-    print(include_block)
-    print()
-
-    # PHASE 1: Detect float globals from opcode evidence
-    # Scan all SSA instructions for float opcodes (FADD, FSUB, FMUL, FDIV, etc.)
-    # Any global variable used in these operations is definitively a float
-    float_globals = set()  # Set of byte offsets for float globals
-    FLOAT_OPCODES = {
-        "FADD", "FSUB", "FMUL", "FDIV", "FMOD", "FNEG",
-        "FLES", "FGRE", "FLEQ", "FGEQ", "FNEQ", "FEQ", "FEQU"
-    }
-    for block_id, instrs in ssa_func.instructions.items():
-        for inst in instrs:
-            if inst.mnemonic in FLOAT_OPCODES:
-                # Check all inputs and outputs for global variable references
-                for val in list(inst.inputs) + list(inst.outputs):
-                    if val.alias:
-                        # Check for data_N pattern (global reference)
-                        if val.alias.startswith("data_"):
-                            try:
-                                # data_N where N is dword offset -> byte offset = N * 4
-                                dword_idx = int(val.alias.split("_")[1])
-                                byte_offset = dword_idx * 4
-                                float_globals.add(byte_offset)
-                            except (IndexError, ValueError):
-                                pass
-                        # Check for named globals (gVarName pattern)
-                        elif len(val.alias) >= 2 and val.alias[0] == 'g' and val.alias[1].isupper():
-                            # Named global - need to find its offset
-                            # This will be resolved during GlobalResolver phase
-                            pass
-
-    # PHASE 2: Detect multi-dimensional arrays from access patterns
-    # Pattern: ADD(base_addr, MUL(index, stride)) reveals stride = inner_dimension * element_size
-    # Maps byte_offset -> list of detected strides (for multi-dim analysis)
-    array_strides = {}  # byte_offset -> set of strides
-
-    def _get_constant_value(value):
-        if value is None:
-            return None
-        if hasattr(value, 'constant_value') and value.constant_value is not None:
-            return value.constant_value
-        if value.alias and value.alias.lstrip('-').isdigit():
-            return int(value.alias)
-        if value.alias and value.alias.startswith("data_") and scr.data_segment:
-            try:
-                offset_idx = int(value.alias[5:])
-                return scr.data_segment.get_dword(offset_idx * 4)
-            except (ValueError, AttributeError):
-                return None
-        return None
-
-    for block_id, instrs in ssa_func.instructions.items():
-        for inst in instrs:
-            # Look for ADD instructions (used in array indexing)
-            if inst.mnemonic == "ADD" and len(inst.inputs) >= 2:
-                left = inst.inputs[0]
-                right = inst.inputs[1]
-
-                # Check if either operand is a base address (&data_N) and the other is MUL
-                base_offset = None
-                mul_val = None
-
-                for candidate_base, candidate_mul in [(left, right), (right, left)]:
-                    if candidate_base.alias and candidate_base.alias.startswith("&data_"):
-                        try:
-                            dword_idx = int(candidate_base.alias.split("_")[1])
-                            base_offset = dword_idx * 4
-                            mul_val = candidate_mul
-                            break
-                        except (IndexError, ValueError):
-                            pass
-
-                if base_offset is not None and mul_val is not None:
-                    # Check if mul_val is produced by a MUL instruction
-                    if mul_val.producer_inst and mul_val.producer_inst.mnemonic in {"MUL", "IMUL"}:
-                        mul_inst = mul_val.producer_inst
-                        if len(mul_inst.inputs) >= 2:
-                            # Look for constant stride in MUL inputs
-                            for mul_inp in mul_inst.inputs:
-                                stride = _get_constant_value(mul_inp)
-
-                                if stride and stride > 0:
-                                    if base_offset not in array_strides:
-                                        array_strides[base_offset] = set()
-                                    array_strides[base_offset].add(stride)
-
-    # P0.1 FIX: Analyze and export global variables
-    # FIX 4: Enable aggressive type inference for globals
-    resolver = GlobalResolver(
-        ssa_func,
-        aggressive_typing=True,   # FIX 4: Enabled for int/float inference
-        infer_structs=False       # Disabled until fully implemented
-    )
-    globals_usage = resolver.analyze()
-
-    # FIX #7: Build SaveInfo size mapping (byte_offset -> size_in_dwords)
-    saveinfo_sizes = {}
-    if scr.save_info:
-        for item in scr.save_info.items:
-            byte_offset = item['val1'] * 4  # Convert dword offset to byte offset
-            size_dwords = item['val2']
-            saveinfo_sizes[byte_offset] = size_dwords
-
-    from .core.headers.database import get_header_database
-    from .core.structures import get_struct_by_name
-    header_db = get_header_database()
-
-    def _format_dim_value(dim: int) -> str:
-        if header_db:
-            names = header_db.get_constant_names_by_value(dim)
-            if names:
-                max_names = [name for name in names if name.endswith("_MAX")]
-                if max_names:
-                    return max_names[0]
-        return str(dim)
-
-    def _infer_element_size(var_type: str) -> Optional[int]:
-        if var_type.endswith("*"):
-            return 4
-        struct_def = get_struct_by_name(var_type)
-        if struct_def:
-            return struct_def.size
-        type_sizes = {
-            "char": 1,
-            "short": 2,
-            "int": 4,
-            "float": 4,
-            "double": 8,
-            "dword": 4,
-            "BOOL": 4,
-        }
-        return type_sizes.get(var_type, None)
-
-    def _infer_array_dimensions(offset: int, total_dwords: int, element_size: int) -> Optional[list]:
-        """
-        PHASE 2: Infer multi-dimensional array dimensions from strides.
-
-        Args:
-            offset: Byte offset of array base
-            total_dwords: Total size in dwords from SaveInfo
-            element_size: Size of each element in bytes
-
-        Returns:
-            List of dimensions [outer, inner, ...] or None if cannot infer
-        """
-        if offset not in array_strides:
-            return None
-
-        strides = sorted(array_strides[offset], reverse=True)
-        if not strides:
-            return None
-        if not element_size or not any(stride > element_size for stride in strides):
-            return None
-
-        total_bytes = total_dwords * 4
-        num_elements = total_bytes // element_size if element_size else total_dwords
-
-        # For 2D array: stride = inner_dim * element_size
-        # For 3D array: stride1 = inner_dim2 * inner_dim3 * element_size
-        #               stride2 = inner_dim3 * element_size
-        dimensions = []
-
-        for stride in strides:
-            if element_size and stride >= element_size:
-                inner_dim = stride // element_size
-                if inner_dim > 0 and num_elements % inner_dim == 0:
-                    dimensions.append(inner_dim)
-                    num_elements //= inner_dim
-
-        # Add remaining outer dimension
-        if num_elements > 1:
-            dimensions.insert(0, num_elements)
-
-        # Verify dimensions multiply to total
-        if dimensions:
-            product = 1
-            for d in dimensions:
-                product *= d
-            expected = total_bytes // element_size if element_size else total_dwords
-            if product != expected:
-                # Dimensions don't match - fall back
-                return None
-
-        return dimensions if len(dimensions) > 1 else None
-
-    # Generate global variable declarations
-    # Skip entirely if the SCR file has zero global pointers — any entries
-    # returned by GlobalResolver are spurious data-segment artefacts.
-    if globals_usage and scr.global_pointers.gptr_count > 0:
-        print("// Global variables")
-        # Sort by offset for consistent output
-        for offset in sorted(globals_usage.keys()):
-            usage = globals_usage[offset]
-            # Skip array elements (only declare array base)
-            if usage.is_array_element:
-                continue
-
-            # P0.1 FIX: Filter out read-only constants (likely from data segment)
-            # Real global variables are written to at least once
-            if usage.write_count == 0 and not usage.name.startswith("g"):
-                # Skip pure read-only data_XXX entries (likely constants)
-                continue
-
-            # COMPILATION FIX: Skip SGI constants (they're #define macros in headers)
-            if usage.source in ("SGI_constant", "SGI_runtime"):
-                # SGI_* names are macros, not variables - skip declaration
-                continue
-
-            # Determine type and name
-            # PHASE 1: Check if this global is used in float operations (ABSOLUTE evidence)
-            # This takes priority over all other type inference methods
-            if offset in float_globals:
-                var_type = "float"
-            elif usage.inferred_type:
-                # FIX 4.4: Use inferred type from GlobalResolver
-                var_type = usage.inferred_type
-            elif usage.header_type:
-                var_type = usage.header_type
-            elif usage.is_incremented or usage.is_decremented:
-                # INC/DEC operations imply integer type
-                var_type = "int"
-            elif usage.possible_types:
-                # Use first detected type if available
-                var_type = list(usage.possible_types)[0]
-            else:
-                # True fallback - unknown type
-                var_type = "dword"
-
-            # SDK type mapping: preserve known struct types based on element size and name hints
-            if var_type in {"int", "dword"} and usage.is_array_base and usage.array_element_size:
-                from vcdecomp.core.structures import get_struct_by_size
-
-                name_hints = {
-                    "recover": "s_SC_MP_Recover",
-                    "rec": "s_SC_MP_Recover",
-                    "sphere": "s_sphere",
-                    "vec": "c_Vector3",
-                    "vector": "c_Vector3",
-                }
-
-                candidates = get_struct_by_size(usage.array_element_size)
-                if candidates:
-                    if len(candidates) == 1:
-                        var_type = candidates[0].name
-                    elif usage.name:
-                        name_lower = usage.name.lower()
-                        for hint, struct_name in name_hints.items():
-                            if hint in name_lower:
-                                for candidate in candidates:
-                                    if candidate.name == struct_name:
-                                        var_type = candidate.name
-                                        break
-                            if var_type not in {"int", "dword"}:
-                                break
-
-            # FIX: Detect float type from initializer value in data segment
-            # If a variable has type "int" or "dword" and its initializer looks like
-            # a float constant (IEEE 754 pattern), type it as float instead.
-            # NOTE: Only apply this heuristic if PHASE 1 didn't already detect it as float
-            detected_float_init = False
-            if var_type in {"int", "dword"} and scr.data_segment:
-                dword_idx = offset // 4
-                if dword_idx < scr.data_segment.data_count:
-                    from vcdecomp.core.ir.expr import _is_likely_float
-                    init_value = scr.data_segment.get_dword(offset)
-                    # Check if it's a non-zero value that looks like a float
-                    if init_value != 0 and _is_likely_float(init_value):
-                        var_type = "float"
-                        detected_float_init = True
-
-            var_name = usage.name if usage.name else f"data_{offset}"
-
-            # FIX #7: Use SaveInfo to detect arrays and get accurate sizes
-            # Check if this global has a size > 1 in SaveInfo
-            size_dwords = saveinfo_sizes.get(offset, 1)
-            is_array = size_dwords > 1
-
-            element_type = var_type
-            element_size = usage.array_element_size or _infer_element_size(element_type)
-
-            # Preserve pointer element types for pointer arrays
-            if is_array and element_type.endswith("*") and element_size and element_size != 4:
-                element_type = element_type.replace(" *", "").rstrip("*").strip()
-                element_size = _infer_element_size(element_type)
-
-            # FIX: Format float initializer properly if type is float
-            # This handles both detected_float_init (heuristic) and float_globals (opcode evidence)
-            if var_type == "float" and scr.data_segment:
-                init_value = scr.data_segment.get_dword(offset)
-                import struct
-                float_val = struct.unpack('<f', struct.pack('<I', init_value & 0xFFFFFFFF))[0]
-                # Format as float literal
-                if float_val == 0.0:
-                    initializer = " = 0.0f"
-                elif float_val == int(float_val):
-                    initializer = f" = {int(float_val)}.0f"
-                else:
-                    initializer = f" = {float_val}f"
-            else:
-                initializer = f" = {usage.initializer}" if usage.initializer else ""
-
-            # Format declaration
-            if is_array:
-                if usage.array_dimensions:
-                    dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in usage.array_dimensions)
-                    print(f"{element_type} {var_name}{dim_text}{initializer};")
-                else:
-                    # PHASE 2: Try to infer multi-dimensional array from stride patterns
-                    inferred_dims = _infer_array_dimensions(offset, size_dwords, element_size or 4)
-                    if inferred_dims:
-                        # Multi-dimensional array detected from access patterns
-                        dim_text = "".join(f"[{_format_dim_value(dim)}]" for dim in inferred_dims)
-                        print(f"{element_type} {var_name}{dim_text}{initializer};")
-                    else:
-                        # Fallback: 1D array declaration: type name[size];
-                        array_size = size_dwords
-                        if element_size and element_size > 0:
-                            total_bytes = size_dwords * 4
-                            if total_bytes % element_size == 0:
-                                array_size = total_bytes // element_size
-
-                        print(f"{element_type} {var_name}[{array_size}]{initializer};")
-            elif usage.is_array_base and usage.array_element_size:
-                # Fallback: use dynamic array detection (for scripts without SaveInfo)
-                array_size = 64  # Default estimate
-                print(f"{var_type} {var_name}[{array_size}]{initializer};")
-            else:
-                # Simple variable: type name;
-                print(f"{var_type} {var_name}{initializer};")
-        print()
-
-    # Zpracuj funkce v pořadí podle adresy
-    # Pass function_bounds for CALL instruction resolution
-    # Pass style for debug output control: 'quiet' (default) or 'normal'/'verbose' with --debug
-    # Heritage: Pass heritage_metadata for improved variable names (default with incremental SSA)
-    style = 'normal' if debug_mode else 'quiet'
-
-    def _is_trivial_init_function(func_text: str) -> bool:
-        """Check if _init function only contains variable declarations and return."""
-        lines = func_text.strip().split('\n')
-        for line in lines:
-            line = line.strip()
-            # Skip empty lines
-            if not line:
-                continue
-            # Skip function signature
-            if line.startswith('void _init(') or line.startswith('dword _init('):
-                continue
-            # Skip opening/closing braces
-            if line in ('{', '}'):
-                continue
-            # Skip variable declarations (type name; or type name = value;)
-            if ';' in line and not '(' in line and not '=' in line:
-                continue
-            # Skip comments
-            if line.startswith('//'):
-                continue
-            # Skip simple return
-            if line == 'return;':
-                continue
-            # Found a non-trivial statement
-            return False
-        return True
-
-    use_collapse = not getattr(args, 'no_collapse', False)
-    if not use_collapse and debug_mode:
-        print(f"// Using flat mode (collapse disabled)", file=sys.stderr)
-
-    for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
-        text = format_structured_function_named(
-            ssa_func,
-            func_name,
-            func_start,
-            func_end,
-            function_bounds=func_bounds,
-            style=style,
-            heritage_metadata=heritage_metadata,
-            use_collapse=use_collapse
-        )
-
-        # Skip empty _init function (only contains variable declarations and return)
-        if func_name == "_init" and _is_trivial_init_function(text):
-            continue
-
-        print(text)
-        print()
+    result = decompile_single_scr(Path(args.file), args)
+    print(result)
 
     if args.dump_type_evidence:
+        from .core.loader import SCRFile
+        from .core.ir.ssa import build_ssa_incremental, build_ssa_all_blocks
         from .core.ir.type_inference import TypeInferenceEngine
+
+        scr = SCRFile.load(args.file, variant=args.variant)
+        if getattr(args, 'legacy_ssa', False):
+            ssa_func = build_ssa_all_blocks(scr)
+        else:
+            ssa_func, _ = build_ssa_incremental(scr, return_metadata=True)
 
         type_engine = TypeInferenceEngine(ssa_func, aggressive=True)
         type_engine.integrate_with_ssa_values()
@@ -1047,6 +613,88 @@ def cmd_structure(args):
             output_path = Path(args.dump_type_evidence)
             output_path.write_text(evidence_json, encoding='utf-8')
             print(f"Type evidence JSON saved to: {output_path}", file=sys.stderr)
+
+
+def cmd_structure_folder(args):
+    """Decompile all .SCR files in a mission folder with cross-file context."""
+    from .core.ir.decompile_file import (
+        decompile_single_scr,
+        resolve_mission_header,
+        run_pass1_analysis,
+    )
+    from .core.ir.cross_file_context import CrossFileContext
+
+    mission_dir = Path(args.directory)
+    if not mission_dir.is_dir():
+        print(f"Error: Not a directory: {mission_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Find all .SCR files (case-insensitive)
+    scr_files = sorted(
+        [f for f in mission_dir.iterdir() if f.suffix.upper() == '.SCR'],
+        key=lambda p: p.name.upper()
+    )
+    if not scr_files:
+        print(f"Error: No .SCR files found in {mission_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Found {len(scr_files)} .SCR files in {mission_dir.name}", file=sys.stderr)
+
+    # Resolve mission header once
+    header_arg = getattr(args, 'header', None)
+    header_path = resolve_mission_header(mission_dir, header_arg)
+    if header_path:
+        from .core.headers.database import get_header_database as _get_hdb
+        from .core.constants import _reset_constants
+        hdb = _get_hdb()
+        hdb.load_mission_header(header_path)
+        _reset_constants()
+        print(f"Mission header loaded: {header_path.name}", file=sys.stderr)
+
+    # --- Pass 1: Collect evidence from all files ---
+    ctx = CrossFileContext()
+    print(f"Pass 1: Analyzing {len(scr_files)} files...", file=sys.stderr)
+    for i, scr_path in enumerate(scr_files, 1):
+        print(f"  [{i}/{len(scr_files)}] {scr_path.name}", file=sys.stderr)
+        try:
+            scr, globals_usage, float_globals = run_pass1_analysis(scr_path, args)
+            ctx.add_file_analysis(scr_path.name, scr, globals_usage, float_globals)
+        except Exception as e:
+            print(f"  WARNING: Failed to analyze {scr_path.name}: {e}", file=sys.stderr)
+
+    ctx.resolve()
+    print(f"Pass 1 complete. {ctx.summary()}", file=sys.stderr)
+
+    # --- Pass 2: Decompile each file with cross-file context ---
+    output_dir = Path(args.output) if args.output else None
+    if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Pass 2: Decompiling {len(scr_files)} files...", file=sys.stderr)
+    for i, scr_path in enumerate(scr_files, 1):
+        print(f"  [{i}/{len(scr_files)}] {scr_path.name}", file=sys.stderr)
+        try:
+            result = decompile_single_scr(
+                scr_path,
+                args,
+                cross_file_context=ctx,
+                header_path=header_path,
+                header_already_loaded=True,
+            )
+
+            if output_dir:
+                out_file = output_dir / (scr_path.stem + ".c")
+                out_file.write_text(result, encoding='utf-8')
+                print(f"    -> {out_file}", file=sys.stderr)
+            else:
+                # Print to stdout with separator
+                print(f"// ========== {scr_path.name} ==========")
+                print(result)
+                print()
+        except Exception as e:
+            print(f"  ERROR: Failed to decompile {scr_path.name}: {e}", file=sys.stderr)
+
+    print("Done.", file=sys.stderr)
 
 
 def cmd_symbols(args):

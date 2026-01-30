@@ -358,6 +358,18 @@ def get_function_signature_string(
             ssa_func, func_name, type_engine
         )
 
+    # Override from mission header match data (parameter names + types)
+    header_sigs = getattr(ssa_func.scr, '_header_function_signatures', {})
+    if func_name in header_sigs:
+        header_data = header_sigs[func_name]
+        header_params = header_data.get('parameters', [])
+        header_ret = header_data.get('return_type', 'dword')
+        if header_params:
+            params_str = ", ".join(
+                f"{ptype} {pname}" for ptype, pname in header_params
+            )
+            return f"{header_ret} {func_name}({params_str})"
+
     # Fallback: Detect signature from bytecode patterns
     sig = detect_function_signature(ssa_func, func_start, func_end)
 

@@ -555,6 +555,20 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     from ..function_signature import detect_function_signature
     func_sig = detect_function_signature(ssa_func, entry_addr, end_addr, func_name=func_name)
 
+    # Override signature from mission header match data (parameter names + types)
+    header_sigs = getattr(ssa_func.scr, '_header_function_signatures', {})
+    if func_name in header_sigs:
+        header_data = header_sigs[func_name]
+        header_params = header_data.get('parameters', [])
+        header_ret = header_data.get('return_type', None)
+        if header_params:
+            func_sig.param_types = [
+                f"{ptype} {pname}" for ptype, pname in header_params
+            ]
+            func_sig.param_count = len(header_params)
+        if header_ret:
+            func_sig.return_type = header_ret
+
     # Find the entry block for this function
     # For negative entry addresses (e.g., ScriptMain at -1098), use CFG's resolved entry_block
     if entry_addr < 0:
