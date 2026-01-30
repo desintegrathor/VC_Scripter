@@ -37,7 +37,7 @@ from .patterns.models import SwitchPattern, IfElsePattern, CaseInfo
 from .patterns.if_else import _detect_if_else_pattern, _detect_early_return_pattern
 from .patterns.switch_case import _detect_switch_patterns, _case_has_break
 from .patterns.loops import _detect_for_loop
-from .analysis.variables import _collect_local_variables
+from .analysis.variables import _collect_local_variables, _scan_used_variables_in_code
 from .analysis.condition import render_condition
 from .emit.block_formatter import _format_block_lines
 from .emit.code_emitter import _render_blocks_with_loops
@@ -869,11 +869,28 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Build complete function output
         output_lines: List[str] = [f"{signature} {{"]
 
-        # Add variable declarations (reuse existing logic - imported at module level)
+        # Add variable declarations with two-pass DCE (same as flat mode)
+        # First collect candidates, then filter against actual usage in body
         vars_decls = _collect_local_variables(ssa_func, func_block_ids, formatter)
+
+        # Two-pass DCE: scan body for actually-used variable names
+        used_in_body = _scan_used_variables_in_code(body_lines)
+        filtered_decls = []
         for var_decl in vars_decls:
+            # Extract variable name from declaration like "int local_46" or "s_SC_initside local_0"
+            parts = var_decl.split()
+            if len(parts) >= 2:
+                var_name = parts[-1].split('[')[0].rstrip(';')
+                if var_name in used_in_body:
+                    filtered_decls.append(var_decl)
+                else:
+                    debug_print(f"DEBUG COLLAPSE DCE: Eliminating unused variable: {var_name}")
+            else:
+                filtered_decls.append(var_decl)
+
+        for var_decl in filtered_decls:
             output_lines.append(f"    {var_decl};")
-        if vars_decls:
+        if filtered_decls:
             output_lines.append("")
 
         # Add body
@@ -954,7 +971,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
     # PHASE 5: Build use-count map for SSA-level dead code elimination (first pass)
     # This allows us to skip declarations for unused temporary variables at SSA level
-    from .analysis.variables import _build_use_count_map, _is_unused_temporary, _scan_used_variables_in_code
+    from .analysis.variables import _build_use_count_map, _is_unused_temporary
     use_counts = _build_use_count_map(ssa_func, func_block_ids, rename_map)
 
     # Collect candidate declarations as (var_type, var_name, formatted_decl) tuples
@@ -1593,8 +1610,6 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             emitted_loop_headers.add(block_id)  # Track by header ID, not loop object
             active_loops.append(header_loop)
             indent = "    " + "    " * (len(active_loops) - 1)
-            lines.append(f"{indent}// Loop header - Block {block_id} @{addr}")
-
             # FIX 3A: Try to detect for-loop pattern
             for_info = _detect_for_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
             if for_info:
@@ -1914,16 +1929,16 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
                 debug_print(f"DEBUG: PHASE 6 TWO-PASS - Skipping undefined temp: {base_name}")
                 continue
 
-        # Non-temps are always kept if they were candidates
-        if not is_any_temp:
+        # Check if variable actually appears in the generated output
+        if base_name in used_in_output:
             filtered_declarations.append(formatted_decl)
             seen_vars.add(base_name)
-        # Temps only kept if they appear in output
-        elif base_name in used_in_output:
+        elif not is_any_temp and not base_name.startswith('local_'):
+            # Non-temp, non-local variables are always kept (e.g., semantic names like 'i')
             filtered_declarations.append(formatted_decl)
             seen_vars.add(base_name)
         else:
-            debug_print(f"DEBUG: PHASE 5.5 TWO-PASS DCE - Eliminating unused temp: {var_name}")
+            debug_print(f"DEBUG: PHASE 5.5 TWO-PASS DCE - Eliminating unused variable: {var_name}")
 
     # Insert filtered declarations at the right position
     if filtered_declarations:

@@ -759,8 +759,6 @@ def _render_blocks_with_loops(
 
         if header_loop:
             # Render loop
-            lines.append(f"{indent}// Loop header - Block {body_block_id} @{body_block.start}")
-
             # Try to detect for-loop pattern (most specific)
             for_info = _detect_for_loop(header_loop, cfg, ssa_func, formatter, resolver, start_to_block, global_map)
             while_info = None

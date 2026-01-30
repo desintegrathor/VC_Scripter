@@ -125,6 +125,13 @@ class ScriptTypeDetector:
             'SC_SetObjectivesNoSound',
             'SC_MissionSave',
             'SC_StorySkipEnable',
+            # Level setup functions (from "level stuff" section of sc_global.h)
+            'SC_InitSide',
+            'SC_InitSideGroup',
+            'SC_SetSideAlly',
+            'SC_GetGroupPlayers',
+            'SC_GetWp',
+            'SC_Ai_SetShootOnHeardEnemyColTest',
         }
         return any(func in level_exclusive for func in self.xfn_functions)
 
