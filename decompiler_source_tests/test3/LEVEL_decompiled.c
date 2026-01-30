@@ -1,5 +1,4 @@
-pycparser not available, using regex fallback for parsing
-// Structured decompilation of decompiler_source_tests\test3\LEVEL.SCR
+// Structured decompilation of LEVEL.SCR
 // Functions: 11
 
 #include <inc\sc_global.h>
@@ -21,7 +20,6 @@ void func_0292(void) {
             SC_P_SetActive(local_1, FALSE);
             SC_P_SetPos(local_1, &vec);
         } else {
-            local_0 = i + 1;
         }
     }
     if (i >= 16) {
@@ -65,7 +63,6 @@ int func_0458(int param_0, int param_1, int param_2) {
         if (! SC_P_IsReady(local_2)) {
             local_1++;
         } else {
-            local_0 = i + 1;
         }
     }
     if (i >= param_1) {
@@ -92,7 +89,6 @@ void func_0511(int param_0, int param_1) {
             param_1[1] = param_1[0];
             local_3 = local_5;
             param_1[0] = i;
-            local_6 = i + 1;
         } else {
             (&local_3) + 4 = local_5;
             param_1[1] = i;

@@ -1,4 +1,4 @@
-// Structured decompilation of decompiler_source_tests/test1/tt.scr
+// Structured decompilation of tt.scr
 // Functions: 15
 
 #include <inc\sc_global.h>
@@ -179,7 +179,6 @@ void func_0498(int param_0, int param_1) {
             local_5[t712_].field_12 = t712_;
             local_5[1065353216].z = 1.0f;
             local_4++;
-            local_3 = i + 1;
         } else {
             local_2 = 1;
         }
@@ -234,7 +233,7 @@ void func_0752(int param_0) {
     int n;
     s_SC_P_getinfo player_info;
 
-    switch (local_2.field_8) {
+    switch (player_info.field_8) {
     case 0:
         if (local_0 <= 0) {
         }
@@ -385,7 +384,6 @@ int ScriptMain(s_SC_NET_info *info) {
                     } else {
                         local_9 = idx + 1;
                     }
-                    local_9 = idx + 1;
                 }
                 break;
             }
@@ -428,7 +426,7 @@ int ScriptMain(s_SC_NET_info *info) {
         break;
     case 9:
         SC_sgi(GVAR_MP_MISSIONTYPE, 9);
-        gEndRule = param_1->field_4;
+        gEndRule = info->field_4;
         gEndValue = info->param2;
         gTime = 0;
         SC_MP_EnableBotsFromScene(0);
@@ -488,9 +486,9 @@ int ScriptMain(s_SC_NET_info *info) {
                 if (j) {
                     SC_P_GetInfo(j, &player_info);
                     if (input_342_unknown_342_2940_1 == t2937_ret) {
-                        local_314 = SC_Wtxt(5108);
+                        local_314 = SC_Wtxt(5108);  // 5108: "Capture the flags one by one!";
                     } else {
-                        local_314 = SC_Wtxt(5109);
+                        local_314 = SC_Wtxt(5109);  // 5109: "Defend the flags! If the attackers seize one, defend the next!";
                     }
                     SC_GameInfoW(local_314);
                     local_314 = 0;
@@ -505,7 +503,7 @@ int ScriptMain(s_SC_NET_info *info) {
                     } else {
                         t3012_ret = SC_AnsiToUni("'disconnected'", &local_379);
                     }
-                    t3021_ret = SC_Wtxt(5107);
+                    t3021_ret = SC_Wtxt(5107);  // 5107: "Attacker %s captured the flag %d."
                     t3028_ret = swprintf(&local_315, t3021_ret, &local_379, gCLN_CurStep);
                     local_314 = &local_315;
                 }
@@ -513,17 +511,17 @@ int ScriptMain(s_SC_NET_info *info) {
                 SC_P_GetInfo(j, &player_info);
                 if (input_355_unknown_355_3064_1 == t3061_ret) {
                     if (gCLN_CurStep == 1) {
-                        local_314 = SC_Wtxt(5111);
+                        local_314 = SC_Wtxt(5111);  // 5111: "Capture the last flag!";
                     } else {
-                        t3085_ret = SC_Wtxt(5110);
+                        t3085_ret = SC_Wtxt(5110);  // 5110: "Capture flag %d !"
                         t3093_ret = swprintf(&local_315, t3085_ret, gCLN_CurStep - 1);
                         local_314 = &local_315;
                     }
                 } else {
                     if (gCLN_CurStep == 1) {
-                        local_314 = SC_Wtxt(5113);
+                        local_314 = SC_Wtxt(5113);  // 5113: "Defend the last flag!";
                     } else {
-                        t3121_ret = SC_Wtxt(5112);
+                        t3121_ret = SC_Wtxt(5112);  // 5112: "Defend flag %d !"
                         t3129_ret = swprintf(&local_315, t3121_ret, gCLN_CurStep - 1);
                         local_314 = &local_315;
                     }
@@ -539,13 +537,12 @@ int ScriptMain(s_SC_NET_info *info) {
         case MISSION_PHASE_INGAME:
             // Loop header - Block 410 @3415
             for (j = 0; j < abl_lists; j++) {
-                if (param_1->field_4 == tmp441) {
+                if (info->field_4 == tmp441) {
                     abl_lists--;
                     abl_list[j] = tmp446;
                 } else {
                     local_8 = j + 1;
                 }
-                local_8 = j + 1;
             }
             if (j < abl_lists) {
                 info->fval1 = 0.1f;
@@ -567,7 +564,7 @@ int ScriptMain(s_SC_NET_info *info) {
         break;
     case 6:
         local_13 = info->param2;
-        local_9 = param_1->field_4;
+        local_9 = info->field_4;
         if (gAttackingSide) {
             local_9 = 1 - idx;
         }
@@ -607,12 +604,12 @@ int ScriptMain(s_SC_NET_info *info) {
         SC_MP_SRV_ClearPlsStats();
         break;
     case 11:
-        gEndRule = param_1->field_4;
+        gEndRule = info->field_4;
         gEndValue = info->param2;
         gTime = 0;
         break;
     case 7:
-        func_0752(param_1->field_4);
+        func_0752(info->field_4);
         break;
     default:
         // Loop header - Block 176 @1195
@@ -620,7 +617,6 @@ int ScriptMain(s_SC_NET_info *info) {
             if (side2 != 0 && tmp24 < 2) {
                 (&local_296) + tmp28 * 4 = 1;
             }
-            local_8 = j + 1;
         }
         gMission_starting_timer -= info->elapsed_time;
         if (tmp37 && tmp39) {

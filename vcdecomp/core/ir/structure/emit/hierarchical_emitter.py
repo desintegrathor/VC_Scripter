@@ -684,6 +684,12 @@ class HierarchicalCodeEmitter:
             inc_patterns.add(f"{for_info.init_var}--")
             inc_patterns.add(f"{for_info.init_var} = {for_info.init_var} + 1")
             inc_patterns.add(f"{for_info.init_var} = ({for_info.init_var} + 1)")
+            # Cross-name patterns: LHS uses raw name, RHS uses display name
+            # e.g., "local_45 = i + 1" when init_var=local_45, var=i
+            inc_patterns.add(f"{for_info.init_var} = {for_info.var} + 1")
+            inc_patterns.add(f"{for_info.init_var} = ({for_info.var} + 1)")
+            inc_patterns.add(f"{for_info.init_var} = {for_info.var} - 1")
+            inc_patterns.add(f"{for_info.init_var} = ({for_info.var} - 1)")
         # Discard empty patterns
         inc_patterns.discard("")
 
@@ -1587,6 +1593,13 @@ class HierarchicalCodeEmitter:
                 # This avoids: "goto block_N; return 0;" → just "return 0;"
                 if self._is_function_epilogue_block(target_id):
                     return lines
+                # Inline the target block instead of emitting a goto when the
+                # target is a terminal block (ends with RET, no successors) that
+                # hasn't been emitted yet. This handles switch exit blocks that
+                # contain real code (e.g., struct field assignment + return).
+                if self._can_inline_goto_target(target_id):
+                    lines.extend(self._emit_basic_by_id(target_id, indent))
+                    return lines
                 if target_id not in self.block_labels:
                     self.block_labels[target_id] = f"block_{target_id}"
                 lines.append(f"{indent}goto {self.block_labels[target_id]};")
@@ -1596,6 +1609,31 @@ class HierarchicalCodeEmitter:
                 lines.append(f"{indent}goto {label};")
 
         return lines
+
+    def _can_inline_goto_target(self, block_id: int) -> bool:
+        """
+        Check if a goto target block can be inlined instead of using a goto.
+
+        A block can be inlined when:
+        1. It hasn't been emitted yet
+        2. It's a terminal block (no successors, ends with RET)
+        """
+        if block_id in self.emitted_blocks:
+            return False
+        cfg_block = self.cfg.blocks.get(block_id)
+        if not cfg_block:
+            return False
+        # Must be a terminal block (no successors)
+        if getattr(cfg_block, 'successors', None):
+            return False
+        # Must end with RET
+        if not cfg_block.instructions:
+            return False
+        last_instr = cfg_block.instructions[-1]
+        if not self.resolver.is_return(last_instr.opcode):
+            return False
+        return True
+
 
     def _is_function_epilogue_block(self, block_id: int) -> bool:
         """Check if a block is a function epilogue (only RET + stack cleanup)."""

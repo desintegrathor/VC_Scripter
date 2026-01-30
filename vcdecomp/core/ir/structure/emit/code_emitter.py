@@ -800,7 +800,11 @@ def _render_blocks_with_loops(
                     if for_info:
                         # Check if this block jumps back to header (back edge)
                         if any(edge.source == loop_body_id for edge in header_loop.back_edges):
-                            skip_var = for_info.var  # Skip increment for loop variable
+                            # Use init_var (raw name) since the rendered LHS uses
+                            # the raw variable name, not the display name.
+                            # e.g., "local_45 = i + 1" has LHS "local_45" (init_var),
+                            # not "i" (display var).
+                            skip_var = for_info.init_var or for_info.var
 
                     if skip_var:
                         # Filter out increment assignment

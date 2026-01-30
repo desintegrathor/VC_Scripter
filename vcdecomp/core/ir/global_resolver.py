@@ -252,15 +252,10 @@ class GlobalResolver:
                             self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
                         self.globals[byte_offset].read_count += 1
 
-                # DCP = write to global
-                # NOTE: arg1 is DWORD offset, must convert to byte offset (* 4)
-                elif mnemonic in {"DCP"}:
-                    if instr.instruction and instr.instruction.instruction:
-                        dword_offset = instr.instruction.instruction.arg1
-                        byte_offset = dword_offset * 4
-                        if byte_offset not in self.globals:
-                            self.globals[byte_offset] = GlobalUsage(offset=byte_offset)
-                        self.globals[byte_offset].write_count += 1
+                # DCP = data copy (dereference pointer, read N bytes)
+                # DCP's arg1 is a SIZE, not a data segment offset.
+                # It reads from the address on the stack, NOT from the data segment.
+                # This is NOT a global write — do not track it here.
 
                 # ASGN with GADR target = write to global
                 # Pattern 1: GADR data[X] → ASGN (direct global write)

@@ -1012,7 +1012,7 @@ class ExpressionFormatter:
             # Map parameter struct types to semantic names
             PARAM_STRUCT_TO_NAME = {
                 "s_SC_NET_info": "info",
-                "s_SC_OBJ_info": "obj_info",
+                "s_SC_OBJ_info": "info",
                 "s_SC_L_info": "info",
                 "s_SC_P_getinfo": "plinfo",
             }
