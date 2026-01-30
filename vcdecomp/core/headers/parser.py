@@ -204,14 +204,83 @@ class HeaderParser:
         re.MULTILINE
     )
 
-    def parse_mission_header(self, header_path: Path) -> Dict:
+    # Pattern to match #include directives: #include <path> or #include "path"
+    INCLUDE_PATTERN = re.compile(r'#include\s*[<"](.+?)[>"]')
+
+    # Headers already handled by SDK/header database — skip these in include resolution
+    SKIP_INCLUDES = {'sc_global.h', 'sc_def.h', 'sc_mpglobal.h', 'mplevel.inc'}
+
+    def _resolve_includes(self, content: str, include_dirs: List[Path],
+                          visited: Optional[set] = None) -> str:
+        """
+        Resolve #include directives and return concatenated content from included files.
+
+        Args:
+            content: The header file content to scan for includes
+            include_dirs: Directories to search for included files
+            visited: Set of already-visited filenames (lowercase) to prevent circular includes
+
+        Returns:
+            Concatenated content of all resolved included files
+        """
+        if visited is None:
+            visited = set()
+
+        included_parts = []
+
+        for match in self.INCLUDE_PATTERN.finditer(content):
+            inc_path_str = match.group(1)
+            # Extract just the filename from paths like inc\gLevel_h.h or inc/gLevel_h.h
+            inc_filename = Path(inc_path_str.replace('\\', '/')).name
+            inc_filename_lower = inc_filename.lower()
+
+            # Skip headers already handled by SDK/database
+            if inc_filename_lower in self.SKIP_INCLUDES:
+                continue
+
+            # Skip already-visited files (circular include protection)
+            if inc_filename_lower in visited:
+                continue
+
+            # Case-insensitive search in include directories
+            resolved_path = None
+            for inc_dir in include_dirs:
+                if not inc_dir.exists():
+                    continue
+                for candidate in inc_dir.iterdir():
+                    if candidate.is_file() and candidate.name.lower() == inc_filename_lower:
+                        resolved_path = candidate
+                        break
+                if resolved_path:
+                    break
+
+            if resolved_path:
+                visited.add(inc_filename_lower)
+                inc_content = resolved_path.read_text(encoding='latin-1')
+                # Recursively resolve includes within the included file
+                nested = self._resolve_includes(inc_content, include_dirs, visited)
+                if nested:
+                    included_parts.append(nested)
+                included_parts.append(inc_content)
+
+        return '\n'.join(included_parts)
+
+    def parse_mission_header(self, header_path: Path,
+                             include_dirs: Optional[List[Path]] = None) -> Dict:
         """
         Parse a mission-specific header file (e.g., LEVEL_H.H).
+
+        Follows #include directives to resolve shared headers (e.g., gLevel_h.h)
+        from the provided include directories.
 
         Extracts:
         - #define constants (reuses _parse_defines)
         - Named struct definitions (struct name { fields };)
         - Function definitions with bodies (extracts signature, skips body)
+
+        Args:
+            header_path: Path to the mission header file
+            include_dirs: Directories to search for #include'd files
 
         Returns:
             Dict with keys: 'constants', 'structures', 'functions'
@@ -223,6 +292,12 @@ class HeaderParser:
 
         with open(header_path, 'r', encoding='latin-1') as f:
             content = f.read()
+
+        # Resolve and prepend included headers
+        if include_dirs:
+            included_content = self._resolve_includes(content, include_dirs)
+            if included_content:
+                content = included_content + '\n' + content
 
         # Parse #define constants
         self._parse_defines(content)

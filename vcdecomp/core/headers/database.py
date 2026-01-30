@@ -187,7 +187,8 @@ class HeaderDatabase:
         from .parser import HeaderParser
 
         parser = HeaderParser()
-        data = parser.parse_mission_header(header_path)
+        include_dirs = [Path(__file__).parent.parent.parent / 'compiler' / 'inc']
+        data = parser.parse_mission_header(header_path, include_dirs=include_dirs)
 
         self._mission_header_name = header_path.name
 
