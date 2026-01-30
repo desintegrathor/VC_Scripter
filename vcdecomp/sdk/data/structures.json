@@ -150,8 +150,8 @@
         "array_size": 0
       },
       {
-        "name": "*pos",
-        "type": "void",
+        "name": "pos",
+        "type": "void*",
         "offset": 16,
         "size": 4,
         "is_array": false,
@@ -210,8 +210,8 @@
         "array_size": 0
       },
       {
-        "name": "*nod",
-        "type": "void",
+        "name": "nod",
+        "type": "void*",
         "offset": 20,
         "size": 4,
         "is_array": false,
@@ -248,16 +248,16 @@
         "array_size": 0
       },
       {
-        "name": "*master_nod",
-        "type": "void",
+        "name": "master_nod",
+        "type": "void*",
         "offset": 4,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod",
-        "type": "void",
+        "name": "nod",
+        "type": "void*",
         "offset": 8,
         "size": 4,
         "is_array": false,
@@ -280,16 +280,16 @@
         "array_size": 0
       },
       {
-        "name": "*world_pos",
-        "type": "c_Vector3",
+        "name": "world_pos",
+        "type": "c_Vector3*",
         "offset": 20,
         "size": 12,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*world_dir",
-        "type": "c_Vector3",
+        "name": "world_dir",
+        "type": "c_Vector3*",
         "offset": 32,
         "size": 12,
         "is_array": false,
@@ -372,16 +372,16 @@
         "array_size": 0
       },
       {
-        "name": "*obj",
-        "type": "void",
+        "name": "obj",
+        "type": "void*",
         "offset": 4,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*weap_type",
-        "type": "void",
+        "name": "weap_type",
+        "type": "void*",
         "offset": 8,
         "size": 4,
         "is_array": false,
@@ -490,16 +490,16 @@
         "array_size": 0
       },
       {
-        "name": "*obj",
-        "type": "void",
+        "name": "obj",
+        "type": "void*",
         "offset": 4,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*weap_type",
-        "type": "void",
+        "name": "weap_type",
+        "type": "void*",
         "offset": 8,
         "size": 4,
         "is_array": false,
@@ -600,24 +600,24 @@
         "array_size": 0
       },
       {
-        "name": "*inifile",
-        "type": "char",
+        "name": "inifile",
+        "type": "char*",
         "offset": 24,
         "size": 1,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*recover_pos",
-        "type": "void",
+        "name": "recover_pos",
+        "type": "void*",
         "offset": 25,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*icon_name",
-        "type": "char",
+        "name": "icon_name",
+        "type": "char*",
         "offset": 29,
         "size": 1,
         "is_array": false,
@@ -728,28 +728,28 @@
         "array_size": 0
       },
       {
-        "name": "*eqp",
-        "type": "s_SC_P_CreateEqp",
+        "name": "eqp",
+        "type": "s_SC_P_CreateEqp*",
         "offset": 82,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "aeg_valid_head_bes[SC_P_CREATE_AEG_VALID_MAX]",
+        "name": "aeg_valid_head_bes",
         "type": "dword",
         "offset": 86,
         "size": 4,
-        "is_array": false,
-        "array_size": 0
+        "is_array": true,
+        "array_size": 1
       },
       {
-        "name": "aeg_valid_body_bes[SC_P_CREATE_AEG_VALID_MAX]",
+        "name": "aeg_valid_body_bes",
         "type": "dword",
         "offset": 90,
         "size": 4,
-        "is_array": false,
-        "array_size": 0
+        "is_array": true,
+        "array_size": 1
       }
     ]
   },
@@ -758,16 +758,16 @@
     "size": 2,
     "fields": [
       {
-        "name": "*bes",
-        "type": "char",
+        "name": "bes",
+        "type": "char*",
         "offset": 0,
         "size": 1,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*eqp",
-        "type": "char",
+        "name": "eqp",
+        "type": "char*",
         "offset": 1,
         "size": 1,
         "is_array": false,
@@ -780,12 +780,12 @@
     "size": 1,
     "fields": [
       {
-        "name": "*sa[SC_PL_SA_MAX]",
-        "type": "char",
+        "name": "sa",
+        "type": "char*",
         "offset": 0,
         "size": 1,
-        "is_array": false,
-        "array_size": 0
+        "is_array": true,
+        "array_size": 1
       }
     ]
   },
@@ -794,12 +794,12 @@
     "size": 4,
     "fields": [
       {
-        "name": "intel[SC_P_INTEL_MAX]",
+        "name": "intel",
         "type": "dword",
         "offset": 0,
         "size": 4,
-        "is_array": false,
-        "array_size": 0
+        "is_array": true,
+        "array_size": 1
       }
     ]
   },
@@ -982,7 +982,7 @@
         "array_size": 0
       },
       {
-        "name": "grenade_sure_time;)",
+        "name": "grenade_sure_time",
         "type": "float",
         "offset": 64,
         "size": 4,
@@ -1146,7 +1146,7 @@
     "size": 12,
     "fields": [
       {
-        "name": "valid_uses;",
+        "name": "valid_uses",
         "type": "dword",
         "offset": 0,
         "size": 4,
@@ -1154,7 +1154,7 @@
         "array_size": 0
       },
       {
-        "name": "use_interval;",
+        "name": "use_interval",
         "type": "float",
         "offset": 4,
         "size": 4,
@@ -1162,7 +1162,7 @@
         "array_size": 0
       },
       {
-        "name": "cur_interval;",
+        "name": "cur_interval",
         "type": "float",
         "offset": 8,
         "size": 4,
@@ -1266,16 +1266,16 @@
     "size": 160,
     "fields": [
       {
-        "name": "*master_nod",
-        "type": "void",
+        "name": "master_nod",
+        "type": "void*",
         "offset": 0,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*steeringwheel_nod",
-        "type": "void",
+        "name": "steeringwheel_nod",
+        "type": "void*",
         "offset": 4,
         "size": 4,
         "is_array": false,
@@ -1354,7 +1354,7 @@
         "array_size": 0
       },
       {
-        "name": "eng_freewheel_revs; volnobehu",
+        "name": "eng_freewheel_revs",
         "type": "float",
         "offset": 84,
         "size": 4,
@@ -1363,7 +1363,7 @@
       },
       {
         "name": "eng_revs_slowdown",
-        "type": "float",
+        "type": "volnobehu float",
         "offset": 88,
         "size": 4,
         "is_array": false,
@@ -1434,24 +1434,24 @@
         "array_size": 0
       },
       {
-        "name": "*eng_Nm",
-        "type": "float",
+        "name": "eng_Nm",
+        "type": "float*",
         "offset": 132,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*eng_kW",
-        "type": "float",
+        "name": "eng_kW",
+        "type": "float*",
         "offset": 136,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*eng_sound_volume",
-        "type": "float",
+        "name": "eng_sound_volume",
+        "type": "float*",
         "offset": 140,
         "size": 4,
         "is_array": false,
@@ -1474,8 +1474,8 @@
         "array_size": 0
       },
       {
-        "name": "*trns_gear",
-        "type": "float",
+        "name": "trns_gear",
+        "type": "float*",
         "offset": 152,
         "size": 4,
         "is_array": false,
@@ -1758,8 +1758,8 @@
         "array_size": 0
       },
       {
-        "name": "*stg_dir",
-        "type": "char",
+        "name": "stg_dir",
+        "type": "char*",
         "offset": 80,
         "size": 1,
         "is_array": false,
@@ -1796,8 +1796,8 @@
     "size": 80,
     "fields": [
       {
-        "name": "*master_nod",
-        "type": "void",
+        "name": "master_nod",
+        "type": "void*",
         "offset": 0,
         "size": 4,
         "is_array": false,
@@ -2032,8 +2032,8 @@
     "size": 24,
     "fields": [
       {
-        "name": "*master_nod",
-        "type": "void",
+        "name": "master_nod",
+        "type": "void*",
         "offset": 0,
         "size": 4,
         "is_array": false,
@@ -2110,72 +2110,72 @@
         "array_size": 0
       },
       {
-        "name": "*master_nod",
-        "type": "void",
+        "name": "master_nod",
+        "type": "void*",
         "offset": 12,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_base",
-        "type": "void",
+        "name": "nod_base",
+        "type": "void*",
         "offset": 16,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_rotate_x",
-        "type": "void",
+        "name": "nod_rotate_x",
+        "type": "void*",
         "offset": 20,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_rotate_z",
-        "type": "void",
+        "name": "nod_rotate_z",
+        "type": "void*",
         "offset": 24,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_rotate_last",
-        "type": "void",
+        "name": "nod_rotate_last",
+        "type": "void*",
         "offset": 28,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_fpv_camera",
-        "type": "void",
+        "name": "nod_fpv_camera",
+        "type": "void*",
         "offset": 32,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_active_pos",
-        "type": "void",
+        "name": "nod_active_pos",
+        "type": "void*",
         "offset": 36,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_muzzle",
-        "type": "void",
+        "name": "nod_muzzle",
+        "type": "void*",
         "offset": 40,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*nod_entry",
-        "type": "void",
+        "name": "nod_entry",
+        "type": "void*",
         "offset": 44,
         "size": 4,
         "is_array": false,
@@ -2254,8 +2254,8 @@
         "array_size": 0
       },
       {
-        "name": "*link_ptr",
-        "type": "void",
+        "name": "link_ptr",
+        "type": "void*",
         "offset": 84,
         "size": 4,
         "is_array": false,
@@ -2270,8 +2270,8 @@
         "array_size": 0
       },
       {
-        "name": "*anim_dir",
-        "type": "char",
+        "name": "anim_dir",
+        "type": "char*",
         "offset": 92,
         "size": 1,
         "is_array": false,
@@ -2308,8 +2308,8 @@
         "array_size": 0
       },
       {
-        "name": "*name",
-        "type": "char",
+        "name": "name",
+        "type": "char*",
         "offset": 12,
         "size": 1,
         "is_array": false,
@@ -3162,16 +3162,16 @@
     "size": 32,
     "fields": [
       {
-        "name": "*weap_type",
-        "type": "void",
+        "name": "weap_type",
+        "type": "void*",
         "offset": 0,
         "size": 4,
         "is_array": false,
         "array_size": 0
       },
       {
-        "name": "*from",
-        "type": "void",
+        "name": "from",
+        "type": "void*",
         "offset": 4,
         "size": 4,
         "is_array": false,

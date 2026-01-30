@@ -19,6 +19,7 @@ class ParsedFunction:
     name: str
     return_type: str
     parameters: List[Tuple[str, str]]  # [(type, name), ...]
+    is_variadic: bool = False
 
 
 @dataclass
@@ -73,41 +74,69 @@ class SDKParser:
 
     def parse_functions(self) -> List[ParsedFunction]:
         """
-        Extract all SC_* function signatures.
+        Extract all function signatures from markdown SDK.
 
-        Pattern: return_type SC_FunctionName(param_type param, ...);
+        Markdown format: ### return_type FuncName(params);
+        Also handles pointer-return: ### void *SC_NOD_Get(...);
+        Also handles non-SC functions: ### float sin(float a);
         """
         functions = []
+        seen = set()
 
-        # Pattern to match function signatures
-        # Matches: void SC_Something(...); or BOOL SC_Something(...);
-        pattern = r'^(void|BOOL|dword|float|int|char\s*\*|ushort\s*\*)\s+(SC_\w+)\s*\((.*?)\)\s*;'
+        # Pattern 1: non-pointer return types (markdown header format)
+        # Matches: ### void SC_Something(...); or ### float sin(...);
+        pattern1 = r'^###\s+(void|BOOL|dword|float|int|char\s*\*|ushort\s*\*)\s+(\w+)\s*\((.*?)\)\s*;'
 
-        for match in re.finditer(pattern, self.content, re.MULTILINE | re.DOTALL):
+        # Pattern 2: pointer return types (e.g., ### void *SC_NOD_Get(...);)
+        pattern2 = r'^###\s+(\w+)\s+\*(\w+)\s*\((.*?)\)\s*;'
+
+        for match in re.finditer(pattern1, self.content, re.MULTILINE):
             return_type = match.group(1).strip()
             func_name = match.group(2).strip()
             params_str = match.group(3).strip()
 
-            # Parse parameters
             parameters = self._parse_parameters(params_str)
+            is_variadic = getattr(self, '_last_is_variadic', False)
 
-            functions.append(ParsedFunction(
-                name=func_name,
-                return_type=return_type,
-                parameters=parameters
-            ))
+            if func_name not in seen:
+                seen.add(func_name)
+                functions.append(ParsedFunction(
+                    name=func_name,
+                    return_type=return_type,
+                    parameters=parameters,
+                    is_variadic=is_variadic
+                ))
+
+        for match in re.finditer(pattern2, self.content, re.MULTILINE):
+            return_type = match.group(1).strip() + '*'
+            func_name = match.group(2).strip()
+            params_str = match.group(3).strip()
+
+            parameters = self._parse_parameters(params_str)
+            is_variadic = getattr(self, '_last_is_variadic', False)
+
+            if func_name not in seen:
+                seen.add(func_name)
+                functions.append(ParsedFunction(
+                    name=func_name,
+                    return_type=return_type,
+                    parameters=parameters,
+                    is_variadic=is_variadic
+                ))
 
         return functions
 
     def _parse_parameters(self, params_str: str) -> List[Tuple[str, str]]:
         """Parse function parameter list."""
+        self._last_is_variadic = False
         if not params_str or params_str == 'void':
             return []
 
         parameters = []
+        anon_idx = 0  # Counter for anonymous parameters
+        self._last_is_variadic = False
 
-        # Split by comma, but handle nested types (e.g., struct pointers)
-        # Simple approach: split by comma and parse each
+        # Split by comma
         param_parts = params_str.split(',')
 
         for param in param_parts:
@@ -115,25 +144,13 @@ class SDKParser:
             if not param:
                 continue
 
-            # Handle parameter format: "type name" or "type *name" or "type name[size]"
-            # Examples:
-            # - "dword pl_id"
-            # - "c_Vector3 *pos"
-            # - "float time"
-            # - "s_SC_P_Create *info"
-            # - "dword weapon[4]"
+            # Track variadic '...'
+            if param == '...':
+                self._last_is_variadic = True
+                continue
 
-            # Strategy: The parameter name is the LAST identifier
-            # Everything before it is the type
-            # Match: <type_part> <name><optional_array>
-            #
-            # Use a more precise pattern:
-            # 1. Type part: everything up to the last space before identifier
-            # 2. Name: last identifier (may have array suffix)
-
-            # Match pattern: capture type (greedy up to last whitespace) and name
-            # This handles: "type *name", "type name", "s_Struct *name"
-            # Note: SDK uses "type *name" format, so we need to handle optional * before parameter name
+            # Match: type [*]name[array]
+            # Examples: "dword pl_id", "c_Vector3 *pos", "char *", "const char *"
             param_match = re.match(r'^(.+)\s+(\*?)(\w+)(\[\d+\])?$', param)
             if param_match:
                 param_type = param_match.group(1).strip()
@@ -152,6 +169,14 @@ class SDKParser:
                 if array_suffix:
                     param_type += array_suffix
 
+                parameters.append((param_type, param_name))
+            else:
+                # Anonymous parameter (e.g., "char *" or "const char *")
+                # Treat entire text as the type, generate a name
+                param_type = param.strip()
+                param_type = param_type.replace(' *', '*').replace('* ', '*')
+                param_name = f'arg{anon_idx}'
+                anon_idx += 1
                 parameters.append((param_type, param_name))
 
         return parameters
@@ -193,27 +218,42 @@ class SDKParser:
         fields = []
         current_offset = 0
 
-        # Split into lines and process each field
+        # Strip inline // comments, but stop before known C type keywords
+        # (handles collapsed single-line structs where comments contain next field)
+        _C_TYPES = r'(?:void|BOOL|dword|int|float|double|char|short|ushort|c_Vector3|s_\w+)'
+        fields_str = re.sub(r'//.*?(?=' + _C_TYPES + r'|\n|;|$)', '', fields_str)
+
+        # Split on semicolons to handle single-line collapsed structs
+        # (e.g., "dword valid_uses; float use_interval; float cur_interval;")
+        declarations = []
         for line in fields_str.split('\n'):
-            line = line.strip()
-            if not line or line.startswith('//') or line.startswith('/*'):
+            # Split each line on semicolons to get individual declarations
+            for part in line.split(';'):
+                part = part.strip()
+                if part:
+                    declarations.append(part)
+
+        for decl in declarations:
+            if not decl or decl.startswith('//') or decl.startswith('/*'):
                 continue
 
-            # Remove trailing semicolon and comments
-            line = line.rstrip(';')
-            if '//' in line:
-                line = line[:line.index('//')]
-            line = line.strip()
-
-            if not line:
+            # Strip any remaining comment artifacts
+            decl = decl.strip()
+            if not decl:
                 continue
 
-            # Parse field: "type name" or "type name[size]"
-            # Handle comma-separated fields (e.g., "float x,y,z;")
-            field_match = re.match(r'(\S+(?:\s+\*)?)\s+(.+)$', line)
+            # Parse field: "type name" or "type *name" or "type name[size]"
+            # Handle comma-separated fields (e.g., "float x,y,z")
+            # Use same approach as _parse_parameters: capture optional * between type and name
+            field_match = re.match(r'^(.+)\s+(\*?)(\S+.*)$', decl)
             if field_match:
                 field_type = field_match.group(1).strip()
-                field_names = field_match.group(2).strip()
+                pointer_marker = field_match.group(2)
+                field_names = field_match.group(3).strip()
+
+                # Move pointer from name to type
+                if pointer_marker:
+                    field_type += '*'
 
                 # Normalize pointer spacing
                 field_type = field_type.replace(' *', '*').replace('* ', '*')
@@ -221,20 +261,43 @@ class SDKParser:
                 # Handle comma-separated fields
                 for field_name_part in field_names.split(','):
                     field_name_part = field_name_part.strip()
+                    if not field_name_part:
+                        continue
 
-                    # Check for array
-                    array_match = re.match(r'(\w+)\[(\d+)\]', field_name_part)
+                    # Check for array with constant or numeric size
+                    array_match = re.match(r'(\*?)(\w+)\[(.+?)\]', field_name_part)
                     if array_match:
-                        field_name = array_match.group(1)
-                        array_size = int(array_match.group(2))
+                        extra_ptr = array_match.group(1)
+                        field_name = array_match.group(2)
+                        array_size_str = array_match.group(3)
                         is_array = True
+                        # Move any extra pointer to type
+                        actual_type = field_type
+                        if extra_ptr:
+                            actual_type += '*'
+                        # Try to parse array size as int; use 1 for named constants
+                        try:
+                            array_size = int(array_size_str)
+                        except ValueError:
+                            array_size = 1  # Named constant, use placeholder
                     else:
+                        # Handle possible leading * on name (shouldn't happen
+                        # after the regex above, but be safe)
+                        if field_name_part.startswith('*'):
+                            field_type += '*'
+                            field_name_part = field_name_part[1:]
                         field_name = field_name_part
                         array_size = 0
                         is_array = False
+                        actual_type = field_type
+
+                    # Strip any trailing semicolons from field name
+                    field_name = field_name.rstrip(';').strip()
+                    if not field_name:
+                        continue
 
                     # Calculate field size
-                    base_size = self._get_type_size(field_type)
+                    base_size = self._get_type_size(actual_type)
                     if is_array:
                         field_size = base_size * array_size
                     else:
@@ -242,7 +305,7 @@ class SDKParser:
 
                     fields.append(ParsedStructField(
                         name=field_name,
-                        type=field_type,
+                        type=actual_type,
                         size=field_size,
                         is_array=is_array,
                         array_size=array_size

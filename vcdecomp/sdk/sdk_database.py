@@ -46,14 +46,19 @@ class FunctionSignature:
     parameters: List[Tuple[str, str]]  # [(type, name), ...]
     out_params: List[int] = field(default_factory=list)
 
+    is_variadic: bool = False
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
-        return {
+        d = {
             'name': self.name,
             'return_type': self.return_type,
             'parameters': [{'type': t, 'name': n} for t, n in self.parameters],
             'out_params': list(self.out_params),
         }
+        if self.is_variadic:
+            d['is_variadic'] = True
+        return d
 
     @classmethod
     def from_dict(cls, data: dict) -> 'FunctionSignature':
@@ -66,7 +71,8 @@ class FunctionSignature:
             name=data['name'],
             return_type=data['return_type'],
             parameters=parameters,
-            out_params=out_params
+            out_params=out_params,
+            is_variadic=data.get('is_variadic', False)
         )
 
 
@@ -336,7 +342,8 @@ class SDKDatabase:
             self.functions[func.name] = FunctionSignature(
                 name=func.name,
                 return_type=func.return_type,
-                parameters=func.parameters
+                parameters=func.parameters,
+                is_variadic=getattr(func, 'is_variadic', False)
             )
 
         # Convert parsed structures to StructDefinition objects

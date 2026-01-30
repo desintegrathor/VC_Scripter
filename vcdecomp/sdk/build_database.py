@@ -1,12 +1,13 @@
 """
-Build SDK databases from Scripting_SDK.txt.
+Build SDK databases from Scripting_SDK.md.
 
 Generates JSON database files:
-- functions.json (734 functions)
-- structures.json (46 structs)
-- constants.json (98+ constants)
+- functions.json
+- structures.json
+- constants.json
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -22,7 +23,7 @@ def build_databases(sdk_path: str, output_dir: str = None) -> None:
     Build JSON databases from SDK.
 
     Args:
-        sdk_path: Path to Scripting_SDK.txt
+        sdk_path: Path to Scripting_SDK.md
         output_dir: Output directory for JSON files (default: vcdecomp/sdk/data/)
     """
     print(f"Parsing SDK: {sdk_path}")
@@ -35,14 +36,37 @@ def build_databases(sdk_path: str, output_dir: str = None) -> None:
     print(f"Parsed {len(structures)} structures")
     print(f"Parsed {len(constants)} constants")
 
-    # Create database
+    # Load existing functions.json to preserve manually-added builtins
     if output_dir:
-        db = SDKDatabase(data_dir=output_dir)
+        data_dir = Path(output_dir)
     else:
-        db = SDKDatabase()  # Use default location
+        data_dir = Path(__file__).parent / 'data'
 
-    # Populate database
+    existing_functions = {}
+    existing_file = data_dir / 'functions.json'
+    if existing_file.exists():
+        with open(existing_file, 'r', encoding='utf-8') as f:
+            existing_functions = json.load(f)
+
+    # Create database
+    db = SDKDatabase(data_dir=str(data_dir))
+
+    # Populate database from parser
     db.populate_from_parser(functions, structures, constants)
+
+    # Merge manually-added functions (those with is_variadic field)
+    # that were not parsed from the SDK (e.g., cos, sin, rand, sprintf)
+    parsed_names = {func.name for func in functions}
+    merged_count = 0
+    for name, func_data in existing_functions.items():
+        if name not in parsed_names and 'is_variadic' in func_data:
+            # Preserve manually-added entry
+            from vcdecomp.sdk.sdk_database import FunctionSignature
+            db.functions[name] = FunctionSignature.from_dict(func_data)
+            merged_count += 1
+
+    if merged_count:
+        print(f"Merged {merged_count} manually-added builtin functions")
 
     # Save to JSON files
     db.save_databases()
@@ -91,12 +115,12 @@ def build_databases(sdk_path: str, output_dir: str = None) -> None:
 
 def main():
     """Main entry point."""
-    # Default SDK path
-    sdk_path = Path(__file__).parent.parent.parent / 'original-resources' / 'Scripting_SDK.txt'
+    # Default SDK path (new clean markdown version)
+    sdk_path = Path(__file__).parent.parent / 'data' / 'Scripting_SDK.md'
 
     if not sdk_path.exists():
         print(f"Error: SDK file not found: {sdk_path}")
-        print("Please ensure Scripting_SDK.txt is in original-resources/")
+        print("Please ensure Scripting_SDK.md is in vcdecomp/data/")
         sys.exit(1)
 
     # Build databases
