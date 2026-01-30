@@ -1228,10 +1228,15 @@ class HierarchicalCodeEmitter:
         """
         operator = " || " if block.is_or else " && "
 
+        # Sub-conditions in combined expressions must be rendered as positive
+        # (raw tested values) with negate=False. The JZ auto-negation (negate=None)
+        # is only correct for standalone if-statements, not combined booleans.
+        # The AND/OR structure itself encodes the short-circuit branching semantics.
+
         # Get condition from first block
         cond1 = None
         if block.first_condition is not None:
-            cond1 = self._extract_condition(block.first_condition)
+            cond1 = self._extract_condition(block.first_condition, negate=False)
 
         # Get condition from second block
         cond2 = None
@@ -1240,7 +1245,7 @@ class HierarchicalCodeEmitter:
                 # Recursive combined condition
                 cond2 = self._extract_combined_condition(block.second_condition)
             else:
-                cond2 = self._extract_condition(block.second_condition)
+                cond2 = self._extract_condition(block.second_condition, negate=False)
 
         if cond1 and cond2:
             combined = f"({cond1}{operator}{cond2})"

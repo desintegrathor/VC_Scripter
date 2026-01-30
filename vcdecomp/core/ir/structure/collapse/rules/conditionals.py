@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .base import CollapseRule
+from ..analysis_helpers import is_loop_header
 from ...blocks.hierarchy import (
     BlockType,
     EdgeType,
@@ -73,6 +74,12 @@ class RuleBlockProperIf(CollapseRule):
         if len(block.out_edges) != 2:
             return False
 
+        # Do NOT collapse loop headers as if-then patterns.
+        # Loop headers should be collapsed by RuleBlockWhileDo instead.
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        if is_loop_header(block, loop_analysis):
+            return False
+
         # No loops back to self
         if block.out_edges[0].target == block or block.out_edges[1].target == block:
             return False
@@ -120,55 +127,20 @@ class RuleBlockProperIf(CollapseRule):
             # succ1 (jump target / FALSE path) is the body
             body = succ1
             merge = succ2
-            # Body is on FALSE branch (jump target), need to negate condition
-            # so that "if (!cond)" becomes the semantic equivalent of "if body on false"
-            # Actually: JZ already auto-negates, so we need to CANCEL that negation
-            # to get "if (cond) { body }" where body executes when original condition is FALSE
-            negate_condition = True
+            # Body is on FALSE branch (index 0). Body runs when cond is FALSE.
+            # Want: if (!cond) { body }
+            # JZ auto-detection gives !cond, which is exactly what we want.
+            # So: condition_negated = False (keep JZ's auto-negation)
+            negate_condition = False
         else:
             # succ2 (fallthrough / TRUE path) is the body
             body = succ2
             merge = succ1
-            # Body is on TRUE branch (fallthrough), no additional negation needed
-            # JZ auto-negates, which would give "if (!cond) { body }"
-            # But we want "if (cond) { body }" - so we need to cancel JZ's auto-negation
-            # Wait - if body is on TRUE path and JZ auto-negates...
-            # Actually: when body is on fallthrough (TRUE path), we want "if (cond)"
-            # JZ renders as "if (!cond)" by default, so we need to cancel that
-            # But that seems wrong for this case...
-            #
-            # Let me reconsider:
-            # - JZ jumps when cond == 0 (false), continues when cond != 0 (true)
-            # - Fallthrough (succ2) executes when cond is TRUE
-            # - Jump target (succ1) executes when cond is FALSE
-            #
-            # render_condition with JZ auto-adds "!" because JZ semantics are inverted
-            # So render_condition gives "!cond" when cond was the value being tested
-            #
-            # If body is on fallthrough (TRUE path):
-            # - We want: if (cond) { body }
-            # - render_condition gives: !cond
-            # - We need to negate that: !!cond = cond
-            # - So negate_condition = True? No wait, that's confusing.
-            #
-            # Let me think differently:
-            # - render_condition with negate=None (auto) and JZ gives "!cond"
-            # - render_condition with negate=False gives "cond"
-            # - render_condition with negate=True gives "!cond"
-            #
-            # If body is on fallthrough (TRUE), we want "if (cond) { body }"
-            # - condition_negated=True means pass negate=False, giving "cond" ✓
-            #
-            # If body is on jump target (FALSE), we want "if (!cond) { body }"
-            # - Actually no, we want the condition to evaluate to TRUE when body runs
-            # - If body runs when original cond is FALSE, we want "if (!cond) { body }"
-            # - condition_negated=True means pass negate=False, giving "cond"
-            # - But we want "!cond"! So condition_negated should be False here.
-            #
-            # OK new logic:
-            # - If body is on TRUE path (fallthrough/succ2): want "if (cond)", negate_condition=True (cancels JZ's !)
-            # - If body is on FALSE path (jump target/succ1): want "if (!cond)", negate_condition=False (keeps JZ's !)
-            negate_condition = True  # Cancel JZ's auto-negation to get "if (cond)"
+            # Body is on TRUE branch (index 1). Body runs when cond is TRUE.
+            # Want: if (cond) { body }
+            # JZ auto-detection gives !cond, which is wrong.
+            # So: condition_negated = True (cancel JZ's auto-negation)
+            negate_condition = True
 
         # Create if block
         if_block = BlockIf(
@@ -242,6 +214,12 @@ class RuleBlockIfElse(CollapseRule):
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
         # Block must have exactly two successors
         if len(block.out_edges) != 2:
+            return False
+
+        # Do NOT collapse loop headers as if-else patterns.
+        # Loop headers should be collapsed by RuleBlockWhileDo instead.
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        if is_loop_header(block, loop_analysis):
             return False
 
         # No loops back to self
@@ -366,6 +344,15 @@ class RuleBlockIfNoExit(CollapseRule):
     def matches(self, graph: BlockGraph, block: StructuredBlock) -> bool:
         # Block must have exactly two successors (binary condition)
         if len(block.out_edges) != 2:
+            return False
+
+        # Do NOT collapse loop headers as if-no-exit patterns.
+        # A loop header with a dead-end exit (e.g., RET after the loop)
+        # should be collapsed as a WhileDo, not as an if-then with the
+        # exit block as its body. Collapsing it here prevents the loop
+        # from being properly structured later.
+        loop_analysis = getattr(graph, "loop_analysis", None)
+        if is_loop_header(block, loop_analysis):
             return False
 
         # Check each branch for dead-end pattern

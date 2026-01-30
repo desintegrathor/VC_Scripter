@@ -123,11 +123,13 @@ class RuleBlockOr(CollapseRule):
                     outer_target = other_branch
 
                     # Determine if OR or AND:
+                    # Edge convention: index 0 = jump target (FALSE for JZ),
+                    #                  index 1 = fallthrough (TRUE for JZ)
                     # OR: cond1 --true--> target, cond1 --false--> cond2
-                    #     So if outer_target is reached on true branch of block, it's OR
-                    # AND: cond1 --false--> other, cond1 --true--> cond2
-                    #     So if outer_target is reached on false branch of block, it's AND
-                    is_or = (i == 1)  # inner_block on false branch means OR pattern
+                    #     inner_block on FALSE branch (i==0), target on TRUE branch
+                    # AND: cond1 --false--> target, cond1 --true--> cond2
+                    #     inner_block on TRUE branch (i==1), target on FALSE branch
+                    is_or = (i == 0)  # inner_block on FALSE branch means OR
                     break
 
             if inner_block is not None:

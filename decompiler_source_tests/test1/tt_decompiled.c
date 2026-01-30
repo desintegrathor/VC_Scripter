@@ -27,7 +27,6 @@ int func_0050(float param_0, int param_1) {
 int func_0119(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
-    int n;
 
     SC_MP_SRV_GetAtgSettings(&atg_settings);
     if (atg_settings.tt_respawntime <= 1.0f) {
@@ -44,7 +43,6 @@ int func_0119(void) {
 int func_0155(int param_0) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
-    int n;
 
     SC_MP_SRV_GetAtgSettings(&atg_settings);
     if (atg_settings.tt_respawntime <= 1.0f) {
@@ -68,7 +66,6 @@ int func_0155(int param_0) {
 int func_0213(void) {
     s_SC_MP_SRV_AtgSettings atg_settings;
     float local_0;
-    int n;
 
     SC_MP_SRV_GetAtgSettings(&atg_settings);
     if (atg_settings.tt_timelimit <= 59.0f) {
@@ -152,11 +149,8 @@ void func_0355(void) {
 
 void func_0498(int param_0, int param_1) {
     s_SC_FpvMapSign local_5[4];
-    int idx;
     int local_2;
     dword local_4;
-    int local_41;
-    int n;
 
     local_4 = 0;
     local_3 = 0;
@@ -165,72 +159,66 @@ void func_0498(int param_0, int param_1) {
         local_1 = 0;
         local_2 = 0;
         if ((i + 1) != param_1) {
-            local_1 = 1;
-            local_0 = 1;
-            local_2 = 1;
+            if (i < param_1) {
+                local_2 = 1;
+            }
+        } else {
+            switch (g_FPV_UsFlag) {
+            case 0:
+                local_1 = 1;
+                break;
+            case 1:
+                local_0 = 1;
+                break;
+            case 2:
+                local_2 = 1;
+                break;
+            }
+        }
+        if (tmp10) {
+            if (! t592_) {
+            } else {
+            }
             SC_DUMMY_Set_DoNotRenHier2(t592_, 1);
+        }
+        if (tmp17) {
+            if (! local_1) {
+            } else {
+            }
             SC_DUMMY_Set_DoNotRenHier2(t617_, 1);
+        }
+        if (tmp24) {
+            if (! local_2) {
+            } else {
+            }
             SC_DUMMY_Set_DoNotRenHier2(t642_, 1);
-            local_5[0].id = 0;
+        }
+        local_5[0].id = 0;
+        if (! local_0) {
+            if (! local_1) {
+                if (local_2) {
+                    local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
+                }
+            } else {
+                local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
+            }
+        } else {
             local_5[g_FPV_UsFlag].id = g_FPV_UsFlag;
-            local_5[g_FPV_VcFlag].id = g_FPV_VcFlag;
-            local_5[g_FPV_NeFlag].id = g_FPV_NeFlag;
+        }
+        if (tmp42) {
             local_5[-1].y = -1;
             local_5[t712_].field_12 = t712_;
             local_5[1065353216].z = 1.0f;
             local_4++;
-        } else {
-            local_2 = 1;
         }
+        local_3 = i + 1;
     }
-    if (i >= 6) {
-        SC_MP_FpvMapSign_Set(local_4, &local_5);
-        return;
-    }
-    if ((i + 1) != param_1) {
-        if (i < param_1) {
-        }
-    } else {
-        switch (g_FPV_UsFlag) {
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            break;
-        }
-    }
-    if (tmp10) {
-        if (! t592_) {
-        } else {
-        }
-    }
-    if (tmp17) {
-        if (! local_1) {
-        } else {
-        }
-    }
-    if (tmp24) {
-        if (! local_2) {
-        } else {
-        }
-    }
-    if (! local_0) {
-        if (! local_1) {
-            if (local_2) {
-            }
-        } else {
-        }
-    } else {
-    }
-    if (tmp42) {
-    }
+    SC_MP_FpvMapSign_Set(local_4, &local_5);
+    return;
 }
 
 void func_0752(int param_0) {
-    int idx;
     dword local_1;
-    int n;
     s_SC_P_getinfo player_info;
 
     switch (player_info.field_8) {
@@ -251,13 +239,10 @@ void func_0752(int param_0) {
 
 void func_0852(void) {
     s_SC_MP_EnumPlayers enum_pl;
-    int idx;
-    int k;
     dword local_1;
     int local_2;
     int local_265;
     int local_266;
-    int m;
 
     if (! SC_MP_SRV_GetAutoTeamBalance()) {
         return;
@@ -286,7 +271,6 @@ void func_0852(void) {
 
 void func_1028(void) {
     s_SC_MP_EnumPlayers enum_pl;
-    int idx;
     int input_158_unknown_158_1044_1;
     dword local_257;
     int local_258;
@@ -294,50 +278,38 @@ void func_1028(void) {
     local_257 = input_158_unknown_158_1044_1 - t1041_ret;
     local_258 = 64;
     t1057_ret = SC_MP_EnumPlayers(&enum_pl, &local_258, local_257);
-    SC_MP_RecoverPlayer(t1084_);
-    local_256 = i + 1;
+    if (SC_MP_EnumPlayers( & enum_pl, & local_258, local_257)) {
+        local_256 = 0;
+        for (i = 0; i < local_258; i++) {
+            if (side2 == 2) {
+                SC_MP_RecoverPlayer(t1084_);
+            }
+            local_256 = i + 1;
+        }
+    }
     return;
 }
 
 int ScriptMain(s_SC_NET_info *info) {
-    s_SC_MP_EnumPlayers enum_pl[32];
-    s_SC_HUD_MP_icon icon[32];
-    char local_0[32];
-    s_SC_MP_hud hudinfo;
-    int i;
-    int input_170_unknown_170_1146_1;
+    dword idx;
     int input_342_unknown_342_2940_1;
     int input_355_unknown_355_3064_1;
     dword j;
-    int k;
     dword local_11;
     int local_12;
     int local_13;
-    int local_294;
-    void* local_295;
     int local_296;
     int local_298;
     ushort* local_314;
     int local_315;
     int local_379;
-    float local_411;
-    float local_412;
-    int local_418;
-    int local_419;
-    int local_420;
     int local_8;
-    int m;
-    int n;
     s_SC_P_getinfo player_info;
     s_SC_MP_SRV_settings srv_settings;
     char* t2998_ret;
     ushort* t3021_ret;
     ushort* t3085_ret;
     ushort* t3121_ret;
-    char* t3163_ret;
-    ushort* t3231_ret;
-    char* t3275_ret;
-    ushort* t3326_ret;
     s_SC_MP_Recover t3600_0;
     c_Vector3 vec;
 
@@ -362,7 +334,6 @@ int ScriptMain(s_SC_NET_info *info) {
                 break;
             case 1:
                 SC_P_GetPos(t1547_, &vec);
-                // Loop header - Block 221 @1557
                 for (idx = gCurStep - 1; idx < gCurStep; idx++) {
                     if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
                         if (idx) {
@@ -535,7 +506,6 @@ int ScriptMain(s_SC_NET_info *info) {
     case 5:
         switch (gMission_phase) {
         case MISSION_PHASE_INGAME:
-            // Loop header - Block 410 @3415
             for (j = 0; j < abl_lists; j++) {
                 if (info->field_4 == tmp441) {
                     abl_lists--;
@@ -612,7 +582,6 @@ int ScriptMain(s_SC_NET_info *info) {
         func_0752(info->field_4);
         break;
     default:
-        // Loop header - Block 176 @1195
         for (j = 0; j < local_12; j++) {
             if (side2 != 0 && tmp24 < 2) {
                 (&local_296) + tmp28 * 4 = 1;

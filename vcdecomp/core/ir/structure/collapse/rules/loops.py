@@ -49,60 +49,68 @@ class RuleBlockWhileDo(CollapseRule):
         graph: BlockGraph,
         block: StructuredBlock
     ) -> Optional[tuple[StructuredBlock, StructuredBlock, int]]:
-        loop_analysis = getattr(graph, "loop_analysis", None)
-        dom_analysis = getattr(graph, "dom_analysis", None)
-        loop_body = get_loop_body(block, loop_analysis) if loop_analysis else None
+        """Resolve loop body and exit blocks using edge types.
 
+        Uses LOOP_EXIT edge type to identify the exit path, and the
+        remaining edge as the body entry. This approach is robust to
+        inner block collapse because it relies on edge types rather
+        than stale loop_body block ID sets.
+        """
         body_block = None
         exit_block = None
         body_edge_index = -1
 
-        if loop_body:
-            for i, edge in enumerate(block.out_edges):
-                if edge.target.block_id in loop_body and edge.target != block:
-                    if body_block is not None:
-                        return None
-                    body_block = edge.target
-                    body_edge_index = i
-                elif edge.target != block:
-                    exit_block = edge.target
+        # Primary strategy: use LOOP_EXIT edge type to identify exit vs body
+        for i, edge in enumerate(block.out_edges):
+            if edge.target == block:
+                continue
+            if edge.edge_type == EdgeType.LOOP_EXIT:
+                exit_block = edge.target
+            else:
+                if body_block is not None:
+                    # Multiple non-exit edges — ambiguous
+                    return None
+                body_block = edge.target
+                body_edge_index = i
 
-            if body_block is None or exit_block is None:
-                return None
-
-            if exit_block.block_id in loop_body:
-                return None
-
-            if dom_analysis and not dominates(block, body_block, dom_analysis):
-                return None
-
-            tails = get_loop_tails(block, loop_analysis)
-            if not tails:
-                return None
-
+        if body_block is not None and exit_block is not None:
             return body_block, exit_block, body_edge_index
 
-        # Fallback to local back-edge detection
+        # Fallback: use back-edge detection
         body_block = None
         exit_block = None
         body_edge_index = -1
+
+        back_edge_source = None
         for edge in block.in_edges:
             if edge.edge_type == EdgeType.BACK_EDGE:
-                body_block = edge.source
+                back_edge_source = edge.source
                 break
 
-        if body_block is None:
+        if back_edge_source is None:
             return None
 
+        # The body entry is the out_edge target that is NOT the exit.
+        # The exit is the out_edge with LOOP_EXIT type, or the one
+        # that doesn't match the back-edge source.
         for i, edge in enumerate(block.out_edges):
-            if edge.target == body_block:
+            if edge.edge_type == EdgeType.LOOP_EXIT:
+                exit_block = edge.target
+            elif edge.target == back_edge_source:
+                # Direct back to the back-edge source — this is a simple loop
                 if block.is_goto_out(i):
                     return None
+                body_block = edge.target
                 body_edge_index = i
             elif edge.target != block:
-                exit_block = edge.target
+                # Could be either body or exit
+                if body_block is None:
+                    body_block = edge.target
+                    body_edge_index = i
+                elif exit_block is None:
+                    exit_block = edge.target
 
-        if exit_block is None:
+        if exit_block is None or body_block is None:
             return None
 
         return body_block, exit_block, body_edge_index

@@ -5,8 +5,6 @@
 #include <inc\sc_def.h>
 
 void func_0292(void) {
-    int j;
-    int k;
     dword local_1;
     c_Vector3 vec;
 
@@ -16,34 +14,41 @@ void func_0292(void) {
     local_0 = 0;
     for (i = 0; i < 16; i++) {
         local_1 = SC_P_GetBySideGroupMember(1, 9, 9);
-        if (! local_1) {
+        if (local_1 && SC_P_IsReady(local_1)) {
             SC_P_SetActive(local_1, FALSE);
             SC_P_SetPos(local_1, &vec);
-        } else {
         }
+        local_0 = i + 1;
     }
-    if (i >= 16) {
-        return;
-    }
-    if (! local_1 || ! SC_P_IsReady(local_1)) {
-    }
+    return;
 }
 
 void func_0355(void) {
     dword i;
-    int j;
-    int k;
     dword local_2;
 
     local_1 = 0;
-    local_0 = 0;
-    local_2 = SC_P_GetBySideGroupMember(1, i, i);
-    SC_P_SetActive(local_2, TRUE);
-    local_0 = idx + 1;
-    local_1 = i + 1;
-    local_2 = SC_P_GetBySideGroupMember(3, 0, i);
-    SC_P_SetActive(local_2, TRUE);
-    local_1 = i + 1;
+    for (i = 0; i < 12; i++) {
+        if (i != 9) {
+            local_0 = 0;
+            for (idx = 0; idx < 16; idx++) {
+                local_2 = SC_P_GetBySideGroupMember(1, i, i);
+                if (local_2) {
+                    SC_P_SetActive(local_2, TRUE);
+                }
+                local_0 = idx + 1;
+            }
+        }
+        local_1 = i + 1;
+    }
+    local_1 = 0;
+    for (i = 0; i < 16; i++) {
+        local_2 = SC_P_GetBySideGroupMember(3, 0, i);
+        if (local_2) {
+            SC_P_SetActive(local_2, TRUE);
+        }
+        local_1 = i + 1;
+    }
     return;
 }
 
@@ -52,30 +57,23 @@ int func_0448(void) {
 }
 
 int func_0458(int param_0, int param_1, int param_2) {
-    int j;
-    int k;
     int local_2;
 
     local_1 = 0;
     local_0 = 0;
     for (i = 0; i < param_1; i++) {
         local_2 = SC_P_GetBySideGroupMember(1, param_0, param_0);
-        if (! SC_P_IsReady(local_2)) {
+        if (SC_P_IsReady(local_2)) {
             local_1++;
-        } else {
         }
+        local_0 = i + 1;
     }
-    if (i >= param_1) {
-        return local_1;
-    }
-    if (SC_P_IsReady(local_2)) {
-    }
+    return local_1;
 }
 
 void func_0511(int param_0, int param_1) {
     dword local_3[2];
     int g_will_pos;
-    int k;
     float local_5;
     c_Vector3 vec;
 
@@ -85,30 +83,24 @@ void func_0511(int param_0, int param_1) {
     for (i = 0; i < 4; i++) {
         local_5 = SC_2VectorsDist(&vec, &g_will_pos[i]);
         if (local_5 <= tmp5) {
+            if (local_5 > tmp20) {
+                (&local_3) + 4 = local_5;
+                param_1[1] = i;
+            }
+        } else {
             (&local_3) + 4 = tmp8;
             param_1[1] = param_1[0];
             local_3 = local_5;
             param_1[0] = i;
-        } else {
-            (&local_3) + 4 = local_5;
-            param_1[1] = i;
         }
+        local_6 = i + 1;
     }
-    if (i >= 4) {
-        return;
-    }
-    if (local_5 <= tmp5) {
-        if (local_5 > tmp20) {
-        }
-    } else {
-    }
+    return;
 }
 
 void func_0612(float param_0) {
     int g_vill_visited;
     int g_will_pos;
-    int j;
-    int k;
     float local_10;
     int local_11;
     int local_2;
@@ -196,7 +188,6 @@ void func_0985(int param_0) {
 }
 
 void func_0994(int param_0) {
-    int k;
     void* local_0;
 
     g_trashes_enabled = param_0;
@@ -218,7 +209,7 @@ void func_1021(void) {
     SC_sgi(SGI_DEBR_01, 0);
     SC_sgi(SGI_REWARD_PILOT, 1);
     t1040_ret = SC_MP_EnumPlayers(&enum_pl, &local_256, 1);
-    if ((SC_MP_EnumPlayers( & enum_pl, & local_256, 1)) || local_256 > 0) {
+    if (SC_MP_EnumPlayers( & enum_pl, & local_256, 1) && local_256 > 0) {
         SC_sgi(SGI_DEBR_01, -1);
         SC_sgi(SGI_REWARD_PILOT, 0);
     }
@@ -233,8 +224,6 @@ int ScriptMain(s_SC_L_info *info) {
     int g_will_pos;
     dword i;
     s_SC_initgroup idx;
-    int j;
-    float k;
     int local_0;
     float local_1;
     float local_2;
@@ -248,11 +237,8 @@ int ScriptMain(s_SC_L_info *info) {
     int local_63;
     s_SC_MissionSave local_80;
     s_SC_Objective local_83;
-    int local_87;
     int local_88;
     int local_89;
-    int local_90;
-    s_SC_P_getinfo player_info;
     c_Vector3 vec;
     c_Vector3 vec2;
 
@@ -531,7 +517,6 @@ int ScriptMain(s_SC_L_info *info) {
             }
             func_0612(info->elapsed_time);
             SC_P_GetPos(local_23, &vec);
-            // Loop header - Block 199 @2472
             for (local_20 = i; local_20 < 4; local_20++) {
                 if ((SC_2VectorsDist( & vec, & g_will_pos[idx6])) < 40.0f) {
                     SC_sgi(SGI_LEVELPHASE, 6);
