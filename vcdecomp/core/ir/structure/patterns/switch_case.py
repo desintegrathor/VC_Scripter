@@ -521,21 +521,53 @@ def _find_param_field_in_predecessors(
 
         instrs = ssa_blocks[pred_id]
 
+        # Get the alias (stack slot) of the var_value being traced.
+        # We use this to verify the DCP result connects to the same stack slot.
+        var_alias = getattr(var_value, 'alias', None)
+
         # Look for DCP preceded by DADR preceded by LADR
         for i, instr in enumerate(instrs):
             if instr.mnemonic != 'DCP':
                 continue
+
+            # Verify the DCP output connects to the var_value being traced.
+            # Check if the DCP output is in the phi_sources of the var_value,
+            # or if the DCP is followed by SSP to the same stack slot as the LCP.
+            if var_value and var_value.producer_inst:
+                lcp_inst = var_value.producer_inst
+                if lcp_inst.mnemonic == 'LCP' and lcp_inst.instruction and lcp_inst.instruction.instruction:
+                    lcp_stack_offset = lcp_inst.instruction.instruction.arg1
+                    # Check if there's an SSP in the same block or nearby that stores
+                    # the DCP result to the same stack offset as the LCP
+                    dcp_stores_to_lcp_slot = False
+                    for j in range(i + 1, min(i + 5, len(instrs))):
+                        check_inst = instrs[j]
+                        if check_inst.mnemonic == 'SSP' and check_inst.instruction and check_inst.instruction.instruction:
+                            ssp_offset = check_inst.instruction.instruction.arg1
+                            if ssp_offset == lcp_stack_offset:
+                                dcp_stores_to_lcp_slot = True
+                                break
+                    if not dcp_stores_to_lcp_slot:
+                        # Also check phi_sources of var_value for the DCP output
+                        if var_value.phi_sources:
+                            for _, phi_src in var_value.phi_sources:
+                                if phi_src.producer_inst and phi_src.producer_inst is instr:
+                                    dcp_stores_to_lcp_slot = True
+                                    break
+                    if not dcp_stores_to_lcp_slot:
+                        _switch_debug(f"    Skipping DCP - output doesn't connect to LCP stack slot {lcp_stack_offset}")
+                        continue
 
             # Check if this DCP has inputs from DADR
             if not instr.inputs or len(instr.inputs) == 0:
                 continue
 
             # Get the pointer input to DCP
-            ptr_value = instr.inputs[0]
-            if not ptr_value.producer_inst:
+            ptr_value_dcp = instr.inputs[0]
+            if not ptr_value_dcp.producer_inst:
                 continue
 
-            dadr_inst = ptr_value.producer_inst
+            dadr_inst = ptr_value_dcp.producer_inst
 
             # Check if pointer came from DADR
             if dadr_inst.mnemonic != 'DADR':
@@ -1179,12 +1211,40 @@ def _detect_switch_patterns(
                                 _switch_debug(f"  -> Detected modulo switch: {var_name}")
 
                 # If not MOD, try other variable resolution methods
-                # PRIORITY FIX: Try global variables FIRST, before parameter fields
-                # This prefers named globals like "gphase" over generic "info->param2"
+                # Try global variables first (named globals like "gphase")
                 if not var_name:
                     var_name = _trace_value_to_global(var_value, formatter, ssa_func)
                     if var_name:
                         _switch_debug(f"  -> Found global: {var_name}")
+                        # Cross-check: if the value's LCP has a DCP (param field access)
+                        # in its direct predecessor chain, the global may be a false
+                        # positive from _find_gcp_for_stack_offset. Build the param
+                        # field name directly from the LADR→DADR→DCP pattern.
+                        if var_value and var_value.producer_inst and var_value.producer_inst.mnemonic == 'LCP':
+                            from ..analysis.value_trace import _find_param_field_in_direct_predecessor_chain
+                            lcp_block_id = var_value.producer_inst.block_id
+                            dcp_result = _find_param_field_in_direct_predecessor_chain(lcp_block_id, ssa_func, max_depth=5)
+                            if dcp_result:
+                                _ladr_offset, dadr_field_offset = dcp_result
+                                # Build parameter field name from DADR offset
+                                _field_map = {
+                                    0: "message", 4: "param1", 8: "param2",
+                                    12: "param3", 16: "elapsed_time", 20: "fval1",
+                                }
+                                field_name = _field_map.get(dadr_field_offset, f"field_{dadr_field_offset}")
+                                param_name = "info"
+                                if hasattr(formatter, '_func_signature') and formatter._func_signature:
+                                    func_sig = formatter._func_signature
+                                    if func_sig.param_types:
+                                        for param_type in func_sig.param_types:
+                                            if 's_SC_NET_info' in param_type or 's_SC_L_info' in param_type:
+                                                parts = param_type.split()
+                                                if parts:
+                                                    param_name = parts[-1].lstrip('*')
+                                                break
+                                param_field = f"{param_name}->{field_name}"
+                                _switch_debug(f"  -> Overriding global '{var_name}' with parameter field '{param_field}' (DCP in direct predecessor chain)")
+                                var_name = param_field
 
                 # Then try parameter field access (info->message, info->param1, etc.)
                 if not var_name:
@@ -1212,12 +1272,10 @@ def _detect_switch_patterns(
                     if var_name:
                         _switch_debug(f"  -> Found function call result: {var_name}")
 
-                # CRITICAL FIX for Switch Variable Tracking:
-                # Try parameter field pattern in predecessor blocks FIRST.
+                # Try parameter field pattern in predecessor blocks.
                 # This handles the common Vietcong pattern:
                 #   Block N:   LADR [sp-4] → DADR 0 → DCP → JMP Block N+1
                 #   Block N+1: LCP [sp+418] → EQU → JZ (switch comparison)
-                # Normal tracing fails because LCP loads from a different stack slot than DCP writes.
                 if not var_name:
                     var_name = _find_param_field_in_predecessors(
                         ssa_func, current_block, var_value, formatter

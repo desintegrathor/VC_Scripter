@@ -8,7 +8,7 @@ int func_0050(float param_0, int param_1) {
     switch (gEndRule) {
     case SC_MP_ENDRULE_TIME:
         if (gMission_phase > 0) {
-            gTime += param_0;
+            gTime += param_1;
         }
         if (gTime <= ((float)gEndValue)) break;
         SC_MP_LoadNextMap();
@@ -21,7 +21,8 @@ int func_0050(float param_0, int param_1) {
         }
         break;
     }
-    return 0;  // FIX (06-05): Synthesized return value
+    SC_message("EndRule unsopported: %d", gEndRule);
+    return FALSE;
 }
 
 int func_0119(void) {
@@ -37,7 +38,6 @@ int func_0119(void) {
         return local_0;
     } else {
         return atg_settings.tt_respawntime;
-    }
 }
 
 int func_0155(int param_0) {
@@ -60,7 +60,6 @@ int func_0155(int param_0) {
             local_0 = 10.0f;
         }
         return local_0;
-    }
 }
 
 int func_0213(void) {
@@ -76,7 +75,6 @@ int func_0213(void) {
         return local_0;
     } else {
         return atg_settings.tt_timelimit;
-    }
 }
 
 void func_0249(void) {
@@ -110,8 +108,8 @@ void func_0294(void) {
 }
 
 int func_0334(int param_0, int param_1) {
-    if ((param_0 % 4) != 0) {
-        if ((param_0 % 4) != 3) {
+    if ((param_1 % 4) != 0) {
+        if ((param_1 % 4) != 3) {
             return TRUE;
         }
     } else {
@@ -144,6 +142,9 @@ void func_0355(void) {
         gMainPhase++;
         break;
     }
+    SC_sgi(502, gMainPhase);
+    gAttackingSide = t487_ret;
+    SC_sgi(507, 6);
     return;
 }
 
@@ -211,7 +212,6 @@ void func_0498(int param_0, int param_1) {
             local_5[1065353216].z = 1.0f;
             local_4++;
         }
-        local_3 = i + 1;
     }
     SC_MP_FpvMapSign_Set(local_4, &local_5);
     return;
@@ -234,6 +234,7 @@ void func_0752(int param_0) {
         local_1 = 0;
         break;
     }
+block_115:
     return;
 }
 
@@ -260,13 +261,19 @@ void func_0852(void) {
     }
     local_265 = 64;
     t921_ret = SC_MP_EnumPlayers(&enum_pl, &local_265, local_1);
-    local_266 = rand() % local_265;
-    local_264 = local_266;
-    local_264 = j + 1;
-    local_264 = 0;
-    t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
-    local_8[j].id = 0;
-    local_2 = i - 1;
+    for (i = 0; i != 0; i = i - 1) {
+        local_266 = rand() % local_265;
+        local_264 = local_266;
+        if (tmp15 == 0) {
+            t1006_ret = SC_MP_SRV_P_SetSideClass(t994_, 1 - local_1, 1 + 20 * ((1 - local_1)));
+            local_8[j].id = 0;
+        } else {
+            local_264 = j + 1;
+            local_264 = 0;
+        }
+    }
+block_157:
+    return;
 }
 
 void func_1028(void) {
@@ -284,14 +291,15 @@ void func_1028(void) {
             if (side2 == 2) {
                 SC_MP_RecoverPlayer(t1084_);
             }
-            local_256 = i + 1;
         }
     }
     return;
 }
 
 int ScriptMain(s_SC_NET_info *info) {
+    s_SC_MP_EnumPlayers enum_pl[32];
     dword idx;
+    int input_170_unknown_170_1146_1;
     int input_342_unknown_342_2940_1;
     int input_355_unknown_355_3064_1;
     dword j;
@@ -303,6 +311,8 @@ int ScriptMain(s_SC_NET_info *info) {
     ushort* local_314;
     int local_315;
     int local_379;
+    int local_418;
+    int local_419;
     int local_8;
     s_SC_P_getinfo player_info;
     s_SC_MP_SRV_settings srv_settings;
@@ -313,63 +323,122 @@ int ScriptMain(s_SC_NET_info *info) {
     s_SC_MP_Recover t3600_0;
     c_Vector3 vec;
 
-    switch (info->message) {
+    switch (local_418) {
     case 3:
-        switch (gMission_phase) {
-        case MISSION_PHASE_NOACTIVE:
-            if (gMissionTime <= -10.0f) break;
-            gMissionTime = -10.0f;
-            gMissionTime_update = -1.0f;
-            func_0264(0);
-            break;
-        case MISSION_PHASE_INGAME:
-            gMission_afterstart_time += info->elapsed_time;
-            gMissionTime -= info->elapsed_time;
-            func_0264(info->elapsed_time);
-            switch (info->elapsed_time) {
-            case 0:
-                if (side6 != 1) {
-                    local_8 = j + 1;
-                }
-                break;
-            case 1:
-                SC_P_GetPos(t1547_, &vec);
-                for (idx = gCurStep - 1; idx < gCurStep; idx++) {
-                    if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
-                        if (idx) {
-                            gCurStep = idx;
-                            t1595_ret = SC_MP_GetHandleofPl(t1593_);
-                            SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
-                            SC_sgi(507, gCurStep);
-                            func_1028();
-                            SC_P_MP_AddPoints(t1610_, 1);
-                        } else {
-                            gMission_phase = 2;
-                            t1628_ret = SC_MP_GetHandleofPl(t1626_);
-                            SC_sgi(510, SC_MP_GetHandleofPl(t1626_));
-                            SC_sgi(503, gMission_phase);
-                            gPhaseTimer = 8.0f;
-                            func_0355();
-                            SC_P_MP_AddPoints(t1647_, 2);
-                        }
-                    } else {
-                        local_9 = idx + 1;
-                    }
-                }
-                break;
+        if (func_0050(info->elapsed_time)) break;
+        (&local_296) + 4 = 0;
+        local_296 = input_170_unknown_170_1146_1;
+        local_12 = 64;
+        if (SC_MP_EnumPlayers( & enum_pl, & local_12, -1)) {
+            if (local_12 == 0 && (gSidePoints[0] + gSidePoints[1]) != 0) {
+                gSidePoints[0] = 0;
+                gSidePoints[1] = 0;
+                func_0249();
             }
-            break;
-        case MISSION_PHASE_WIN_DEFENDERS:
-            break;
-        case MISSION_PHASE_WIN_ATTACKERS:
-            if (gPhaseTimer >= 0.0f) break;
-            gNoActiveTime = 0;
+            local_8 = 0;
+        }
+        for (j = 0; j < local_12; j++) {
+            if (side2 != 0 && tmp24 < 2) {
+                (&local_296) + tmp28 * 4 = 1;
+            }
+        }
+        gMission_starting_timer -= info->elapsed_time;
+        if (tmp37 && tmp39) {
+            SC_MP_SetInstantRecovery(0);
+            if (gMission_phase == 0) {
+                gMission_phase = 1;
+                gMission_afterstart_time = 0;
+                SC_sgi(503, gMission_phase);
+                func_0294();
+                SC_MP_SRV_InitGameAfterInactive();
+                if (gNoActiveTime > 6.0f) {
+                    SC_MP_RestartMission();
+                    SC_MP_RecoverAllNoAiPlayers();
+                }
+                gMission_starting_timer = 8.0f;
+            }
+        }
+        if (gMission_starting_timer <= 0.0f && gMission_phase > 0) {
             gMission_phase = 0;
+            gMission_afterstart_time = 0;
             SC_sgi(503, gMission_phase);
             func_0852();
-            SC_MP_SetInstantRecovery(1);
-            SC_MP_RecoverAllNoAiPlayers();
+            func_0294();
+        }
+        for (j = 0; j < 2; j++) {
+            local_9 = 0;
+            local_10 = 0;
+            gRecTimer[768] + idx * 128 + idx29 * 4 -= info->elapsed_time;
+            local_10 = idx29 + 1;
+            local_9 = idx + 1;
+        }
+        for (local_10 = 0; local_10 < tmp50; local_10++) {
+        }
+        local_8 = j + 1;
+        gNextRecover -= info->elapsed_time;
+        if (gNextRecover < 0.0f) {
+            gNextRecover = t1425_ret;
+        }
+        if (local_419 == 0) {
+            gNoActiveTime += info->elapsed_time;
+            if (gMissionTime > -10.0f) {
+                gMissionTime = -10.0f;
+                gMissionTime_update = -1.0f;
+                func_0264(0);
+            }
+        } else {
+            if (local_419 == 1) {
+                gMission_afterstart_time += info->elapsed_time;
+                gMissionTime -= info->elapsed_time;
+                func_0264(info->elapsed_time);
+                gMission_phase = 3;
+                SC_sgi(503, gMission_phase);
+                gPhaseTimer = 8.0f;
+                func_0355();
+                local_8 = 0;
+            } else {
+                gPhaseTimer -= info->elapsed_time;
+                gNoActiveTime = 0;
+                gMission_phase = 0;
+                SC_sgi(503, gMission_phase);
+                func_0852();
+                SC_MP_SetInstantRecovery(1);
+                SC_MP_RecoverAllNoAiPlayers();
+            }
+        }
+        switch (info->elapsed_time) {
+        case 0:
+            if (side6 != 1) {
+                local_8 = j + 1;
+            }
             break;
+        case 1:
+            SC_P_GetPos(t1547_, &vec);
+            for (idx = gCurStep - 1; idx < gCurStep; idx++) {
+                if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
+                    if (idx) {
+                        gCurStep = idx;
+                        t1595_ret = SC_MP_GetHandleofPl(t1593_);
+                        SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
+                        SC_sgi(507, gCurStep);
+                        func_1028();
+                        SC_P_MP_AddPoints(t1610_, 1);
+                    } else {
+                        gMission_phase = 2;
+                        t1628_ret = SC_MP_GetHandleofPl(t1626_);
+                        SC_sgi(510, SC_MP_GetHandleofPl(t1626_));
+                        SC_sgi(503, gMission_phase);
+                        gPhaseTimer = 8.0f;
+                        func_0355();
+                        SC_P_MP_AddPoints(t1647_, 2);
+                    }
+                } else {
+                    local_9 = idx + 1;
+                }
+            }
+            break;
+        }
+        for (j = 0; j < local_12; j++) {
         }
         break;
     case 4:
@@ -402,13 +471,6 @@ int ScriptMain(s_SC_NET_info *info) {
         gTime = 0;
         SC_MP_EnableBotsFromScene(0);
         break;
-    case 0:
-        if ((gSidePoints[0] + gSidePoints[1]) != 0) {
-            gSidePoints[0] = 0;
-            gSidePoints[1] = 0;
-            func_0249();
-        }
-        break;
     case 1:
         g_FPV_UsFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_USflag.BES");
         g_FPV_VcFlag = SC_MP_FpvMapSign_Load("g\\weapons\\Vvh_map\\icons\\MPIC_VCflag.BES");
@@ -423,7 +485,6 @@ int ScriptMain(s_SC_NET_info *info) {
         for (j = 0; j < 6; j++) {
             SC_MP_SRV_SetClassLimit(j + 1, t2149_);
             SC_MP_SRV_SetClassLimit(j + 21, t2161_);
-            local_8 = j + 1;
         }
         break;
     case 2:
@@ -504,8 +565,8 @@ int ScriptMain(s_SC_NET_info *info) {
         }
         break;
     case 5:
-        switch (gMission_phase) {
-        case MISSION_PHASE_INGAME:
+        switch (info->param2) {
+        case 1:
             for (j = 0; j < abl_lists; j++) {
                 if (info->field_4 == tmp441) {
                     abl_lists--;
@@ -524,7 +585,7 @@ int ScriptMain(s_SC_NET_info *info) {
                 }
             }
             break;
-        case MISSION_PHASE_NOACTIVE:
+        case 0:
             info->fval1 = 3.0f;
             break;
         default:
@@ -581,37 +642,7 @@ int ScriptMain(s_SC_NET_info *info) {
     case 7:
         func_0752(info->field_4);
         break;
-    default:
-        for (j = 0; j < local_12; j++) {
-            if (side2 != 0 && tmp24 < 2) {
-                (&local_296) + tmp28 * 4 = 1;
-            }
-        }
-        gMission_starting_timer -= info->elapsed_time;
-        if (tmp37 && tmp39) {
-            SC_MP_SetInstantRecovery(0);
-            if (gMission_phase == 0) {
-                gMission_phase = 1;
-                gMission_afterstart_time = 0;
-                SC_sgi(503, gMission_phase);
-                func_0294();
-                SC_MP_SRV_InitGameAfterInactive();
-                if (gNoActiveTime > 6.0f) {
-                    SC_MP_RestartMission();
-                    SC_MP_RecoverAllNoAiPlayers();
-                }
-            }
-            gMission_starting_timer = 8.0f;
-        }
-        if (gMission_starting_timer <= 0.0f && gMission_phase > 0) {
-            gMission_phase = 0;
-            gMission_afterstart_time = 0;
-            SC_sgi(503, gMission_phase);
-            func_0852();
-            func_0294();
-        }
-        break;
     }
-    return 0;  // FIX (06-05): Synthesized return value
+    return TRUE;
 }
 

@@ -103,6 +103,91 @@ def _score_producer_quality(inst):
     return 10       # Other (temporaries, arithmetic)
 
 
+def _has_dcp_producer_in_phi(value, ssa_func: SSAFunction, max_depth: int = 10) -> bool:
+    """
+    Check if any PHI source of this value ultimately traces to a DCP instruction.
+
+    DCP = dereference pointer, which indicates a parameter field access pattern
+    (e.g., info->message). If a value's PHI sources include a DCP path, the value
+    likely comes from a parameter field and should NOT be claimed as a global variable.
+    """
+    if not value or max_depth <= 0:
+        return False
+
+    prod = value.producer_inst
+    if not prod:
+        return False
+
+    # Direct DCP producer
+    if prod.mnemonic == "DCP":
+        return True
+
+    # Check through PHI node inputs
+    if prod.mnemonic == "PHI":
+        for phi_input in prod.inputs:
+            if _has_dcp_producer_in_phi(phi_input, ssa_func, max_depth - 1):
+                return True
+
+    # Check through LCP that might have phi_sources
+    if prod.mnemonic == "LCP" and value.phi_sources:
+        for _, phi_source in value.phi_sources:
+            if _has_dcp_producer_in_phi(phi_source, ssa_func, max_depth - 1):
+                return True
+
+    return False
+
+
+def _find_param_field_in_direct_predecessor_chain(
+    block_id: int,
+    ssa_func: SSAFunction,
+    max_depth: int = 5
+) -> Optional[Tuple[int, int]]:
+    """
+    Find a parameter field access pattern (LADR→DADR→DCP) in the direct
+    predecessor chain (single-predecessor blocks connected by unconditional jumps).
+
+    Returns (ladr_offset, dadr_offset) tuple if found, None otherwise.
+
+    Only follows single-predecessor blocks to avoid matching DCP patterns in
+    unrelated branches of the CFG.
+    """
+    cfg = ssa_func.cfg
+    if not cfg or not hasattr(ssa_func, 'instructions'):
+        return None
+
+    current = block_id
+    for _ in range(max_depth):
+        if current not in cfg.blocks:
+            break
+        block = cfg.blocks[current]
+        preds = list(block.predecessors)
+        if len(preds) != 1:
+            break  # Stop at merge points (multiple predecessors)
+        pred_id = preds[0]
+
+        # Check this predecessor for LADR→DADR→DCP pattern
+        if pred_id in ssa_func.instructions:
+            for inst in ssa_func.instructions[pred_id]:
+                if inst.mnemonic == 'DCP' and inst.inputs:
+                    ptr_value = inst.inputs[0]
+                    if ptr_value.producer_inst and ptr_value.producer_inst.mnemonic == 'DADR':
+                        dadr = ptr_value.producer_inst
+                        if dadr.inputs:
+                            base = dadr.inputs[0]
+                            if base.producer_inst and base.producer_inst.mnemonic == 'LADR':
+                                ladr = base.producer_inst
+                                if ladr.instruction and ladr.instruction.instruction:
+                                    ladr_offset = ladr.instruction.instruction.arg1
+                                    # Negative offset (>0x7FFFFFFF in unsigned) = parameter
+                                    if ladr_offset > 0x7FFFFFFF:
+                                        dadr_offset = dadr.instruction.instruction.arg1 if dadr.instruction and dadr.instruction.instruction else 0
+                                        return (ladr_offset, dadr_offset)
+
+        current = pred_id
+
+    return None
+
+
 def _follow_ssa_value_across_blocks(
     value,
     ssa_func: SSAFunction,
@@ -914,6 +999,13 @@ def _trace_value_to_global(
     elif producer.mnemonic == "LCP":
         # LCP loads from stack - the value might have been stored by GCP earlier
 
+        # Guard: If any PHI source traces to DCP (pointer dereference), this value
+        # comes from a parameter field access (e.g., info->message), not a global.
+        # Return None so _trace_value_to_parameter_field can handle it correctly.
+        if ssa_func and _has_dcp_producer_in_phi(value, ssa_func):
+            logger.debug(f"_trace_value_to_global: Skipping - value has DCP producer in PHI (parameter field access)")
+            return None
+
         # Pattern 1: Check if this LCP value has phi_sources
         if value.phi_sources:
             for _, phi_source in value.phi_sources:
@@ -926,6 +1018,13 @@ def _trace_value_to_global(
         if ssa_func:
             ultimate_producer = _follow_ssa_value_across_blocks(value, ssa_func, visited.copy(), max_depth=10)
             if ultimate_producer and ultimate_producer.mnemonic in {"GCP", "GLD"}:
+                # Before claiming this as a global, check if there's also a DCP path.
+                # If the PHI chain has both GCP and DCP sources, the value is ambiguous
+                # (e.g., a parameter field value sharing a stack slot with a global).
+                # In that case, return None so parameter field tracing can handle it.
+                if _has_dcp_producer_in_phi(value, ssa_func):
+                    logger.debug(f"_trace_value_to_global: Pattern 2 - GCP found but DCP also in PHI chain, returning None")
+                    return None
                 if ultimate_producer.instruction and ultimate_producer.instruction.instruction:
                     dword_offset = ultimate_producer.instruction.instruction.arg1
                     if hasattr(formatter, '_global_names'):
