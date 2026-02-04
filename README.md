@@ -1,197 +1,137 @@
-# VC-Script-Decompiler
+# VC-Script Decompiler
 
-Dekompilátor pro Vietcong (2003) game scripty. Převádí zkompilované `.scr` soubory (bytecode) zpět na čitelný C-like zdrojový kód.
+Decompiler for Vietcong (2003) game scripts. Converts compiled `.scr` bytecode files back into readable C-like source code.
 
-## Základní použití
+## Getting Started
 
-Dekompilátor je primárně **nástroj pro příkazovou řádku**. GUI je dostupné pouze pro základní náhled, ale není určené pro produkční použití.
+### Launch the GUI
 
-### Dekompilace jednoho souboru
+Double-click **`launch.bat`** to start the application. The GUI lets you open `.scr` files, view disassembly, and decompile scripts interactively.
+
+### Command-Line Usage
+
+The decompiler can also be used from the command line:
 
 ```bash
+# Decompile a script (default: Ghidra-style collapse + incremental heritage SSA)
 py -3 -m vcdecomp structure script.scr > output.c
+
+# Show script info
+py -3 -m vcdecomp info script.scr
+
+# Disassemble to readable assembly
+py -3 -m vcdecomp disasm script.scr > output.asm
 ```
 
-### Dekompilace celé složky
-
-Pro dekompilaci všech `.scr` souborů ve složce použijte standardní shell nástroje:
+### Batch Decompilation
 
 **Windows (PowerShell):**
 ```powershell
-# Dekompilace všech .scr souborů v aktuální složce
 Get-ChildItem *.scr | ForEach-Object {
     py -3 -m vcdecomp structure $_.FullName > "$($_.BaseName)_decompiled.c"
 }
-
-# Rekurzivně včetně podsložek
-Get-ChildItem -Recurse *.scr | ForEach-Object {
-    py -3 -m vcdecomp structure $_.FullName > "$($_.DirectoryName)\$($_.BaseName)_decompiled.c"
-}
 ```
 
-**Linux/WSL (Bash):**
+**Bash:**
 ```bash
-# Dekompilace všech .scr souborů v aktuální složce
 for file in *.scr; do
     py -3 -m vcdecomp structure "$file" > "${file%.scr}_decompiled.c"
 done
-
-# Rekurzivně včetně podsložek
-find . -name "*.scr" -exec sh -c 'py -3 -m vcdecomp structure "$1" > "${1%.scr}_decompiled.c"' _ {} \;
 ```
 
-## Dekompilace s dostupnou hlavičkou (SDK)
+## Recommended Workflow for Decompiled Output
 
-Dekompilátor automaticky používá informace z Vietcong SDK, které obsahuje signatury externích funkcí (`SC_*`). SDK data jsou součástí projektu v `vcdecomp/sdk/data/functions.json`.
+The decompiler produces a best-effort reconstruction of the original source. The output should be reviewed and refined before considering it final:
 
-### Co SDK poskytuje:
-- **Názvy parametrů** externích funkcí (např. `SC_P_Create(string name, vector pos)`)
-- **Typy parametrů** (int, float, string, vector, entity, ...)
-- **Návratové typy** funkcí
-- **Počty parametrů** pro všechny `SC_*` funkce
+1. **Cross-check against disassembly** — Compare the decompiled C code with the disassembly output (`py -3 -m vcdecomp disasm script.scr`) to verify that nothing is missing, duplicated, or logically incorrect.
 
-### Aktualizace SDK z nových scriptů
+2. **Use SDK headers as reference** — Consult `sc_global.h` and `sc_def.h` (in `vcdecomp/compiler/inc/`) and the Scripting SDK documentation (`docs/Scripting_SDK.txt`) to verify function signatures, parameter types, constants, and engine API usage.
 
-Pokud máte nové skripty, které volají dosud neznámé externí funkce, můžete SDK aktualizovat:
+3. **Analyze full missions together** — When decompiling an entire mission, process all scripts from the mission folder at once and cross-reference them. Scripts within a mission share global state, call each other's functions, and reference the same entities. Reconstructing them together gives much better results than analyzing each file in isolation.
 
-```bash
-# Skenování složky se skripty a agregace všech XFN volání
-py -3 -m vcdecomp xfn-aggregate scripts/ --format summary
+4. **Use external context** — Game walkthroughs, mission descriptions, and lore can help understand what a script is doing — naming variables, identifying event sequences, and making sense of AI behavior or trigger logic.
 
-# Export agregovaných signatur do SDK formátu
-py -3 -m vcdecomp xfn-aggregate scripts/ --format sdk -o new_functions.json
+If you don't have access to a coding agent (Claude Code, Cursor, etc.), you can use the [Vietcong Game Modder](https://chatgpt.com/g/g-68b42a36825c81919ebd8df8bc6d1478-vietcong-game-modder) chat assistant for the review and refinement steps. It won't be ideal, but it can still help with cross-referencing disassembly, spotting issues, and suggesting corrections through the chat window.
 
-# Sloučení s existujícím SDK
-py -3 -m vcdecomp xfn-aggregate scripts/ --format sdk -o merged.json --merge-sdk
-```
+## CLI Options
 
-**Co se stane:**
-1. Dekompilátor projde všechny `.scr` soubory v zadané složce
-2. Extrahuje XFN tabulky (externí funkce) a jejich volání
-3. Analyzuje počet předávaných parametrů
-4. Vytvoří nebo aktualizuje seznam známých funkcí
-
-**Poznámka:** SDK neobsahuje implementaci funkcí (ta je v enginu hry), pouze signatury pro lepší dekompilaci.
-
-## Pokročilé možnosti
-
-### Režimy dekompilace
+### Decompilation Modes
 
 ```bash
-# Ghidra-style hierarchické strukturování (výchozí, nejlepší kvalita)
+# Ghidra-style hierarchical structuring (default, best quality)
 py -3 -m vcdecomp structure script.scr > output.c
 
-# Plochý režim (rychlejší, nižší kvalita)
+# Flat mode (faster, lower quality)
 py -3 -m vcdecomp structure --no-collapse script.scr > output.c
 
-# Ladící výstup (pro diagnostiku problémů)
+# Debug output (for diagnostics)
 py -3 -m vcdecomp structure --debug script.scr > output.c 2> debug.log
-```
 
-### SSA režimy
-
-```bash
-# Incremental Heritage SSA (výchozí, vyšší kvalita)
-py -3 -m vcdecomp structure script.scr > output.c
-
-# Legacy SSA (rychlejší, ale méně přesné)
+# Legacy SSA (faster but less accurate)
 py -3 -m vcdecomp structure --legacy-ssa script.scr > output.c
 ```
 
-### Informace o scriptu
+### Other Commands
 
 ```bash
-# Zobrazit metadata (entry point, velikost, počet instrukcí)
+# Script metadata (entry point, size, instruction count)
 py -3 -m vcdecomp info script.scr
 
-# Disassembly (čitelný assembler)
+# Disassembly
 py -3 -m vcdecomp disasm script.scr > output.asm
 
-# Export globálních proměnných
+# Export global variable symbols
 py -3 -m vcdecomp symbols script.scr -o globals.json -f json
+
+# Aggregate external function signatures from multiple .scr files
+py -3 -m vcdecomp xfn-aggregate scripts/ --format summary
 ```
 
-## GUI (pouze pro náhled)
+## SDK Integration
 
-GUI verze je **experimentální** a není určená pro produkční použití:
+The decompiler automatically uses Vietcong SDK data (external function signatures) stored in `vcdecomp/sdk/data/functions.json`. This provides parameter names, types, and return types for 700+ `SC_*` engine functions.
+
+To update the SDK from new scripts:
 
 ```bash
-py -3 -m vcdecomp gui [script.scr]
+py -3 -m vcdecomp xfn-aggregate scripts/ --format sdk -o new_functions.json --merge-sdk
 ```
 
-**Omezení GUI:**
-- Pomalejší než CLI
-- Nedovoluje batch processing
-- Neumožňuje pokročilé flagy
-- Žádná podpora pro automatizaci
+## Technical Details
 
-**Pro vážné použití vždy preferujte CLI.**
+### .SCR File Format
+- **Header:** Entry point, function parameter count
+- **Data segment:** Constants, strings (4-byte aligned, little-endian)
+- **Code segment:** Instructions (12 bytes each: opcode + 2× int32 args)
+- **XFN table:** External function entries (28 bytes each)
 
-## Příklad workflow
+### Instruction Set
+- ~150 opcodes (arithmetic, control flow, stack operations)
+- Type prefixes: `C`=char, `S`=short, `I`=int, `F`=float, `D`=double
+- Examples: `IADD`, `FADD`, `PUSH`, `POP`, `JZ`, `XCALL`
 
-```bash
-# 1. Zjistit informace o scriptu
-py -3 -m vcdecomp info mission01/LEVEL.SCR
+### External Functions (SC_*)
+Scripts call 700+ engine functions with the `SC_` prefix:
+- `SC_P_Create()` — Create player
+- `SC_NOD_Get()` — Get scene object
+- `SC_SND_PlaySound3D()` — Play 3D sound
+- `SC_message()` — Debug message
+- Full list in `vcdecomp/sdk/data/functions.json`
 
-# 2. Dekompilovat s debug výstupem
-py -3 -m vcdecomp structure --debug mission01/LEVEL.SCR > LEVEL.c 2> LEVEL_debug.log
+## Documentation
 
-# 3. Pokud je výstup špatný, zkusit flat mode
-py -3 -m vcdecomp structure --no-collapse mission01/LEVEL.SCR > LEVEL_flat.c
+- `docs/Scripting_SDK.txt` — Official Vietcong Scripting SDK reference
+- `docs/decompilation_guide.md` — Decompilation workflow guide
+- `vcdecomp/core/ir/structure/README.md` — Structure module architecture
+- `CLAUDE.md` — AI assistant reference (complete technical details)
 
-# 4. Agregovat XFN z celé mise
-py -3 -m vcdecomp xfn-aggregate mission01/ --format summary
-```
+## Known Limitations
 
-## Technické detaily
+1. **Variable types** — Type inference is incomplete; some variables remain as `dword`
+2. **Macros** — Original macros are lost (expanded by the preprocessor before compilation)
+3. **Global variables** — Detection is heuristic-based and may be inaccurate
+4. **Complex loops** — Loop body detection may be incomplete for complex control flow graphs
 
-### Architektura .SCR souboru
-- **Header:** Entry point, počet parametrů funkce
-- **Data segment:** Konstanty, stringy (4-byte aligned, little-endian)
-- **Code segment:** Instrukce (12 bajtů: opcode + 2× int32 argumenty)
-- **XFN tabulka:** Externí funkce (28 bajtů/záznam)
+## License
 
-### Instruction set
-- ~150 opcodes (aritmetika, control flow, stack operace)
-- Type prefixy: `C`=char, `S`=short, `I`=int, `F`=float, `D`=double
-- Příklady: `IADD`, `FADD`, `PUSH`, `POP`, `JZ`, `XCALL`
-
-### Externí funkce (SC_*)
-Skripty volají 700+ engine funkcí s prefixem `SC_`:
-- `SC_P_Create()` - Vytvoření hráče
-- `SC_NOD_Get()` - Získání objektu
-- `SC_message()` - Debug zpráva
-- Kompletní seznam v `vcdecomp/sdk/data/functions.json`
-
-## Dokumentace
-
-- `CLAUDE.md` - Návod pro AI asistenty (kompletní reference)
-- `docs/decompilation_guide.md` - Podrobný průvodce dekompilací
-- `vcdecomp/core/ir/structure/README.md` - Architektura strukturálního modulu
-- `vcdecomp/data/Scripting_SDK.md` - Oficiální Vietcong SDK dokumentace
-
-## Testování
-
-```bash
-# Spustit všechny testy
-py -3 -m pytest vcdecomp/tests/ -v
-
-# Test konkrétního modulu
-py -3 -m pytest vcdecomp/tests/test_structure_patterns.py -v
-
-# End-to-end testy (kompletní dekompilace)
-py -3 -m pytest vcdecomp/tests/test_end_to_end_decompilation.py -v
-```
-
-Testovací skripty s originálním zdrojovým kódem: `decompiler_source_tests/`
-
-## Známá omezení
-
-1. **Typy proměnných** - Ne vždy lze správně odvodit typ (zůstávají jako `dword`)
-2. **Makra** - Originální makra jsou ztracena (preprocessor je expandoval)
-3. **Globální proměnné** - Detekce je heuristická, může být nepřesná
-4. **Komplexní smyčky** - U složitých control flow může být tělo smyčky neúplné
-
-## Licence
-
-Interní nástroj pro rekonstrukci Vietcong skriptů.
+Internal tool for Vietcong script reconstruction.
