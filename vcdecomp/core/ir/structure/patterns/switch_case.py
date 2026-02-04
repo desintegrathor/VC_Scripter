@@ -909,6 +909,49 @@ def _find_equ_for_comparison(
     return None
 
 
+def _is_different_stack_source(test_ssa_value, var_value) -> bool:
+    """
+    Check if two SSA values that resolved to the same variable name
+    actually come from different stack locations (LCP aliases).
+
+    This detects nested switch variables that falsely resolve to the same
+    global name. For example, gphase is loaded to local_88 for the outer
+    switch, but SC_ggi(SGI_LEVELPHASE) result stored in local_89 also
+    traces back to gphase via _trace_value_to_global's GCP heuristic.
+
+    Returns True if both values are produced by LCP but from different
+    stack slots (different aliases), indicating different source variables.
+    """
+    if not test_ssa_value or not var_value:
+        return False
+
+    test_prod = test_ssa_value.producer_inst
+    var_prod = var_value.producer_inst
+
+    if not test_prod or not var_prod:
+        return False
+
+    # Both must be LCP (stack loads) for this check to apply
+    if test_prod.mnemonic != 'LCP' or var_prod.mnemonic != 'LCP':
+        return False
+
+    test_alias = test_ssa_value.alias
+    var_alias = var_value.alias
+
+    if not test_alias or not var_alias:
+        return False
+
+    # If aliases differ, they load from different stack slots = different variables
+    if test_alias != var_alias:
+        _switch_debug(
+            f"Different stack source detected: test={test_alias} vs new={var_alias} "
+            f"(same resolved name but different stack slots → nested switch)"
+        )
+        return True
+
+    return False
+
+
 def _detect_switch_patterns(
     ssa_func: SSAFunction,
     func_block_ids: Set[int],
@@ -1329,7 +1372,7 @@ def _detect_switch_patterns(
                     chain_debug['variables_seen'].append(test_var)
                     chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
                     debug_print(f"DEBUG SWITCH: First case - variable: {test_var}, SSA: {var_value.name if hasattr(var_value, 'name') else var_value}")
-                elif test_var != var_name:
+                elif test_var != var_name or _is_different_stack_source(test_ssa_value, var_value):
                     # NESTED SWITCH FIX: Different variable = likely nested switch
                     # EXCEPTION 1: If test_var is a MOD expression (contains %), and var_name is local_N,
                     # this is likely the same switch - the MOD result is stored on stack and reloaded.
@@ -1668,9 +1711,15 @@ def _detect_switch_patterns(
             # Also, if a block is in a case body but reached by another case, it's an exit
             best_exit = None
             best_score = 0
+            best_exit_addr = -1  # Track address for tiebreaking
             for bid, reaching_cases in exit_candidates.items():
                 # Skip blocks that are part of the switch structure itself
                 if bid in all_case_blocks or bid in chain_blocks:
+                    continue
+
+                # Skip blocks that are inside a case body (they're internal to a case,
+                # not convergence points) - unless reached by multiple cases
+                if bid in all_preliminary_body and len(reaching_cases) <= 1:
                     continue
 
                 # PHASE 1.3 FIX: Verify exit isn't a nested structure entry
@@ -1693,11 +1742,16 @@ def _detect_switch_patterns(
                 if bid in all_preliminary_body and len(reaching_cases) > 1:
                     score += 10  # Strong indicator
 
-                # Prefer blocks reached by MORE cases
-                if score > best_score:
+                # Get block address for tiebreaking (prefer higher addresses = later in code)
+                candidate_addr = candidate_block.start if candidate_block else 0
+
+                # Prefer blocks reached by MORE cases; tiebreak by highest address
+                # (exit blocks typically appear after all case bodies in code order)
+                if score > best_score or (score == best_score and candidate_addr > best_exit_addr):
                     best_score = score
                     best_exit = bid
-                    debug_print(f"DEBUG SWITCH: New best exit: {bid} with score {score} (reached by {reaching_cases})")
+                    best_exit_addr = candidate_addr
+                    debug_print(f"DEBUG SWITCH: New best exit: {bid} (addr={candidate_addr}) with score {score} (reached by {reaching_cases})")
 
             exit_candidates_simple: Dict[int, int] = {
                 bid: len(cases) for bid, cases in exit_candidates.items()
@@ -1725,7 +1779,9 @@ def _detect_switch_patterns(
             # Collect all blocks belonging to the switch (initially just chain and case entries)
             debug_print(f"DEBUG SWITCH: Building all_blocks for {test_var}, chain_blocks={chain_blocks}, header_block={block_id}")
             all_blocks = set(chain_blocks)
-            all_blocks.add(block_id)  # CRITICAL FIX: Always include header block
+            # Include header block (use actual_header if it was adjusted,
+            # but we need to compute it first - so always include block_id for now,
+            # and fix up after actual_header is determined below)
             all_blocks.update(all_case_blocks)
             debug_print(f"DEBUG SWITCH: all_blocks after adding chain and cases: {all_blocks}")
             if current_block is not None:
@@ -1979,9 +2035,31 @@ def _detect_switch_patterns(
             # Determine switch type for rendering
             switch_type = "full" if len(cases) >= 2 else "single_case"
 
+            # Determine the actual header block: the first comparison block in the chain.
+            # When BFS starts from a non-comparison block (e.g., block 95 which contains
+            # pre-switch code), we should use the first chain block (e.g., block 109)
+            # as the header so the collapse engine correctly identifies the switch start.
+            actual_header = block_id
+            if chain_blocks:
+                first_chain = chain_blocks[0]
+                # Only override if block_id is not itself a comparison block
+                if first_chain != block_id and first_chain in func_block_ids:
+                    first_chain_block = cfg.blocks.get(first_chain)
+                    if first_chain_block and first_chain_block.instructions:
+                        last_instr = first_chain_block.instructions[-1]
+                        if resolver.is_conditional_jump(last_instr.opcode):
+                            actual_header = first_chain
+                            debug_print(f"DEBUG SWITCH: Using first chain block {actual_header} as header instead of BFS start {block_id}")
+                            # Remove pre-switch blocks from all_blocks - they are NOT part of the switch
+                            # They'll be emitted as sequential code before the switch by the collapse engine
+                            all_blocks.discard(block_id)
+
+            # Ensure actual_header is in all_blocks
+            all_blocks.add(actual_header)
+
             switch = SwitchPattern(
                 test_var=test_var,
-                header_block=block_id,
+                header_block=actual_header,
                 cases=cases,
                 default_block=current_block,  # Last block in chain is default
                 default_body_blocks=default_body,

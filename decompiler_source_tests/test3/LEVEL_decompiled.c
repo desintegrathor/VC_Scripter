@@ -224,8 +224,6 @@ void func_1021(void) {
 }
 
 int ScriptMain(s_SC_L_info *info) {
-    s_SC_Ai_PlFollow local_43;
-    char local_67[32];
     int g_music;
     int g_save;
     int g_will_pos;
@@ -245,7 +243,6 @@ int ScriptMain(s_SC_L_info *info) {
     s_SC_MissionSave local_80;
     s_SC_Objective local_83;
     int local_88;
-    int local_89;
     c_Vector3 vec;
     c_Vector3 vec2;
 
@@ -269,7 +266,8 @@ int ScriptMain(s_SC_L_info *info) {
                 SC_ShowMovieInfo(0);
             }
         }
-        if (local_88 == 0) {
+        switch (gphase) {
+        case 0:
             local_4.MaxHideOutsStatus = 32;
             local_4.MaxGroups = 4;
             SC_InitSide(0, &local_4);
@@ -291,286 +289,238 @@ int ScriptMain(s_SC_L_info *info) {
             local_4.MaxGroups = 12;
             SC_InitSide(1, &local_4);
             local_20 = 0;
-        } else {
+            for (i = 0; i < 12; i++) {
+                idx.SideId = 1;
+                idx.GroupId = i;
+                idx.MaxPlayers = 16;
+                idx.NoHoldFireDistance = 100.0f;
+                SC_InitSideGroup(&idx);
+            }
+            break;
+        case 1:
             local_20 = SC_ggi(SGI_LEVELPHASE);
-            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-            g_save[0] = 1;
-            local_80.savename_id = 9136;
-            local_80.description_id = 9137;
-            SC_MissionSave(&local_80);  // 9137: "You are flying over the ricefields."
-            gStartMusicTime -= info->elapsed_time;
-            g_music = 1;
-            t1700_ret = SC_AGS_Set(0);
-        }
-        for (i = 0; i < 12; i++) {
-            idx.SideId = 1;
-            idx.GroupId = i;
-            idx.MaxPlayers = 16;
-            idx.NoHoldFireDistance = 100.0f;
-            SC_InitSideGroup(&idx);
-        }
-        local_4.MaxHideOutsStatus = 2;
-        local_4.MaxGroups = 2;
-        SC_InitSide(2, &local_4);
-        idx.SideId = 2;
-        idx.GroupId = 0;
-        idx.MaxPlayers = 1;
-        idx.NoHoldFireDistance = 100.0f;
-        SC_InitSideGroup(&idx);
-        idx.SideId = 2;
-        idx.GroupId = 1;
-        idx.MaxPlayers = 20;
-        idx.NoHoldFireDistance = 0;
-        SC_InitSideGroup(&idx);
-        SC_SetSideAlly(0, 2, 1.0f);
-        SC_SetSideAlly(1, 2, 1.0f);
-        local_4.MaxHideOutsStatus = 2;
-        local_4.MaxGroups = 1;
-        SC_InitSide(3, &local_4);
-        idx.SideId = 3;
-        idx.GroupId = 0;
-        idx.MaxPlayers = 16;
-        idx.NoHoldFireDistance = 0;
-        SC_InitSideGroup(&idx);
-        SC_SetSideAlly(0, 3, 0.0f);
-        SC_SetSideAlly(1, 3, 1.0f);
-        SC_SetSideAlly(2, 3, 0.0f);
-        func_0994(0);
-        gphase = 1;
-        SC_sgi(SGI_LEVPILOT_S1G0, 0);
-        SC_sgi(SGI_LEVPILOT_S1G1, 0);
-        SC_sgi(SGI_LEVPILOT_S1G2, 0);
-        SC_sgi(SGI_LEVPILOT_S1G3, 0);
-        SC_sgi(SGI_LEVPILOT_S1G4, 0);
-        local_20 = 0;
-        for (i = 0; i < 4; i++) {
-            SC_ZeroMem(t1464_, 12);
-            local_43[i] = 1.5f;
-            local_43[i].y = 5.0f;
-            (&local_63) + i * 4 = i;
-        }
-        local_20 = 0;
-        for (i = 0; i < 10; i++) {
-            SC_Ai_SetPlFollow(1, i, 0, &local_43, &local_63, &local_63, 4);
-        }
-        local_20 = 0;
-        for (i = 0; i < 4; i++) {
-            t1544_ret = sprintf(&local_67, "WP_will%d", i + 1);
-            t1556_ret = SC_GetWp(&local_67, &g_will_pos[i]);
-        }
-        SC_sgi(SGI_LEVELPHASE, 0);
-        SC_sgi(SGI_LEVPILOT_HELI3_ATTACK, 0);
-        SC_sgi(SGI_LEVPILOT_JUSTLOADEDVALUE, 0);
-        SC_RadioSetDist(10.0f);
-        SC_ZeroMem(&g_save, 8);
-        SC_ZeroMem(&g_music, 8);
-        SC_ArtillerySupport(0);
-        SC_SetViewAnim("g\\camanims\\CAMERA\\Pilot_in.anm", 0, 350, 0);
-        SC_FadeTo(1, 0.0f);
-        SC_FadeTo(0, 3.0f);
-        switch (g_dialog) {
-        case 0:
-            local_0 = 0.5f;
-            SC_SpeechRadio2(3400, &local_0);  // 3400: "Red Bird, this is Hotel Six, what's your Lima Oscar Charlie? Over."
-            local_0 = i + 0.3f;
-            SC_SpeechRadio2(3401, &local_0);  // 3401: "Hotel Six, this is Red Bird. We are about five klicks south of the target. Over."
-            local_0 = tmp114 + 0.3f;
-            SC_SpeechRadio2(3402, &local_0);  // 3402: "Red Bird, this is Six. Have you seen any enemy down there? Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3403, &local_0);  // 3403: "Six, this is Red Bird. That�s a negative. Area is clear. Over."
-            local_0 += 0.3f;
-            SC_SpeechRadio2(3404, &local_0);  // 3404: "This is Six, roger that, Red Bird, stay in contact. Out."
-            local_0 += 0.5f;
-            g_dialog = 1;
-            break;
-        case 1:
-            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 1) break;
-            local_24 = SC_P_GetBySideGroupMember(0, 0, 2);
-            local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
-            local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
-            local_0 = 3.0f;
-            SC_P_Speech2(local_24, 3420, &local_0);  // 3420: "Shit."
-            local_0 = 3.2f;
-            SC_P_Speech2(local_25, 3421, &local_0);  // 3421: "Fuck!"
-            g_dialog = 2;
-            break;
-        case 2:
-            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 2) break;
-            local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
-            local_0 = 1.0f;
-            SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
-            local_0 = tmp114 + 0.3f;
-            t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-            SC_P_Speech2(t1894_ret, 3423, &local_0);  // 3423: "Blue Bird's been hit!"
-            local_0 += 0.4f;
-            SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
-            local_0 += 0.3f;
-            SC_SpeechRadio2(3416, &local_0);  // 3416: "Red Bird, this is Blue bird. We've been hit by ground fire. Controls are going... Shit!"
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3417, &local_0);  // 3417: "Blue Bird, this is Red Bird. I see flames on your tail. Get that thing on the deck, before she blows! Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3418, &local_0);  // 3418: "Fuck! Red, I'm trying. Controls have gone... Can't hold her... Call Six..."
-            local_0 += 0.5f;
-            SC_P_Speech2(local_26, 3419, &local_0);  // 3419: "Damn! We need to get the hell outta here, too much ground fire!"
-            local_0 += 2.0f;
-            local_2 = local_0 - 1.2f;
-            t1970_ret = SC_P_GetBySideGroupMember(0, 0, 0);
-            SC_P_Speech2(t1970_ret, 3430, &local_2);  // 3430: "Fucking gooks."
-            local_2 = tmp141 + 1.5f;
-            SC_P_Speech2(local_25, 3431, &local_0);  // 3431: "Are these choppers made of fucking cardboard or what?"
-            SC_SpeechRadio2(3424, &local_0);  // 3424: "Hotel Six, this is Red Bird. Blue Bird has taken hits, and is attempting emergency landing. Say again, Blue Bird is going down. Ground fire is too heavy. We're leaving the area. Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3425, &local_0);  // 3425: "Red Bird, this is Six. Where did this happen? Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3426, &local_0);  // 3426: "Six, this is Red Bird. Over some rice fields. Grid ref 25 dash 13. We�ve seen group of VC on the paddy fields. Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3427, &local_0);  // 3427: "Red Bird, this is Six. Can you assist Blue Bird? Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3428, &local_0);  // 3428: "Six, this is Red Bird. I will draw a circle and attack with my fifty cal. Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3429, &local_0);  // 3429: "This is Six. OK, Red Bird, be careful. Over."
-            local_0 += 0.5f;
-            g_dialog = 3;
-            break;
-        case 3:
-            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 3) break;
-            local_0 = 0;
-            SC_SpeechRadio2(3440, &local_0);  // 3440: "Red Bird, this is Six. Can you see the crew of the downed chopper? Over."
-            local_0 = i + 0.5f;
-            SC_SpeechRadio2(3441, &local_0);  // 3441: "Six, this is Red Bird. Seems only one pilot made it out alive. He's running for cover. The rest are KIA or WIA. Over."
-            local_0 = tmp114 + 0.5f;
-            SC_SpeechRadio2(3442, &local_0);  // 3442: "Red Bird, this is Six. Can you pick him up? Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3443, &local_0);  // 3443: "Six, this is Red Bird. Negative, there are too many gooks around. Can�t land safely. Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3444, &local_0);  // 3444: "Red Bird, this is Six. Move to sector 24 dash 11 and insert Hawkins there. Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3445, &local_0);  // 3445: "Six, this is Red Bird. What, insert only one soldier? What about the rest? Over."
-            local_0 += 0.5f;
-            SC_SpeechRadio2(3446, &local_0);  // 3446: "Red, this is Six. I don�t want too many people down there. Hawkins is experienced enough. The rest will support them from the air. Over."
-            local_0 += 0.5f;
-            g_dialog = 4;
-            break;
-        case 4:
-            if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 4) break;
-            g_dialog = 5;
-            local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
-            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-            local_0 = 0;
-            SC_P_Speech2(local_26, 3447, &local_0);  // 3447: "This is Six. OK, Hawkins, take a radio with you so that we can stay in touch, use call sign Fox One. Over."
-            local_0 += 0.3f;
-            SC_P_Speech2(local_22, 3448, &local_0);  // 3448: "Roger Six, of course. Over."
-            local_0 += 0.6f;
-            SC_P_Speech2(local_26, 3449, &local_0);  // 3449: "Fox One, this is Six. Good luck Hawkins, bring us back that pilot."
-            local_0 += 0.3f;
-            info->next_exe_time = local_0 - 1.0f;
-            SC_P_Speech2(local_22, 3450, &local_0);  // 3450: "This is Fox One. I'll let you know how we're doing, Six. Over."
-            break;
-        case 5:
-            SC_PC_EnableExit(1);
-            g_dialog = 6;
-            break;
-        }
-        switch (local_89) {
-        case 1:
-            if (g_dochange) {
-                func_0292();
-                func_0355();
-                g_dochange = 0;
-                if (!g_save[1]) {
-                    g_save[1] = 1;
-                    local_80.savename_id = 9138;
-                    local_80.description_id = 9139;
-                    SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
+            if (!g_save[0]) {
+                local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                if (local_22 && SC_P_IsReady(local_22)) {
+                    g_save[0] = 1;
+                    local_80.savename_id = 9136;
+                    local_80.description_id = 9137;
+                    SC_MissionSave(&local_80);  // 9137: "You are flying over the ricefields."
                 }
             }
-            func_0612(info->elapsed_time);
-            break;
-        case 2:
-            func_0612(info->elapsed_time);
-            if (! local_23) break;
-            if (! local_22) break;
-            if (! SC_P_GetActive(local_23)) break;
-            if (! SC_P_IsReady(local_23)) break;
-            if (! SC_P_IsReady(local_22)) break;
-            if (local_1 >= 10.0f) break;
-            SC_sgi(SGI_LEVELPHASE, 3);
-            local_0 = 0;
-            SC_P_Speech2(local_22, 3451, &local_0);  // 3451: "Thank God, we found you! Are you alright? Any injuries?"
-            local_0 += 1.6f;
-            SC_P_Speech2(local_23, 3452, &local_0);  // 3452: "I'm OK. The team I had with me are screwed, though. Gooks have probably got there by now..."
-            local_0 += 0.5f;
-            SC_P_Speech2(local_22, 3453, &local_0);  // 3453: "I'll request extraction, we'll call in support to pick up the guys at the downed slick when we're on the chopper."
-            local_0 = tmp192;
-            local_83.text_id = 3471;
-            local_83.status = 2;
-            SC_SetObjectives(1, &local_83, 0.0f);  // 3471: "Find the pilot"
-            break;
-        case 3:
-            SC_Radio_Enable(20);
-            SC_PC_EnableRadioBreak(1);
-            SC_sgi(SGI_LEVELPHASE, 4);
-            break;
-        case 4:
-            break;
-        case 5:
-            if (gPilotCommTime > 0.0f) {
-                gPilotCommTime -= info->elapsed_time;
+            if (!tmp105) {
+                if (gStartMusicTime > 0.0f && gStartMusicTime <= 0.0f) {
+                    g_music = 1;
+                    t1700_ret = SC_AGS_Set(0);
+                }
+            }
+            switch (info->param2) {
+            case 0:
+                switch (g_dialog) {
+                case 0:
+                    local_0 = 0.5f;
+                    SC_SpeechRadio2(3400, &local_0);  // 3400: "Red Bird, this is Hotel Six, what's your Lima Oscar Charlie? Over."
+                    local_0 = i + 0.3f;
+                    SC_SpeechRadio2(3401, &local_0);  // 3401: "Hotel Six, this is Red Bird. We are about five klicks south of the target. Over."
+                    local_0 = tmp114 + 0.3f;
+                    SC_SpeechRadio2(3402, &local_0);  // 3402: "Red Bird, this is Six. Have you seen any enemy down there? Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3403, &local_0);  // 3403: "Six, this is Red Bird. That�s a negative. Area is clear. Over."
+                    local_0 += 0.3f;
+                    SC_SpeechRadio2(3404, &local_0);  // 3404: "This is Six, roger that, Red Bird, stay in contact. Out."
+                    local_0 += 0.5f;
+                    g_dialog = 1;
+                    break;
+                case 1:
+                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 1) break;
+                    local_24 = SC_P_GetBySideGroupMember(0, 0, 2);
+                    local_25 = SC_P_GetBySideGroupMember(0, 0, 5);
+                    local_27 = SC_P_GetBySideGroupMember(0, 0, 4);
+                    local_0 = 3.0f;
+                    SC_P_Speech2(local_24, 3420, &local_0);  // 3420: "Shit."
+                    local_0 = 3.2f;
+                    SC_P_Speech2(local_25, 3421, &local_0);  // 3421: "Fuck!"
+                    g_dialog = 2;
+                    break;
+                case 2:
+                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 2) break;
+                    local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                    local_0 = 1.0f;
+                    SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
+                    local_0 = tmp114 + 0.3f;
+                    t1894_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                    SC_P_Speech2(t1894_ret, 3423, &local_0);  // 3423: "Blue Bird's been hit!"
+                    local_0 += 0.4f;
+                    SC_P_Speech2(local_26, 3422, &local_0);  // 3422: "What the fuck was that?"
+                    local_0 += 0.3f;
+                    SC_SpeechRadio2(3416, &local_0);  // 3416: "Red Bird, this is Blue bird. We've been hit by ground fire. Controls are going... Shit!"
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3417, &local_0);  // 3417: "Blue Bird, this is Red Bird. I see flames on your tail. Get that thing on the deck, before she blows! Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3418, &local_0);  // 3418: "Fuck! Red, I'm trying. Controls have gone... Can't hold her... Call Six..."
+                    local_0 += 0.5f;
+                    SC_P_Speech2(local_26, 3419, &local_0);  // 3419: "Damn! We need to get the hell outta here, too much ground fire!"
+                    local_0 += 2.0f;
+                    local_2 = local_0 - 1.2f;
+                    t1970_ret = SC_P_GetBySideGroupMember(0, 0, 0);
+                    SC_P_Speech2(t1970_ret, 3430, &local_2);  // 3430: "Fucking gooks."
+                    local_2 = tmp141 + 1.5f;
+                    SC_P_Speech2(local_25, 3431, &local_0);  // 3431: "Are these choppers made of fucking cardboard or what?"
+                    SC_SpeechRadio2(3424, &local_0);  // 3424: "Hotel Six, this is Red Bird. Blue Bird has taken hits, and is attempting emergency landing. Say again, Blue Bird is going down. Ground fire is too heavy. We're leaving the area. Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3425, &local_0);  // 3425: "Red Bird, this is Six. Where did this happen? Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3426, &local_0);  // 3426: "Six, this is Red Bird. Over some rice fields. Grid ref 25 dash 13. We�ve seen group of VC on the paddy fields. Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3427, &local_0);  // 3427: "Red Bird, this is Six. Can you assist Blue Bird? Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3428, &local_0);  // 3428: "Six, this is Red Bird. I will draw a circle and attack with my fifty cal. Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3429, &local_0);  // 3429: "This is Six. OK, Red Bird, be careful. Over."
+                    local_0 += 0.5f;
+                    g_dialog = 3;
+                    break;
+                case 3:
+                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 3) break;
+                    local_0 = 0;
+                    SC_SpeechRadio2(3440, &local_0);  // 3440: "Red Bird, this is Six. Can you see the crew of the downed chopper? Over."
+                    local_0 = i + 0.5f;
+                    SC_SpeechRadio2(3441, &local_0);  // 3441: "Six, this is Red Bird. Seems only one pilot made it out alive. He's running for cover. The rest are KIA or WIA. Over."
+                    local_0 = tmp114 + 0.5f;
+                    SC_SpeechRadio2(3442, &local_0);  // 3442: "Red Bird, this is Six. Can you pick him up? Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3443, &local_0);  // 3443: "Six, this is Red Bird. Negative, there are too many gooks around. Can�t land safely. Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3444, &local_0);  // 3444: "Red Bird, this is Six. Move to sector 24 dash 11 and insert Hawkins there. Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3445, &local_0);  // 3445: "Six, this is Red Bird. What, insert only one soldier? What about the rest? Over."
+                    local_0 += 0.5f;
+                    SC_SpeechRadio2(3446, &local_0);  // 3446: "Red, this is Six. I don�t want too many people down there. Hawkins is experienced enough. The rest will support them from the air. Over."
+                    local_0 += 0.5f;
+                    g_dialog = 4;
+                    break;
+                case 4:
+                    if (SC_ggi(SGI_LEVPILOT_HELI3_ATTACK) < 4) break;
+                    g_dialog = 5;
+                    local_26 = SC_P_GetBySideGroupMember(0, 2, 1);
+                    local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                    local_0 = 0;
+                    SC_P_Speech2(local_26, 3447, &local_0);  // 3447: "This is Six. OK, Hawkins, take a radio with you so that we can stay in touch, use call sign Fox One. Over."
+                    local_0 += 0.3f;
+                    SC_P_Speech2(local_22, 3448, &local_0);  // 3448: "Roger Six, of course. Over."
+                    local_0 += 0.6f;
+                    SC_P_Speech2(local_26, 3449, &local_0);  // 3449: "Fox One, this is Six. Good luck Hawkins, bring us back that pilot."
+                    local_0 += 0.3f;
+                    info->next_exe_time = local_0 - 1.0f;
+                    SC_P_Speech2(local_22, 3450, &local_0);  // 3450: "This is Fox One. I'll let you know how we're doing, Six. Over."
+                    break;
+                case 5:
+                    SC_PC_EnableExit(1);
+                    g_dialog = 6;
+                    break;
+                }
+                break;
+            case 1:
+                if (g_dochange) {
+                    func_0292();
+                    func_0355();
+                    g_dochange = 0;
+                    if (!g_save[1]) {
+                        g_save[1] = 1;
+                        local_80.savename_id = 9138;
+                        local_80.description_id = 9139;
+                        SC_MissionSave(&local_80);  // 9139: "There is a pilot from the crashed helicopter somewhere in the ricefields.  Captain Rosenfield wants you to find him and bring him back alive."
+                    }
+                }
+                func_0612(info->elapsed_time);
+                break;
+            case 2:
+                func_0612(info->elapsed_time);
+                if (! local_23) break;
+                if (! local_22) break;
+                if (! SC_P_GetActive(local_23)) break;
+                if (! SC_P_IsReady(local_23)) break;
+                if (! SC_P_IsReady(local_22)) break;
+                if (local_1 >= 10.0f) break;
+                SC_sgi(SGI_LEVELPHASE, 3);
+                local_0 = 0;
+                SC_P_Speech2(local_22, 3451, &local_0);  // 3451: "Thank God, we found you! Are you alright? Any injuries?"
+                local_0 += 1.6f;
+                SC_P_Speech2(local_23, 3452, &local_0);  // 3452: "I'm OK. The team I had with me are screwed, though. Gooks have probably got there by now..."
+                local_0 += 0.5f;
+                SC_P_Speech2(local_22, 3453, &local_0);  // 3453: "I'll request extraction, we'll call in support to pick up the guys at the downed slick when we're on the chopper."
+                local_0 = tmp192;
+                local_83.text_id = 3471;
+                local_83.status = 2;
+                SC_SetObjectives(1, &local_83, 0.0f);  // 3471: "Find the pilot"
+                break;
+            case 3:
+                SC_Radio_Enable(20);
+                SC_PC_EnableRadioBreak(1);
+                SC_sgi(SGI_LEVELPHASE, 4);
+                break;
+            case 4:
+                break;
+            case 5:
+                if (gPilotCommTime > 0.0f) {
+                    gPilotCommTime -= info->elapsed_time;
+                    break;
+                }
+                func_0612(info->elapsed_time);
+                SC_P_GetPos(local_23, &vec);
+                for (local_20 = i; local_20 < 4; local_20++) {
+                    if ((SC_2VectorsDist( & vec, & g_will_pos[idx6])) < 40.0f) {
+                        SC_sgi(SGI_LEVELPHASE, 6);
+                        SC_sgi(SGI_LEVPILOT_EVACVILLID, idx6);
+                        vec.z += 1.5f;
+                        vec2.x = tmp216 - tmp217;
+                        vec2.y = tmp221 - vec.y;
+                        vec2.z = 0.0f;
+                        t2542_ret = SC_VectorLen(&vec2);
+                        local_0 = (SC_VectorLen(&vec2)) / 10.0f;
+                        vec2.x /= t2551_;
+                        vec2.y /= vec2.y;
+                        vec2.z = 7.0f;
+                        t2576_ret = SC_Item_Create2(147, &vec, &vec2);
+                    } else {
+                        local_20 = idx6 + 1;
+                    }
+                }
+                break;
+            case 6:
+                func_0612(info->elapsed_time);
+                break;
+            case 7:
+                local_20 = 2;
+                g_final_enter_timer += info->elapsed_time;
+                if (SC_P_IsInHeli(local_23)) {
+                    local_20 = idx6 - 1;
+                } else {
+                    if (g_final_enter_timer > 30.0f) {
+                        SC_P_SetToHeli(local_23, "heli2", 3);
+                    } else {
+                        func_0985(local_23);
+                        SC_P_Ai_EnterHeli(local_23, "heli2", 4);
+                        info->next_exe_time = 4.0f;
+                    }
+                }
+                local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
+                if (SC_P_IsInHeli(local_22)) {
+                    local_20 = idx6 - 1;
+                }
+                if (idx6 != 0) break;
+                SC_sgi(SGI_LEVELPHASE, 8);
+                t2696_ret = SC_AGS_Set(1);
+                info->next_exe_time = 0.1f;
+                gEndTimer = 15.0f;
+                break;
+            case 8:
+                if (gEndTimer >= 0.0f) break;
+                func_1021();
+                SC_TheEnd();
+                SC_sgi(SGI_LEVELPHASE, 9);
                 break;
             }
-            func_0612(info->elapsed_time);
-            SC_P_GetPos(local_23, &vec);
-            for (local_20 = i; local_20 < 4; local_20++) {
-                if ((SC_2VectorsDist( & vec, & g_will_pos[idx6])) < 40.0f) {
-                    SC_sgi(SGI_LEVELPHASE, 6);
-                    SC_sgi(SGI_LEVPILOT_EVACVILLID, idx6);
-                    vec.z += 1.5f;
-                    vec2.x = tmp216 - tmp217;
-                    vec2.y = tmp221 - vec.y;
-                    vec2.z = 0.0f;
-                    t2542_ret = SC_VectorLen(&vec2);
-                    local_0 = (SC_VectorLen(&vec2)) / 10.0f;
-                    vec2.x /= t2551_;
-                    vec2.y /= vec2.y;
-                    vec2.z = 7.0f;
-                    t2576_ret = SC_Item_Create2(147, &vec, &vec2);
-                } else {
-                    local_20 = idx6 + 1;
-                }
-            }
-            break;
-        case 6:
-            func_0612(info->elapsed_time);
-            break;
-        case 7:
-            local_20 = 2;
-            g_final_enter_timer += info->elapsed_time;
-            if (SC_P_IsInHeli(local_23)) {
-                local_20 = idx6 - 1;
-            } else {
-                if (g_final_enter_timer > 30.0f) {
-                    SC_P_SetToHeli(local_23, "heli2", 3);
-                } else {
-                    func_0985(local_23);
-                    SC_P_Ai_EnterHeli(local_23, "heli2", 4);
-                    info->next_exe_time = 4.0f;
-                }
-            }
-            local_22 = SC_P_GetBySideGroupMember(0, 0, 0);
-            if (SC_P_IsInHeli(local_22)) {
-                local_20 = idx6 - 1;
-            }
-            if (idx6 != 0) break;
-            SC_sgi(SGI_LEVELPHASE, 8);
-            t2696_ret = SC_AGS_Set(1);
-            info->next_exe_time = 0.1f;
-            gEndTimer = 15.0f;
-            break;
-        case 8:
-            if (gEndTimer >= 0.0f) break;
-            func_1021();
-            SC_TheEnd();
-            SC_sgi(SGI_LEVELPHASE, 9);
             break;
         }
         break;

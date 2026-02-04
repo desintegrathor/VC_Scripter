@@ -221,21 +221,28 @@ void func_0752(int param_0) {
     dword local_1;
     s_SC_P_getinfo player_info;
 
-    switch (player_info.field_8) {
-    case 0:
-        if (local_0 <= 0) {
-        }
-        local_1 = 1;
-        break;
-    case 1:
-        if (local_0 >= 0) {
-            return;
-        }
-        local_1 = 0;
-        break;
+    if (! SC_MP_SRV_GetAutoTeamBalance()) {
+        return;
     }
-block_115:
-    return;
+    local_0 = SC_MP_SRV_GetTeamsNrDifference(1);
+    if (/* condition */) {
+        return;
+    } else {
+        SC_P_GetInfo(param_0, &player_info);
+        if (player_info.field_8 == 0 && local_0 > 0) {
+            local_1 = 1;
+        } else {
+            if (player_info.field_8 == 1 && local_0 < 0) {
+                return;
+            }
+            local_1 = 0;
+        }
+        t827_ret = SC_MP_SRV_P_SetSideClass(param_0, local_1, 1 + 20 * local_1);
+        if (abl_lists < 64) {
+            abl_list[abl_lists] = param_0;
+            abl_lists++;
+        }
+        return;
 }
 
 void func_0852(void) {
@@ -298,6 +305,7 @@ void func_1028(void) {
 
 int ScriptMain(s_SC_NET_info *info) {
     s_SC_MP_EnumPlayers enum_pl[32];
+    s_SC_HUD_MP_icon icon[32];
     dword idx;
     int input_170_unknown_170_1146_1;
     int input_342_unknown_342_2940_1;
@@ -311,8 +319,9 @@ int ScriptMain(s_SC_NET_info *info) {
     ushort* local_314;
     int local_315;
     int local_379;
+    float local_411;
+    float local_412;
     int local_418;
-    int local_419;
     int local_8;
     s_SC_P_getinfo player_info;
     s_SC_MP_SRV_settings srv_settings;
@@ -320,6 +329,10 @@ int ScriptMain(s_SC_NET_info *info) {
     ushort* t3021_ret;
     ushort* t3085_ret;
     ushort* t3121_ret;
+    char* t3163_ret;
+    ushort* t3231_ret;
+    char* t3275_ret;
+    ushort* t3326_ret;
     s_SC_MP_Recover t3600_0;
     c_Vector3 vec;
 
@@ -345,18 +358,75 @@ int ScriptMain(s_SC_NET_info *info) {
         gMission_starting_timer -= info->elapsed_time;
         if (tmp37 && tmp39) {
             SC_MP_SetInstantRecovery(0);
-            if (gMission_phase == 0) {
-                gMission_phase = 1;
-                gMission_afterstart_time = 0;
+            gMission_phase = 1;
+            gMission_afterstart_time = 0;
+            SC_sgi(503, gMission_phase);
+            func_0294();
+            SC_MP_SRV_InitGameAfterInactive();
+            SC_MP_RestartMission();
+            SC_MP_RecoverAllNoAiPlayers();
+            gMission_starting_timer = 8.0f;
+        }
+        switch (gMission_phase) {
+        case MISSION_PHASE_NOACTIVE:
+            break;
+        case MISSION_PHASE_INGAME:
+            gMission_afterstart_time += info->elapsed_time;
+            gMissionTime -= info->elapsed_time;
+            func_0264(info->elapsed_time);
+            if (gMissionTime <= 0.0f) {
+                gMission_phase = 3;
                 SC_sgi(503, gMission_phase);
-                func_0294();
-                SC_MP_SRV_InitGameAfterInactive();
-                if (gNoActiveTime > 6.0f) {
-                    SC_MP_RestartMission();
-                    SC_MP_RecoverAllNoAiPlayers();
-                }
-                gMission_starting_timer = 8.0f;
+                gPhaseTimer = 8.0f;
+                func_0355();
+            } else {
+                if (gMission_afterstart_time <= 5.0f) break;
+                if (gCurStep <= 0) break;
+                local_8 = 0;
             }
+            for (j = 0; j < local_12; j++) {
+                if (tmp98 == gAttackingSide && side6 == 1) {
+                    SC_P_GetPos(t1547_, &vec);
+                    for (idx = gCurStep - 1; idx < gCurStep; idx++) {
+                        if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
+                            if (idx) {
+                                gCurStep = idx;
+                                t1595_ret = SC_MP_GetHandleofPl(t1593_);
+                                SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
+                                SC_sgi(507, gCurStep);
+                                func_1028();
+                                SC_P_MP_AddPoints(t1610_, 1);
+                            } else {
+                                gMission_phase = 2;
+                                t1628_ret = SC_MP_GetHandleofPl(t1626_);
+                                SC_sgi(510, SC_MP_GetHandleofPl(t1626_));
+                                SC_sgi(503, gMission_phase);
+                                gPhaseTimer = 8.0f;
+                                func_0355();
+                                SC_P_MP_AddPoints(t1647_, 2);
+                            }
+                        } else {
+                            local_9 = idx + 1;
+                        }
+                    }
+                }
+                SC_P_GetPos(t1547_, &vec);
+                local_9 = gCurStep - 1;
+            }
+            break;
+        case MISSION_PHASE_WIN_DEFENDERS:
+            break;
+        case MISSION_PHASE_WIN_ATTACKERS:
+            if (gPhaseTimer >= 0.0f) break;
+            gNoActiveTime = 0;
+            gMission_phase = 0;
+            SC_sgi(503, gMission_phase);
+            func_0852();
+            SC_MP_SetInstantRecovery(1);
+            SC_MP_RecoverAllNoAiPlayers();
+            break;
+        default:
+            break;
         }
         if (gMission_starting_timer <= 0.0f && gMission_phase > 0) {
             gMission_phase = 0;
@@ -379,81 +449,25 @@ int ScriptMain(s_SC_NET_info *info) {
         if (gNextRecover < 0.0f) {
             gNextRecover = t1425_ret;
         }
-        if (local_419 == 0) {
-            gNoActiveTime += info->elapsed_time;
-            if (gMissionTime > -10.0f) {
-                gMissionTime = -10.0f;
-                gMissionTime_update = -1.0f;
-                func_0264(0);
-            }
-        } else {
-            if (local_419 == 1) {
-                gMission_afterstart_time += info->elapsed_time;
-                gMissionTime -= info->elapsed_time;
-                func_0264(info->elapsed_time);
-                gMission_phase = 3;
-                SC_sgi(503, gMission_phase);
-                gPhaseTimer = 8.0f;
-                func_0355();
-                local_8 = 0;
-            } else {
-                gPhaseTimer -= info->elapsed_time;
-                gNoActiveTime = 0;
-                gMission_phase = 0;
-                SC_sgi(503, gMission_phase);
-                func_0852();
-                SC_MP_SetInstantRecovery(1);
-                SC_MP_RecoverAllNoAiPlayers();
-            }
-        }
-        switch (info->elapsed_time) {
-        case 0:
-            if (side6 != 1) {
-                local_8 = j + 1;
-            }
-            break;
-        case 1:
-            SC_P_GetPos(t1547_, &vec);
-            for (idx = gCurStep - 1; idx < gCurStep; idx++) {
-                if (SC_IsNear3D( & vec, & gStepSwitch[idx], t1574_)) {
-                    if (idx) {
-                        gCurStep = idx;
-                        t1595_ret = SC_MP_GetHandleofPl(t1593_);
-                        SC_sgi(510, SC_MP_GetHandleofPl(t1593_));
-                        SC_sgi(507, gCurStep);
-                        func_1028();
-                        SC_P_MP_AddPoints(t1610_, 1);
-                    } else {
-                        gMission_phase = 2;
-                        t1628_ret = SC_MP_GetHandleofPl(t1626_);
-                        SC_sgi(510, SC_MP_GetHandleofPl(t1626_));
-                        SC_sgi(503, gMission_phase);
-                        gPhaseTimer = 8.0f;
-                        func_0355();
-                        SC_P_MP_AddPoints(t1647_, 2);
-                    }
-                } else {
-                    local_9 = idx + 1;
-                }
-            }
-            break;
-        }
-        for (j = 0; j < local_12; j++) {
+        gNoActiveTime += info->elapsed_time;
+        if (gMissionTime > -10.0f) {
+            gMissionTime = -10.0f;
+            gMissionTime_update = -1.0f;
+            func_0264(0);
         }
         break;
     case 4:
         gCLN_ShowInfo -= info->elapsed_time;
+        if (gCLN_ShowStartInfo > 0.0f) {
+            gCLN_ShowStartInfo -= info->elapsed_time;
+        }
+        if (gCLN_ShowWaitingInfo > 0.0f) {
+            gCLN_ShowWaitingInfo -= info->elapsed_time;
+        }
+        t1752_ret = SC_ggi(503);
         switch (gCLN_ShowWaitingInfo) {
         case 0:
             func_0498(SC_ggi(508) - 1, 2);
-            switch (SC_ggi(503)) {
-            case 1:
-                gCLN_MissionTime -= info->elapsed_time;
-                break;
-            case 3:
-                local_299[local_11].z = 0;
-                break;
-            }
             break;
         case 1:
             if (gCLN_CurStep != SC_ggi(507) && gCLN_CurStep < idx34 && gCLN_CurStep > 0) {
@@ -463,6 +477,41 @@ int ScriptMain(s_SC_NET_info *info) {
             func_0498(t1827_ret, gCLN_CurStep);
             break;
         }
+        if (gCLN_MissionTimePrevID != SC_ggi(505)) {
+            gCLN_MissionTimePrevID = SC_ggi(505);
+            gCLN_MissionTime = SC_ggf(504);
+        } else {
+        }
+        switch (SC_ggi(503)) {
+        case 1:
+            gCLN_MissionTime -= info->elapsed_time;
+            break;
+        case 3:
+            local_299[local_11].z = 0;
+            break;
+        default:
+            for (j = 0; j < 2; j++) {
+                gCLN_SidePoints[j] = SC_ggi(500 + j);
+                SC_MP_SetSideStats(j, 0, t1910_);
+                local_299[j].y = 1;
+                local_299[j].icon_id = 3 * j;
+                local_299[j].z = tmp179;
+                local_299[j].field_12 = -1140850689;
+            }
+            local_11 = 2;
+            if (gCLN_MissionTime > 0.0f && SC_ggi(503)) {
+                local_299[local_11].field_12 = -1140850689;
+                local_299[local_11].icon_id = 6;
+                if (SC_ggi(503) == 3) {
+                } else {
+                    local_299[local_11].z = (int)(gCLN_MissionTime + 0.99f);
+                }
+                local_299[local_11].y = 2;
+                local_11++;
+            }
+            break;
+        }
+        SC_MP_SetIconHUD(&icon, local_11);
         break;
     case 9:
         SC_sgi(GVAR_MP_MISSIONTYPE, 9);
@@ -492,6 +541,9 @@ int ScriptMain(s_SC_NET_info *info) {
         local_314 = 0;
         local_298 = 0;
         local_10 = SC_ggi(502);
+        if (gCLN_gamephase != SC_ggi(503)) {
+            gCLN_gamephase = SC_ggi(503);
+        }
         switch (gCLN_gamephase) {
         case 2:
             break;
@@ -563,8 +615,68 @@ int ScriptMain(s_SC_NET_info *info) {
         default:
             break;
         }
+        t3147_ret = SC_ggi(510);
+        local_9 = SC_MP_GetPlofHandle(t3147_ret);
+        if (idx) {
+            t3163_ret = SC_P_GetName(idx);
+            t3168_ret = SC_AnsiToUni(t3163_ret, &local_379);
+        } else {
+            t3177_ret = SC_AnsiToUni("'disconnected'", &local_379);
+        }
+        switch (gCLN_gamephase) {
+        case 0:
+            local_8 = 5101;
+            break;
+        case 1:
+            local_8 = 5103;
+            break;
+        case 2:
+            local_8 = 5102;
+            break;
+        case 3:
+            local_8 = 5104;
+            break;
+        }
+        t3231_ret = SC_Wtxt(j);
+        t3237_ret = swprintf(&local_315, t3231_ret, &local_379);
+        local_314 = &local_315;
+        gCLN_ShowStartInfo = 0;
+        t3259_ret = SC_ggi(510);
+        local_9 = SC_MP_GetPlofHandle(t3259_ret);
+        if (idx) {
+            t3275_ret = SC_P_GetName(idx);
+            t3280_ret = SC_AnsiToUni(t3275_ret, &local_379);
+        } else {
+            t3289_ret = SC_AnsiToUni("'disconnected'", &local_379);
+        }
+        t3296_ret = SC_ggi(506);
+        switch (gCLN_gamephase) {
+        case 0:
+            local_8 = 5105;
+            break;
+        case 1:
+            local_8 = 5106;
+            break;
+        }
+        t3326_ret = SC_Wtxt(j);
+        t3332_ret = swprintf(&local_315, t3326_ret, &local_379);
+        local_314 = &local_315;
+        gCLN_ShowStartInfo = 0;
+        if (! local_314) break;
+        SC_GetScreenRes(&local_411, &local_412);
+        local_411 -= SC_Fnt_GetWidthW(local_314, 1.0f);
+        if (local_298) {
+            local_412 = 0.5f * local_412 - 40.0f;
+        } else {
+            local_412 = 15.0f;
+        }
+        SC_Fnt_WriteW(local_411 * 0.5f, local_412, local_314, 1.0f, -1);
         break;
     case 5:
+        if (info->param2) {
+            info->fval1 = 0.1f;
+        } else {
+        }
         switch (info->param2) {
         case 1:
             for (j = 0; j < abl_lists; j++) {
