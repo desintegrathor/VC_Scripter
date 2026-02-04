@@ -15,7 +15,7 @@
 !setup.py
 !ghidra-decompiler-src/
 !ghidra-decompiler-src/**
-!run_vcdecomp_gui.bat
+!launch.bat
 
 # Always ignore these (even if inside vcdecomp)
 __pycache__/
