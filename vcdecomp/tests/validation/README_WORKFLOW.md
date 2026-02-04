@@ -150,7 +150,7 @@ All tests should **PASS** with the following characteristics:
 **Solution**: Ensure Compiler-testruns/ exists with .scr and .c files
 
 ### Tests Skip Due to Missing Compiler
-**Cause**: SCMP.exe not found in original-resources/compiler/
+**Cause**: SCMP.exe not found in vcdecomp/compiler/
 **Solution**: Tests will run with mocked compilation (expected behavior)
 
 ### Cache Tests Fail

@@ -157,14 +157,8 @@ def cmd_lift(args):
 
 def cmd_gui(args):
     """Spustí GUI aplikaci"""
-    try:
-        from .gui.main_window import run_gui
-        run_gui(args.file if args.file else None)
-    except ImportError as e:
-        print(f"Error: GUI dependencies not installed.")
-        print(f"Install with: pip install PyQt6")
-        print(f"Details: {e}")
-        sys.exit(1)
+    from .gui import run_gui
+    run_gui(args.file if args.file else None)
 
 
 def _add_variant_option(subparser):
@@ -361,7 +355,7 @@ Příklady:
     p_validate = subparsers.add_parser('validate', help='Validate decompiled source by recompiling')
     p_validate.add_argument('original_scr', help='Path to original .SCR file')
     p_validate.add_argument('source_file', help='Path to decompiled source .c file')
-    p_validate.add_argument('--compiler-dir', help='Path to compiler directory (default: original-resources/compiler)')
+    p_validate.add_argument('--compiler-dir', help='Path to compiler directory (default: vcdecomp/compiler)')
     p_validate.add_argument('--output-format', choices=['text', 'json', 'html'],
                            help='Output format for report (default: auto-detect from --report-file or text)')
     p_validate.add_argument('--report-file', help='Save detailed report to file')
@@ -372,7 +366,7 @@ Příklady:
     p_validate_batch = subparsers.add_parser('validate-batch', help='Validate multiple files in batch mode')
     p_validate_batch.add_argument('--input-dir', required=True, help='Directory containing decompiled .c files')
     p_validate_batch.add_argument('--original-dir', required=True, help='Directory containing original .scr files')
-    p_validate_batch.add_argument('--compiler-dir', help='Path to compiler directory (default: original-resources/compiler)')
+    p_validate_batch.add_argument('--compiler-dir', help='Path to compiler directory (default: vcdecomp/compiler)')
     p_validate_batch.add_argument('--jobs', type=int, default=4, help='Number of parallel validation jobs (default: 4)')
     p_validate_batch.add_argument('--report-file', help='Save batch summary report to JSON file')
     p_validate_batch.add_argument('--no-cache', action='store_true', help='Disable validation cache')
@@ -754,8 +748,8 @@ def cmd_validate(args):
     if args.compiler_dir:
         compiler_dir = Path(args.compiler_dir).resolve()
     else:
-        # Default to original-resources/compiler relative to project root
-        compiler_dir = Path(__file__).parent.parent / "original-resources" / "compiler"
+        # Default to vcdecomp/compiler relative to package
+        compiler_dir = Path(__file__).parent / "compiler"
 
     # Check files exist
     if not original_scr.exists():
@@ -854,7 +848,7 @@ def cmd_validate_batch(args):
     if args.compiler_dir:
         compiler_dir = Path(args.compiler_dir).resolve()
     else:
-        compiler_dir = Path(__file__).parent.parent / "original-resources" / "compiler"
+        compiler_dir = Path(__file__).parent / "compiler"
 
     # Validate directories exist
     if not input_dir.exists() or not input_dir.is_dir():

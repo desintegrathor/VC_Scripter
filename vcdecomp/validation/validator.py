@@ -122,7 +122,7 @@ class ValidationOrchestrator:
             ValidationResult with complete validation findings
 
         Example:
-            >>> orchestrator = ValidationOrchestrator("./original-resources/compiler")
+            >>> orchestrator = ValidationOrchestrator("./vcdecomp/compiler")
             >>> result = orchestrator.validate("original.scr", "decompiled.c")
             >>> print(result.verdict)
             ValidationVerdict.PASS

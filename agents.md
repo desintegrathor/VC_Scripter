@@ -126,18 +126,18 @@ py -3 -m pytest vcdecomp/tests/test_end_to_end_decompilation.py -v
 ```
 
 ### Compiling Scripts (Original Compiler)
-The original SCMP compiler toolchain is in `original-resources/compiler/`. Due to WSL/Windows interop limitations, use the Python wrapper:
+The original SCMP compiler toolchain is in `vcdecomp/compiler/`. Due to WSL/Windows interop limitations, use the Python wrapper:
 
 ```bash
 # Compile tt.c (the test file in compiler directory)
 py -3 compile_simple.py
 
-# This compiles: original-resources/compiler/tt.c
-# Output: original-resources/compiler/tt.scr
+# This compiles: vcdecomp/compiler/tt.c
+# Output: vcdecomp/compiler/tt.scr
 ```
 
 **To compile other files:**
-1. Copy your `.c` file to `original-resources/compiler/`
+1. Copy your `.c` file to `vcdecomp/compiler/`
 2. Edit `compile.bat` to reference your file
 3. Run: `py -3 compile_simple.py`
 
@@ -236,7 +236,7 @@ Scripts call 700+ engine functions with `SC_*` prefix:
 - `SC_SND_PlaySound3D()` - Play 3D sound
 - `SC_message()` - Debug message
 
-Function prototypes are in `original-resources/h/sc_global.h`.
+Function prototypes are in `vcdecomp/compiler/inc/sc_global.h`.
 
 ## Important Constraints
 

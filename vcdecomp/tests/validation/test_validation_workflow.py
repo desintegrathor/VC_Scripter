@@ -36,7 +36,7 @@ class TestValidationWorkflowBasic(unittest.TestCase):
     def setUpClass(cls):
         """Set up test fixtures and paths."""
         cls.project_root = Path(__file__).parent.parent.parent.parent
-        cls.compiler_dir = cls.project_root / "original-resources" / "compiler"
+        cls.compiler_dir = cls.project_root / "vcdecomp" / "compiler"
         cls.test_data_dir = cls.project_root / "Compiler-testruns"
 
         # Check if compiler tools exist
@@ -71,7 +71,7 @@ class TestValidationWorkflowBasic(unittest.TestCase):
             shutil.rmtree(self.temp_dir)
 
     @unittest.skipUnless(
-        Path(__file__).parent.parent.parent.parent / "original-resources" / "compiler" / "SCMP.exe",
+        Path(__file__).parent.parent.parent.parent / "vcdecomp" / "compiler" / "SCMP.exe",
         "Compiler tools not available"
     )
     def test_validation_orchestrator_initialization(self):
@@ -92,7 +92,7 @@ class TestValidationWorkflowBasic(unittest.TestCase):
             )
 
     @unittest.skipUnless(
-        Path(__file__).parent.parent.parent.parent / "original-resources" / "compiler" / "SCMP.exe",
+        Path(__file__).parent.parent.parent.parent / "vcdecomp" / "compiler" / "SCMP.exe",
         "Compiler tools not available"
     )
     def test_full_validation_workflow_with_mocked_compilation(self):
@@ -475,7 +475,7 @@ class TestErrorRecovery(unittest.TestCase):
     def setUp(self):
         """Create temporary directory."""
         self.temp_dir = Path(tempfile.mkdtemp(prefix="test_errors_"))
-        self.compiler_dir = Path(__file__).parent.parent.parent.parent / "original-resources" / "compiler"
+        self.compiler_dir = Path(__file__).parent.parent.parent.parent / "vcdecomp" / "compiler"
 
     def tearDown(self):
         """Clean up temporary files."""

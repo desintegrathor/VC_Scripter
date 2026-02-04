@@ -21,7 +21,7 @@ def compiler_paths():
     """
     # Paths relative to project root
     project_root = Path(__file__).parent.parent.parent
-    compiler_dir = project_root / "original-resources" / "compiler"
+    compiler_dir = project_root / "vcdecomp" / "compiler"
 
     # Include directories (headers)
     include_dirs = [

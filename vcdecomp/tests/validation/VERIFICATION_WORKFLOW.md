@@ -77,7 +77,7 @@ class TestReportGeneration(unittest.TestCase):
 **Status**: ✅ COMPLETE (with smart fallback)
 
 **Evidence**:
-- Tests locate real compiler tools in `original-resources/compiler/`
+- Tests locate real compiler tools in `vcdecomp/compiler/`
 - Tests load real test fixtures from `Compiler-testruns/`
 - Tests use real BytecodeComparator for comparison
 - **Smart design**: Compilation is mocked for predictability and CI/CD compatibility
@@ -88,7 +88,7 @@ class TestReportGeneration(unittest.TestCase):
 @classmethod
 def setUpClass(cls):
     """Set up test fixtures and paths."""
-    cls.compiler_dir = cls.project_root / "original-resources" / "compiler"
+    cls.compiler_dir = cls.project_root / "vcdecomp" / "compiler"
     cls.test_data_dir = cls.project_root / "Compiler-testruns"
     cls.compiler_available = (cls.compiler_dir / "SCMP.exe").exists()
     # Finds real .scr and .c file pairs

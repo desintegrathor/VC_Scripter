@@ -597,7 +597,7 @@ def main():
 
     # Get paths
     project_root = Path(__file__).parent.parent.parent.parent
-    headers_dir = project_root / 'original-resources' / 'h'
+    headers_dir = Path(__file__).parent.parent.parent / 'compiler' / 'inc'
     output_dir = project_root / 'vcdecomp' / 'core' / 'headers' / 'data'
     output_dir.mkdir(exist_ok=True)
 
