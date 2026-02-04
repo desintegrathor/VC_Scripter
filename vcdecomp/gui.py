@@ -297,7 +297,7 @@ class App:
         self.btn_select_input.grid(row=1, column=2, **pad)
 
         # Header row
-        ttk.Label(dec_frame, text="Header:").grid(row=2, column=0, sticky="w", **pad)
+        ttk.Label(dec_frame, text="Header (optional):").grid(row=2, column=0, sticky="w", **pad)
         ttk.Entry(dec_frame, textvariable=self.decompile_header, width=50, state="readonly"
                   ).grid(row=2, column=1, sticky="ew", **pad)
         ttk.Button(dec_frame, text="Select header",
