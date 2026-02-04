@@ -1,4 +1,0 @@
-preprocessing error:
-file: C:\Users\flori\source\repos\VC_Scripter\vcdecomp\compiler\DEFORT.c
-line: 4
-message: cannot open including file 'C:\Users\flori\source\repos\VC_Scripter\vcdecomp\compiler\LEVEL_H.H'.
