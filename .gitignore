@@ -18,6 +18,15 @@ vcdecomp/compiler/test3_*
 decompiler_source_tests/
 docs/
 ghidra-decompiler-src/
+decompilation_work_folder/
+ralph-logs/
+script-folders/
+original-resources/
+test_compilation/
+.claude/
+.github/
+.vscode/
+.planning/
 
 # Local-only files
 CLAUDE.md
@@ -26,3 +35,49 @@ compile_simple.py
 requirements.txt
 pyproject.toml
 setup.py
+
+# Debug/log soubory
+*.log
+debug.log
+*_debug.log
+*_stderr.log
+*.asm
+
+# Dočasné decompiler výstupy v root
+*_decompiled.c
+*_output.c
+flat_output.c
+collapse_output.c
+temp_output.c
+
+# Ad-hoc test skripty v root
+/test_*.py
+/compile*.py
+/run_*.py
+/generate_*.py
+/verify_*.py
+
+# Progress/status dokumenty
+*_STATUS.md
+*_PROGRESS.md
+*_RESULTS.md
+*_REPORT.md
+*_SUMMARY.md
+DECOMPILATION_PROGRESS.md
+DECOMPILER_SKILL.md
+phase*.md
+
+# Claude scratchpad soubory (ty divné C: cesty)
+C:*
+C\357\200\272*
+
+# Misc
+nul
+/-
+.gitattributes
+ralph-decompiler.sh
+run-background.sh
+run-overnight.sh
+
+# User settings
+vcdecomp/vcdecomp_settings.json
