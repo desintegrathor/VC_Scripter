@@ -1414,6 +1414,11 @@ class HierarchicalCodeEmitter:
                 if const_name:
                     case_value = const_name
             lines.append(f"{indent}case {case_value}:")
+
+            # If this case falls through to another case, skip body and break
+            if case.fall_through_to is not None:
+                continue
+
             # Prefer structured body_block when it contains nested switches or loops;
             # fall back to flat-mode rendering for case bodies with if/else structure.
             if case.body_block is not None and self._has_structured_children(case.body_block):

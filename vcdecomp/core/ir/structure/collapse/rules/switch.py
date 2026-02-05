@@ -258,6 +258,7 @@ class RuleBlockSwitch(CollapseRule):
                 body_block=case_body,  # Already structured (BlockIf, BlockList, etc.)
                 is_default=False,
                 has_break=has_break,
+                fall_through_to=case_info.falls_through_to,  # Preserve fall-through relationship
                 body_block_ids=set(case_info.body_blocks),  # CFG block IDs as fallback
             ))
 
