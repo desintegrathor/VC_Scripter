@@ -594,9 +594,10 @@ def get_verified_field_name(struct_name: str, offset: int) -> Optional[str]:
                 if field.offset == offset:
                     return field.name
                 if field.is_array:
-                    field_end = field.offset + (field.size * field.array_size)
+                    field_end = field.offset + field.size  # field.size is already total bytes
                     if field.offset <= offset < field_end:
-                        index = (offset - field.offset) // field.size
+                        element_size = field.size // field.array_size if field.array_size > 0 else field.size
+                        index = (offset - field.offset) // element_size
                         return f"{field.name}[{index}]"
 
     # Fallback: try header parser
