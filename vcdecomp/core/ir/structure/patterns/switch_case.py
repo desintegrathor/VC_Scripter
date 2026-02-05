@@ -2006,9 +2006,50 @@ def _detect_switch_patterns(
 
                             # If the potential exit block starts after all case bodies, it's post-switch code
                             if potential_exit_addr >= max_case_addr:
-                                # Special case: switch-return functions often have a single return block
-                                # as the implicit default. Keep it if there's no common exit block.
-                                if exit_block is None and _block_ends_with_return(cfg, potential_exit, resolver):
+                                # NEW: Check if block contains meaningful code (not just boilerplate)
+                                # XCALL = function call, GADR = address of (typically string)
+                                # These indicate real code, not just exit boilerplate
+                                has_meaningful_code = False
+                                block_to_check = potential_exit_blk
+
+                                # If this is a JMP-only block, also check the JMP target
+                                # This handles cases where the default entry is a JMP block
+                                # that redirects to the actual default body
+                                blocks_to_check = [potential_exit_blk]
+                                if (len(potential_exit_blk.instructions) == 1 and
+                                    resolver.get_mnemonic(potential_exit_blk.instructions[0].opcode) == "JMP"):
+                                    jmp_target_addr = potential_exit_blk.instructions[0].arg1
+                                    for bid, blk in cfg.blocks.items():
+                                        if blk.start == jmp_target_addr and bid != exit_block:
+                                            blocks_to_check.append(blk)
+                                            debug_print(f"DEBUG SWITCH: Following JMP from default entry to block {bid} (addr {jmp_target_addr})")
+                                            break
+
+                                for blk in blocks_to_check:
+                                    for instr in blk.instructions:
+                                        mnem = resolver.get_mnemonic(instr.opcode)
+                                        if mnem in ("XCALL", "GADR"):
+                                            has_meaningful_code = True
+                                            break
+                                    if has_meaningful_code:
+                                        break
+
+                                if has_meaningful_code:
+                                    debug_print(
+                                        f"DEBUG SWITCH: Keeping default body {default_body} - "
+                                        f"contains meaningful code (not just exit boilerplate)"
+                                    )
+                                    # Don't set default_body = None, this IS the default case
+                                    # Also add the JMP target block to default_body if it was followed
+                                    if len(blocks_to_check) > 1:
+                                        for bid, blk in cfg.blocks.items():
+                                            if blk == blocks_to_check[1]:
+                                                default_body.add(bid)
+                                                debug_print(f"DEBUG SWITCH: Added JMP target block {bid} to default_body")
+                                                break
+                                elif exit_block is None and _block_ends_with_return(cfg, potential_exit, resolver):
+                                    # Special case: switch-return functions often have a single return block
+                                    # as the implicit default. Keep it if there's no common exit block.
                                     debug_print(
                                         "DEBUG SWITCH: Keeping default body as return-only block "
                                         f"for switch-return function (default_body={default_body})"
