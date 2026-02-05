@@ -494,7 +494,8 @@ def _find_param_field_in_predecessors(
     # Get predecessors using BFS traversal (up to 10 levels)
     # This is needed because the LADR→DADR→DCP pattern might be many blocks away
     # from the switch comparison block, especially in large functions like ScriptMain
-    preds = set()
+    # Use dict to track depth: pred_id -> depth
+    preds: Dict[int, int] = {}
     to_visit = []
     if current_block_id in cfg.blocks:
         block = cfg.blocks[current_block_id]
@@ -506,7 +507,7 @@ def _find_param_field_in_predecessors(
         pred_id, depth = to_visit.pop(0)
         if pred_id in preds:
             continue
-        preds.add(pred_id)
+        preds[pred_id] = depth  # Store depth for this predecessor
         if depth < max_depth and pred_id in cfg.blocks:
             for pred in cfg.blocks[pred_id].predecessors:
                 if pred not in preds:
@@ -515,7 +516,7 @@ def _find_param_field_in_predecessors(
     _switch_debug(f"  Searching {len(preds)} predecessor blocks for LADR→DADR→DCP pattern")
 
     # Search each predecessor for the pattern
-    for pred_id in preds:
+    for pred_id, depth in preds.items():
         if pred_id not in ssa_blocks:
             continue
 
@@ -540,20 +541,95 @@ def _find_param_field_in_predecessors(
                     # Check if there's an SSP in the same block or nearby that stores
                     # the DCP result to the same stack offset as the LCP
                     dcp_stores_to_lcp_slot = False
-                    for j in range(i + 1, min(i + 5, len(instrs))):
+
+                    # Step 1: Search from DCP to end of block for SSP to same slot
+                    # (Extended from 5-instruction window to entire block until branch)
+                    for j in range(i + 1, len(instrs)):
                         check_inst = instrs[j]
+                        # Stop if we hit a branch/jump - SSP won't be after that
+                        if check_inst.mnemonic in ('JMP', 'JZ', 'JNZ', 'RET'):
+                            break
                         if check_inst.mnemonic == 'SSP' and check_inst.instruction and check_inst.instruction.instruction:
                             ssp_offset = check_inst.instruction.instruction.arg1
                             if ssp_offset == lcp_stack_offset:
                                 dcp_stores_to_lcp_slot = True
+                                _switch_debug(f"    Found SSP to slot {lcp_stack_offset} at offset {j - i} from DCP in same block")
                                 break
+
+                    # Step 2: Search successor blocks for SSP to same slot
                     if not dcp_stores_to_lcp_slot:
-                        # Also check phi_sources of var_value for the DCP output
+                        dcp_block = cfg.blocks.get(pred_id)
+                        if dcp_block:
+                            for succ_id in dcp_block.successors:
+                                if succ_id in ssa_blocks:
+                                    for succ_inst in ssa_blocks[succ_id]:
+                                        if succ_inst.mnemonic == 'SSP' and succ_inst.instruction and succ_inst.instruction.instruction:
+                                            if succ_inst.instruction.instruction.arg1 == lcp_stack_offset:
+                                                dcp_stores_to_lcp_slot = True
+                                                _switch_debug(f"    Found SSP to slot {lcp_stack_offset} in successor block {succ_id}")
+                                                break
+                                        # Stop at branches
+                                        if succ_inst.mnemonic in ('JMP', 'JZ', 'JNZ', 'RET'):
+                                            break
+                                    if dcp_stores_to_lcp_slot:
+                                        break
+
+                    # Step 3: Check SSA use chain - if DCP output is used by SSP
+                    if not dcp_stores_to_lcp_slot:
+                        if hasattr(instr, 'outputs') and instr.outputs:
+                            dcp_output = instr.outputs[0]
+                            # Check uses of this SSA value
+                            for user in getattr(dcp_output, 'uses', []):
+                                if hasattr(user, 'mnemonic') and user.mnemonic == 'SSP':
+                                    if user.instruction and user.instruction.instruction:
+                                        if user.instruction.instruction.arg1 == lcp_stack_offset:
+                                            dcp_stores_to_lcp_slot = True
+                                            _switch_debug(f"    Found SSP to slot {lcp_stack_offset} via SSA use chain")
+                                            break
+
+                    # Step 4: Also check phi_sources of var_value for the DCP output
+                    if not dcp_stores_to_lcp_slot:
                         if var_value.phi_sources:
                             for _, phi_src in var_value.phi_sources:
                                 if phi_src.producer_inst and phi_src.producer_inst is instr:
                                     dcp_stores_to_lcp_slot = True
+                                    _switch_debug(f"    Found DCP output in phi_sources")
                                     break
+
+                    # Step 5: DIRECT PREDECESSOR HEURISTIC
+                    # If the DCP is in a direct predecessor (depth 1) of the current block,
+                    # AND the LCP alias indicates a high stack offset (likely function parameter),
+                    # AND the DCP accesses a parameter via LADR with negative offset,
+                    # then accept this DCP as the switch variable source.
+                    # This handles the common VC compiler pattern where:
+                    #   Block N:   LADR [sp-4] → DADR 0 → DCP → JMP Block N+1
+                    #   Block N+1: LCP [sp+418] → EQU → JZ
+                    # The bytecode doesn't store the DCP result to sp+418, but the values
+                    # are semantically related (both represent info->message).
+                    if not dcp_stores_to_lcp_slot and depth == 1:
+                        # Check if this is a parameter field access pattern
+                        # Look ahead to see if this DCP is from LADR→DADR→DCP on a parameter
+                        if instr.inputs and len(instr.inputs) > 0:
+                            ptr_val = instr.inputs[0]
+                            if ptr_val.producer_inst and ptr_val.producer_inst.mnemonic == 'DADR':
+                                dadr = ptr_val.producer_inst
+                                if dadr.inputs and len(dadr.inputs) > 0:
+                                    base_val = dadr.inputs[0]
+                                    if base_val.producer_inst and base_val.producer_inst.mnemonic == 'LADR':
+                                        ladr = base_val.producer_inst
+                                        if ladr.instruction and ladr.instruction.instruction:
+                                            ladr_offset = ladr.instruction.instruction.arg1
+                                            # Convert to signed
+                                            if ladr_offset > 0x7FFFFFFF:
+                                                ladr_offset = ladr_offset - 0x100000000
+                                            # If LADR has negative offset, it's a parameter access
+                                            if ladr_offset < 0:
+                                                # Check if LCP offset is high (likely total frame size + 1)
+                                                # indicating it accesses the same parameter slot
+                                                if lcp_stack_offset > 100:  # High offset threshold
+                                                    dcp_stores_to_lcp_slot = True
+                                                    _switch_debug(f"    Direct predecessor heuristic: DCP from LADR[sp{ladr_offset:+d}] matches high LCP offset {lcp_stack_offset}")
+
                     if not dcp_stores_to_lcp_slot:
                         _switch_debug(f"    Skipping DCP - output doesn't connect to LCP stack slot {lcp_stack_offset}")
                         continue

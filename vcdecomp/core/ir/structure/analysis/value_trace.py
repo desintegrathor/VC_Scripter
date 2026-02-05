@@ -1373,7 +1373,8 @@ def _trace_value_to_parameter(value, formatter: ExpressionFormatter, ssa_func: S
                                 # Extract parameter name from "s_SC_NET_info *info"
                                 parts = param_type.split()
                                 if parts:
-                                    param_name = parts[-1]
+                                    # Strip leading/trailing * from the name
+                                    param_name = parts[-1].lstrip('*').rstrip('*')
                                 break
 
                 return f"{param_name}->{field_name}"
