@@ -243,6 +243,24 @@ def _find_mod_in_predecessors(block_id: int, ssa_func: SSAFunction, max_depth: i
     return None
 
 
+def _get_instruction_block(inst, ssa_func: SSAFunction) -> Optional[int]:
+    """Get the block ID containing an instruction.
+
+    Args:
+        inst: SSA instruction to find
+        ssa_func: SSA function
+
+    Returns:
+        Block ID if found, None otherwise
+    """
+    for block_id, insts in ssa_func.instructions.items():
+        for i in insts:
+            if i is inst or (hasattr(i, 'address') and hasattr(inst, 'address')
+                            and i.address == inst.address):
+                return block_id
+    return None
+
+
 def _case_has_break(
     cfg: CFG,
     case: CaseInfo,
@@ -1264,18 +1282,49 @@ def _detect_switch_patterns(
                 # IMPORTANT: Only match MOD if its result flows to the same stack location
                 if actual_producer and actual_producer.mnemonic == 'LCP':
                     lcp_alias = var_value.alias  # e.g., "local_0"
+
+                    # Extract stack offset from LCP instruction (e.g., [sp+0] -> 0)
+                    lcp_offset = None
+                    if (actual_producer.instruction and
+                        actual_producer.instruction.instruction):
+                        raw_offset = actual_producer.instruction.instruction.arg1
+                        # Convert to signed offset
+                        lcp_offset = raw_offset - 0x100000000 if raw_offset >= 0x80000000 else raw_offset
+                        _switch_debug(f"  LCP stack offset: {lcp_offset}")
+
                     # Search current block and predecessors for MOD instruction
                     mod_inst = _find_mod_in_predecessors(current_block, ssa_func, max_depth=2)
                     if mod_inst:
                         # Verify MOD result is stored to the same location as LCP loads
-                        # Check if the MOD has an output that gets assigned to the same alias
                         mod_matches = False
+
+                        # Strategy 1: Check if MOD has output with matching alias
                         if mod_inst.outputs:
                             for out in mod_inst.outputs:
                                 if out.alias == lcp_alias:
                                     mod_matches = True
+                                    _switch_debug(f"  -> MOD matched via alias: {lcp_alias}")
                                     break
-                        # Also check if there's an ASGN after the MOD that stores to the same location
+
+                        # Strategy 2: For stack-based MOD, check instruction sequence
+                        # If MOD is immediately followed by JMP and LCP loads [sp+0], it's the MOD result
+                        # MOD leaves result at TOS (top of stack); if LCP is in same or immediate successor
+                        # block and loads [sp+0], it's the MOD result
+                        if not mod_matches and lcp_offset == 0:
+                            mod_block_id = _get_instruction_block(mod_inst, ssa_func)
+                            if mod_block_id is not None:
+                                # Check if current_block is mod_block or immediate successor
+                                cfg = ssa_func.cfg
+                                mod_block = cfg.get_block(mod_block_id)
+                                if mod_block:
+                                    # Accept if: current block IS the mod block, OR
+                                    # current block is an immediate successor of mod block
+                                    if (current_block == mod_block_id or
+                                        current_block in mod_block.successors):
+                                        mod_matches = True
+                                        _switch_debug(f"  -> MOD matched via stack position heuristic (LCP [sp+0] after MOD in block {mod_block_id})")
+
+                        # Strategy 3: Check if there's an ASGN after the MOD that stores to the same location
                         if not mod_matches and mod_inst.address is not None:
                             mod_block = ssa_func.instructions.get(current_block, [])
                             for check_inst in mod_block:
@@ -1285,12 +1334,14 @@ def _detect_switch_patterns(
                                     check_inst.inputs[1].alias.startswith('&') and
                                     check_inst.inputs[1].alias[1:] == lcp_alias):
                                     mod_matches = True
+                                    _switch_debug(f"  -> MOD matched via ASGN pattern")
                                     break
+
                         if mod_matches:
                             actual_producer = mod_inst
                             _switch_debug(f"  -> Found MOD in predecessor block (same variable {lcp_alias})")
                         else:
-                            _switch_debug(f"  -> Found MOD in predecessor block but for different variable (MOD, not {lcp_alias})")
+                            _switch_debug(f"  -> Found MOD in predecessor block but for different variable (MOD outputs don't match {lcp_alias})")
 
                 if actual_producer and actual_producer.mnemonic == "MOD":
                         # Extract: var % constant
