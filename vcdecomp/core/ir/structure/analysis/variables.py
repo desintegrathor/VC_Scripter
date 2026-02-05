@@ -20,6 +20,20 @@ from ..utils.helpers import debug_print
 logger = logging.getLogger(__name__)
 
 
+def _is_global_variable(name: str, known_globals: Optional[Set[str]] = None) -> bool:
+    """Check if a variable name refers to a global variable.
+
+    Uses known global names set when available, falls back to
+    'g' + uppercase heuristic for scripts without global resolution.
+    """
+    if known_globals and name in known_globals:
+        return True
+    # Fallback heuristic for 'gCamelCase' pattern (gEndTimer, gSidePoints, etc.)
+    if len(name) >= 2 and name[0] == 'g' and name[1].isupper():
+        return True
+    return False
+
+
 @dataclass
 class ArrayDims:
     """Information about array dimensions detected from usage patterns."""
@@ -454,7 +468,7 @@ def _build_use_count_map(ssa_func: SSAFunction, func_block_ids: Set[int], rename
     return use_counts
 
 
-def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter, type_tracker=None) -> List[str]:
+def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], formatter, type_tracker=None, known_globals: Optional[Set[str]] = None) -> List[str]:
     """
     Collect local variable declarations for a function.
 
@@ -463,6 +477,7 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
         func_block_ids: Block IDs belonging to this function
         formatter: ExpressionFormatter instance
         type_tracker: Optional LocalVariableTypeTracker for unified type resolution
+        known_globals: Optional set of known global variable names (from GlobalResolver)
 
     Returns list of declaration strings like "int i", "float local_2", etc.
 
@@ -612,9 +627,8 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
             return
         if var_name.startswith("gData") or var_name.startswith("gVar"):  # Skip globals
             return
-        # Skip global variables named from save_info (start with 'g' + uppercase letter)
-        # Examples: gSidePoints, gEndRule, gAttackingSide
-        if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
+        # Skip global variables (known from GlobalResolver or 'g' + uppercase heuristic)
+        if _is_global_variable(var_name, known_globals):
             return
 
         # Check if variable has semantic name (i, player_info, etc.)
@@ -1188,9 +1202,8 @@ def _collect_local_variables(ssa_func: SSAFunction, func_block_ids: Set[int], fo
                 # Phase 2: DON'T skip local_ - they may only appear as &local_X (address-of)
                 if var_name.startswith('param_') or var_name.startswith('data_'):
                     continue
-                # Skip global variables named from save_info (start with 'g' + uppercase letter)
-                # Examples: gSidePoints, gEndRule, gAttackingSide
-                if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
+                # Skip global variables (known from GlobalResolver or 'g' + uppercase heuristic)
+                if _is_global_variable(var_name, known_globals):
                     continue
                 # Skip constants and keywords
                 if var_name.isupper() or var_name.isdigit():

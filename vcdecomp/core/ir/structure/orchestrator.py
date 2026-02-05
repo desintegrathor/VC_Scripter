@@ -871,7 +871,8 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
 
         # Add variable declarations with two-pass DCE (same as flat mode)
         # First collect candidates, then filter against actual usage in body
-        vars_decls = _collect_local_variables(ssa_func, func_block_ids, formatter)
+        _known_globals = set(global_map.values()) if global_map else None
+        vars_decls = _collect_local_variables(ssa_func, func_block_ids, formatter, known_globals=_known_globals)
 
         # Two-pass DCE: scan body for actually-used variable names
         used_in_body = _scan_used_variables_in_code(body_lines)
@@ -1029,7 +1030,7 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
     # so finalize() consolidates that evidence. Future architecture may allow runtime pattern
     # collection during formatting to provide additional evidence.
     type_tracker.finalize()
-    old_vars = _collect_local_variables(ssa_func, func_block_ids, formatter, type_tracker=type_tracker)
+    old_vars = _collect_local_variables(ssa_func, func_block_ids, formatter, type_tracker=type_tracker, known_globals=global_var_names or None)
     for var_decl in old_vars:
         # Extract variable name from declaration for duplicate check
         parts = var_decl.split()
@@ -2175,9 +2176,10 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if var_name.startswith('s_') or var_name.startswith('c_'):
             continue
 
-        # Skip global variables (gVarname pattern - 'g' followed by uppercase letter)
+        # Skip global variables (known from GlobalResolver or 'g' + uppercase heuristic)
         # These are already declared at file scope, don't shadow them locally
-        if len(var_name) >= 2 and var_name[0] == 'g' and var_name[1].isupper():
+        from .analysis.variables import _is_global_variable
+        if _is_global_variable(var_name, global_var_names or None):
             continue
 
         # Now check if this variable SHOULD be declared
