@@ -582,31 +582,29 @@ def get_verified_field_name(struct_name: str, offset: int) -> Optional[str]:
     """
     Return a field name only if it can be verified from SDK or headers.
 
-    If the mapping is missing or ambiguous between sources, return None.
+    SDK database is authoritative. It uses range-based matching for arrays.
+    Header parser is used as fallback when SDK has no entry.
     """
-    candidates = []
-
+    # SDK is authoritative - use range-based matching for array support
     sdk_db = _get_sdk_database()
     if sdk_db:
         sdk_struct = sdk_db.get_structure(struct_name)
         if sdk_struct:
             for field in sdk_struct.fields:
                 if field.offset == offset:
-                    candidates.append(field.name)
-                    break
+                    return field.name
+                if field.is_array:
+                    field_end = field.offset + (field.size * field.array_size)
+                    if field.offset <= offset < field_end:
+                        index = (offset - field.offset) // field.size
+                        return f"{field.name}[{index}]"
 
+    # Fallback: try header parser
     db = get_header_database()
     header_fields = db.get_struct_fields(struct_name)
     field_info = header_fields.get(offset)
     if field_info:
-        candidates.append(field_info.name)
-
-    if not candidates:
-        return None
-
-    unique_names = {name for name in candidates}
-    if len(unique_names) == 1:
-        return unique_names.pop()
+        return field_info.name
 
     return None
 
