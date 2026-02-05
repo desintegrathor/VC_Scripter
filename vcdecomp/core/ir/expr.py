@@ -1637,6 +1637,25 @@ class ExpressionFormatter:
             else:
                 # No rename entry - will fall through to inline rendering anyway
                 is_call_return = True
+        # FIX: Skip rename_map for DCP (dereference) operations - these should inline
+        # to show the dereferenced expression (e.g., gFlagNod[i][0]) not tmpN
+        # This is similar to how is_infix_op works for arithmetic expressions
+        is_dcp = False
+        if value.producer_inst and value.producer_inst.mnemonic == "DCP":
+            if self._rename_map and value.name in self._rename_map:
+                renamed = self._rename_map[value.name]
+                # Only bypass for generic temp names that would be less readable
+                # than the inlined expression (e.g., "tmp10" → "gFlagNod[i][0]")
+                # Patterns: tmpN, ptrN, objN, tNNN_ (raw SSA names)
+                if re.match(r'^(tmp|ptr|obj)\d*$', renamed):
+                    is_dcp = True
+                elif re.match(r'^t\d+_$', renamed):
+                    # Raw SSA name like t592_ - bypass to inline expression
+                    is_dcp = True
+            else:
+                # No rename entry - will fall through to inline rendering anyway
+                is_dcp = True
+
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1648,7 +1667,7 @@ class ExpressionFormatter:
         preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
                 and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op
-                and not is_infix_op and not is_call_return):
+                and not is_infix_op and not is_call_return and not is_dcp):
             return _strip_ssa_version_suffix(self._rename_map[value.name])
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
