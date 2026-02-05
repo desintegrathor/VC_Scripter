@@ -4257,6 +4257,18 @@ class ExpressionFormatter:
                 name = get_constant_name("SCM", value)
                 if name:
                     return name
+        elif func_name == "SC_P_ScriptMessage":
+            # Second argument (index 1) is SCM_* message type
+            if arg_index == 1:
+                name = get_constant_name("SCM", value)
+                if name:
+                    return name
+        elif func_name in ("SC_P_GetBySideGroupMember", "SC_GetGroupPlayers"):
+            # First argument (index 0) is SC_P_SIDE_* (US=0, VC=1, NEUTRAL=2)
+            if arg_index == 0:
+                name = get_player_constant("SIDE", value)
+                if name:
+                    return name
 
         # Boolean hodnoty (0/1) pro poslední argument některých funkcí
         if value in (0, 1) and func_name in (
