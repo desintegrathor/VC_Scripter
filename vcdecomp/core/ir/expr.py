@@ -4056,10 +4056,13 @@ class ExpressionFormatter:
             # Return function call expression - note: CALL can return value!
             # Check if there's an output (return value)
             if inst.outputs:
-                dest = self._format_target(inst.outputs[0])
-                return f"{dest} = {func_name}({args});"
-            else:
-                return f"{func_name}({args});"
+                # Check if the return value is actually used by any real instruction
+                output = inst.outputs[0]
+                real_uses = sum(1 for addr, _ in output.uses if addr >= 0) if hasattr(output, 'uses') else 1
+                if real_uses > 0:
+                    dest = self._format_target(output)
+                    return f"{dest} = {func_name}({args});"
+            return f"{func_name}({args});"
 
         # XCALL - get function name from XFN table
         if inst.mnemonic == "XCALL":
@@ -4196,10 +4199,13 @@ class ExpressionFormatter:
                         text_annotation = f"  // {annotation}"
 
             if inst.outputs:
-                dest = self._format_target(inst.outputs[0])
-                return f"{dest} = {func_name}({args});{text_annotation}"
-            else:
-                return f"{func_name}({args});{text_annotation}"
+                # Check if the return value is actually used by any real instruction
+                output = inst.outputs[0]
+                real_uses = sum(1 for addr, _ in output.uses if addr >= 0) if hasattr(output, 'uses') else 1
+                if real_uses > 0:
+                    dest = self._format_target(output)
+                    return f"{dest} = {func_name}({args});{text_annotation}"
+            return f"{func_name}({args});{text_annotation}"
 
         args = ", ".join(self._render_value(val) for val in inst.inputs)
 
