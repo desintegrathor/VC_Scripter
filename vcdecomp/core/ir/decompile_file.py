@@ -11,7 +11,7 @@ from __future__ import annotations
 import struct
 import sys
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Callable, Dict, Optional, Set, Tuple
 
 from .cross_file_context import CrossFileContext
 
@@ -141,6 +141,7 @@ def decompile_single_scr(
     cross_file_context: Optional[CrossFileContext] = None,
     header_path: Optional[Path] = None,
     header_already_loaded: bool = False,
+    progress_callback: Optional[Callable[[str], None]] = None,
 ) -> str:
     """
     Decompile a single .scr file and return the decompiled C source as a string.
@@ -152,10 +153,15 @@ def decompile_single_scr(
         args: Parsed CLI arguments (must have variant, debug/verbose, legacy_ssa, etc.)
         cross_file_context: Optional cross-file context for multi-file decompilation
         header_path: Optional mission header path (overrides auto-detection)
+        header_already_loaded: Whether the header has already been loaded
+        progress_callback: Optional callback for progress updates (receives status messages)
 
     Returns:
         The decompiled C source code as a string
     """
+    def _progress(msg: str):
+        if progress_callback:
+            progress_callback(msg)
     from ..loader import SCRFile
     from .structure import format_structured_function_named
     from .ssa import build_ssa_all_blocks, build_ssa_incremental
@@ -167,6 +173,7 @@ def decompile_single_scr(
     debug_mode = getattr(args, 'debug', False) or getattr(args, 'verbose', False)
     set_debug_enabled(debug_mode)
 
+    _progress("Loading bytecode...")
     scr = SCRFile.load(str(scr_path), variant=getattr(args, 'variant', 'auto'))
 
     # Set flags on SCR object
@@ -177,6 +184,7 @@ def decompile_single_scr(
     scr.enable_bidirectional_types = not getattr(args, 'no_bidirectional_types', False)
     scr.debug_type_inference = getattr(args, 'debug_type_inference', False)
 
+    _progress("Analyzing functions...")
     from ..disasm import Disassembler
     disasm = Disassembler(scr)
     func_bounds = disasm.get_function_boundaries_v2()
@@ -196,6 +204,7 @@ def decompile_single_scr(
             print(f"// Mission header loaded: {header_path.name}", file=sys.stderr)
 
     # Build SSA
+    _progress("Building SSA...")
     use_legacy_ssa = getattr(args, 'legacy_ssa', False)
     heritage_metadata = None
     if not use_legacy_ssa:
@@ -248,6 +257,7 @@ def decompile_single_scr(
     array_strides = _detect_array_strides(ssa_func, scr)
 
     # Resolve globals
+    _progress("Resolving globals...")
     resolver = GlobalResolver(
         ssa_func,
         aggressive_typing=True,
@@ -326,7 +336,7 @@ def decompile_single_scr(
         return dimensions if len(dimensions) > 1 else None
 
     # Generate global variable declarations
-    if globals_usage and scr.global_pointers.gptr_count > 0:
+    if globals_usage:
         global_lines = []
         global_lines.append("// Global variables")
         for offset in sorted(globals_usage.keys()):
@@ -466,7 +476,11 @@ def decompile_single_scr(
             return False
         return True
 
-    for func_name, (func_start, func_end) in sorted(func_bounds.items(), key=lambda x: x[1][0]):
+    sorted_funcs = sorted(func_bounds.items(), key=lambda x: x[1][0])
+    total_funcs = len(sorted_funcs)
+
+    for idx, (func_name, (func_start, func_end)) in enumerate(sorted_funcs, 1):
+        _progress(f"Function {idx}/{total_funcs}: {func_name}")
         text = format_structured_function_named(
             ssa_func,
             func_name,

@@ -85,8 +85,11 @@ def _decompile_single(scr_path: Path, output_dir: Path, header: Optional[str],
     args = _make_args(header)
     basename = scr_path.stem
 
-    status_cb(f"Decompiling {scr_path.name}...")
-    c_text = decompile_single_scr(scr_path, args, header_path=Path(header) if header else None)
+    c_text = decompile_single_scr(
+        scr_path, args,
+        header_path=Path(header) if header else None,
+        progress_callback=lambda msg: status_cb(f"{scr_path.name}: {msg}")
+    )
     out_c = output_dir / f"{basename}.c"
     out_c.write_text(c_text, encoding="utf-8")
 
@@ -150,13 +153,13 @@ def _decompile_folder(folder: Path, output_dir: Path, header: Optional[str],
     # Pass 2
     output_dir.mkdir(parents=True, exist_ok=True)
     for i, scr_path in enumerate(scr_files, 1):
-        status_cb(f"Pass 2: [{i}/{total}] {scr_path.name}")
         try:
             c_text = decompile_single_scr(
                 scr_path, args,
                 cross_file_context=ctx,
                 header_path=header_path,
                 header_already_loaded=True,
+                progress_callback=lambda msg, idx=i, f=scr_path.name: status_cb(f"[{idx}/{total}] {f}: {msg}")
             )
             (output_dir / f"{scr_path.stem}.c").write_text(c_text, encoding="utf-8")
 
