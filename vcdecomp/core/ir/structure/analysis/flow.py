@@ -252,7 +252,8 @@ def _find_case_body_blocks(
     stop_blocks: Set[int],
     resolver: opcodes.OpcodeResolver,
     known_exit_blocks: Optional[Set[int]] = None,
-    convergence_threshold: int = 2
+    convergence_threshold: int = 2,
+    loops: Optional[List[NaturalLoop]] = None
 ) -> Set[int]:
     """
     Find all blocks belonging to a case body using BFS with improved stopping.
@@ -272,6 +273,10 @@ def _find_case_body_blocks(
         known_exit_blocks: Optional set of known exit points to stop at
         convergence_threshold: Stop at blocks with >= this many predecessors from
                                different sources (convergence points)
+        loops: Optional list of NaturalLoop objects for back-edge filtering.
+               When provided, back-edge predecessors (loop body blocks targeting
+               their loop header) are excluded from convergence detection.
+               This prevents premature termination at loop headers inside case bodies.
 
     Returns:
         Set of all block IDs in the case body
@@ -295,6 +300,29 @@ def _find_case_body_blocks(
             return True
         return dominates(cfg, case_entry, candidate)
 
+    def _is_back_edge_predecessor(pred: int, block_id: int) -> bool:
+        """
+        Check if pred->block_id is a back edge (pred is inside a loop whose header is block_id).
+
+        Back edges should NOT be counted as external predecessors for convergence detection,
+        because they represent loop iteration, not convergence from different code paths.
+        """
+        if loops is None:
+            return False
+        for loop in loops:
+            if loop.header == block_id and pred in loop.body:
+                return True
+        return False
+
+    def _get_dag_predecessors(block_id: int, predecessors: List[int]) -> List[int]:
+        """
+        Filter out back-edge predecessors for DAG analysis.
+
+        For convergence detection, we only care about forward edges (DAG edges),
+        not back edges from loop bodies to loop headers.
+        """
+        return [p for p in predecessors if not _is_back_edge_predecessor(p, block_id)]
+
     def _should_include_block(block_id: int) -> bool:
         """Check if a block should be included in the case body."""
         if block_id in effective_stop and block_id != case_entry:
@@ -313,19 +341,21 @@ def _find_case_body_blocks(
         if not block:
             return False
 
-        # Convergence detection
+        # Convergence detection (filter out back-edge predecessors for DAG analysis)
         if block_id != case_entry:
             predecessors = getattr(block, 'predecessors', [])
-            if predecessors and len(predecessors) >= convergence_threshold:
-                preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
+            # Filter out back-edge predecessors - they don't represent convergence
+            dag_predecessors = _get_dag_predecessors(block_id, predecessors)
+            if dag_predecessors and len(dag_predecessors) >= convergence_threshold:
+                preds_in_body = sum(1 for p in dag_predecessors if p in body_blocks or p in visited)
                 preds_from_other_cases = sum(
-                    1 for p in predecessors
+                    1 for p in dag_predecessors
                     if p in effective_stop
                     and p != case_entry
                     and p not in body_blocks
                     and p not in visited
                 )
-                preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
+                preds_external = len(dag_predecessors) - preds_in_body - preds_from_other_cases
 
                 if preds_from_other_cases > 0:
                     return False
@@ -361,19 +391,22 @@ def _find_case_body_blocks(
         if not block:
             continue
 
-        # Convergence detection (Ghidra-style)
+        # Convergence detection (Ghidra-style, with back-edge filtering)
         if block_id != case_entry:
             predecessors = getattr(block, 'predecessors', [])
-            if predecessors and len(predecessors) >= convergence_threshold:
-                preds_in_body = sum(1 for p in predecessors if p in body_blocks or p in visited)
+            # Filter out back-edge predecessors for DAG analysis
+            # Back edges represent loop iteration, not convergence from different paths
+            dag_predecessors = _get_dag_predecessors(block_id, predecessors)
+            if dag_predecessors and len(dag_predecessors) >= convergence_threshold:
+                preds_in_body = sum(1 for p in dag_predecessors if p in body_blocks or p in visited)
                 preds_from_other_cases = sum(
-                    1 for p in predecessors
+                    1 for p in dag_predecessors
                     if p in effective_stop
                     and p != case_entry
                     and p not in body_blocks
                     and p not in visited
                 )
-                preds_external = len(predecessors) - preds_in_body - preds_from_other_cases
+                preds_external = len(dag_predecessors) - preds_in_body - preds_from_other_cases
 
                 if preds_from_other_cases > 0:
                     continue

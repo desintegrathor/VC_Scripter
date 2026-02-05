@@ -13,7 +13,7 @@ import logging
 import sys
 import os
 
-from ...cfg import CFG
+from ...cfg import CFG, NaturalLoop, find_all_loops
 from ....disasm import opcodes
 from ...ssa import SSAFunction
 from ...expr import ExpressionFormatter
@@ -1072,6 +1072,10 @@ def _detect_switch_patterns(
     switches: List[SwitchPattern] = []
     processed_blocks: Set[int] = set()
 
+    # Compute loops once for back-edge filtering in case body detection
+    # This prevents premature termination at loop headers inside case bodies
+    loops: List[NaturalLoop] = find_all_loops(cfg)
+
     # DEBUG: Print blocks around ScriptMain entry (1097)
     scriptmain_blocks = [bid for bid in cfg.blocks.keys() if 1090 <= cfg.blocks[bid].start <= 1200]
     scriptmain_in_func = [bid for bid in scriptmain_blocks if bid in func_block_ids]
@@ -1801,7 +1805,8 @@ def _detect_switch_patterns(
                     preliminary_bodies[case.block_id] = set()
                     continue
                 preliminary_bodies[case.block_id] = _find_case_body_blocks(
-                    cfg, case.block_id, preliminary_stop, resolver
+                    cfg, case.block_id, preliminary_stop, resolver,
+                    loops=loops
                 )
                 # Add this body to stop blocks so next cases don't overlap
                 preliminary_stop.update(preliminary_bodies[case.block_id])
@@ -2021,7 +2026,8 @@ def _detect_switch_patterns(
 
                 preliminary_bodies[case.block_id] = _find_case_body_blocks(
                     cfg, case.block_id, preliminary_stop, resolver,
-                    known_exit_blocks={exit_block} if exit_block else None
+                    known_exit_blocks={exit_block} if exit_block else None,
+                    loops=loops
                 )
                 # Add this case's body to stop_blocks for next cases
                 preliminary_stop.update(preliminary_bodies[case.block_id])
@@ -2079,7 +2085,8 @@ def _detect_switch_patterns(
                 debug_print(f"DEBUG SWITCH: Finding body for case {case.value}, entry={case.block_id}, stop_blocks={sorted(pass2_stop)}")
                 case.body_blocks = _find_case_body_blocks(
                     cfg, case.block_id, pass2_stop, resolver,
-                    known_exit_blocks={exit_block} if exit_block else None
+                    known_exit_blocks={exit_block} if exit_block else None,
+                    loops=loops
                 )
                 debug_print(f"DEBUG SWITCH: Case {case.value} body_blocks: {sorted(case.body_blocks)}")
                 # BUG FIX #3: Add this case's body to stop_blocks so next cases don't cross into it
@@ -2108,7 +2115,8 @@ def _detect_switch_patterns(
                 else:
                     default_body = _find_case_body_blocks(
                         cfg, default_body_entry, stop_blocks, resolver,
-                        known_exit_blocks={exit_block} if exit_block else None
+                        known_exit_blocks={exit_block} if exit_block else None,
+                        loops=loops
                     )
                     debug_print(f"DEBUG SWITCH: Found default body blocks: {default_body}")
 

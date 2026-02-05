@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Dict, Set, List, Optional, Tuple
 import logging
 
-from ...cfg import CFG
+from ...cfg import CFG, NaturalLoop, find_all_loops
 from ....disasm import opcodes
 from ...ssa import SSAFunction, SSAInstruction, SSAValue
 from ...expr import ExpressionFormatter
@@ -80,6 +80,9 @@ def _detect_binary_search_switch(
     resolver = getattr(ssa_func.scr, "opcode_resolver", opcodes.DEFAULT_RESOLVER)
     ssa_blocks = ssa_func.instructions
 
+    # Compute loops for back-edge filtering in case body detection
+    loops: List[NaturalLoop] = find_all_loops(cfg)
+
     # Try to build decision tree
     start_to_block = {block.start: block_id for block_id, block in cfg.blocks.items()}
     tree_result = _build_decision_tree(
@@ -106,10 +109,10 @@ def _detect_binary_search_switch(
 
     for value, block_id in sorted(case_values.items()):
         # Find all blocks in this case body
-        # _find_case_body_blocks(cfg, case_entry, stop_blocks, resolver)
         stop_blocks = tree_blocks | ({exit_block} if exit_block else set())
         body_blocks = _find_case_body_blocks(
-            cfg, block_id, stop_blocks, resolver
+            cfg, block_id, stop_blocks, resolver,
+            loops=loops
         )
         all_blocks.update(body_blocks)
 
