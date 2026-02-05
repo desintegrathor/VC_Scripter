@@ -1423,8 +1423,24 @@ class HierarchicalCodeEmitter:
             # fall back to flat-mode rendering for case bodies with if/else structure.
             if case.body_block is not None and self._has_structured_children(case.body_block):
                 lines.extend(self._emit_block(case.body_block, indent + "    "))
-                # Mark body block IDs as emitted
+                # Emit any body blocks NOT covered by the structured body_block
                 if case.body_block_ids:
+                    covered = getattr(case.body_block, 'covered_blocks', None) or set()
+                    uncovered = sorted(
+                        set(case.body_block_ids) - covered - set(exit_ids) - self.emitted_blocks,
+                        key=lambda bid: self.cfg.blocks[bid].start if bid in self.cfg.blocks else 9999999
+                    )
+                    if uncovered:
+                        # Build stop blocks: other cases + exit + already-covered blocks
+                        case_stop_blocks: Set[int] = set(covered)
+                        for other_case in block.cases:
+                            if other_case is not case and other_case.body_block_ids:
+                                case_stop_blocks.update(other_case.body_block_ids)
+                        if block.default_case and block.default_case.body_block_ids:
+                            case_stop_blocks.update(block.default_case.body_block_ids)
+                        lines.extend(self._emit_flat_block_section(
+                            uncovered, case_stop_blocks, indent + "    ", exit_ids
+                        ))
                     self.emitted_blocks.update(set(case.body_block_ids) - set(exit_ids))
             elif case.body_block_ids:
                 lines.extend(self._emit_switch_case_body_flat(case, block, exit_ids, indent + "    "))
