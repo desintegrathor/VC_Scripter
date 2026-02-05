@@ -1228,6 +1228,7 @@ class ExpressionFormatter:
         # 1. Comparison operations (used in conditions)
         # 2. Simple operations (CAST, ADD with constants) - SSA may count uses incorrectly
         # 3. Address/pointer operations (PNT, DCP) - always inline
+        # 4. XCALL/CALL return values - the function call IS the value, there's no variable
         if len(value.uses) != 1:
             # Always inline comparisons
             if inst.mnemonic in COMPARISON_OPS:
@@ -1245,6 +1246,10 @@ class ExpressionFormatter:
             # Always inline address load operations
             elif inst.mnemonic in {"LADR", "GADR", "DADR"}:
                 pass  # Allow - address expressions should always inline
+            # Always inline XCALL/CALL return values - the function call IS the value
+            # Returning raw SSA names like "t312_ret" is always wrong for function returns
+            elif inst.mnemonic in {"XCALL", "CALL"}:
+                pass  # Allow - function calls should always render as calls
             else:
                 return False
 
@@ -1264,12 +1269,13 @@ class ExpressionFormatter:
         # DCP (dereference/load) - inline to show dereferenced value
         if inst.mnemonic == "DCP":
             return True
-        # XCALL/CALL return values with single use should be inlined
-        # This prevents duplicate function calls (standalone XCALL + inlined use)
+        # XCALL/CALL return values should be inlined UNLESS the call has output params.
+        # The function call IS the value - returning raw SSA names is always wrong.
+        # But if the call has output params, it must be emitted as a statement to populate
+        # those params, so the return value should NOT be inlined (use the variable instead).
         if inst.mnemonic in {"XCALL", "CALL"}:
-            # Only inline if exactly 1 real use (positive addresses are actual code locations)
-            real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
-            if real_uses == 1:
+            has_out_params = inst.metadata.get("has_out_params", False) if inst.metadata else False
+            if not has_out_params:
                 return True
         return False
 
@@ -1488,12 +1494,18 @@ class ExpressionFormatter:
         # and we lose the ability to inline it
         # BUT only inline when used once (as function argument) - if result is stored
         # to a variable and reused, don't inline to avoid duplicate function calls
+        # ALSO: Don't inline if the call has output params - the call needs to be
+        # emitted as a statement to populate those params, so the return value should
+        # reference the variable, not inline the call again.
         if value.producer_inst and value.producer_inst.mnemonic in {"XCALL", "CALL"}:
-            # Count only "real" uses (positive addresses are actual code locations,
-            # negative addresses are PHI/block boundary markers from SSA construction)
-            real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
-            if real_uses == 1:
-                return self._inline_expression(value, context, parent_operator)
+            # Don't inline if call has output params (would cause duplicate call emission)
+            has_out_params = value.producer_inst.metadata.get("has_out_params", False) if value.producer_inst.metadata else False
+            if not has_out_params:
+                # Count only "real" uses (positive addresses are actual code locations,
+                # negative addresses are PHI/block boundary markers from SSA construction)
+                real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
+                if real_uses == 1:
+                    return self._inline_expression(value, context, parent_operator)
 
         # PRIORITY 1: Check if value represents struct field access (ABSOLUTE HIGHEST)
         # This MUST come before rename_map to preserve field expressions like "ai_props.watchfulness"
@@ -1608,6 +1620,23 @@ class ExpressionFormatter:
             else:
                 # No rename entry - will fall through to inline rendering anyway
                 is_infix_op = True
+        # FIX: Skip rename_map for XCALL/CALL return values in two cases:
+        # 1. Renamed to raw SSA name (t###_ret) - always wrong for function returns
+        # 2. Call has output params (has_out_params) - need to use return variable, not inlined call
+        is_call_return = False
+        if value.producer_inst and value.producer_inst.mnemonic in {"XCALL", "CALL"}:
+            has_out_params = value.producer_inst.metadata.get("has_out_params", False) if value.producer_inst.metadata else False
+            if self._rename_map and value.name in self._rename_map:
+                renamed = self._rename_map[value.name]
+                # Bypass if renamed to raw SSA name (t###_ret pattern)
+                if re.match(r'^t\d+_ret$', renamed):
+                    is_call_return = True
+                # Also bypass if function has output params - we emitted statement, use return var
+                elif has_out_params:
+                    is_call_return = True
+            else:
+                # No rename entry - will fall through to inline rendering anyway
+                is_call_return = True
         is_array_indexing = False
         if value.producer_inst and value.producer_inst.mnemonic == "ADD" and len(value.producer_inst.inputs) >= 2:
             left = value.producer_inst.inputs[0]
@@ -1619,7 +1648,7 @@ class ExpressionFormatter:
         preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
                 and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op
-                and not is_infix_op):
+                and not is_infix_op and not is_call_return):
             return _strip_ssa_version_suffix(self._rename_map[value.name])
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -2703,14 +2732,36 @@ class ExpressionFormatter:
                         size_val = base_element_size
                     index_expr = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
                     # Fix: If index rendered as address of the base array (e.g., &g_will_pos),
-                    # the SSA has wrong aliasing. Try the rename_map for a better name.
+                    # the SSA has wrong aliasing. Try alternatives to find the real index.
                     if index_expr:
                         stripped = index_expr.lstrip("&")
                         if stripped == base_name:
+                            resolved = False
+                            # Try 1: rename_map for a better name
                             alt = self._rename_map.get(index_operand.name) if self._rename_map else None
                             if alt and alt != base_name and not alt.startswith("&"):
                                 index_expr = alt
-                            else:
+                                resolved = True
+                            # Try 2: The other MUL operand (the one we didn't pick as index)
+                            if not resolved:
+                                other_operand = mul_right if index_operand is mul_left else mul_left
+                                other_rendered = self._render_value(other_operand, context=ExpressionContext.IN_ARRAY_INDEX)
+                                other_stripped = other_rendered.lstrip("&") if other_rendered else ""
+                                if other_rendered and other_stripped != base_name and self._get_constant_int(other_operand) is None:
+                                    index_expr = other_rendered
+                                    resolved = True
+                            # Try 3: Trace back through producer chain to find original source
+                            # (e.g., LCP/GCP that loaded a local variable before bad aliasing)
+                            if not resolved and index_operand.producer_inst:
+                                for inp in index_operand.producer_inst.inputs:
+                                    inp_rendered = self._render_value(inp, context=ExpressionContext.IN_ARRAY_INDEX)
+                                    if inp_rendered:
+                                        inp_stripped = inp_rendered.lstrip("&")
+                                        if inp_stripped != base_name and self._get_constant_int(inp) is None:
+                                            index_expr = inp_rendered
+                                            resolved = True
+                                            break
+                            if not resolved:
                                 index_expr = None  # Can't resolve valid index
                 elif base_is_array and base_element_size:
                     index_operand = mul_left if self._get_constant_int(mul_right) == base_element_size else mul_right
@@ -3116,11 +3167,11 @@ class ExpressionFormatter:
             pass  # Debug print removed
             # print(f"  producer: {source_val.producer_inst.mnemonic}@{source_val.producer_inst.address}", file=sys.stderr)
 
-        # Pattern 3: Direct XCALL->ASGN (source is t###_ret from XCALL)
-        if source_val.producer_inst and source_val.producer_inst.mnemonic == "XCALL":
-            # Source comes directly from XCALL return value (t###_ret pattern)
-            xcall_inst = source_val.producer_inst
-            call_expr = self._format_call(xcall_inst)
+        # Pattern 3: Direct XCALL/CALL->ASGN (source is t###_ret from XCALL or CALL)
+        if source_val.producer_inst and source_val.producer_inst.mnemonic in {"XCALL", "CALL"}:
+            # Source comes directly from XCALL/CALL return value (t###_ret pattern)
+            call_inst = source_val.producer_inst
+            call_expr = self._format_call(call_inst)
             if call_expr.endswith(";"):
                 call_expr = call_expr[:-1].strip()
             # Strip off any "t###_ret = " prefix since we're replacing the target
@@ -3885,8 +3936,8 @@ class ExpressionFormatter:
             # Pattern: DCP(pointer_expr) → *pointer_expr (explicit dereference)
             else:
                 expr = f"(*{addr_rendered})"
-        elif inst.mnemonic == "XCALL":
-            # XCALL return value - inline the function call expression
+        elif inst.mnemonic in {"XCALL", "CALL"}:
+            # XCALL/CALL return value - inline the function call expression
             # This enables nested calls like SC_AnsiToUni(SC_P_GetName(x), ...)
             call_expr = self._format_call(inst)
             # _format_call returns "func(args);" - strip the trailing semicolon
@@ -4342,11 +4393,11 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                             # Found CALL+LLD+ASGN pattern!
                             call_to_assignment[instructions[check_idx].address] = inst
                             break
-            # Pattern 3: Direct XCALL->ASGN (XCALL output t###_ret used directly in ASGN)
-            elif source_val.producer_inst and source_val.producer_inst.mnemonic == "XCALL":
-                # Found ASGN with direct XCALL source (t###_ret pattern)
-                xcall_inst = source_val.producer_inst
-                xcall_to_assignment[xcall_inst.address] = inst
+            # Pattern 3: Direct XCALL/CALL->ASGN (XCALL/CALL output t###_ret used directly in ASGN)
+            elif source_val.producer_inst and source_val.producer_inst.mnemonic in {"XCALL", "CALL"}:
+                # Found ASGN with direct XCALL/CALL source (t###_ret pattern)
+                call_inst = source_val.producer_inst
+                xcall_to_assignment[call_inst.address] = inst
 
     formatted: List[FormattedExpression] = []
 

@@ -606,7 +606,13 @@ def _trace_value_to_function_call(
     producer = value.producer_inst
 
     # Direct XCALL/CALL result (rare but possible)
+    # But NOT if the call has output params - those must be emitted as statements
+    # and the return value should use the variable, not inline the call again.
     if producer.mnemonic in {"XCALL", "CALL"}:
+        has_out_params = producer.metadata.get("has_out_params", False) if producer.metadata else False
+        if has_out_params:
+            # Return None - the call must be emitted as statement, don't inline
+            return None
         return _format_xcall_expression(producer, formatter, ssa_func)
 
     # NEW PHASE 8B.2: Check if producer is LCP (stack reload pattern)
