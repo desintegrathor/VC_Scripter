@@ -1233,42 +1233,21 @@ class HierarchicalCodeEmitter:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
             else:
-                # Determine negation based on condition_negated flag
-                # When negate_condition() was called, branches were swapped.
-                # We need to invert the JZ/JNZ auto-detection to match.
-                #
-                # Logic:
-                # - JZ normally means "if (!cond)" since it jumps when zero
-                # - JNZ normally means "if (cond)" since it jumps when non-zero
-                # - When branches are swapped (condition_negated=True), we need
-                #   to flip the polarity: JZ becomes "if (cond)", JNZ becomes "if (!cond)"
-                #
-                # By passing negate=block.condition_negated, we invert the auto-detection:
-                # - If condition_negated=False: auto-detect (JZ->negate, JNZ->no negate)
-                # - If condition_negated=True: pass negate=True to flip the result
-                #   Actually, we need to pass the OPPOSITE of what JZ/JNZ would normally do
-                #
-                # Correction: render_condition auto-detects JZ->negate=True, JNZ->negate=False
-                # If branches were swapped, we want the OPPOSITE behavior.
-                # So if condition_negated=True, we pass negate=False to cancel JZ's negation
-                # or negate=True to add negation to JNZ.
-                #
-                # Actually simpler: if condition_negated, we want the opposite of auto-detect.
-                # Pass negate=None when not negated (auto-detect), but when negated:
-                # - We need to compute what auto-detect would do and flip it
-                # This is complex. Simpler approach: always pass explicit negate value.
-                #
-                # Final logic: When condition_negated=True, we want condition WITHOUT negation
-                # (because swapping branches already "negates" semantically).
-                # Pass negate=False when condition_negated=True.
-                # Pass negate=None (auto-detect) when condition_negated=False.
-                if block.condition_negated:
-                    # Branches were swapped, so emit condition without negation
-                    # The swap itself handles the semantic negation
-                    condition = self._extract_condition(block.condition_block, negate=False)
+                # Check if condition_block is a BlockList containing a BlockCondition
+                # This happens when the collapse engine partially collapses an AND/OR
+                # chain but wraps it in a BlockList with other statement blocks.
+                embedded_cond = self._find_embedded_condition(block.condition_block)
+                if embedded_cond is not None:
+                    condition = self._extract_combined_condition(embedded_cond)
                 else:
-                    # Normal case - let render_condition auto-detect from JZ/JNZ
-                    condition = self._extract_condition(block.condition_block, negate=None)
+                    # Determine negation based on condition_negated flag.
+                    # When condition_negated=True, branches were swapped, so emit
+                    # condition without negation (the swap handles semantic negation).
+                    # When condition_negated=False, let render_condition auto-detect.
+                    if block.condition_negated:
+                        condition = self._extract_condition(block.condition_block, negate=False)
+                    else:
+                        condition = self._extract_condition(block.condition_block, negate=None)
 
         if condition is None:
             condition = "/* condition */"
@@ -1306,7 +1285,14 @@ class HierarchicalCodeEmitter:
         # Get condition
         condition = block.condition_expr
         if condition is None and block.condition_block is not None:
-            condition = self._extract_condition(block.condition_block)
+            if isinstance(block.condition_block, BlockCondition):
+                condition = self._extract_combined_condition(block.condition_block)
+            else:
+                embedded_cond = self._find_embedded_condition(block.condition_block)
+                if embedded_cond is not None:
+                    condition = self._extract_combined_condition(embedded_cond)
+                else:
+                    condition = self._extract_condition(block.condition_block)
 
         if condition is None:
             condition = "/* condition */"
@@ -1394,7 +1380,14 @@ class HierarchicalCodeEmitter:
         # Get condition
         condition = block.condition_expr
         if condition is None and block.condition_block is not None:
-            condition = self._extract_condition(block.condition_block)
+            if isinstance(block.condition_block, BlockCondition):
+                condition = self._extract_combined_condition(block.condition_block)
+            else:
+                embedded_cond = self._find_embedded_condition(block.condition_block)
+                if embedded_cond is not None:
+                    condition = self._extract_combined_condition(embedded_cond)
+                else:
+                    condition = self._extract_condition(block.condition_block)
 
         if condition is None:
             condition = "/* condition */"
@@ -1481,6 +1474,112 @@ class HierarchicalCodeEmitter:
             combined = cond2
         else:
             combined = "true"
+
+        return simplify_boolean_expression(combined)
+
+    def _find_embedded_condition(self, block: StructuredBlock) -> Optional[BlockCondition]:
+        """Find a BlockCondition embedded inside a BlockList or other container.
+
+        When the collapse engine partially collapses an AND/OR chain, the result
+        may be wrapped in a BlockList alongside statement blocks. This method
+        searches for the BlockCondition component.
+        """
+        if isinstance(block, BlockCondition):
+            return block
+        if isinstance(block, BlockList):
+            for comp in block.components:
+                if isinstance(comp, BlockCondition):
+                    return comp
+                # Recurse into nested BlockLists
+                if isinstance(comp, BlockList):
+                    found = self._find_embedded_condition(comp)
+                    if found is not None:
+                        return found
+        return None
+
+    def _try_extract_and_or_chain(self, block: StructuredBlock, negate: Optional[bool]) -> Optional[str]:
+        """Extract compound AND/OR condition by walking the CFG.
+
+        When an AND/OR chain isn't collapsed into a BlockCondition (e.g., the
+        condition_block is a non-basic structured block), walk the underlying
+        CFG blocks to detect short-circuit chains:
+          - AND: consecutive JZ blocks jumping to the same false target
+          - OR:  consecutive JNZ blocks jumping to the same true target
+        """
+        cfg_ids = sorted(block.covered_blocks) if hasattr(block, 'covered_blocks') else []
+        if not cfg_ids:
+            return None
+
+        # Find the first CFG block that has a conditional jump
+        start_cfg_id = None
+        for bid in cfg_ids:
+            cfg_block = self.cfg.blocks.get(bid)
+            if cfg_block and _find_condition_jump(cfg_block, self.resolver):
+                start_cfg_id = bid
+                break
+        if start_cfg_id is None:
+            return None
+
+        # Walk forward through condition chain
+        chain = []  # List of (block_id, mnemonic, jump_target)
+        current = start_cfg_id
+        shared_target = None
+        visited = set()
+
+        while current is not None and current not in visited and len(chain) < 10:
+            visited.add(current)
+            cfg_block = self.cfg.blocks.get(current)
+            if cfg_block is None:
+                break
+            jump = _find_condition_jump(cfg_block, self.resolver)
+            if jump is None:
+                break
+
+            mnemonic = self.resolver.get_mnemonic(jump.opcode)
+            jump_target = jump.arg1
+
+            chain.append((current, mnemonic, jump_target))
+
+            if shared_target is None:
+                shared_target = jump_target
+            elif jump_target != shared_target:
+                # Chain broken — different targets
+                break
+
+            # Follow fallthrough to next condition block
+            fallthrough_id = None
+            for succ_id in cfg_block.successors:
+                if succ_id != jump_target and succ_id in cfg_ids:
+                    fallthrough_id = succ_id
+                    break
+            current = fallthrough_id
+
+        if len(chain) < 2:
+            return None
+
+        # Render each condition with negate=False (raw tested value)
+        # The AND/OR structure itself encodes the short-circuit semantics
+        conditions = []
+        for bid, mnemonic, _ in chain:
+            cond = render_condition(
+                self.ssa_func, bid, self.formatter, self.cfg,
+                self.resolver, negate=False
+            )
+            if cond and cond.text and cond.text != "true":
+                conditions.append(cond.text)
+
+        if len(conditions) < 2:
+            return None
+
+        # JZ chain = AND (all jump to false target when condition is false)
+        # JNZ chain = OR (all jump to true target when condition is true)
+        is_and = chain[0][1] == "JZ"
+        operator = " && " if is_and else " || "
+        combined = "(" + operator.join(conditions) + ")"
+
+        # Apply negation if branches were swapped
+        if negate:
+            combined = f"!{combined}"
 
         return simplify_boolean_expression(combined)
 
@@ -1929,10 +2028,12 @@ class HierarchicalCodeEmitter:
             if isinstance(block, BlockList):
                 candidate = self._find_condition_block_in_list(block)
                 if candidate is None:
-                    return None
+                    # Fallback: try to detect uncollapsed AND/OR chain via CFG walk
+                    return self._try_extract_and_or_chain(block, negate)
                 block = candidate
             else:
-                return None
+                # Fallback: try to detect uncollapsed AND/OR chain via CFG walk
+                return self._try_extract_and_or_chain(block, negate)
 
         cfg_block_id = block.original_block_id
         cfg = self.cfg
