@@ -783,8 +783,50 @@ def _render_blocks_with_loops(
                         lines.append(f"{indent}while (TRUE) {{  // loop body: blocks {sorted(header_loop.body)}")
 
             # Render loop body blocks
+            # Build map of inner loop headers that are DIRECT children of this loop.
+            # A direct child is an inner loop whose header is in this loop's body
+            # but NOT in any other inner loop's body (except as that loop's header).
+            inner_loop_headers: Dict[int, object] = {}
+            for inner_loop in func_loops:
+                if inner_loop.header != header_loop.header and inner_loop.header in header_loop.body:
+                    inner_loop_headers[inner_loop.header] = inner_loop
+
+            # Find the OUTERMOST inner loops only (direct children).
+            # If loop B contains loop C, and both are in header_loop's body,
+            # we only want B (C will be handled by B's recursion).
+            direct_inner_headers: Dict[int, object] = {}
+            for hdr, inner_loop in inner_loop_headers.items():
+                # Check if this header is contained in any OTHER inner loop's body
+                is_nested_deeper = False
+                for other_hdr, other_loop in inner_loop_headers.items():
+                    if other_hdr != hdr and hdr in other_loop.body:
+                        is_nested_deeper = True
+                        break
+                if not is_nested_deeper:
+                    direct_inner_headers[hdr] = inner_loop
+
+            # Compute body blocks consumed by direct inner loops
+            inner_consumed: Set[int] = set()
+            for inner_loop in direct_inner_headers.values():
+                inner_consumed.update(inner_loop.body)
+
             loop_body_sorted = sorted(header_loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
             for loop_body_id in loop_body_sorted:
+                # Skip blocks consumed by a direct inner loop (non-header blocks)
+                if loop_body_id in inner_consumed and loop_body_id not in direct_inner_headers:
+                    continue
+
+                # Check if this body block is a direct inner loop header - emit recursively
+                if loop_body_id in direct_inner_headers:
+                    inner_lines = _render_blocks_with_loops(
+                        [loop_body_id], indent + "    ", ssa_func, formatter, cfg, func_loops,
+                        start_to_block, resolver, block_to_if, visited_ifs,
+                        emitted_blocks, global_map, early_returns,
+                        block_to_switch, render_switch_callback, switch_exit_ids
+                    )
+                    lines.extend(inner_lines)
+                    continue
+
                 loop_body_block = cfg.blocks.get(loop_body_id)
                 if loop_body_block:
                     ssa_block = ssa_func.instructions.get(loop_body_id, [])
@@ -827,8 +869,9 @@ def _render_blocks_with_loops(
             else:
                 lines.append(f"{indent}}}")
 
-            # Mark all loop body blocks as processed
+            # Mark all loop body blocks as processed (locally and in caller's tracking)
             processed_in_loop.update(header_loop.body)
+            emitted_blocks.update(header_loop.body)
         else:
             # Regular block - render normally
             ssa_block = ssa_func.instructions.get(body_block_id, [])

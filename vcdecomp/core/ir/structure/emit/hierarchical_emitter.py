@@ -611,6 +611,50 @@ class HierarchicalCodeEmitter:
 
         return None
 
+    def _try_emit_nested_loop(self, block_id: int, indent: str, outer_loop) -> Optional[List[str]]:
+        """
+        Check if a body block is an inner loop header and emit it as a nested loop.
+
+        When emitting the body of a structured loop, any body block that is itself
+        a loop header must be emitted as a nested loop structure, not as flat statements.
+
+        Returns emitted lines if successful, None if block is not a loop header or
+        detection failed.
+        """
+        if block_id not in self._loop_header_map:
+            return None
+
+        inner_loop = self._loop_header_map[block_id]
+
+        # Don't try to recurse on the same loop (header == outer header)
+        if inner_loop.header == outer_loop.header:
+            return None
+
+        # Temporarily remove inner loop's blocks from emitted sets so
+        # _try_emit_natural_loop can process them
+        inner_blocks = set(inner_loop.body)
+        removed_emitted = inner_blocks & self.emitted_blocks
+        removed_loop_body = inner_blocks & self._emitted_as_loop_body
+        self.emitted_blocks -= inner_blocks
+        self._emitted_as_loop_body -= inner_blocks
+
+        try:
+            result = self._try_emit_natural_loop(inner_loop, indent)
+            if result is not None:
+                # Success - inner loop blocks stay marked as emitted
+                # (they were re-added by the recursive call's pre-marking)
+                return result
+            else:
+                # Detection failed - restore the marks so flat emission works
+                self.emitted_blocks |= removed_emitted
+                self._emitted_as_loop_body |= removed_loop_body
+                return None
+        except Exception:
+            # On any error, restore marks
+            self.emitted_blocks |= removed_emitted
+            self._emitted_as_loop_body |= removed_loop_body
+            return None
+
     def _emit_natural_for_loop(self, loop, for_info, indent: str) -> List[str]:
         """Emit a natural loop as a for loop."""
         lines = []
@@ -652,6 +696,16 @@ class HierarchicalCodeEmitter:
                 lines.extend(body_lines)
                 emitted_in_body.add(body_id)
             else:
+                # Check if this body block is an inner loop header
+                nested_lines = self._try_emit_nested_loop(body_id, indent + "    ", loop)
+                if nested_lines is not None:
+                    lines.extend(nested_lines)
+                    # Mark all inner loop blocks as emitted in this body
+                    inner_loop = self._loop_header_map[body_id]
+                    for bid in inner_loop.body:
+                        emitted_in_body.add(bid)
+                    continue
+
                 # Check if this block has a conditional branch to other body blocks
                 cond_lines = self._try_emit_body_block_with_condition(
                     body_id, body_set, emitted_in_body, loop, for_info, indent + "    "
@@ -852,6 +906,14 @@ class HierarchicalCodeEmitter:
             lines.append(f"{indent}if ({condition_text}) {{")
             for bid in true_blocks:
                 if bid not in emitted_in_body:
+                    # Check for nested loop first
+                    nested = self._try_emit_nested_loop(bid, indent + "    ", loop)
+                    if nested is not None:
+                        lines.extend(nested)
+                        inner_loop = self._loop_header_map[bid]
+                        for inner_bid in inner_loop.body:
+                            emitted_in_body.add(inner_bid)
+                        continue
                     is_back_edge = any(
                         be.source == bid and be.target == loop.header
                         for be in loop.back_edges
@@ -871,6 +933,14 @@ class HierarchicalCodeEmitter:
                 if unvisited_false:
                     lines[-1] = f"{indent}}} else {{"
                     for bid in unvisited_false:
+                        # Check for nested loop first
+                        nested = self._try_emit_nested_loop(bid, indent + "    ", loop)
+                        if nested is not None:
+                            lines.extend(nested)
+                            inner_loop = self._loop_header_map[bid]
+                            for inner_bid in inner_loop.body:
+                                emitted_in_body.add(inner_bid)
+                            continue
                         is_back_edge = any(
                             be.source == bid and be.target == loop.header
                             for be in loop.back_edges
@@ -888,6 +958,14 @@ class HierarchicalCodeEmitter:
             lines.append(f"{indent}if ({neg_cond}) {{")
             for bid in false_blocks:
                 if bid not in emitted_in_body:
+                    # Check for nested loop first
+                    nested = self._try_emit_nested_loop(bid, indent + "    ", loop)
+                    if nested is not None:
+                        lines.extend(nested)
+                        inner_loop = self._loop_header_map[bid]
+                        for inner_bid in inner_loop.body:
+                            emitted_in_body.add(inner_bid)
+                        continue
                     bl = self._emit_body_block_by_id(bid, indent + "    ", force=True)
                     lines.extend(bl)
                     emitted_in_body.add(bid)
@@ -954,6 +1032,11 @@ class HierarchicalCodeEmitter:
         )
 
         for body_id in body_blocks:
+            # Check if this body block is an inner loop header
+            nested_lines = self._try_emit_nested_loop(body_id, indent + "    ", loop)
+            if nested_lines is not None:
+                lines.extend(nested_lines)
+                continue
             # Emit body block by ID, force=True because pre-marked as emitted
             body_lines = self._emit_body_block_by_id(body_id, indent + "    ", force=True)
             lines.extend(body_lines)
@@ -979,6 +1062,11 @@ class HierarchicalCodeEmitter:
         )
 
         for body_id in body_blocks:
+            # Check if this body block is an inner loop header
+            nested_lines = self._try_emit_nested_loop(body_id, indent + "    ", loop)
+            if nested_lines is not None:
+                lines.extend(nested_lines)
+                continue
             # Emit body block by ID, force=True because pre-marked as emitted
             body_lines = self._emit_body_block_by_id(body_id, indent + "    ", force=True)
             lines.extend(body_lines)
