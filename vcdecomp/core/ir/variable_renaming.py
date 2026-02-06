@@ -763,28 +763,6 @@ class VariableRenamer:
         if "INC" in mnemonics_used or "DEC" in mnemonics_used:
             return "loop_counter"
 
-        # FIX #5 Phase 2: Also detect ADD/SUB pattern (i = i + 1)
-        # Loop counters are characterized by:
-        # 1. Used in ADD/SUB operation
-        # 2. Used in comparison operation (ULE, UGE, etc.)
-        # 3. Short lifetime (typical for loop counters)
-        has_add_sub = any(m in mnemonics_used for m in {"ADD", "SUB", "IADD", "ISUB"})
-        has_comparison = any(m in mnemonics_used for m in {"ULE", "UGE", "ULT", "UGT", "ILE", "IGE", "ILT", "IGT", "EQU", "NEQ", "ULES", "UGES", "ULTS", "UGTS"})
-
-        if has_add_sub and has_comparison:
-            # Very likely a loop counter
-            return "loop_counter"
-
-        # FIX #5 Phase 2: Alternative - detect variables used only in tight loops
-        # If a variable is used in ADD and then immediately in comparison, it's likely a loop counter
-        if has_add_sub and len(uses) <= 10:
-            # Check if this variable is modified within its own lifetime (classic loop counter pattern)
-            # Variable is loaded, incremented, stored back, and compared - all in small range
-            address_range = ver.last_use - ver.first_def if ver.last_use > ver.first_def else 0
-            if address_range < 50 and has_comparison:
-                # Tight loop with comparison - likely loop counter
-                return "loop_counter"
-
         # Pattern 2: Side value detection (player_info.field2 → side)
         # MUST check BEFORE temp check! Many side values are used sparingly.
         # Use addr_index for O(1) lookup of instructions near first_def
@@ -817,16 +795,11 @@ class VariableRenamer:
 
                 # Only detect as side_value if preceded by PNT (struct field access)
                 if prev_inst and prev_inst.mnemonic == 'PNT':
-                    # FIX P0.4.2: PNT + offset pattern = struct field access
-                    # Check if PNT has offset argument typical for .side/.field2 (offset 8)
-                    # Pattern: LADR &player_info → PNT +8 → DCP → ASGN
-                    pnt_offset = None
-                    if prev_inst.instruction and hasattr(prev_inst.instruction, 'instruction'):
-                        pnt_offset = prev_inst.instruction.instruction.arg1
-                    # Common field offsets: 8 (.side, .field2), 0 (first field), 4, 12, etc.
-                    # For now, accept offset 8 as strong indicator of side/field2
-                    if pnt_offset == 8:
-                        return "side_value"
+                    # Check PNT alias for .side/.field2 evidence instead of raw offset
+                    for val in prev_inst.outputs + prev_inst.inputs:
+                        if hasattr(val, 'alias') and val.alias:
+                            if any(p in val.alias for p in ['.side', '.field2', '.field_2']):
+                                return "side_value"
                 elif prev_inst and prev_inst.mnemonic == 'DADR':
                     # This is pointer->field access (FALSE POSITIVE - skip)
                     pass
@@ -852,10 +825,6 @@ class VariableRenamer:
                                 # Use only specific field patterns with dots
                                 if '.side' in inp.alias or '.field2' in inp.alias or '.field_2' in inp.alias:
                                     return "side_value"
-
-        # Pattern 3: Temp variable (used sparingly)
-        if len(uses) <= 2:
-            return "temp"
 
         return "general"
 
