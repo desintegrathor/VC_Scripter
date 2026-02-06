@@ -403,6 +403,258 @@ def _find_return_line_from_cfg_path(
     return None
 
 
+def _add_undefined_variable_declarations(
+    lines: List[str],
+    declared_vars: Set[str],
+    global_var_names: Optional[Set[str]],
+    use_counts: Optional[Dict[str, int]] = None
+) -> List[str]:
+    """
+    Add declarations for undefined variables in generated code.
+
+    This is a fallback mechanism that catches variables that were missed by
+    the primary variable collection pass (e.g., loop indices, SSA temporaries).
+
+    Args:
+        lines: List of code lines to scan and modify
+        declared_vars: Set of already-declared variable names
+        global_var_names: Set of global variable names to skip
+        use_counts: Optional use counts for DCE filtering
+
+    Returns:
+        Modified list of code lines with additional declarations inserted
+    """
+    import re
+    from typing import Set as SetType, Dict as DictType, Optional as OptType, List as ListType, Tuple as TupleType
+
+    # Helper function to scan all variables used in code
+    def _scan_all_vars(code_lines: ListType[str]) -> SetType[str]:
+        """Extract ALL variable names used in code."""
+        used = set()
+        identifier_pattern = re.compile(r'\b([a-zA-Z_]\w*)\b')
+
+        for line in code_lines:
+            # Skip comments and string literals
+            code_part = line.split('//')[0]  # Remove line comments
+            code_part = re.sub(r'/\*.*?\*/', '', code_part)  # Remove block comments
+
+            for match in identifier_pattern.finditer(code_part):
+                var_name = match.group(1)
+                used.add(var_name)
+
+        return used
+
+    # Helper function to infer struct type from field access patterns
+    def _infer_struct_type_from_fields(var_name: str, code_lines: ListType[str]) -> OptType[str]:
+        """Try to determine struct type from field access patterns."""
+        field_pattern = re.compile(rf'{re.escape(var_name)}[.-]>?(\w+)')
+        fields_accessed = set()
+
+        for line in code_lines:
+            matches = field_pattern.findall(line)
+            fields_accessed.update(matches)
+
+        # Match against known struct types based on field names
+        if 'watchfulness' in fields_accessed or 'zerodist' in fields_accessed:
+            return "s_SC_P_AI_props"
+        if 'side' in fields_accessed and 'master_nod' in fields_accessed:
+            return "s_SC_P_info"
+        if fields_accessed and any(f.startswith('field') for f in fields_accessed):
+            return "dword"
+
+        return None
+
+    # Helper function to infer variable type from usage patterns
+    def _infer_type_from_usage(var_name: str, code_lines: ListType[str]) -> str:
+        """Infer variable type from how it's used in code."""
+
+        # Check for struct member access
+        struct_access_pattern = re.compile(rf'\b{re.escape(var_name)}[.-]>?\w+')
+        for line in code_lines:
+            if struct_access_pattern.search(line):
+                struct_type = _infer_struct_type_from_fields(var_name, code_lines)
+                return struct_type if struct_type else "dword"
+
+        # Check for pointer dereference
+        pointer_deref_pattern = re.compile(rf'\(\*{re.escape(var_name)}\)|\*{re.escape(var_name)}\b')
+        for line in code_lines:
+            if pointer_deref_pattern.search(line):
+                return "int*"
+
+        # Check for array access
+        array_access_pattern = re.compile(rf'{re.escape(var_name)}\[')
+        for line in code_lines:
+            if array_access_pattern.search(line):
+                return "int"
+
+        # Check for float operations
+        float_keywords = ['frnd', 'fabs', 'sqrt', 'sin', 'cos']
+        for line in code_lines:
+            if var_name in line:
+                for keyword in float_keywords:
+                    if keyword in line:
+                        return "float"
+
+        # Check for function calls with &var
+        address_of_pattern = re.compile(rf'(\w+)\(&{re.escape(var_name)}\b')
+        for line in code_lines:
+            match = address_of_pattern.search(line)
+            if match:
+                func_name = match.group(1)
+                if "GetAtgSettings" in func_name:
+                    return "s_SC_MP_SRV_AtgSettings"
+                elif "GetInfo" in func_name or "P_info" in func_name:
+                    return "s_SC_P_info"
+                elif "GetSettings" in func_name:
+                    return "s_SC_MP_SRV_settings"
+                elif "SC_MP_EnumPlayers" in func_name:
+                    return "s_SC_MP_EnumPlayers[64]"
+
+        # Default to int
+        return "int"
+
+    def _has_assignment(var_name: str, code_lines: ListType[str]) -> bool:
+        """Check if a variable has any assignments in the code."""
+        # Pattern 1: Direct assignment (var = expr)
+        assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*=[^=]')
+
+        # Pattern 2: Compound assignment
+        compound_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*[+\-*/&|^%]+=')
+
+        # Pattern 3: Increment/decrement
+        incr_decr_pattern = re.compile(rf'(\+\+|\-\-)\s*{re.escape(var_name)}\b|\b{re.escape(var_name)}\s*(\+\+|\-\-)')
+
+        # Pattern 4: Address-of passed to function
+        address_of_pattern = re.compile(rf'\w+\s*\([^)]*&{re.escape(var_name)}\b')
+
+        # Pattern 5: For-loop initialization
+        for_init_pattern = re.compile(rf'for\s*\(\s*{re.escape(var_name)}\s*=')
+
+        # Pattern 6: Array element assignment
+        array_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*\[[^\]]*\]\s*=[^=]')
+
+        # Pattern 7: Struct field assignment
+        struct_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*[.-]>\s*\w+\s*=[^=]')
+
+        for line in code_lines:
+            if assign_pattern.search(line):
+                return True
+            if compound_assign_pattern.search(line):
+                return True
+            if incr_decr_pattern.search(line):
+                return True
+            if address_of_pattern.search(line):
+                return True
+            if for_init_pattern.search(line):
+                return True
+            if array_assign_pattern.search(line):
+                return True
+            if struct_assign_pattern.search(line):
+                return True
+
+        return False
+
+    def _is_unused_temporary(var_name: str, counts: OptType[DictType[str, int]]) -> bool:
+        """Check if a variable is an unused temporary."""
+        if counts is None:
+            return False
+        return counts.get(var_name, 0) == 0
+
+    # C keywords and built-in identifiers to skip
+    c_keywords = {
+        'if', 'else', 'while', 'for', 'return', 'break', 'continue', 'switch', 'case', 'default',
+        'int', 'float', 'double', 'void', 'char', 'short', 'long', 'unsigned', 'signed',
+        'struct', 'union', 'enum', 'typedef', 'sizeof', 'const', 'static', 'extern',
+        'true', 'false', 'TRUE', 'FALSE', 'NULL',
+        'dword', 'BOOL', 'byte'
+    }
+
+    # Built-in type names
+    builtin_types = {
+        'c_Vector3', 's_SC_P_info', 's_SC_P_AI_props', 's_SC_OBJ_info', 's_SC_MP_hud',
+        's_SC_MP_SRV_settings', 's_SC_L_info', 's_SC_P_Create'
+    }
+
+    # Scan for all used variables
+    used_vars = _scan_all_vars(lines)
+
+    # Filter to find undefined variables
+    undefined_vars = set()
+    for var_name in used_vars:
+        # Skip if already declared
+        if var_name in declared_vars:
+            continue
+
+        # Skip C keywords and built-in types
+        if var_name in c_keywords or var_name in builtin_types:
+            continue
+
+        # Skip function names (SC_*, func_*)
+        if var_name.startswith('SC_') or var_name.startswith('func_'):
+            continue
+
+        # Skip constants and macros (all caps)
+        if var_name.isupper():
+            continue
+
+        # Skip type names (s_*, c_*)
+        if var_name.startswith('s_') or var_name.startswith('c_'):
+            continue
+
+        # Skip global variables
+        from .analysis.variables import _is_global_variable
+        if _is_global_variable(var_name, global_var_names or None):
+            continue
+
+        # At this point, var_name has passed all filters - it needs declaration
+        # Only exclude very short numeric patterns
+        if len(var_name) <= 2 and var_name.isdigit():
+            continue
+
+        undefined_vars.add(var_name)
+
+    # Infer types and create declarations
+    var_declarations_to_add: ListType[TupleType[str, str]] = []
+    for var_name in sorted(undefined_vars):
+        # DCE filtering
+        if _is_unused_temporary(var_name, use_counts):
+            debug_print(f"DEBUG: Fallback DCE - Skipping unused temp: {var_name}")
+            continue
+
+        # NOTE: We previously filtered out "used but never assigned" variables
+        # However, this causes compilation errors (undefined identifiers).
+        # It's better to declare the variable (even with undefined value) than
+        # to have a compile error. The user can then investigate the issue.
+        # The _has_assignment check is kept for reference but not used:
+        has_assign = _has_assignment(var_name, lines)
+        if not has_assign:
+            debug_print(f"DEBUG: Fallback - Variable used but never assigned (declaring anyway): {var_name}")
+            # Still declare it - compilation errors are worse than undefined behavior
+
+        var_type = _infer_type_from_usage(var_name, lines)
+        var_declarations_to_add.append((var_type, var_name))
+
+    # Insert declarations after function signature
+    if var_declarations_to_add:
+        # Find the insertion point (after opening brace, before first code)
+        insert_pos = 1
+        for i, line in enumerate(lines):
+            if line.strip().endswith('{'):
+                insert_pos = i + 1
+                break
+
+        # Add declarations
+        for var_type, var_name in var_declarations_to_add:
+            lines.insert(insert_pos, f"    {var_type} {var_name};  // Auto-generated")
+            insert_pos += 1
+
+        # Add blank line after auto-generated declarations
+        if var_declarations_to_add:
+            lines.insert(insert_pos, "")
+
+    return lines
+
+
 def format_structured_function(ssa_func: SSAFunction) -> str:
     """
     Format SSA function as structured C-like code (legacy version).
@@ -898,6 +1150,36 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         output_lines.extend(body_lines)
 
         output_lines.append("}")
+
+        # FALLBACK: Add declarations for any undefined variables not caught by primary collection
+        # This is essential for loop indices, SSA temporaries, etc. that the primary pass misses
+        declared_vars_set = set()
+        # Add params from signature
+        if '(' in signature:
+            params_start = signature.find('(')
+            params_end = signature.find(')')
+            if params_start > 0 and params_end > params_start:
+                params_str = signature[params_start+1:params_end].strip()
+                if params_str and params_str != 'void':
+                    for param_part in params_str.split(','):
+                        words = param_part.strip().split()
+                        if words:
+                            param_name = words[-1].lstrip('*').split('[')[0]
+                            declared_vars_set.add(param_name)
+        # Add declarations from filtered_decls
+        for var_decl in filtered_decls:
+            parts = var_decl.split()
+            if len(parts) >= 2:
+                var_name = parts[-1].split('[')[0].rstrip(';')
+                declared_vars_set.add(var_name)
+
+        output_lines = _add_undefined_variable_declarations(
+            output_lines,
+            declared_vars_set,
+            _known_globals,
+            use_counts=None  # DCE already applied above
+        )
+
         return "\n".join(output_lines)
 
     # =========================================================================
@@ -2078,6 +2360,17 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         # Pattern 4: Address-of passed to function (func(&var)) - callee may assign
         address_of_pattern = re.compile(rf'\w+\s*\([^)]*&{re.escape(var_name)}\b')
 
+        # Pattern 5: For-loop initialization: for (var = ...; ...)
+        # This is critical - for-loop headers are NOT matched by simple assign_pattern
+        # because the loop header structure differs from a simple assignment statement
+        for_init_pattern = re.compile(rf'for\s*\(\s*{re.escape(var_name)}\s*=')
+
+        # Pattern 6: Array element assignment: var[...] = expr
+        array_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*\[[^\]]*\]\s*=[^=]')
+
+        # Pattern 7: Struct field assignment through variable: var.field = or var->field =
+        struct_assign_pattern = re.compile(rf'\b{re.escape(var_name)}\s*[.-]>\s*\w+\s*=[^=]')
+
         for line in lines:
             if assign_pattern.search(line):
                 return True
@@ -2086,6 +2379,12 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             if incr_decr_pattern.search(line):
                 return True
             if address_of_pattern.search(line):
+                return True
+            if for_init_pattern.search(line):
+                return True
+            if array_assign_pattern.search(line):
+                return True
+            if struct_assign_pattern.search(line):
                 return True
 
         return False
@@ -2182,50 +2481,28 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
         if _is_global_variable(var_name, global_var_names or None):
             continue
 
-        # Now check if this variable SHOULD be declared
-        # Include all remaining identifiers that aren't obviously constants/types
-        needs_declaration = False
+        # At this point, var_name has passed all filters:
+        # - Not already declared
+        # - Not a C keyword or builtin type
+        # - Not a function name (SC_*, func_*)
+        # - Not a constant/macro (all caps)
+        # - Not a type name (s_*, c_*)
+        # - Not a global variable
+        #
+        # Therefore, it's a local variable that needs declaration.
+        # Use a catch-all approach rather than a whitelist.
+        needs_declaration = True
 
-        # Pattern 1: local_X (stack variables)
-        if var_name.startswith('local_'):
-            needs_declaration = True
-
-        # Pattern 2: tXXX_X (SSA temporaries)
-        elif var_name.startswith('t') and '_' in var_name and var_name[1:].split('_')[0].isdigit():
-            needs_declaration = True
-
-        # Pattern 3: Single letter variables (i, j, k, tmp, etc.)
-        elif len(var_name) == 1 and var_name in 'ijklmnxyz':
-            needs_declaration = True
-
-        # Pattern 4: Common variable names (tmp, retval, props, etc.)
-        elif var_name in {'tmp', 'tmp1', 'tmp2', 'retval', 'result', 'idx', 'index'}:
-            needs_declaration = True
-
-        # Pattern 5: Variables with struct field access (detected by _infer_type_from_usage)
-        elif any(f'{var_name}.' in line or f'{var_name}->' in line for line in lines):
-            needs_declaration = True
-
-        # Pattern 6: Pointer dereferences
-        elif any(f'(*{var_name})' in line or f'*{var_name}' in line for line in lines):
-            needs_declaration = True
-
-        # Pattern 7: Variables that look like semantic names from variable renaming
-        elif var_name in {'ai_props', 'player_info', 'obj_info', 'srv_settings', 'hudinfo',
-                          'side', 'sideA', 'sideB', 'master', 'nod', 'enemy'}:
-            needs_declaration = True
-
-        # Pattern 8: Variables used with array indexing (var[index])
-        # BUGFIX: Global arrays like abl_list need to be declared
-        elif any(f'{var_name}[' in line for line in lines):
-            needs_declaration = True
+        # Only EXCLUDE specific patterns that shouldn't be declared:
+        # - Very short numeric-looking patterns that might be false positives
+        if len(var_name) <= 2 and var_name.isdigit():
+            needs_declaration = False
 
         if needs_declaration:
             undefined_vars.add(var_name)
 
     # 4. Infer types for undefined variables
     # PHASE 5: Apply DCE filtering before adding declarations
-    # PHASE 6: Skip variables that are used but never assigned (broken PHI references)
     var_declarations_to_add: ListType[Tuple[str, str]] = []
     for var_name in sorted(undefined_vars):
         # PHASE 5: Skip unused temporaries (dead code elimination)
@@ -2233,12 +2510,14 @@ def format_structured_function_named(ssa_func: SSAFunction, func_name: str, entr
             debug_print(f"DEBUG: PHASE 5 DCE - Skipping unused temp from undefined vars: {var_name}")
             continue
 
-        # PHASE 6: Skip variables that are used but never assigned
-        # These come from broken PHI nodes or incorrect SSA analysis
-        # They would cause compilation errors (undefined behavior)
-        if not _has_assignment(var_name, lines):
-            debug_print(f"DEBUG: PHASE 6 - Skipping undefined variable (no assignment): {var_name}")
-            continue
+        # NOTE: We previously filtered out "used but never assigned" variables (PHASE 6)
+        # However, this causes compilation errors (undefined identifiers).
+        # It's better to declare the variable (even with undefined value) than
+        # to have a compile error. The user can then investigate the issue.
+        has_assign = _has_assignment(var_name, lines)
+        if not has_assign:
+            debug_print(f"DEBUG: PHASE 6 - Variable used but never assigned (declaring anyway): {var_name}")
+            # Still declare it - compilation errors are worse than undefined behavior
 
         var_type = _infer_type_from_usage(var_name, lines)
         var_declarations_to_add.append((var_type, var_name))
