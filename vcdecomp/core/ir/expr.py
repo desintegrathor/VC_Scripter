@@ -2398,6 +2398,136 @@ class ExpressionFormatter:
 
         return None
 
+    def _decompose_multidim_index(self, value: SSAValue) -> Optional[str]:
+        """
+        Decompose nested ADD(ADD(...GADR..., MUL(i, stride1)), MUL(j, stride2)) chains
+        into multi-dimensional array notation like base[i][j][k].
+
+        Walks the ADD chain collecting (stride, index_expr) terms, then matches them
+        against known array_strides from GlobalResolver to produce correct subscripts.
+        Returns notation like "gRecTimer[i][j][k]" or None if pattern doesn't match.
+        """
+        if not value.producer_inst or value.producer_inst.mnemonic != "ADD":
+            return None
+
+        # Walk the nested ADD chain, collecting index terms
+        # Each term is (stride_value: int, index_ssa: SSAValue) or (byte_offset: int, None) for constants
+        terms = []  # List of (stride, index_ssa_or_None)
+        current = value
+
+        while current.producer_inst and current.producer_inst.mnemonic == "ADD" and len(current.producer_inst.inputs) == 2:
+            add_inst = current.producer_inst
+            left = add_inst.inputs[0]
+            right = add_inst.inputs[1]
+
+            # Check if right side is MUL(index, stride)
+            if right.producer_inst and right.producer_inst.mnemonic in {"MUL", "IMUL"} and len(right.producer_inst.inputs) == 2:
+                mul_left = right.producer_inst.inputs[0]
+                mul_right = right.producer_inst.inputs[1]
+
+                stride = self._get_constant_int(mul_right)
+                index_operand = mul_left
+                if stride is None:
+                    stride = self._get_constant_int(mul_left)
+                    index_operand = mul_right
+                if stride is not None and stride > 0:
+                    terms.append((stride, index_operand))
+                    current = left
+                    continue
+
+            # Check if right side is a constant byte offset (for constant indices)
+            const_offset = self._get_constant_int(right)
+            if const_offset is not None and const_offset > 0:
+                terms.append((const_offset, None))  # None = constant offset, not MUL
+                current = left
+                continue
+
+            # Can't decompose further
+            break
+
+        # We need at least 2 terms to qualify as multi-dimensional
+        if len(terms) < 2:
+            return None
+
+        # Current should now be the GADR base
+        if not current.producer_inst or current.producer_inst.mnemonic != "GADR":
+            return None
+
+        gadr_inst = current.producer_inst
+        if not gadr_inst.instruction or not gadr_inst.instruction.instruction:
+            return None
+
+        gadr_offset = gadr_inst.instruction.instruction.arg1  # dword offset
+        if gadr_offset not in self._global_type_info:
+            return None
+
+        global_info = self._global_type_info[gadr_offset]
+        if not global_info.is_array_base or not global_info.array_strides or not global_info.array_element_size:
+            return None
+
+        # Build the full list of expected strides: array_strides (descending) + element_size
+        # e.g., for [2][6][32] of float(4): expected = [768, 128, 4]
+        expected_strides = list(global_info.array_strides) + [global_info.array_element_size]
+
+        # Get base name
+        base_name = self._global_names.get(gadr_offset)
+        if not base_name:
+            base_name = self._render_value(current)
+            if base_name.startswith("&"):
+                base_name = base_name[1:]
+
+        # Match collected terms to expected strides
+        # Terms were collected outermost-first (rightmost ADD first), but strides should be
+        # assigned largest-first. Sort terms by stride value descending.
+        # First, separate MUL terms from constant-offset terms
+        mul_terms = [(s, idx) for s, idx in terms if idx is not None]
+        const_terms = [(s, idx) for s, idx in terms if idx is None]
+
+        # Build subscript list matching expected strides
+        subscripts = []  # will be [expr_str, expr_str, ...] for each dimension
+        used_strides = set()
+
+        for expected_stride in expected_strides:
+            matched = False
+            # Try to match a MUL term with this stride
+            for i, (stride, index_operand) in enumerate(mul_terms):
+                if stride == expected_stride and i not in used_strides:
+                    idx_str = self._render_value(index_operand, context=ExpressionContext.IN_ARRAY_INDEX)
+                    # Validate: index should not be the base array address
+                    if idx_str and idx_str.lstrip("&") != base_name:
+                        subscripts.append(idx_str)
+                        used_strides.add(i)
+                        matched = True
+                        break
+
+            if not matched:
+                # Try to match constant terms that divide evenly by this stride
+                for j, (const_val, _) in enumerate(const_terms):
+                    combined_idx = len(mul_terms) + j
+                    if combined_idx not in used_strides and const_val % expected_stride == 0:
+                        idx_val = const_val // expected_stride
+                        subscripts.append(str(idx_val))
+                        used_strides.add(combined_idx)
+                        # Subtract matched portion from const_val for remaining strides
+                        matched = True
+                        break
+
+            if not matched:
+                # This stride wasn't covered - assume index 0
+                subscripts.append("0")
+
+        if not subscripts:
+            return None
+
+        # Build result: base[i][j][k]
+        result = base_name + "".join(f"[{s}]" for s in subscripts)
+
+        # Notify type tracker
+        if self._type_tracker:
+            self._type_tracker.record_array_usage(base_name, result)
+
+        return result
+
     def _detect_array_indexing(self, value: SSAValue) -> Optional[str]:
         """
         Detect array indexing pattern: GADR/DADR base + (index * element_size)
@@ -2409,6 +2539,11 @@ class ExpressionFormatter:
             return None
 
         inst = value.producer_inst
+
+        # Try multi-dimensional array decomposition first (for nested ADD/MUL chains)
+        multidim = self._decompose_multidim_index(value)
+        if multidim:
+            return multidim
 
         # Pattern 0: ADD(ADR(local_X), offset) → local_X.fieldN  (plain structure field access)
         # Or: ADD(ADD(ADR(local_X), offset1), offset2) → local_X.fieldN
