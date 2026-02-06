@@ -1176,9 +1176,55 @@ class HierarchicalCodeEmitter:
 
         return lines
 
+    def _is_empty_branch(self, branch: Optional[StructuredBlock]) -> bool:
+        """Check if a branch block would produce zero visible statements.
+
+        Used to detect boolean PHI diamonds where both branches only contain
+        GCP constant loads consumed by a PHI node (no user-visible code).
+        """
+        if branch is None:
+            return True
+        if isinstance(branch, BlockBasic):
+            block_id = branch.original_block_id
+            if block_id < 0:
+                return True
+            from ..emit.code_emitter import _render_block_statements
+            stmts = _render_block_statements(
+                self.ssa_func, block_id, self.formatter, self.resolver, self.global_map
+            )
+            return len(stmts) == 0
+        if isinstance(branch, BlockList):
+            # A BlockList is empty if all its components are empty
+            return all(self._is_empty_branch(comp) for comp in branch.components)
+        return False
+
     def _emit_if(self, block: BlockIf, indent: str) -> List[str]:
         """Emit an if-then-else structure."""
         lines = []
+
+        # Skip empty if/else diamonds (boolean PHI patterns).
+        # When both branches produce zero statements (only GCP constants for PHI + JMP),
+        # the diamond was consumed by _detect_boolean_phi() in the expression renderer.
+        if self._is_empty_branch(block.true_block) and self._is_empty_branch(block.false_block):
+            # Mark all covered blocks as emitted so they don't appear elsewhere
+            if block.true_block is not None:
+                for bid in block.true_block.covered_blocks:
+                    self.emitted_blocks.add(bid)
+            if block.false_block is not None:
+                for bid in block.false_block.covered_blocks:
+                    self.emitted_blocks.add(bid)
+            # Still emit condition block statements (LCP etc.) if any
+            if block.condition_block is not None:
+                for bid in block.condition_block.covered_blocks:
+                    self.emitted_blocks.add(bid)
+                cond_lines = self._emit_block(block.condition_block, indent)
+                if cond_lines:
+                    # Filter out the if/goto line that _emit_block may produce
+                    filtered = [l for l in cond_lines
+                                if not l.lstrip().startswith("if (") and not l.lstrip().startswith("if(")
+                                and not l.lstrip().startswith("goto ")]
+                    lines.extend(filtered)
+            return lines
 
         # Get condition
         condition = block.condition_expr

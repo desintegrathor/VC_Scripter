@@ -1505,6 +1505,13 @@ class ExpressionFormatter:
             if real_uses == 1:
                 return self._inline_expression(value, context, parent_operator)
 
+        # PRIORITY 0.5: Detect boolean negation/identity PHI pattern early.
+        # Must come BEFORE constant/alias resolution, which would reduce PHI(0,1) to "1".
+        if value.producer_inst and value.producer_inst.mnemonic == "PHI" and len(value.producer_inst.inputs) == 2:
+            bool_result = self._detect_boolean_phi(value)
+            if bool_result is not None:
+                return bool_result
+
         # PRIORITY 1: Check if value represents struct field access (ABSOLUTE HIGHEST)
         # This MUST come before rename_map to preserve field expressions like "ai_props.watchfulness"
         # Otherwise, if rename_map contains {"t456_0": "j"}, we'd return "j" and lose field access
@@ -2525,6 +2532,162 @@ class ExpressionFormatter:
             self._type_tracker.record_array_usage(base_name, result)
 
         return result
+
+    def _detect_boolean_phi(self, value: SSAValue) -> Optional[str]:
+        """
+        Detect boolean negation/identity PHI pattern from a JZ diamond.
+
+        The VC compiler implements `!value` as a CFG diamond:
+          cond_block: LCP → JZ → {zero_path, nonzero_path}
+          zero_path:  GCP 1 → JMP → merge  (JZ target = value was 0 → push 1)
+          nonzero_path: GCP 0 → JMP → merge (fall-through = value was nonzero → push 0)
+          merge: PHI(1, 0) = !value
+
+        Returns "!cond" or "cond" if pattern matches, None otherwise.
+        """
+        phi = value.producer_inst
+        if not phi or phi.mnemonic != "PHI" or len(phi.inputs) != 2:
+            return None
+
+        # Get constant values for both PHI inputs
+        const_vals = {}  # input_index -> int_value
+        for i, inp in enumerate(phi.inputs):
+            cv = self._constant_propagator.get_constant(inp)
+            if cv is not None and isinstance(cv.value, (int, float)):
+                int_val = int(cv.value)
+                if int_val in (0, 1):
+                    const_vals[i] = int_val
+        if len(const_vals) != 2:
+            return None
+        vals_set = set(const_vals.values())
+        if vals_set != {0, 1}:
+            return None
+
+        # We have PHI(0, 1) or PHI(1, 0). Now find the condition block.
+        # phi_sources: [(pred_block_id, source_name), ...]
+        phi_sources = value.phi_sources
+        if not phi_sources or len(phi_sources) != 2:
+            return None
+
+        pred_block_ids = [src[0] for src in phi_sources]
+        cfg = self._ssa_func.cfg
+
+        # Walk back from each PHI source through single-predecessor chains
+        # to find the common condition block. The diamond may have passthrough blocks:
+        #   cond → {jz_target, fallthrough}
+        #   jz_target: GCP → merge (direct)
+        #   fallthrough: JMP → gcp_block: GCP → merge (indirect)
+        def _walk_to_condition(block_id, max_depth=3):
+            """Walk back through single-predecessor chains, collecting visited blocks."""
+            chain = [block_id]
+            current = block_id
+            for _ in range(max_depth):
+                b = cfg.blocks.get(current)
+                if not b or len(b.predecessors) != 1:
+                    break
+                pred = next(iter(b.predecessors))
+                chain.append(pred)
+                current = pred
+            return chain
+
+        chain_0 = _walk_to_condition(pred_block_ids[0])
+        chain_1 = _walk_to_condition(pred_block_ids[1])
+
+        # Find common block in the two chains (the condition block)
+        set_0 = set(chain_0)
+        cond_block_id = None
+        for bid in chain_1:
+            if bid in set_0:
+                cond_block_id = bid
+                break
+        if cond_block_id is None:
+            return None
+
+        cond_block = cfg.blocks.get(cond_block_id)
+        if not cond_block or len(cond_block.successors) != 2:
+            return None
+
+        # Find JZ/JNZ instruction in the condition block
+        cond_insts = self._ssa_func.instructions.get(cond_block_id, [])
+        jz_inst = None
+        for inst in reversed(cond_insts):
+            if inst.mnemonic in {"JZ", "JNZ"}:
+                jz_inst = inst
+                break
+        if not jz_inst or not jz_inst.inputs:
+            return None
+
+        # Get the condition value (input to JZ/JNZ)
+        cond_value = jz_inst.inputs[0]
+
+        # Determine which successor of the condition block is the JZ/JNZ target
+        jz_target_addr = jz_inst.instruction.instruction.arg1
+        jz_target_succ = None
+        fallthrough_succ = None
+        for succ_id in cond_block.successors:
+            succ = cfg.blocks.get(succ_id)
+            if succ and succ.start == jz_target_addr:
+                jz_target_succ = succ_id
+            else:
+                fallthrough_succ = succ_id
+
+        if jz_target_succ is None or fallthrough_succ is None:
+            return None
+
+        # Map each condition successor to the PHI source it leads to
+        # JZ target → one of {pred_block_ids[0], pred_block_ids[1]}
+        # Fallthrough → the other one
+        def _reaches_phi_source(start_id, target_ids, max_depth=3):
+            """Check which PHI source block is reachable from start."""
+            current = start_id
+            for _ in range(max_depth):
+                if current in target_ids:
+                    return current
+                b = cfg.blocks.get(current)
+                if not b or len(b.successors) != 1:
+                    return None
+                current = next(iter(b.successors))
+            return None
+
+        target_set = set(pred_block_ids)
+        jz_phi_source = _reaches_phi_source(jz_target_succ, target_set)
+        ft_phi_source = _reaches_phi_source(fallthrough_succ, target_set)
+
+        if jz_phi_source is None or ft_phi_source is None:
+            return None
+
+        # Find which PHI input index corresponds to the JZ target path
+        jz_target_idx = None
+        for i, (pred_id, _) in enumerate(phi_sources):
+            if pred_id == jz_phi_source:
+                jz_target_idx = i
+                break
+        if jz_target_idx is None:
+            return None
+
+        jz_target_const = const_vals[jz_target_idx]
+
+        # JZ: jumps when condition == 0
+        #   If JZ target produces 1: PHI = !condition (zero → 1, nonzero → 0)
+        #   If JZ target produces 0: PHI = condition (zero → 0, nonzero → 1)
+        # JNZ: jumps when condition != 0
+        #   If JNZ target produces 1: PHI = condition (nonzero → 1, zero → 0)
+        #   If JNZ target produces 0: PHI = !condition (nonzero → 0, zero → 1)
+        if jz_inst.mnemonic == "JZ":
+            is_negation = (jz_target_const == 1)
+        else:  # JNZ
+            is_negation = (jz_target_const == 0)
+
+        # Render the condition
+        cond_text = self._render_value(cond_value)
+
+        if is_negation:
+            # Wrap in ! - add parens if condition has spaces (complex expression)
+            if " " in cond_text:
+                return f"!({cond_text})"
+            return f"!{cond_text}"
+        else:
+            return cond_text
 
     def _detect_array_indexing(self, value: SSAValue) -> Optional[str]:
         """
