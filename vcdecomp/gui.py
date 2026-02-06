@@ -303,8 +303,12 @@ class App:
         ttk.Label(dec_frame, text="Header (optional):").grid(row=2, column=0, sticky="w", **pad)
         ttk.Entry(dec_frame, textvariable=self.decompile_header, width=50, state="readonly"
                   ).grid(row=2, column=1, sticky="ew", **pad)
-        ttk.Button(dec_frame, text="Select header",
-                   command=self._select_decompile_header).grid(row=2, column=2, **pad)
+        hdr_btn_frame = ttk.Frame(dec_frame)
+        hdr_btn_frame.grid(row=2, column=2, **pad)
+        ttk.Button(hdr_btn_frame, text="Select header",
+                   command=self._select_decompile_header).pack(side="left")
+        ttk.Button(hdr_btn_frame, text="Clear",
+                   command=self._clear_decompile_header).pack(side="left", padx=(4, 0))
 
         # Output row
         ttk.Label(dec_frame, text="Output:").grid(row=3, column=0, sticky="w", **pad)
@@ -381,6 +385,10 @@ class App:
         if path:
             self.decompile_header.set(path)
             self._persist()
+
+    def _clear_decompile_header(self):
+        self.decompile_header.set("")
+        self._persist()
 
     def _select_decompile_output(self):
         path = filedialog.askdirectory(title="Select output directory")
