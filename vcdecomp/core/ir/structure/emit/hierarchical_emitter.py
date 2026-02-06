@@ -1232,6 +1232,8 @@ class HierarchicalCodeEmitter:
             # Check if condition_block is a combined condition (AND/OR)
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
+                if block.condition_negated:
+                    condition = f"!({condition})"
             else:
                 # Check if condition_block is a BlockList containing a BlockCondition
                 # This happens when the collapse engine partially collapses an AND/OR
@@ -1239,6 +1241,8 @@ class HierarchicalCodeEmitter:
                 embedded_cond = self._find_embedded_condition(block.condition_block)
                 if embedded_cond is not None:
                     condition = self._extract_combined_condition(embedded_cond)
+                    if block.condition_negated:
+                        condition = f"!({condition})"
                 else:
                     # Determine negation based on condition_negated flag.
                     # When condition_negated=True, branches were swapped, so emit
@@ -1287,10 +1291,14 @@ class HierarchicalCodeEmitter:
         if condition is None and block.condition_block is not None:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
+                if getattr(block, 'condition_negated', False):
+                    condition = f"!({condition})"
             else:
                 embedded_cond = self._find_embedded_condition(block.condition_block)
                 if embedded_cond is not None:
                     condition = self._extract_combined_condition(embedded_cond)
+                    if getattr(block, 'condition_negated', False):
+                        condition = f"!({condition})"
                 else:
                     condition = self._extract_condition(block.condition_block)
 
@@ -1382,10 +1390,14 @@ class HierarchicalCodeEmitter:
         if condition is None and block.condition_block is not None:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
+                if getattr(block, 'condition_negated', False):
+                    condition = f"!({condition})"
             else:
                 embedded_cond = self._find_embedded_condition(block.condition_block)
                 if embedded_cond is not None:
                     condition = self._extract_combined_condition(embedded_cond)
+                    if getattr(block, 'condition_negated', False):
+                        condition = f"!({condition})"
                 else:
                     condition = self._extract_condition(block.condition_block)
 

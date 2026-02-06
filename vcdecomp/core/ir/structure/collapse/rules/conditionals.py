@@ -17,11 +17,26 @@ from ...blocks.hierarchy import (
     BlockGraph,
     StructuredBlock,
     BlockIf,
+    BlockCondition,
     BlockEdge,
 )
 from ....expr import ExpressionFormatter, format_block_expressions
 
 _SIDE_EFFECT_MNEMONICS = {"CALL", "XCALL", "STORE", "DCP", "ASGN"}
+
+
+def _is_true_edge(block: StructuredBlock, edge_idx: int) -> bool:
+    """Determine if out_edges[edge_idx] is the TRUE (condition-satisfied) path.
+
+    JZ convention: edge[0] = FALSE (jump target), edge[1] = TRUE (fallthrough)
+    BlockCondition AND: edge[0] = TRUE, edge[1] = FALSE
+    BlockCondition OR:  edge[0] = FALSE, edge[1] = TRUE (matches JZ)
+    """
+    if isinstance(block, BlockCondition) and not block.is_or:
+        # AND: edge[0]=TRUE, edge[1]=FALSE — inverted from JZ
+        return edge_idx == 0
+    # JZ and OR: edge[0]=FALSE, edge[1]=TRUE
+    return edge_idx == 1
 
 
 def _get_expression_formatter(graph: BlockGraph) -> Optional[ExpressionFormatter]:
@@ -116,31 +131,38 @@ class RuleBlockProperIf(CollapseRule):
         return False
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        succ1 = block.out_edges[0].target  # Jump target (FALSE path for JZ)
-        succ2 = block.out_edges[1].target  # Fallthrough (TRUE path for JZ)
+        succ1 = block.out_edges[0].target
+        succ2 = block.out_edges[1].target
 
         # Determine which is body and which is merge
-        # Edge ordering: index 0 = jump target (FALSE for JZ), index 1 = fallthrough (TRUE for JZ)
         if (succ1.has_single_successor() and
             succ1.get_single_successor() == succ2 and
             succ1.has_single_predecessor()):
-            # succ1 (jump target / FALSE path) is the body
+            # succ1 (edge[0]) is the body
             body = succ1
             merge = succ2
-            # Body is on FALSE branch (index 0). Body runs when cond is FALSE.
-            # Want: if (!cond) { body }
-            # JZ auto-detection gives !cond, which is exactly what we want.
-            # So: condition_negated = False (keep JZ's auto-negation)
-            negate_condition = False
+            body_edge_idx = 0
         else:
-            # succ2 (fallthrough / TRUE path) is the body
+            # succ2 (edge[1]) is the body
             body = succ2
             merge = succ1
-            # Body is on TRUE branch (index 1). Body runs when cond is TRUE.
-            # Want: if (cond) { body }
-            # JZ auto-detection gives !cond, which is wrong.
-            # So: condition_negated = True (cancel JZ's auto-negation)
-            negate_condition = True
+            body_edge_idx = 1
+
+        # Body becomes the if-body. We emit: if (rendered_cond) { body }
+        # We need rendered_cond to be positive when body is TRUE, negated when FALSE.
+        #
+        # For JZ blocks: condition_negated=False → JZ auto-negates → !cond
+        #                condition_negated=True  → cancels auto-neg → cond
+        #   So: negate_condition = (body is on TRUE edge)
+        #
+        # For BlockCondition: condition_negated=False → positive cond
+        #                     condition_negated=True  → !(cond)
+        #   So: negate_condition = (body is on FALSE edge)
+        body_on_true = _is_true_edge(block, body_edge_idx)
+        if isinstance(block, BlockCondition):
+            negate_condition = not body_on_true
+        else:
+            negate_condition = body_on_true
 
         # Create if block
         if_block = BlockIf(
@@ -260,8 +282,17 @@ class RuleBlockIfElse(CollapseRule):
         return True
 
     def apply(self, graph: BlockGraph, block: StructuredBlock) -> Optional[StructuredBlock]:
-        true_body = block.out_edges[0].target
-        false_body = block.out_edges[1].target
+        # For JZ blocks: edge[0]=FALSE, edge[1]=TRUE. The emitter's JZ auto-negation
+        # conspires with true_body=edge[0] to produce correct output.
+        # For BlockCondition: edge polarity may differ, so assign semantically.
+        # BlockCondition AND: edge[0]=TRUE, edge[1]=FALSE → true_body=edge[0] is correct.
+        # BlockCondition OR:  edge[0]=FALSE, edge[1]=TRUE → swap needed.
+        if isinstance(block, BlockCondition) and block.is_or:
+            true_body = block.out_edges[1].target
+            false_body = block.out_edges[0].target
+        else:
+            true_body = block.out_edges[0].target
+            false_body = block.out_edges[1].target
         merge = true_body.get_single_successor()
 
         # Create if block
@@ -400,8 +431,13 @@ class RuleBlockIfNoExit(CollapseRule):
 
         # If BOTH branches are dead-ends, emit a full if/else without a merge.
         if len(dead_clauses) == 2:
-            true_block = block.out_edges[0].target
-            false_block = block.out_edges[1].target
+            # For OR BlockCondition, edge[0]=FALSE, edge[1]=TRUE — swap needed.
+            if isinstance(block, BlockCondition) and block.is_or:
+                true_block = block.out_edges[1].target
+                false_block = block.out_edges[0].target
+            else:
+                true_block = block.out_edges[0].target
+                false_block = block.out_edges[1].target
 
             if_block = BlockIf(
                 block_type=BlockType.IF,
@@ -452,10 +488,15 @@ class RuleBlockIfNoExit(CollapseRule):
         if continue_block is None:
             return None
 
-        # Determine if we need to negate condition
-        # If dead clause is on index 1 (false branch), we need to negate
-        # to make it the true branch for proper if-then syntax
-        negate_condition = (dead_clause_idx == 1)
+        # Determine if we need to negate condition.
+        # The dead clause becomes the if-body. We emit: if (rendered_cond) { dead_body }
+        # We need rendered_cond to be positive when dead_clause is TRUE, negated when FALSE.
+        # Same logic as RuleBlockProperIf — see comments there.
+        dead_on_true = _is_true_edge(block, dead_clause_idx)
+        if isinstance(block, BlockCondition):
+            negate_condition = not dead_on_true
+        else:
+            negate_condition = dead_on_true
 
         # Create if block
         if_block = BlockIf(

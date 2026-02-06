@@ -4757,6 +4757,12 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                 call_inst = source_val.producer_inst
                 xcall_to_assignment[call_inst.address] = inst
 
+    # Build address-to-instruction lookup for discard-use detection
+    _addr_to_inst: Dict[int, SSAInstruction] = {}
+    for _block_insts in ssa_func.instructions.values():
+        for _inst in _block_insts:
+            _addr_to_inst[_inst.address] = _inst
+
     formatted: List[FormattedExpression] = []
 
     def _to_signed32(val: int) -> int:
@@ -4816,8 +4822,54 @@ def format_block_expressions(ssa_func: SSAFunction, block_id: int, formatter: Ex
                 # Output is never used - skip this instruction (dead code)
                 continue
 
+        # For XCALL/CALL: check if return value is discarded, meaning the call
+        # won't be rendered through any other path (inline or LLD handler).
+        # Discard patterns:
+        # 1. Output has 0 SSA uses AND next instruction is LLD to non-return slot
+        #    (VC compiler stores return value to a scratch local that's never read)
+        # 2. Output consumed by LLD to negative frame offset (discard slot)
         has_out_params = inst.metadata.get("has_out_params", False) if inst.mnemonic in {"CALL", "XCALL"} else False
-        should_emit = has_out_params or not inst.outputs or not all(
+        has_discard_use = False
+        if inst.mnemonic in {"CALL", "XCALL"} and inst.outputs:
+            for val in inst.outputs:
+                # Check SSA uses for discard LLD (negative offset)
+                for use_addr, use_operand in val.uses:
+                    use_inst = _addr_to_inst.get(use_addr)
+                    if (use_inst is not None and use_inst.mnemonic == "LLD"
+                            and not use_inst.outputs
+                            and use_inst.instruction and use_inst.instruction.instruction):
+                        signed_offset = _to_signed32(use_inst.instruction.instruction.arg1)
+                        # Negative offset BUT not -3 (return slot) = discard
+                        # -3 is the return slot, which IS a meaningful use
+                        if signed_offset < 0 and signed_offset != -3:
+                            has_discard_use = True
+                            break
+                if has_discard_use:
+                    break
+                # Check for 0-use outputs: the XCALL return value is discarded
+                # unless there's a return slot store (LLD [sp-3]) later in the block
+                # that will render the value via the RET handler.
+                if len(val.uses) == 0:
+                    inst_idx = instructions.index(inst)
+                    has_return_store = False
+                    for check_idx in range(inst_idx + 1, min(inst_idx + 6, len(instructions))):
+                        check_inst = instructions[check_idx]
+                        if check_inst.mnemonic == "RET":
+                            # RET found before return slot store — check if
+                            # the RET handler will render the XCALL inline
+                            # (via looking backwards for LLD [sp-3])
+                            has_return_store = True
+                            break
+                        if (check_inst.mnemonic == "LLD" and not check_inst.outputs
+                                and check_inst.instruction and check_inst.instruction.instruction):
+                            check_offset = _to_signed32(check_inst.instruction.instruction.arg1)
+                            if check_offset == -3:
+                                has_return_store = True
+                                break
+                    if not has_return_store:
+                        has_discard_use = True
+                        break
+        should_emit = has_out_params or has_discard_use or not inst.outputs or not all(
             formatter._can_inline(val) for val in inst.outputs
         )
         if not should_emit:
