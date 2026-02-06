@@ -150,12 +150,13 @@ def _format_block_lines(
         cond_text = condition_render.text or f"cond_{block_id}"
 
         lines = []
-        # Render header statements (excluding the conditional jump)
+        # Render ALL header statements.
+        # format_block_expressions() already filters out control flow ops
+        # (JMP, JZ, JNZ), so all remaining expressions are real statements.
+        # The branch condition is rendered separately by render_condition() above.
         expressions = format_block_expressions(ssa_func, block_id, formatter=formatter)
-        if expressions:
-            # Filter out the last expression (conditional jump)
-            for expr in expressions[:-1]:
-                lines.append(f"{indent}{expr.text}")
+        for expr in expressions:
+            lines.append(f"{indent}{expr.text}")
 
         # Render early return/break
         lines.append(f"{indent}if ({cond_text}) break;")
