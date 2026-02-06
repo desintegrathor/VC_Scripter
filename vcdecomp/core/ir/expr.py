@@ -2851,8 +2851,14 @@ class ExpressionFormatter:
                         is_local_array = True
 
                 if not is_local_array:
-                    # Not a known array - skip array notation to avoid compilation errors
-                    return None
+                    # Not a known array from type tracking, but MUL-based indexing
+                    # (ADD(LADR, MUL(idx, stride))) is definitive evidence of array access.
+                    # Allow it through; only block non-MUL patterns.
+                    has_mul_index = (right.producer_inst and
+                                    right.producer_inst.mnemonic in {"MUL", "IMUL"} and
+                                    len(right.producer_inst.inputs) == 2)
+                    if not has_mul_index:
+                        return None
 
             # Check if right is (index * element_size) pattern
             index_expr = None
@@ -3075,6 +3081,25 @@ class ExpressionFormatter:
                                                 self._type_tracker.record_field_usage(base_var, result)
                                             return result
             return array_notation
+
+        # FIX: Detect ADD(LADR(base), const_offset) pattern for local struct field access
+        # Pattern: LADR loads &local_var, ADD adds constant byte offset → local_var.field_N
+        # This mirrors the DADR handler below but for ADD-based pointer arithmetic
+        if value.producer_inst and value.producer_inst.mnemonic == "ADD":
+            add_inst = value.producer_inst
+            if len(add_inst.inputs) >= 2:
+                left = add_inst.inputs[0]
+                right = add_inst.inputs[1]
+                if (left.producer_inst and left.producer_inst.mnemonic == "LADR"):
+                    const_offset = self._get_constant_int(right)
+                    if const_offset is not None and const_offset > 0:
+                        # Get base name from LADR
+                        base_rendered = self._render_value(left)
+                        if base_rendered.startswith("&"):
+                            base_name = base_rendered[1:]
+                            field_name = self._resolve_field_name(base_name, const_offset)
+                            display_name = self._get_field_base_name(base_name, field_name)
+                            return f"{display_name}.{field_name}"
 
         # FIX: Detect DADR(LADR(param)) pattern for struct field access
         # Pattern: LADR loads &param, DADR adds field offset
