@@ -503,22 +503,25 @@ class HierarchicalCodeEmitter:
             lines.extend(self._emit_basic_by_id(block_id, indent))
 
         # Post-processing: Dead code elimination
-        # Find the last return statement and truncate everything after it
-        # (except labeled blocks which may be goto targets)
-        last_return_idx = -1
+        # Find the last return statement at brace depth 0 (function body level).
+        # Returns inside nested blocks (if/else, switch, while) must NOT trigger
+        # truncation — their enclosing closing braces are syntactically required.
+        last_toplevel_return_idx = -1
+        brace_depth = 0
         for i, line in enumerate(lines):
             stripped = line.strip()
-            if stripped == "return;" or stripped.startswith("return "):
-                last_return_idx = i
-        if last_return_idx >= 0 and last_return_idx < len(lines) - 1:
+            brace_depth += stripped.count('{') - stripped.count('}')
+            if (stripped == "return;" or stripped.startswith("return ")) and brace_depth == 0:
+                last_toplevel_return_idx = i
+        if last_toplevel_return_idx >= 0 and last_toplevel_return_idx < len(lines) - 1:
             # Check if anything after the return is a labeled block (goto target)
             has_labeled = any(
                 lines[j].strip().endswith(":")
-                for j in range(last_return_idx + 1, len(lines))
+                for j in range(last_toplevel_return_idx + 1, len(lines))
                 if lines[j].strip()
             )
             if not has_labeled:
-                lines = lines[:last_return_idx + 1]
+                lines = lines[:last_toplevel_return_idx + 1]
 
         return lines
 

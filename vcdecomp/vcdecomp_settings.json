@@ -1,7 +1,7 @@
 {
-  "decompile_mode": "single",
-  "decompile_input": "C:/vc_soubory/G/MACHINES/VEHICLES/MVJ_M35_REO/MVJ_M35_REO.SCR",
-  "decompile_header": "C:/vc_soubory/LEVELS/BRIEFING/DATA/FRENCH/SCRIPTS/BRIEFING.H",
+  "decompile_mode": "folder",
+  "decompile_input": "C:/vc_soubory/LEVELS/CRASH/DATA/CRASH/SCRIPTS",
+  "decompile_header": "",
   "decompile_output": "C:/Users/flori/Desktop/dsdsa",
   "compile_script": "C:/Users/flori/Desktop/dsdsa/DEFORT.c",
   "compile_output": "C:/Users/flori/Desktop/dsdsa"
