@@ -1490,22 +1490,20 @@ class ExpressionFormatter:
 
         # PRIORITY 0: Inline XCALL/CALL return values for nested function calls
         # This enables patterns like: SC_AnsiToUni(SC_P_GetName(x), y)
+        # and: if (SC_MP_EnumPlayers(&enum_pl, &pls, flags)) { ... }
         # MUST come before rename_map check, otherwise t2998_ret gets renamed to tmp109
-        # and we lose the ability to inline it
-        # BUT only inline when used once (as function argument) - if result is stored
-        # to a variable and reused, don't inline to avoid duplicate function calls
-        # ALSO: Don't inline if the call has output params - the call needs to be
-        # emitted as a statement to populate those params, so the return value should
-        # reference the variable, not inline the call again.
+        # and we lose the ability to inline it.
+        # Only inline when used once - if result is stored to a variable and reused,
+        # don't inline to avoid duplicate function calls.
+        # Note: Calls with output params (has_out_params) are also inlined when
+        # single-use, because the inlined call still populates out params correctly
+        # (e.g., if(SC_MP_EnumPlayers(&list, &count, flags)) is valid C).
         if value.producer_inst and value.producer_inst.mnemonic in {"XCALL", "CALL"}:
-            # Don't inline if call has output params (would cause duplicate call emission)
-            has_out_params = value.producer_inst.metadata.get("has_out_params", False) if value.producer_inst.metadata else False
-            if not has_out_params:
-                # Count only "real" uses (positive addresses are actual code locations,
-                # negative addresses are PHI/block boundary markers from SSA construction)
-                real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
-                if real_uses == 1:
-                    return self._inline_expression(value, context, parent_operator)
+            # Count only "real" uses (positive addresses are actual code locations,
+            # negative addresses are PHI/block boundary markers from SSA construction)
+            real_uses = sum(1 for addr, _ in value.uses if addr >= 0)
+            if real_uses == 1:
+                return self._inline_expression(value, context, parent_operator)
 
         # PRIORITY 1: Check if value represents struct field access (ABSOLUTE HIGHEST)
         # This MUST come before rename_map to preserve field expressions like "ai_props.watchfulness"
