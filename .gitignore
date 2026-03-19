@@ -71,6 +71,9 @@ phase*.md
 C:*
 C\357\200\272*
 
+# Temp files
+*.tmp
+
 # Misc
 nul
 /-
