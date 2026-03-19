@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ida-pro-mcp": {
+      "type": "http",
+      "url": "http://127.0.0.1:8745/mcp"
+    },
+    "sco-parser": {
+      "type": "stdio",
+      "command": "py",
+      "args": ["-3", "-m", "sco_parser"]
+    }
+  }
+}
