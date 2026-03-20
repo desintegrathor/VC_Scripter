@@ -84,6 +84,3 @@ run-overnight.sh
 
 # User settings
 vcdecomp/vcdecomp_settings.json
-
-# MCP config
-.mcp.json
