@@ -1,0 +1,1 @@
+This folder contains all the original script related code which was found left in the game files by the developers, or by other means from the depths of the internet. It can be a useful insight when reverse engineering the original compiled scripts.

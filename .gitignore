@@ -21,7 +21,7 @@ ghidra-decompiler-src/
 decompilation_work_folder/
 ralph-logs/
 script-folders/
-original-resources/
+original-resources/compiler/
 test_compilation/
 .claude/
 .github/
