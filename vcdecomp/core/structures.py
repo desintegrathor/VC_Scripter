@@ -592,6 +592,8 @@ def get_verified_field_name(struct_name: str, offset: int) -> Optional[str]:
         if sdk_struct:
             for field in sdk_struct.fields:
                 if field.offset == offset:
+                    if field.is_array:
+                        return f"{field.name}[0]"
                     return field.name
                 if field.is_array:
                     field_end = field.offset + field.size  # field.size is already total bytes

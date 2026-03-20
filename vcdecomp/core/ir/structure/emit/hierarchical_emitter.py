@@ -579,7 +579,14 @@ class HierarchicalCodeEmitter:
         )
 
         if for_info:
-            return self._emit_natural_for_loop(loop, for_info, indent)
+            # Validate: reject contradictory init like for(x=0; x!=0; ...)
+            loop_var = for_info.init_var or for_info.var
+            init_val = for_info.init.strip()
+            cond = for_info.condition.strip()
+            if init_val == "0" and loop_var and (f"{loop_var} != 0" in cond or f"{loop_var} > 0" in cond):
+                for_info = None  # Reject — contradictory init
+            else:
+                return self._emit_natural_for_loop(loop, for_info, indent)
 
         # Try while-loop detection
         while_info = _detect_while_loop(
@@ -1318,16 +1325,30 @@ class HierarchicalCodeEmitter:
             # Try to detect for-loop pattern at emit time (matching flat pattern mode)
             for_info = self._try_detect_for_loop(block)
             if for_info:
-                lines.append(f"{indent}for ({for_info.var} = {for_info.init}; "
-                           f"{for_info.condition}; {for_info.increment}) {{")
-                skip_var = for_info.init_var or for_info.var
-                # Emit body with increment suppression
-                if block.body_block is not None:
-                    self._for_loop_skip_vars.add(skip_var)
-                    lines.extend(self._emit_block(block.body_block, indent + "    "))
-                    self._for_loop_skip_vars.discard(skip_var)
-                lines.append(f"{indent}}}")
-                return lines
+                # Validate: the init variable must appear in the condition, AND
+                # the init value must be consistent with entering the loop.
+                # Reject false positives like for(x=0; x!=0; ...) which never executes.
+                loop_var = for_info.init_var or for_info.var
+                valid_for = loop_var and for_info.condition and loop_var in for_info.condition
+                if valid_for:
+                    # Check for contradictory init: "var = 0" with "var != 0" → never enters
+                    init_val = for_info.init.strip()
+                    cond = for_info.condition.strip()
+                    if init_val == "0" and f"{loop_var} != 0" in cond:
+                        valid_for = False
+                    elif init_val == "0" and f"{loop_var} > 0" in cond:
+                        valid_for = False
+                if valid_for:
+                    lines.append(f"{indent}for ({for_info.var} = {for_info.init}; "
+                               f"{for_info.condition}; {for_info.increment}) {{")
+                    skip_var = loop_var
+                    # Emit body with increment suppression
+                    if block.body_block is not None:
+                        self._for_loop_skip_vars.add(skip_var)
+                        lines.extend(self._emit_block(block.body_block, indent + "    "))
+                        self._for_loop_skip_vars.discard(skip_var)
+                    lines.append(f"{indent}}}")
+                    return lines
 
             # Fallback: emit as while loop
             lines.append(f"{indent}while ({condition}) {{")

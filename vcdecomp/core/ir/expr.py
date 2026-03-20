@@ -23,7 +23,7 @@ from ..constants import (
 )
 from ..structures import (
     get_struct_by_name, get_struct_by_size, get_verified_field_name,
-    infer_struct_from_function, STRUCTURES_BY_SIZE
+    get_field_at_offset, infer_struct_from_function, STRUCTURES_BY_SIZE
 )
 from .ssa import SSAFunction, SSAInstruction, SSAValue
 from .global_resolver import resolve_globals
@@ -1625,6 +1625,19 @@ class ExpressionFormatter:
             else:
                 # No rename entry - will fall through to inline rendering anyway
                 is_infix_op = True
+        # FIX: Skip rename_map for UNARY_PREFIX ops (NEG, FNEG, BN) — same logic as infix
+        is_unary_op = False
+        if value.producer_inst and value.producer_inst.mnemonic in UNARY_PREFIX:
+            if self._rename_map and value.name in self._rename_map:
+                renamed = self._rename_map[value.name]
+                if re.match(r'^(tmp|ptr|obj)\d*$', renamed):
+                    is_unary_op = True
+                elif re.match(r'^t\d+_$', renamed):
+                    is_unary_op = True
+                elif re.match(r'^[a-z]$', renamed):
+                    is_unary_op = True
+            else:
+                is_unary_op = True
         # FIX: Skip rename_map for XCALL/CALL return values in two cases:
         # 1. Renamed to raw SSA name (t###_ret) - always wrong for function returns
         # 2. Call has output params (has_out_params) - need to use return variable, not inlined call
@@ -1642,11 +1655,11 @@ class ExpressionFormatter:
             else:
                 # No rename entry - will fall through to inline rendering anyway
                 is_call_return = True
-        # FIX: Skip rename_map for DCP (dereference) operations - these should inline
+        # FIX: Skip rename_map for DCP/PNT operations - these should inline
         # to show the dereferenced expression (e.g., gFlagNod[i][0]) not tmpN
-        # This is similar to how is_infix_op works for arithmetic expressions
+        # PNT produces pointer addresses that should also inline (e.g., enum_pl[i].status)
         is_dcp = False
-        if value.producer_inst and value.producer_inst.mnemonic == "DCP":
+        if value.producer_inst and value.producer_inst.mnemonic in {"DCP", "PNT"}:
             if self._rename_map and value.name in self._rename_map:
                 renamed = self._rename_map[value.name]
                 # Only bypass for generic temp names that would be less readable
@@ -1672,7 +1685,7 @@ class ExpressionFormatter:
         preserve_compound = bool(getattr(value, "metadata", {}).get("preserve_compound"))
         if (self._rename_map and value.name in self._rename_map and not is_ladr and not is_array_indexing
                 and not is_gcp_constant and not preserve_compound and not is_parametric_alias and not is_cast_op
-                and not is_infix_op and not is_call_return and not is_dcp):
+                and not is_infix_op and not is_unary_op and not is_call_return and not is_dcp):
             return _strip_ssa_version_suffix(self._rename_map[value.name])
 
         # NEW: Check if value is a string literal from data segment (VERY HIGH PRIORITY)
@@ -2823,17 +2836,35 @@ class ExpressionFormatter:
                         offset_str = self._render_value(right)
                         offset = int(offset_str)
 
+                        # Check if base is a global struct (allows larger offsets)
+                        base_is_array = False
+                        base_is_struct = False
+                        base_struct_type = None
+                        if left.producer_inst.mnemonic == "GADR":
+                            gadr_offset = left.producer_inst.instruction.instruction.arg1
+                            if gadr_offset in self._global_type_info:
+                                gi = self._global_type_info[gadr_offset]
+                                base_is_array = gi.is_array_base
+                                if gi.is_struct_base and gi.inferred_type:
+                                    base_is_struct = True
+                                    base_struct_type = gi.inferred_type
+
+                        # Global struct field resolution: gVar + offset → gVar.field_name
+                        # (no 256-byte limit for known structs)
+                        if base_is_struct and base_struct_type and not base_is_array and offset > 0:
+                            field_name = get_verified_field_name(base_struct_type, offset)
+                            if not field_name:
+                                field_name = get_field_at_offset(base_struct_type, offset)
+                            if field_name:
+                                return f"{base_name}.{field_name}"
+                            else:
+                                return f"{base_name}.field_{offset}"
+
                         # Reasonable field offset range - but exclude multiplication patterns
                         if 0 < offset < 256:
-                            # NEW: Check if base is a known array (skip struct field notation if it is)
-                            base_is_array = False
-                            if left.producer_inst.mnemonic == "GADR":
-                                gadr_offset = left.producer_inst.instruction.instruction.arg1
-                                if gadr_offset in self._global_type_info:
-                                    base_is_array = self._global_type_info[gadr_offset].is_array_base
                             # FIX (01-20): Also check if local var has struct array type from field tracker
                             # If the variable is a struct array, we need to access element [0]
-                            elif left.producer_inst.mnemonic == "LADR":
+                            if left.producer_inst.mnemonic == "LADR":
                                 # Check if type_tracker or field_tracker knows this is a struct array
                                 tracked_type = None
                                 is_struct_array = False
@@ -4265,17 +4296,36 @@ class ExpressionFormatter:
         elif inst.mnemonic == "DCP" and len(inst.inputs) == 1:
             # DCP (dereference/load) - render as dereferenced value
             addr_value = inst.inputs[0]
-            addr_rendered = self._render_value(addr_value)
 
-            # Pattern: DCP(&local_X) → local_X (dereference of address literal)
-            if addr_rendered.startswith("&"):
-                expr = addr_rendered[1:]  # Remove & to get the value
-            # Pattern: DCP(data_X) → data_X (implicit load from data segment)
-            elif addr_value.alias and addr_value.alias.startswith("data_"):
-                expr = addr_rendered  # data_X already represents the value
-            # Pattern: DCP(pointer_expr) → *pointer_expr (explicit dereference)
+            # Try array indexing detection on the address FIRST
+            array_notation = self._detect_array_indexing(addr_value)
+            if array_notation:
+                # Check if DCP has a field offset (struct array element access)
+                dcp_size = inst.instruction.instruction.arg1 if inst.instruction and inst.instruction.instruction else 0
+                # DCP arg1 is the load SIZE in bytes, not a field offset.
+                # The field offset comes from PNT before DCP, which is already
+                # folded into the address computation. So array_notation is enough.
+                expr = array_notation
             else:
-                expr = f"(*{addr_rendered})"
+                addr_rendered = self._render_value(addr_value)
+
+                # Pattern: DCP(&local_X) → local_X (dereference of address literal)
+                if addr_rendered.startswith("&"):
+                    expr = addr_rendered[1:]  # Remove & to get the value
+                # Pattern: DCP(data_X) → data_X (implicit load from data segment)
+                elif addr_value.alias and addr_value.alias.startswith("data_"):
+                    expr = addr_rendered  # data_X already represents the value
+                # Pattern: DCP(PNT(array[i], field_offset)) → array[i].field
+                # PNT renders struct field addresses without & prefix when it
+                # detects array indexing. DCP loads the value at that address.
+                elif (addr_value.producer_inst
+                      and addr_value.producer_inst.mnemonic == "PNT"
+                      and '.' in addr_rendered
+                      and not addr_rendered.startswith("(*")):
+                    expr = addr_rendered
+                # Pattern: DCP(pointer_expr) → *pointer_expr (explicit dereference)
+                else:
+                    expr = f"(*{addr_rendered})"
         elif inst.mnemonic in {"XCALL", "CALL"}:
             # XCALL/CALL return value - inline the function call expression
             # This enables nested calls like SC_AnsiToUni(SC_P_GetName(x), ...)
