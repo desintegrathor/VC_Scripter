@@ -68,6 +68,14 @@ Changes propagate to subsequent `scr_decompile` calls.
 | `scr_set_type(handle, target, new_type)` | Override type of a global (`global:name`) or local (`local:func:var`) |
 | `scr_set_comment(handle, addr, comment)` | Add/update comment at an instruction address |
 
+### Compilation
+
+| Tool | What it does |
+|-|-|
+| `scr_compile(source_path, output_name?)` | Compile a `.c` script to `.scr` bytecode using the SCMP compiler |
+
+Copies the source file into the compiler directory, invokes the toolchain (`spp → scc → sasm`), and returns the output `.scr` path on success or compiler error messages on failure.
+
 ### Data & Export
 
 | Tool | What it does |
@@ -139,9 +147,8 @@ sco_positions(handle, node_type="Player")   # Player start positions
 
 1. Decompile the script using `scr_decompile` or the CLI (`py -3 -m vcdecomp structure script.scr > output.c`)
 2. Edit the decompiled C source
-3. Copy the `.c` file to `vcdecomp/compiler/`
-4. Compile: `py -3 compile_simple.py`
-5. Replace the original `.scr` in your game folder with the compiled output
+3. Compile: `scr_compile("path/to/script.c")` — returns the output `.scr` path or error messages
+4. Replace the original `.scr` in your game folder with the compiled output
 
 ### Create a new script
 
@@ -163,8 +170,9 @@ py -3 -m vcdecomp disasm script.scr > output.asm
 # Script info
 py -3 -m vcdecomp info script.scr
 
-# Compile (copy .c to vcdecomp/compiler/ first)
-py -3 compile_simple.py
+# Compile (via MCP or CLI)
+# MCP: scr_compile("script.c")
+# CLI: copy .c to vcdecomp/compiler/, then: py -3 compile_simple.py
 
 # GUI
 py -3 -m vcdecomp gui
