@@ -1,6 +1,8 @@
 """MCP server for interactive .scr file decompilation and analysis."""
 
 import os
+import shutil
+import subprocess
 from typing import Dict, Optional
 from mcp.server.fastmcp import FastMCP
 
@@ -464,4 +466,102 @@ def scr_export(handle: str, format: str = "json") -> dict:
         "format": "json",
         "functions": funcs,
         "globals": globals_list,
+    }
+
+
+# ============================================================
+# Phase 4: Compilation
+# ============================================================
+
+# Locate compiler directory relative to this package
+_COMPILER_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "vcdecomp", "compiler")
+)
+
+
+@mcp.tool()
+def scr_compile(source_path: str, output_name: Optional[str] = None) -> dict:
+    """Compile a .c script to .scr bytecode using the Vietcong SCMP compiler.
+
+    Args:
+        source_path: Path to the .c source file
+        output_name: Base name for output files (default: same as source)
+    """
+    source_path = os.path.abspath(source_path)
+    if not os.path.isfile(source_path):
+        return {"error": f"Source file not found: {source_path}"}
+
+    compiler_dir = _COMPILER_DIR
+    bat_path = os.path.join(compiler_dir, "compile_script.bat")
+    if not os.path.isfile(bat_path):
+        return {"error": f"compile_script.bat not found in {compiler_dir}"}
+
+    # Determine base name for output
+    src_basename = os.path.basename(source_path)
+    base = output_name or os.path.splitext(src_basename)[0]
+    out_scr = base + ".scr"
+    out_h = base + ".h"
+
+    # Copy source into compiler dir if not already there
+    compiler_src = os.path.join(compiler_dir, src_basename)
+    if os.path.normcase(os.path.abspath(source_path)) != os.path.normcase(compiler_src):
+        shutil.copy2(source_path, compiler_src)
+
+    # Clean up old error files and previous output
+    for ext in (".err",):
+        for prefix in ("spp", "scc", "sasm"):
+            err_file = os.path.join(compiler_dir, prefix + ext)
+            if os.path.exists(err_file):
+                os.remove(err_file)
+    scr_out_path = os.path.join(compiler_dir, out_scr)
+    if os.path.exists(scr_out_path):
+        os.remove(scr_out_path)
+
+    # Run the compiler via cmd.exe /c
+    try:
+        result = subprocess.run(
+            [os.path.join(compiler_dir, "compile_script.bat"),
+             src_basename, out_scr, out_h],
+            cwd=compiler_dir,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return {"error": "Compilation timed out after 30 seconds"}
+
+    # Check for error files
+    errors = {}
+    for prefix in ("spp", "scc", "sasm"):
+        err_file = os.path.join(compiler_dir, prefix + ".err")
+        if os.path.isfile(err_file):
+            content = open(err_file, "r", errors="replace").read().strip()
+            if content:
+                errors[prefix] = content
+
+    if errors:
+        return {
+            "status": "error",
+            "errors": errors,
+            "stdout": result.stdout.strip() if result.stdout else "",
+            "stderr": result.stderr.strip() if result.stderr else "",
+        }
+
+    # Check for output
+    if os.path.isfile(scr_out_path):
+        size = os.path.getsize(scr_out_path)
+        return {
+            "status": "ok",
+            "output_path": scr_out_path,
+            "output_size": size,
+            "stdout": result.stdout.strip() if result.stdout else "",
+        }
+
+    # Neither errors nor output — generic failure
+    return {
+        "status": "error",
+        "error": "Compilation produced no output and no error files",
+        "returncode": result.returncode,
+        "stdout": result.stdout.strip() if result.stdout else "",
+        "stderr": result.stderr.strip() if result.stderr else "",
     }
