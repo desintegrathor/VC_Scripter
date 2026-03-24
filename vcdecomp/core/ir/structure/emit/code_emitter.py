@@ -541,10 +541,12 @@ def _render_if_else_recursive(
 
     # Render false branch if exists (skip if all blocks are control-flow-only)
     def _body_has_content(body_set):
-        """Check if any block in body has real statements."""
+        """Check if any block in body has real statements (excluding already-emitted blocks)."""
         if not body_set:
             return False
         for bid in body_set:
+            if bid in emitted_blocks:
+                continue  # Skip already-emitted blocks (e.g. for-loop back-edge sources)
             ssa_blk = ssa_func.instructions.get(bid, [])
             if not _is_control_flow_only(ssa_blk, resolver):
                 return True
@@ -810,6 +812,17 @@ def _render_blocks_with_loops(
             for inner_loop in direct_inner_headers.values():
                 inner_consumed.update(inner_loop.body)
 
+            # For for-loops, identify back-edge source blocks (contain the increment).
+            # Pre-mark them as emitted to prevent if/else detection from pulling them
+            # into branch bodies (which would duplicate the increment in the output).
+            # They'll still be force-rendered with filtering at their iteration turn.
+            for_back_edge_sources: Set[int] = set()
+            if for_info:
+                for be in header_loop.back_edges:
+                    if be.source != header_loop.header:
+                        for_back_edge_sources.add(be.source)
+                        emitted_blocks.add(be.source)
+
             loop_body_sorted = sorted(header_loop.body, key=lambda bid: cfg.blocks[bid].start if bid in cfg.blocks else 9999999)
             for loop_body_id in loop_body_sorted:
                 # Skip blocks consumed by a direct inner loop (non-header blocks)
@@ -839,7 +852,7 @@ def _render_blocks_with_loops(
                     skip_var = None
                     if for_info:
                         # Check if this block jumps back to header (back edge)
-                        if any(edge.source == loop_body_id for edge in header_loop.back_edges):
+                        if loop_body_id in for_back_edge_sources or any(edge.source == loop_body_id for edge in header_loop.back_edges):
                             # Use init_var (raw name) since the rendered LHS uses
                             # the raw variable name, not the display name.
                             # e.g., "local_45 = i + 1" has LHS "local_45" (init_var),
@@ -847,14 +860,15 @@ def _render_blocks_with_loops(
                             skip_var = for_info.init_var or for_info.var
 
                     if skip_var:
-                        # Filter out increment assignment
+                        # Force-render with filtering (even though in emitted_blocks,
+                        # back-edge source may have non-increment statements to emit).
                         block_lines = _format_block_lines_filtered(
                             ssa_func, loop_body_id, indent + "    ", formatter, skip_var,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,
                             early_returns, guard_blocks
                         )
                         lines.extend(block_lines)
-                    else:
+                    elif loop_body_id not in emitted_blocks:
                         lines.extend(_format_block_lines(
                             ssa_func, loop_body_id, indent + "    ", formatter,
                             block_to_if, visited_ifs, emitted_blocks, cfg, start_to_block, resolver,

@@ -326,6 +326,11 @@ class BlockWhileDo(StructuredBlock):
     for_init: Optional[str] = None
     for_increment: Optional[str] = None
 
+    # Condition polarity for emit time.
+    # When True, the emitter should negate the condition text.
+    # Set by collapse rules based on which edge leads to the body.
+    _negate_for_emit: bool = False
+
     def negate_condition(self):
         """
         Negate the loop condition.
@@ -359,6 +364,11 @@ class BlockDoWhile(StructuredBlock):
     body_block: Optional[StructuredBlock] = None
     condition_block: Optional[StructuredBlock] = None
     condition_expr: Optional[str] = None
+
+    # Condition polarity for emit time.
+    # When True, the emitter should negate the condition text.
+    # Set by collapse rules based on which edge is the back-edge.
+    _negate_for_emit: bool = False
 
     def negate_condition(self):
         """

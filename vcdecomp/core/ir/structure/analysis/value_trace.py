@@ -229,6 +229,19 @@ def _follow_ssa_value_across_blocks(
 
     # If we have a direct producer that's not a PHI, return it
     if prod_inst and prod_inst.mnemonic != "PHI":
+        # Follow frame def-use chain: if this is an LCP (frame read),
+        # the heritage rename pass may have linked it to the defining write
+        if prod_inst.mnemonic == "LCP" and hasattr(value, 'metadata'):
+            frame_version = value.metadata.get('frame_def_version')
+            if frame_version and hasattr(ssa_func, 'values') and frame_version in ssa_func.values:
+                def_value = ssa_func.values[frame_version]
+                logger.debug(f"  _follow_ssa_value_across_blocks: Following frame def chain LCP -> {frame_version}")
+                result = _follow_ssa_value_across_blocks(
+                    def_value, ssa_func, seen_blocks, max_depth - 1
+                )
+                if result:
+                    return result
+                # Fall through to return LCP itself if chain doesn't lead anywhere useful
         logger.debug(f"  _follow_ssa_value_across_blocks: Found producer {prod_inst.mnemonic} at {prod_inst.address} in block {prod_inst.block_id}")
         return prod_inst
 
@@ -938,7 +951,8 @@ def _trace_value_to_global(
     value,
     formatter: ExpressionFormatter,
     ssa_func: Optional[SSAFunction] = None,
-    visited: Optional[Set[int]] = None
+    visited: Optional[Set[int]] = None,
+    skip_dcp_guard: bool = False
 ) -> Optional[str]:
     """
     Trace an SSA value back to its global variable source.
@@ -1005,12 +1019,35 @@ def _trace_value_to_global(
     elif producer.mnemonic == "LCP":
         # LCP loads from stack - the value might have been stored by GCP earlier
 
-        # Guard: If any PHI source traces to DCP (pointer dereference), this value
-        # comes from a parameter field access (e.g., info->message), not a global.
-        # Return None so _trace_value_to_parameter_field can handle it correctly.
-        if ssa_func and _has_dcp_producer_in_phi(value, ssa_func):
-            logger.debug(f"_trace_value_to_global: Skipping - value has DCP producer in PHI (parameter field access)")
-            return None
+        # DCP guard: When skip_dcp_guard=True, the caller handles confidence
+        # modulation instead — skip all DCP checks and always attempt resolution.
+        if not skip_dcp_guard:
+            # SSA DEF-CHAIN PRIORITY: Use frame_def_version to refine the DCP guard.
+            # The blanket _has_dcp_producer_in_phi guard examines ALL phi sources, including
+            # stale definitions from other code paths. For nested switches where a frame slot
+            # is first written by DCP (info->param2) and then overwritten by a global store,
+            # the blanket guard incorrectly blocks global resolution.
+            #
+            # If frame_def_version exists and its reaching definition does NOT trace to DCP,
+            # skip the blanket guard — the most recent write is not a parameter field access.
+            dcp_guard_should_block = True  # default: guard blocks as before
+            if ssa_func and hasattr(value, 'metadata'):
+                frame_version = value.metadata.get('frame_def_version')
+                if frame_version and hasattr(ssa_func, 'values') and frame_version in ssa_func.values:
+                    def_value = ssa_func.values[frame_version]
+                    def_has_dcp = _has_dcp_producer_in_phi(def_value, ssa_func, max_depth=5)
+                    if not def_has_dcp:
+                        dcp_guard_should_block = False
+                        logger.debug(f"_trace_value_to_global: frame_def_version {frame_version} has no DCP path, bypassing DCP guard")
+
+            # Guard: If any PHI source traces to DCP (pointer dereference), this value
+            # comes from a parameter field access (e.g., info->message), not a global.
+            # Return None so _trace_value_to_parameter_field can handle it correctly.
+            if dcp_guard_should_block and ssa_func and _has_dcp_producer_in_phi(value, ssa_func):
+                logger.debug(f"_trace_value_to_global: Skipping - value has DCP producer in PHI (parameter field access)")
+                return None
+        else:
+            dcp_guard_should_block = False
 
         # Pattern 1: Check if this LCP value has phi_sources
         if value.phi_sources:
@@ -1028,7 +1065,8 @@ def _trace_value_to_global(
                 # If the PHI chain has both GCP and DCP sources, the value is ambiguous
                 # (e.g., a parameter field value sharing a stack slot with a global).
                 # In that case, return None so parameter field tracing can handle it.
-                if _has_dcp_producer_in_phi(value, ssa_func):
+                # REFINED: Skip guard when frame_def_version indicates no DCP in reaching def.
+                if dcp_guard_should_block and _has_dcp_producer_in_phi(value, ssa_func):
                     logger.debug(f"_trace_value_to_global: Pattern 2 - GCP found but DCP also in PHI chain, returning None")
                     return None
                 if ultimate_producer.instruction and ultimate_producer.instruction.instruction:
@@ -1038,6 +1076,33 @@ def _trace_value_to_global(
                         if global_name:
                             logger.debug(f"_trace_value_to_global: Found global via cross-block trace: {global_name}")
                             return global_name
+
+        # Pattern 2b: XCALL/CALL return stored to global via post-store alias
+        # The heritage pass annotates frame writes with global_alias_offset when
+        # LLD copy-mode is followed by GADR+ASGN (same value stored to global)
+        if ssa_func and ultimate_producer and ultimate_producer.mnemonic in {"XCALL", "CALL"}:
+            frame_version = value.metadata.get('frame_def_version')
+            if frame_version and frame_version in ssa_func.values:
+                def_val = ssa_func.values[frame_version]
+                # Collect candidate frame write versions
+                candidates = [def_val]
+                if def_val.phi_sources:
+                    candidates = [ssa_func.values[src] for _, src in def_val.phi_sources
+                                 if src in ssa_func.values]
+                # Find the candidate whose producer matches the ultimate producer
+                # (i.e., the specific frame write that stores this XCALL/CALL's return)
+                for candidate in candidates:
+                    alias_offset = candidate.metadata.get('global_alias_offset')
+                    if alias_offset is None:
+                        continue
+                    # Verify this candidate's producer is the same XCALL/CALL
+                    if (candidate.producer_inst and
+                            candidate.producer_inst.address == ultimate_producer.address):
+                        if hasattr(formatter, '_global_names'):
+                            global_name = formatter._global_names.get(alias_offset)
+                            if global_name:
+                                logger.debug(f"_trace_value_to_global: Found global via post-store alias: {global_name}")
+                                return global_name
 
         # Pattern 3: Search predecessors for GCP loading to same stack offset
         if ssa_func and producer.instruction and producer.instruction.instruction:
@@ -1117,15 +1182,30 @@ def _find_gcp_for_stack_offset(
 
     block_instructions = ssa_func.instructions[block_id]
 
-    # Search for GCP/GLD in this block
-    for inst in block_instructions:
+    # Search for GCP/GLD in this block, then verify it stores to the target stack offset
+    for i, inst in enumerate(block_instructions):
         if inst.mnemonic in {"GCP", "GLD"}:
-            if inst.instruction and inst.instruction.instruction:
-                dword_offset = inst.instruction.instruction.arg1
-                if hasattr(formatter, '_global_names'):
-                    global_name = formatter._global_names.get(dword_offset)
-                    if global_name:
-                        return global_name
+            if not (inst.instruction and inst.instruction.instruction):
+                continue
+            dword_offset = inst.instruction.instruction.arg1
+            if not hasattr(formatter, '_global_names'):
+                continue
+            global_name = formatter._global_names.get(dword_offset)
+            if not global_name:
+                continue
+
+            # Verify: look for LADR [sp+stack_offset] after this GCP in the same block
+            # Pattern: GCP data[X]; ... LADR [sp+N]; ASGN; SSP
+            for j in range(i + 1, min(i + 6, len(block_instructions))):
+                later = block_instructions[j]
+                if later.mnemonic == "LADR":
+                    if later.instruction and later.instruction.instruction:
+                        ladr_offset = later.instruction.instruction.arg1
+                        if ladr_offset == stack_offset:
+                            return global_name
+                # Stop searching if we hit another GCP/GLD or control flow
+                if later.mnemonic in {"GCP", "GLD", "JMP", "JZ", "JNZ", "CALL", "XCALL", "RET"}:
+                    break
 
     # Search predecessors
     if hasattr(ssa_func, 'cfg') and ssa_func.cfg and block_id in ssa_func.cfg.blocks:

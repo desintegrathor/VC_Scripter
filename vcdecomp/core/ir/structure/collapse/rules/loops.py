@@ -155,11 +155,13 @@ class RuleBlockWhileDo(CollapseRule):
             body_block=body_block,
         )
 
-        # Ghidra: negate condition if body is on false branch (index 1)
-        # while (cond) { body } means cond should be true to enter body
-        # If bytecode has false branch going to body, we need to negate
-        if body_edge_index == 1:
-            while_block.negate_condition()
+        # JZ semantics: edge 0 = JZ target (false/zero path), edge 1 = fallthrough (true path)
+        # For while-loops: body on true path (edge 1) → while(cond) → no negate
+        #                   body on false path (edge 0) → while(!cond) → negate
+        # We set _negate_for_emit instead of calling negate_condition() because
+        # condition_expr is None at collapse time (expression not yet rendered).
+        if body_edge_index == 0:
+            while_block._negate_for_emit = True
 
         # Update covered blocks
         while_block.covered_blocks = block.covered_blocks | body_block.covered_blocks
@@ -289,11 +291,13 @@ class RuleBlockDoWhile(CollapseRule):
             condition_block=cond,
         )
 
-        # Ghidra: negate condition if back edge is on false branch (index 1)
-        # do { body } while (cond) means cond should be true to loop back
-        # If bytecode has false branch looping back, we need to negate
-        if back_edge_index == 1:
-            dowhile_block.negate_condition()
+        # JZ semantics: edge 0 = JZ target (false/zero path), edge 1 = fallthrough (true path)
+        # For do-while: back-edge on true path (edge 1) → do{}while(cond) → no negate
+        #               back-edge on false path (edge 0) → do{}while(!cond) → negate
+        # We set _negate_for_emit instead of calling negate_condition() because
+        # condition_expr is None at collapse time (expression not yet rendered).
+        if back_edge_index == 0:
+            dowhile_block._negate_for_emit = True
 
         # Update covered blocks
         dowhile_block.covered_blocks = block.covered_blocks | cond.covered_blocks

@@ -44,6 +44,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _negate_condition_text(cond: str) -> str:
+    """Negate a condition string, applying simplification if possible."""
+    from ....parenthesization import is_simple_expression
+    if is_simple_expression(cond):
+        result = f"!{cond}"
+    else:
+        result = f"!({cond})"
+    return simplify_boolean_expression(result)
+
+
 class HierarchicalCodeEmitter:
     """
     Emits C-like code from a hierarchical block structure.
@@ -908,6 +918,18 @@ class HierarchicalCodeEmitter:
         true_blocks = self._collect_branch_blocks(true_id, false_id, body_set, loop, emitted_in_body)
         false_blocks = self._collect_branch_blocks(false_id, true_id, body_set, loop, emitted_in_body)
 
+        # For for-loops: remove back-edge source blocks (increment blocks) from
+        # branch sets. These blocks are convergence points after the if/else —
+        # the increment is already in the for-header, so emitting it inside a
+        # branch produces a spurious duplicate increment.
+        if for_info:
+            back_edge_sources = {
+                be.source for be in loop.back_edges if be.target == loop.header
+            }
+            if back_edge_sources:
+                true_blocks = [b for b in true_blocks if b not in back_edge_sources]
+                false_blocks = [b for b in false_blocks if b not in back_edge_sources]
+
         # Emit if statement
         if true_blocks:
             lines.append(f"{indent}if ({condition_text}) {{")
@@ -1293,21 +1315,25 @@ class HierarchicalCodeEmitter:
         """Emit a while loop structure."""
         lines = []
 
-        # Get condition
+        # Get condition — bypass JZ auto-negation by passing negate=False,
+        # then apply _negate_for_emit flag set by collapse rules.
+        negate_for_emit = getattr(block, '_negate_for_emit', False)
         condition = block.condition_expr
         if condition is None and block.condition_block is not None:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
-                if getattr(block, 'condition_negated', False):
-                    condition = f"!({condition})"
+                if negate_for_emit:
+                    condition = _negate_condition_text(condition)
             else:
                 embedded_cond = self._find_embedded_condition(block.condition_block)
                 if embedded_cond is not None:
                     condition = self._extract_combined_condition(embedded_cond)
-                    if getattr(block, 'condition_negated', False):
-                        condition = f"!({condition})"
+                    if negate_for_emit:
+                        condition = _negate_condition_text(condition)
                 else:
-                    condition = self._extract_condition(block.condition_block)
+                    condition = self._extract_condition(block.condition_block, negate=False)
+                    if negate_for_emit:
+                        condition = _negate_condition_text(condition)
 
         if condition is None:
             condition = "/* condition */"
@@ -1406,21 +1432,25 @@ class HierarchicalCodeEmitter:
         """Emit a do-while loop structure."""
         lines = []
 
-        # Get condition
+        # Get condition — bypass JZ auto-negation by passing negate=False,
+        # then apply _negate_for_emit flag set by collapse rules.
+        negate_for_emit = getattr(block, '_negate_for_emit', False)
         condition = block.condition_expr
         if condition is None and block.condition_block is not None:
             if isinstance(block.condition_block, BlockCondition):
                 condition = self._extract_combined_condition(block.condition_block)
-                if getattr(block, 'condition_negated', False):
-                    condition = f"!({condition})"
+                if negate_for_emit:
+                    condition = _negate_condition_text(condition)
             else:
                 embedded_cond = self._find_embedded_condition(block.condition_block)
                 if embedded_cond is not None:
                     condition = self._extract_combined_condition(embedded_cond)
-                    if getattr(block, 'condition_negated', False):
-                        condition = f"!({condition})"
+                    if negate_for_emit:
+                        condition = _negate_condition_text(condition)
                 else:
-                    condition = self._extract_condition(block.condition_block)
+                    condition = self._extract_condition(block.condition_block, negate=False)
+                    if negate_for_emit:
+                        condition = _negate_condition_text(condition)
 
         if condition is None:
             condition = "/* condition */"

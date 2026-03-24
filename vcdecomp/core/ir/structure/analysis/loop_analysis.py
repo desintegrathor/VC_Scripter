@@ -506,13 +506,38 @@ class LoopAnalysis:
 
     def is_loop_header(self, block: StructuredBlock) -> bool:
         """Check if a block is a loop header."""
-        return any(loop.head.block_id == block.block_id for loop in self.loops)
+        # Direct match on block_id (works for uncollapsed blocks)
+        if any(loop.head.block_id == block.block_id for loop in self.loops):
+            return True
+        # After collapse, the original header may have been absorbed into a
+        # new block (BlockCondition, BlockList, etc.) with a different block_id.
+        # Check if any of this block's covered CFG IDs is a known loop header.
+        if hasattr(block, 'covered_blocks') and block.covered_blocks:
+            loop_header_cfg_ids = set()
+            for loop in self.loops:
+                head = loop.head
+                loop_header_cfg_ids.add(head.block_id)
+                cfg_id = getattr(head, 'original_block_id', -1)
+                if cfg_id >= 0:
+                    loop_header_cfg_ids.add(cfg_id)
+            if block.covered_blocks & loop_header_cfg_ids:
+                return True
+        return False
 
     def get_loop_by_header(self, head: StructuredBlock) -> Optional[LoopBody]:
         """Get the loop with the given header block."""
         for loop in self.loops:
             if loop.head.block_id == head.block_id:
                 return loop
+        # Fallback: match via covered_blocks (handles collapsed blocks)
+        if hasattr(head, 'covered_blocks') and head.covered_blocks:
+            for loop in self.loops:
+                h = loop.head
+                if h.block_id in head.covered_blocks:
+                    return loop
+                cfg_id = getattr(h, 'original_block_id', -1)
+                if cfg_id >= 0 and cfg_id in head.covered_blocks:
+                    return loop
         return None
 
     def get_containing_loops(self, block: StructuredBlock) -> List[LoopBody]:

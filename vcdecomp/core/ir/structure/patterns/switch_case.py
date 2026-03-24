@@ -9,6 +9,7 @@ switch variables from nearby global variable loads.
 from __future__ import annotations
 
 from typing import Dict, Set, List, Optional
+from dataclasses import dataclass
 import logging
 import sys
 import os
@@ -26,7 +27,8 @@ from ..analysis.value_trace import (
     _trace_value_to_global,
     _trace_value_to_function_call,
     _follow_ssa_value_across_blocks,
-    _check_ssa_value_equivalence
+    _check_ssa_value_equivalence,
+    _has_dcp_producer_in_phi,
 )
 from .jump_table import _detect_binary_search_switch
 from ..utils.helpers import debug_print
@@ -43,6 +45,282 @@ def _switch_debug(msg: str):
     """
     if SWITCH_DEBUG:
         debug_print(f"[SWITCH] {msg}")
+
+
+@dataclass
+class SwitchVariableCandidate:
+    """A candidate switch variable with confidence score from a specific tracer."""
+    name: str           # e.g., "gphase", "info->message", "param_0%4"
+    confidence: int     # 0-100
+    source: str         # tracer tag for debug logging
+    is_expression: bool = False  # True for "param_0%4" etc.
+
+
+def _compute_frame_def_has_dcp(var_value, ssa_func) -> Optional[bool]:
+    """Check if the reaching definition for var_value's frame slot involves DCP.
+
+    Returns:
+        True  = DCP in reaching def (value likely from parameter field access)
+        False = no DCP (value from global, function call, etc.)
+        None  = unknown (no metadata or SSA info available)
+    """
+    if not ssa_func or not var_value or not hasattr(var_value, 'metadata'):
+        return None
+    frame_version = var_value.metadata.get('frame_def_version')
+    if not frame_version:
+        return None
+    if not hasattr(ssa_func, 'values') or frame_version not in ssa_func.values:
+        return None
+    def_value = ssa_func.values[frame_version]
+    return _has_dcp_producer_in_phi(def_value, ssa_func, max_depth=5)
+
+
+def _try_resolve_mod_expression(
+    var_value, current_block, ssa_func, formatter
+) -> Optional[str]:
+    """Try to resolve a MOD (modulo) expression for the switch variable.
+
+    Extracts the 'base_var % constant' pattern from bytecode. Handles three
+    strategies for matching MOD output to LCP input:
+    1. Alias matching (MOD output alias == LCP alias)
+    2. Dead header pattern (MOD last in predecessor, LCP first in current)
+    3. ASGN store pattern (MOD result stored via ASGN to same location)
+
+    Returns the expression string (e.g., "param_0%4") or None.
+    """
+    actual_producer = var_value.producer_inst
+    if not actual_producer:
+        return None
+
+    # If producer is LCP, search predecessor blocks for MOD
+    if actual_producer.mnemonic == 'LCP':
+        lcp_alias = var_value.alias
+
+        # Extract stack offset from LCP instruction
+        lcp_offset = None
+        if (actual_producer.instruction and
+            actual_producer.instruction.instruction):
+            raw_offset = actual_producer.instruction.instruction.arg1
+            lcp_offset = raw_offset - 0x100000000 if raw_offset >= 0x80000000 else raw_offset
+            _switch_debug(f"  LCP stack offset: {lcp_offset}")
+
+        # Search current block and predecessors for MOD instruction
+        mod_inst = _find_mod_in_predecessors(current_block, ssa_func, max_depth=2)
+        if mod_inst:
+            mod_matches = False
+
+            # Strategy 1: Check if MOD has output with matching alias
+            if mod_inst.outputs:
+                for out in mod_inst.outputs:
+                    if out.alias == lcp_alias:
+                        mod_matches = True
+                        _switch_debug(f"  -> MOD matched via alias: {lcp_alias}")
+                        break
+
+            # Strategy 2: Dead header pattern
+            if not mod_matches and lcp_offset is not None:
+                mod_block_id = _get_instruction_block(mod_inst, ssa_func)
+                if mod_block_id is not None:
+                    cfg = ssa_func.cfg
+                    mod_block = cfg.get_block(mod_block_id)
+                    if mod_block:
+                        if (current_block == mod_block_id or
+                            current_block in mod_block.successors):
+                            mod_is_last_op = False
+                            mod_ssa_block = ssa_func.instructions.get(mod_block_id, [])
+                            real_ops = [i for i in mod_ssa_block if i.address >= 0]
+                            for idx_m, inst_m in enumerate(real_ops):
+                                if inst_m is mod_inst:
+                                    remaining = real_ops[idx_m+1:]
+                                    mod_is_last_op = all(
+                                        r.mnemonic == 'JMP' for r in remaining
+                                    ) if remaining else True
+                                    break
+
+                            lcp_is_first = False
+                            cmp_ssa_block = ssa_func.instructions.get(current_block, [])
+                            cmp_real = [i for i in cmp_ssa_block if i.address >= 0]
+                            if cmp_real and cmp_real[0].mnemonic == 'LCP':
+                                lcp_is_first = True
+
+                            if mod_is_last_op and lcp_is_first:
+                                mod_matches = True
+                                _switch_debug(f"  -> MOD matched via dead header pattern (MOD in block {mod_block_id}, LCP [sp+{lcp_offset}] first in block {current_block})")
+
+                    # Strategy 3: ASGN store pattern
+                    if not mod_matches and mod_inst.address is not None:
+                        mod_block_insts = ssa_func.instructions.get(current_block, [])
+                        for check_inst in mod_block_insts:
+                            if (check_inst.mnemonic == 'ASGN' and
+                                len(check_inst.inputs) >= 2 and
+                                check_inst.inputs[1].alias and
+                                check_inst.inputs[1].alias.startswith('&') and
+                                check_inst.inputs[1].alias[1:] == lcp_alias):
+                                mod_matches = True
+                                _switch_debug(f"  -> MOD matched via ASGN pattern")
+                                break
+
+            if mod_matches:
+                actual_producer = mod_inst
+                _switch_debug(f"  -> Found MOD in predecessor block (same variable {lcp_alias})")
+            else:
+                _switch_debug(f"  -> Found MOD in predecessor block but for different variable")
+
+    if actual_producer and actual_producer.mnemonic == "MOD":
+        if len(actual_producer.inputs) >= 2:
+            base_var = actual_producer.inputs[0]
+            mod_value = actual_producer.inputs[1]
+
+            # Try to get base variable name
+            base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
+            if not base_name:
+                base_name = _trace_value_to_global(base_var, formatter, ssa_func)
+            if not base_name:
+                producer = _follow_ssa_value_across_blocks(base_var, ssa_func, max_depth=10)
+                if producer:
+                    if producer.mnemonic == 'LCP':
+                        base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
+                    elif producer.mnemonic in {'GCP', 'GLD'}:
+                        base_name = _trace_value_to_global(base_var, formatter, ssa_func)
+            if not base_name:
+                base_name = formatter.render_value(base_var)
+
+            # Try to get modulo constant
+            mod_const = None
+            if mod_value.alias and mod_value.alias.startswith("data_"):
+                try:
+                    offset = int(mod_value.alias[5:])
+                    if ssa_func.scr and ssa_func.scr.data_segment:
+                        mod_const = ssa_func.scr.data_segment.get_dword(offset * 4)
+                except (ValueError, AttributeError):
+                    pass
+
+            if mod_const is not None:
+                result = f"{base_name}%{mod_const}"
+                _switch_debug(f"  -> Detected modulo switch: {result}")
+                return result
+
+    return None
+
+
+def _resolve_switch_variable(
+    var_value, current_block, ssa_func, formatter, func_block_ids
+) -> SwitchVariableCandidate:
+    """Run ALL variable resolution tracers and pick the best candidate by confidence.
+
+    Replaces the old first-match-wins waterfall with a unified scoring system.
+    Each tracer assigns a base confidence score. When the frame slot's reaching
+    definition has no DCP (meaning it doesn't come from a parameter field access),
+    parameter-based tracers are penalized to 0.
+    """
+    candidates = []
+    frame_has_dcp = _compute_frame_def_has_dcp(var_value, ssa_func)
+    _switch_debug(f"  frame_has_dcp: {frame_has_dcp}")
+
+    # 1. MOD structural pattern (confidence 95)
+    mod_name = _try_resolve_mod_expression(var_value, current_block, ssa_func, formatter)
+    if mod_name:
+        candidates.append(SwitchVariableCandidate(
+            name=mod_name, confidence=95, source="mod_expression", is_expression=True
+        ))
+
+    # 2. Dead GCP/LCP header (confidence 90)
+    dead_gcp_name = _find_dead_gcp_in_predecessor(ssa_func, current_block, formatter)
+    if dead_gcp_name:
+        candidates.append(SwitchVariableCandidate(
+            name=dead_gcp_name, confidence=90, source="dead_gcp_header"
+        ))
+
+    # 3. Global variable trace (confidence 70, boosted to 80 when no DCP)
+    global_name = _trace_value_to_global(var_value, formatter, ssa_func, skip_dcp_guard=True)
+    if global_name:
+        conf = 80 if frame_has_dcp is False else 70
+        candidates.append(SwitchVariableCandidate(
+            name=global_name, confidence=conf, source="global_trace"
+        ))
+
+    # 4. Parameter field access (confidence 75, dropped to 0 when no DCP)
+    param_field_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
+    if param_field_name:
+        conf = 0 if frame_has_dcp is False else 75
+        candidates.append(SwitchVariableCandidate(
+            name=param_field_name, confidence=conf, source="param_field"
+        ))
+
+    # 5. Parameter trace (confidence 60, dropped to 0 when no DCP)
+    param_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
+    if param_name:
+        conf = 0 if frame_has_dcp is False else 60
+        # Try semantic name inference
+        if param_name.startswith('param_'):
+            semantic = _infer_parameter_semantic_name(var_value, param_name, ssa_func, formatter)
+            if semantic:
+                param_name = semantic
+                conf = 0 if frame_has_dcp is False else 65
+                candidates.append(SwitchVariableCandidate(
+                    name=param_name, confidence=conf, source="semantic_param"
+                ))
+            else:
+                candidates.append(SwitchVariableCandidate(
+                    name=param_name, confidence=conf, source="param_trace"
+                ))
+        else:
+            candidates.append(SwitchVariableCandidate(
+                name=param_name, confidence=conf, source="param_trace"
+            ))
+
+    # 6. Function call result (confidence 55)
+    func_call_name = _trace_value_to_function_call(ssa_func, var_value, formatter)
+    if func_call_name:
+        candidates.append(SwitchVariableCandidate(
+            name=func_call_name, confidence=55, source="func_call"
+        ))
+
+    # 7. Predecessor param field search (confidence 50, dropped to 0 when no DCP)
+    pred_field_name = _find_param_field_in_predecessors(
+        ssa_func, current_block, var_value, formatter
+    )
+    if pred_field_name:
+        conf = 0 if frame_has_dcp is False else 50
+        candidates.append(SwitchVariableCandidate(
+            name=pred_field_name, confidence=conf, source="pred_param_field"
+        ))
+
+    # 8. Nearby GCP heuristic (confidence 30)
+    gcp_name = _find_switch_variable_from_nearby_gcp(
+        ssa_func, current_block, var_value, formatter, func_block_ids
+    )
+    if gcp_name:
+        candidates.append(SwitchVariableCandidate(
+            name=gcp_name, confidence=30, source="nearby_gcp"
+        ))
+
+    # 9. Fallback: render_value (confidence 10)
+    rendered = formatter.render_value(var_value)
+    if rendered:
+        candidates.append(SwitchVariableCandidate(
+            name=rendered, confidence=10, source="render_fallback"
+        ))
+
+    # Filter out confidence=0 candidates
+    viable = [c for c in candidates if c.confidence > 0]
+
+    if not viable:
+        # All candidates were zeroed out — use render fallback
+        fallback_name = formatter.render_value(var_value)
+        _switch_debug(f"  -> All candidates zeroed out, using render fallback: {fallback_name}")
+        return SwitchVariableCandidate(
+            name=fallback_name, confidence=10, source="render_fallback"
+        )
+
+    # Pick winner: max confidence, tiebreak by shorter name
+    viable.sort(key=lambda c: (-c.confidence, len(c.name)))
+    winner = viable[0]
+
+    _switch_debug(f"  -> Candidates: {[(c.name, c.confidence, c.source) for c in viable]}")
+    _switch_debug(f"  -> Winner: {winner.name} (confidence={winner.confidence}, source={winner.source})")
+
+    return winner
 
 
 def _detect_case_fallthrough(
@@ -828,6 +1106,100 @@ def _find_switch_variable_from_nearby_gcp(
     return None
 
 
+def _find_dead_gcp_in_predecessor(
+    ssa_func: SSAFunction,
+    current_block_id: int,
+    formatter: ExpressionFormatter,
+) -> Optional[str]:
+    """
+    Detect the "dead switch header" compiler pattern.
+
+    The VC compiler emits a header block for switch statements:
+        Block N:   GCP data[X]   ; declare switch variable (NEVER consumed)
+                   JMP Block N+1
+        Block N+1: LCP [sp+Y]    ; re-read value from frame stack
+                   GCP const     ; case value
+                   EQU           ; compare
+
+    Also detects LCP dead headers (used when the switch variable is already
+    in a local frame slot):
+        Block N:   LCP [sp+X]    ; declare switch variable (NEVER consumed)
+                   JMP Block N+1
+
+    The output has zero real uses (only flows to PHI nodes with negative
+    addresses). Combined with the block shape (only GCP/GLD/LCP + JMP), this
+    is a definitive signal of the switch variable.
+    """
+    cfg = ssa_func.cfg
+    if not cfg or current_block_id not in cfg.blocks:
+        return None
+
+    preds = cfg.blocks[current_block_id].predecessors
+    ssa_blocks = ssa_func.instructions
+
+    for pred_id in preds:
+        if pred_id not in ssa_blocks:
+            continue
+
+        ssa_instrs = ssa_blocks[pred_id]
+
+        # Filter to non-PHI instructions (address >= 0)
+        real_instrs = [i for i in ssa_instrs if i.address >= 0]
+
+        # Block shape check: exactly 2 real instructions, header + JMP
+        if len(real_instrs) != 2:
+            continue
+
+        header_instr = None
+        has_jmp = False
+        for instr in real_instrs:
+            if instr.mnemonic in {'GCP', 'GLD', 'LCP'}:
+                header_instr = instr
+            elif instr.mnemonic == 'JMP':
+                has_jmp = True
+
+        if not header_instr or not has_jmp:
+            continue
+
+        # Check that header output has zero real uses (all uses are PHI, addr < 0)
+        if not header_instr.outputs:
+            continue
+
+        header_output = header_instr.outputs[0]
+        real_uses = [addr for addr, _ in header_output.uses if addr >= 0]
+        if len(real_uses) > 0:
+            continue
+
+        # Dead header confirmed — resolve variable name
+        if header_instr.mnemonic in {'GCP', 'GLD'}:
+            # Global load header: resolve global name from data offset
+            if hasattr(header_instr, 'instruction') and hasattr(header_instr.instruction, 'instruction'):
+                dword_offset = header_instr.instruction.instruction.arg1
+                if hasattr(formatter, '_global_names'):
+                    global_name = formatter._global_names.get(dword_offset)
+                    if global_name:
+                        _switch_debug(f"    Dead GCP header in block {pred_id}: {global_name} (0 real uses)")
+                        return global_name
+
+        elif header_instr.mnemonic == 'LCP':
+            # LCP dead header: the loaded variable IS the switch variable.
+            # Try to resolve the alias (e.g., local_20 → g_dialog if stored there).
+            alias = header_output.alias
+            if alias:
+                # Check if this local has a global name via global resolver
+                if hasattr(formatter, '_global_names'):
+                    # Try resolving through the frame slot value
+                    var_name = _trace_value_to_global(header_output, formatter, ssa_func)
+                    if var_name:
+                        _switch_debug(f"    Dead LCP header in block {pred_id}: {var_name} (from {alias})")
+                        return var_name
+                # If not a global, return the alias as-is (local variable name)
+                _switch_debug(f"    Dead LCP header in block {pred_id}: {alias} (local)")
+                return alias
+
+    return None
+
+
 def _extract_comparison_variable(
     block_id: int,
     ssa_func: SSAFunction,
@@ -855,12 +1227,13 @@ def _extract_comparison_variable(
         if ssa_inst.mnemonic == 'EQU':
             if len(ssa_inst.inputs) >= 2:
                 var_value = ssa_inst.inputs[0]
-                # Use existing variable tracing logic
-                var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
+                # Use existing variable tracing logic — same priority order
+                # as _resolve_switch_variable: globals first, then param fields
+                var_name = _trace_value_to_global(var_value, formatter, ssa_func)
+                if not var_name:
+                    var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
                 if not var_name:
                     var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
-                if not var_name:
-                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
                 if not var_name and hasattr(var_value, 'alias'):
                     var_name = var_value.alias
                 return var_name
@@ -947,6 +1320,7 @@ def _pre_scan_for_nested_headers(
     return nested_headers
 
 
+
 def _find_equ_for_comparison(
     current_block_id: int,
     jump_ssa,
@@ -978,7 +1352,8 @@ def _find_equ_for_comparison(
         if any(out.name == condition_value.name for out in ssa_inst.outputs):
             if ssa_inst.mnemonic == "EQU" and len(ssa_inst.inputs) >= 2:
                 _switch_debug(f"Found EQU in current block {current_block_id}")
-                return (ssa_inst, ssa_inst.inputs[0], ssa_inst.inputs[1])
+                var_val, const_val = ssa_inst.inputs[0], ssa_inst.inputs[1]
+                return (ssa_inst, var_val, const_val)
 
     # Search predecessors if not found in current block
     if max_pred_search > 0:
@@ -991,7 +1366,8 @@ def _find_equ_for_comparison(
                     if any(out.name == condition_value.name for out in ssa_inst.outputs):
                         if ssa_inst.mnemonic == "EQU" and len(ssa_inst.inputs) >= 2:
                             _switch_debug(f"Found EQU in predecessor block {pred_id}")
-                            return (ssa_inst, ssa_inst.inputs[0], ssa_inst.inputs[1])
+                            var_val, const_val = ssa_inst.inputs[0], ssa_inst.inputs[1]
+                            return (ssa_inst, var_val, const_val)
 
                 # Recurse to predecessor's predecessors
                 result = _find_equ_for_comparison(
@@ -1123,11 +1499,11 @@ def _detect_switch_patterns(
         # This allows us to pick the most consistent variable (highest occurrence)
         # and handle cases where different blocks use different names for the same value
         variable_frequency: Dict[str, int] = {}  # var_name -> count of blocks using it
-        variable_priority: Dict[str, int] = {}   # var_name -> priority score (param field=100, global=50, etc.)
+        variable_confidence: Dict[str, int] = {}  # var_name -> confidence score from unified scoring
         variable_to_ssa: Dict[str, any] = {}      # var_name -> SSA value
 
         # PHASE 3 FIX: Collect ALL potential cases first, then filter
-        # Structure: List[(var_name, var_priority, ssa_value, case_info)]
+        # Structure: List[(var_name, var_confidence, ssa_value, case_info, source_block)]
         all_potential_cases: List[tuple] = []
         case_sources: Dict[tuple[int, int], int] = {}
 
@@ -1268,228 +1644,18 @@ def _detect_switch_patterns(
                     except (ValueError, AttributeError):
                         pass
 
-                # FIX #1: Get variable name - try parameter field FIRST (highest priority)
+                # Resolve switch variable using unified scoring system
                 _switch_debug(f"Switch detection: Tracing var_value {var_value.name if hasattr(var_value, 'name') else var_value} (alias: {var_value.alias if hasattr(var_value, 'alias') else 'None'})")
                 _switch_debug(f"  Producer: {var_value.producer_inst.mnemonic if var_value.producer_inst else 'None'}")
                 _switch_debug(f"  Current test_var: {test_var}, test_ssa_value: {test_ssa_value.name if test_ssa_value and hasattr(test_ssa_value, 'name') else test_ssa_value}")
 
-                var_name = None
+                winner = _resolve_switch_variable(
+                    var_value, current_block, ssa_func, formatter, func_block_ids
+                )
+                var_name = winner.name
+                var_confidence = winner.confidence
 
-                # Phase 8B.1 FIX: Check for MOD operation FIRST before other traces
-                # This prevents parameter/global traces from hiding the modulo expression
-
-                # First, check if var_value itself is produced by MOD
-                actual_producer = var_value.producer_inst
-
-                # If producer is LCP (load from stack), search predecessor blocks for MOD
-                # This handles cases like: Block N: MOD -> Block N+1: LCP [sp+0] -> EQU
-                # IMPORTANT: Only match MOD if its result flows to the same stack location
-                if actual_producer and actual_producer.mnemonic == 'LCP':
-                    lcp_alias = var_value.alias  # e.g., "local_0"
-
-                    # Extract stack offset from LCP instruction (e.g., [sp+0] -> 0)
-                    lcp_offset = None
-                    if (actual_producer.instruction and
-                        actual_producer.instruction.instruction):
-                        raw_offset = actual_producer.instruction.instruction.arg1
-                        # Convert to signed offset
-                        lcp_offset = raw_offset - 0x100000000 if raw_offset >= 0x80000000 else raw_offset
-                        _switch_debug(f"  LCP stack offset: {lcp_offset}")
-
-                    # Search current block and predecessors for MOD instruction
-                    mod_inst = _find_mod_in_predecessors(current_block, ssa_func, max_depth=2)
-                    if mod_inst:
-                        # Verify MOD result is stored to the same location as LCP loads
-                        mod_matches = False
-
-                        # Strategy 1: Check if MOD has output with matching alias
-                        if mod_inst.outputs:
-                            for out in mod_inst.outputs:
-                                if out.alias == lcp_alias:
-                                    mod_matches = True
-                                    _switch_debug(f"  -> MOD matched via alias: {lcp_alias}")
-                                    break
-
-                        # Strategy 2: For stack-based MOD, check instruction sequence
-                        # If MOD is immediately followed by JMP and LCP loads [sp+0], it's the MOD result
-                        # MOD leaves result at TOS (top of stack); if LCP is in same or immediate successor
-                        # block and loads [sp+0], it's the MOD result
-                        if not mod_matches and lcp_offset == 0:
-                            mod_block_id = _get_instruction_block(mod_inst, ssa_func)
-                            if mod_block_id is not None:
-                                # Check if current_block is mod_block or immediate successor
-                                cfg = ssa_func.cfg
-                                mod_block = cfg.get_block(mod_block_id)
-                                if mod_block:
-                                    # Accept if: current block IS the mod block, OR
-                                    # current block is an immediate successor of mod block
-                                    if (current_block == mod_block_id or
-                                        current_block in mod_block.successors):
-                                        mod_matches = True
-                                        _switch_debug(f"  -> MOD matched via stack position heuristic (LCP [sp+0] after MOD in block {mod_block_id})")
-
-                        # Strategy 3: Check if there's an ASGN after the MOD that stores to the same location
-                        if not mod_matches and mod_inst.address is not None:
-                            mod_block = ssa_func.instructions.get(current_block, [])
-                            for check_inst in mod_block:
-                                if (check_inst.mnemonic == 'ASGN' and
-                                    len(check_inst.inputs) >= 2 and
-                                    check_inst.inputs[1].alias and
-                                    check_inst.inputs[1].alias.startswith('&') and
-                                    check_inst.inputs[1].alias[1:] == lcp_alias):
-                                    mod_matches = True
-                                    _switch_debug(f"  -> MOD matched via ASGN pattern")
-                                    break
-
-                        if mod_matches:
-                            actual_producer = mod_inst
-                            _switch_debug(f"  -> Found MOD in predecessor block (same variable {lcp_alias})")
-                        else:
-                            _switch_debug(f"  -> Found MOD in predecessor block but for different variable (MOD outputs don't match {lcp_alias})")
-
-                if actual_producer and actual_producer.mnemonic == "MOD":
-                        # Extract: var % constant
-                        if len(actual_producer.inputs) >= 2:
-                            base_var = actual_producer.inputs[0]
-                            mod_value = actual_producer.inputs[1]
-
-                            # Try to get base variable name
-                            base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
-                            if not base_name:
-                                base_name = _trace_value_to_global(base_var, formatter, ssa_func)
-                            if not base_name:
-                                # Phase 8B.1: Use multi-block SSA tracing for complex cases
-                                producer = _follow_ssa_value_across_blocks(base_var, ssa_func, max_depth=10)
-                                if producer:
-                                    if producer.mnemonic == 'LCP':
-                                        # Parameter load - try to resolve again with producer context
-                                        base_name = _trace_value_to_parameter(base_var, formatter, ssa_func)
-                                    elif producer.mnemonic in {'GCP', 'GLD'}:
-                                        # Global load - try to resolve again with producer context
-                                        base_name = _trace_value_to_global(base_var, formatter, ssa_func)
-                            if not base_name:
-                                base_name = formatter.render_value(base_var)
-
-                            # Try to get modulo constant
-                            mod_const = None
-                            if mod_value.alias and mod_value.alias.startswith("data_"):
-                                try:
-                                    offset = int(mod_value.alias[5:])
-                                    if ssa_func.scr and ssa_func.scr.data_segment:
-                                        mod_const = ssa_func.scr.data_segment.get_dword(offset * 4)
-                                except (ValueError, AttributeError):
-                                    pass
-
-                            if mod_const is not None:
-                                var_name = f"{base_name}%{mod_const}"
-                                _switch_debug(f"  -> Detected modulo switch: {var_name}")
-
-                # If not MOD, try other variable resolution methods
-                # Try global variables first (named globals like "gphase")
-                if not var_name:
-                    var_name = _trace_value_to_global(var_value, formatter, ssa_func)
-                    if var_name:
-                        _switch_debug(f"  -> Found global: {var_name}")
-                        # Cross-check: if the value's LCP has a DCP (param field access)
-                        # in its direct predecessor chain, the global may be a false
-                        # positive from _find_gcp_for_stack_offset. Build the param
-                        # field name directly from the LADR→DADR→DCP pattern.
-                        if var_value and var_value.producer_inst and var_value.producer_inst.mnemonic == 'LCP':
-                            from ..analysis.value_trace import _find_param_field_in_direct_predecessor_chain
-                            lcp_block_id = var_value.producer_inst.block_id
-                            dcp_result = _find_param_field_in_direct_predecessor_chain(lcp_block_id, ssa_func, max_depth=5)
-                            if dcp_result:
-                                _ladr_offset, dadr_field_offset = dcp_result
-                                # Build parameter field name from DADR offset
-                                _field_map = {
-                                    0: "message", 4: "param1", 8: "param2",
-                                    12: "param3", 16: "elapsed_time", 20: "fval1",
-                                }
-                                field_name = _field_map.get(dadr_field_offset, f"field_{dadr_field_offset}")
-                                param_name = "info"
-                                if hasattr(formatter, '_func_signature') and formatter._func_signature:
-                                    func_sig = formatter._func_signature
-                                    if func_sig.param_types:
-                                        for param_type in func_sig.param_types:
-                                            if 's_SC_NET_info' in param_type or 's_SC_L_info' in param_type:
-                                                parts = param_type.split()
-                                                if parts:
-                                                    param_name = parts[-1].lstrip('*')
-                                                break
-                                param_field = f"{param_name}->{field_name}"
-                                _switch_debug(f"  -> Overriding global '{var_name}' with parameter field '{param_field}' (DCP in direct predecessor chain)")
-                                var_name = param_field
-
-                # Then try parameter field access (info->message, info->param1, etc.)
-                if not var_name:
-                    var_name = _trace_value_to_parameter_field(var_value, formatter, ssa_func)
-                    if var_name:
-                        _switch_debug(f"  -> Found parameter field: {var_name}")
-
-                if not var_name:
-                    var_name = _trace_value_to_parameter(var_value, formatter, ssa_func)
-                    if var_name:
-                        _switch_debug(f"  -> Found parameter: {var_name}")
-
-                        # PHASE 8B Priority 1: If generic parameter name (param_0, param_1, etc.),
-                        # try to infer semantic name from function context
-                        if var_name.startswith('param_'):
-                            semantic_name = _infer_parameter_semantic_name(
-                                var_value, var_name, ssa_func, formatter
-                            )
-                            if semantic_name:
-                                var_name = semantic_name
-                                _switch_debug(f"  -> Inferred semantic parameter name: {var_name}")
-
-                if not var_name:
-                    var_name = _trace_value_to_function_call(ssa_func, var_value, formatter)
-                    if var_name:
-                        _switch_debug(f"  -> Found function call result: {var_name}")
-
-                # Try parameter field pattern in predecessor blocks.
-                # This handles the common Vietcong pattern:
-                #   Block N:   LADR [sp-4] → DADR 0 → DCP → JMP Block N+1
-                #   Block N+1: LCP [sp+418] → EQU → JZ (switch comparison)
-                if not var_name:
-                    var_name = _find_param_field_in_predecessors(
-                        ssa_func, current_block, var_value, formatter
-                    )
-                    if var_name:
-                        _switch_debug(f"  -> Found via predecessor param field search: {var_name}")
-
-                # FALLBACK: If predecessor search failed, try GCP heuristic.
-                # This is needed for global variable switches where the global is loaded
-                # in a predecessor block but not tracked through SSA.
-                if not var_name:
-                    # Look for GCP in SSA blocks - works for all iterations, not just first
-                    # IMPORTANT: Pass SSA function, not CFG, to get correct mnemonics
-                    var_name = _find_switch_variable_from_nearby_gcp(
-                        ssa_func, current_block, var_value, formatter, func_block_ids
-                    )
-                    if var_name:
-                        _switch_debug(f"  -> Found via GCP heuristic: {var_name}")
-
-                if not var_name:
-                    # Fall back to regular rendering if neither parameter nor global
-                    var_name = formatter.render_value(var_value)
-                    _switch_debug(f"  -> Fallback to rendered value: {var_name}")
-
-                # PHASE 2 FIX: Calculate priority score for this variable
-                var_priority = 0
-                if "->" in var_name:
-                    # Parameter field access (info->message)
-                    var_priority = 100
-                elif var_name.startswith("param_"):
-                    var_priority = 90
-                elif var_name.startswith("g") or "_g" in var_name:
-                    var_priority = 50
-                elif "%" in var_name:
-                    # Modulo expression
-                    var_priority = 80
-                else:
-                    var_priority = 30
-
-                _switch_debug(f"  Variable '{var_name}' assigned priority: {var_priority}")
+                _switch_debug(f"  Variable '{var_name}' assigned confidence: {var_confidence} (source: {winner.source})")
 
                 # NESTED SWITCH FIX: When we see a different variable, it's likely a nested switch
                 # Only collect cases for the SAME variable to preserve switch structure
@@ -1536,7 +1702,11 @@ def _detect_switch_patterns(
                         # Don't update test_var - keep the MOD-based name
                     elif same_source:
                         # Same stack variable, different traced names - keep the first (more descriptive) name
-                        _switch_debug(f"Same-source continuation: {test_var} vs {var_name} (treating as same variable)")
+                        # Use test_var for tracking so the best_variable logic doesn't
+                        # pick a different name just because a later false resolution
+                        # has higher priority (e.g., info->param2 priority=100 vs gphase priority=50).
+                        var_name = test_var
+                        _switch_debug(f"Same-source continuation: {test_var} vs original (treating as same variable)")
                         chain_debug['variables_seen'].append(var_name)
                         chain_debug['ssa_values_seen'].append(var_value.name if hasattr(var_value, 'name') else str(var_value))
                         debug_print(f"DEBUG SWITCH: Same-source continuation - keeping {test_var}")
@@ -1557,11 +1727,11 @@ def _detect_switch_patterns(
                         # to a nested switch, not the current one being detected.
                         continue
 
-                # Track this variable's frequency and priority.
+                # Track this variable's frequency and confidence.
                 # This is done AFTER the nested switch check so that variables
                 # belonging to nested switches are excluded from best-variable selection.
                 variable_frequency[var_name] = variable_frequency.get(var_name, 0) + 1
-                variable_priority[var_name] = max(variable_priority.get(var_name, 0), var_priority)
+                variable_confidence[var_name] = max(variable_confidence.get(var_name, 0), var_confidence)
                 variable_to_ssa[var_name] = var_value
 
                 # Same variable (or first case), try to extract constant value using ConstantPropagator
@@ -1601,7 +1771,7 @@ def _detect_switch_patterns(
                             # FIX: Assign detection_order to preserve bytecode order
                             case_info = CaseInfo(value=case_val, block_id=case_block_id, detection_order=next_detection_order)
                             next_detection_order += 1
-                            all_potential_cases.append((var_name, var_priority, var_value, case_info, current_block))
+                            all_potential_cases.append((var_name, var_confidence, var_value, case_info, current_block))
                             case_sources[(case_val, case_block_id)] = current_block
 
                             # TEMPORARY: Also add to old structure for compatibility
@@ -1609,7 +1779,7 @@ def _detect_switch_patterns(
                             chain_blocks.append(current_block)
                             last_chain_block = current_block  # Track last test block
                             found_equ = True
-                            debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, priority={var_priority}, order={case_info.detection_order}")
+                            debug_print(f"DEBUG SWITCH: Added case: value={case_val}, block={case_block_id}, var={var_name}, confidence={var_confidence}, order={case_info.detection_order}")
 
                             # BFS: Add ALL successors of this comparison block to the queue
                             # This allows us to find comparison blocks even if they're not directly chained
@@ -1636,22 +1806,20 @@ def _detect_switch_patterns(
             switch_type = "full" if len(cases) >= 2 else "single_case"
             _switch_debug(f"Switch detected: {test_var}, type={switch_type}")
 
-        # PHASE 2 FIX: Select the BEST variable based on priority and frequency
-        # If we saw multiple variables during BFS, pick the one with highest priority
-        # This handles cases where different blocks use different names for the same value
+        # Select the BEST variable based on confidence and frequency
+        # If we saw multiple variables during BFS, pick the one with highest confidence
         if len(cases) >= 1 and variable_frequency:
             _switch_debug(f"Variable frequency: {variable_frequency}")
-            _switch_debug(f"Variable priority: {variable_priority}")
+            _switch_debug(f"Variable confidence: {variable_confidence}")
 
-            # Find variable with best combination of priority and frequency
             best_var = None
             best_score = -1
 
             for var_name in variable_frequency:
-                # Score = priority * 1000 + frequency
-                # This heavily weights priority but uses frequency as tiebreaker
-                score = variable_priority.get(var_name, 0) * 1000 + variable_frequency[var_name]
-                _switch_debug(f"  {var_name}: priority={variable_priority.get(var_name, 0)}, freq={variable_frequency[var_name]}, score={score}")
+                # Score = confidence * 1000 + frequency
+                # This heavily weights confidence but uses frequency as tiebreaker
+                score = variable_confidence.get(var_name, 0) * 1000 + variable_frequency[var_name]
+                _switch_debug(f"  {var_name}: confidence={variable_confidence.get(var_name, 0)}, freq={variable_frequency[var_name]}, score={score}")
 
                 if score > best_score:
                     best_score = score
@@ -1722,6 +1890,58 @@ def _detect_switch_patterns(
         # 2 cases becomes a switch only if there's a default case OR case values are non-sequential
         # (non-sequential values like 0,2 suggest intentional switch; sequential 0,1 is likely if-else)
         debug_print(f"DEBUG SWITCH: BFS loop complete for block {block_id}: {len(cases)} unique cases collected (duplicates removed)")
+
+        # STRUCTURAL CONTINUITY CHECK: Split chain at structural gaps.
+        # When two separate switch(X) statements on the same variable exist,
+        # the BFS merges them because it doesn't detect structural boundaries.
+        # Check if chain_blocks form a continuous CFG path. If not, keep only
+        # the first connected segment and leave the rest for later detection.
+        if len(chain_blocks) >= 2:
+            first_segment_end = 0
+            for ci in range(1, len(chain_blocks)):
+                prev_bid = chain_blocks[ci - 1]
+                curr_bid = chain_blocks[ci]
+                prev_block = cfg.blocks.get(prev_bid)
+                connected = False
+                if prev_block:
+                    # Direct successor
+                    if curr_bid in prev_block.successors:
+                        connected = True
+                    else:
+                        # Allow one intermediate block (JMP passthrough)
+                        for succ_id in prev_block.successors:
+                            succ_block = cfg.blocks.get(succ_id)
+                            if succ_block and curr_bid in succ_block.successors:
+                                # Verify it's a JMP-only block
+                                if succ_block.instructions and len(succ_block.instructions) <= 2:
+                                    connected = True
+                                    break
+                if connected:
+                    first_segment_end = ci
+                else:
+                    break
+
+            if first_segment_end < len(chain_blocks) - 1:
+                # Gap found — split chain
+                kept_chain = chain_blocks[:first_segment_end + 1]
+                dropped_chain = chain_blocks[first_segment_end + 1:]
+                kept_set = set(kept_chain)
+
+                # Filter cases to only keep those from the first segment
+                kept_cases = []
+                for case in cases:
+                    # Find the chain block that produced this case
+                    case_key = (case.value, case.block_id)
+                    src = filtered_case_sources.get(case_key) or case_sources.get(case_key)
+                    if src in kept_set:
+                        kept_cases.append(case)
+
+                if kept_cases and len(kept_cases) < len(cases):
+                    debug_print(f"DEBUG SWITCH: Split chain at structural gap: kept {len(kept_cases)} cases (chain {kept_chain}), dropped {len(cases) - len(kept_cases)} cases (chain {dropped_chain})")
+                    chain_blocks = kept_chain
+                    cases = kept_cases
+                    # Update last_chain_block
+                    last_chain_block = kept_chain[-1] if kept_chain else last_chain_block
 
         # Use last_chain_block instead of current_block (which might be a body block)
         # The last chain block is the last test/comparison block in the switch chain

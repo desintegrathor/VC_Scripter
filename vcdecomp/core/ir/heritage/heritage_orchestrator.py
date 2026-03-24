@@ -32,6 +32,7 @@ from ..stack_lifter import (
     _to_signed, _stack_alias_from_offset
 )
 from .location_map import LocationMap, HeritageRange, AddressSpace
+from .rename import rename_frame_variables, RenameResult
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,9 @@ class HeritageOrchestrator:
         # PHI naming counter
         self._phi_counter = 0
 
+        # Rename pass result
+        self._rename_result: Optional[RenameResult] = None
+
     def _lift_all_blocks(self) -> Dict[int, List[LiftedInstruction]]:
         """
         Lift all blocks in the CFG.
@@ -172,6 +176,15 @@ class HeritageOrchestrator:
 
             # Heritage the new variables (place PHIs, rename)
             self._heritage_new_variables(new_vars)
+
+        # Renaming pass: walk dominator tree to create frame def-use chains
+        param_count = getattr(self.scr.header, 'num_args', 0)
+        if param_count == 0:
+            param_count = self._detect_parameter_count()
+        self._rename_result = rename_frame_variables(
+            self.cfg, self._lifted, self._phi_nodes, self._variables,
+            self.resolver, param_count=param_count,
+        )
 
         # Build final SSA function
         self.ssa_func = self._build_final_ssa()
@@ -299,17 +312,33 @@ class HeritageOrchestrator:
                         var_info = discovered_offsets[offset]
 
                     # Track definition/use blocks
+                    # Frame WRITE patterns:
+                    #   1. LLD with outputs (store mode, pops=1) — original detection
+                    #   2. LLD without outputs but positive offset (copy mode after XCALL/CALL)
+                    #   3. LADR [sp+N] followed by ASGN within 3 instructions
+                    # Frame READ patterns:
+                    #   1. LCP [sp+N] — loads from frame to eval stack
+                    #   2. Normal LLD [sp+N] with outputs (pops=0, pushes=1) — loads from frame
+                    is_def = False
                     if mnemonic == "LLD" and inst.outputs:
-                        # LLD stores a value - this is a definition
+                        # LLD store mode (pops=1) - this is a definition
+                        is_def = True
+                    elif mnemonic == "LLD" and not inst.outputs and offset >= 0:
+                        # LLD copy mode (after XCALL/CALL, pops=0 pushes=0) - frame write
+                        is_def = True
+                    # NOTE: LADR+ASGN detection disabled for now — it causes too many
+                    # PHI nodes to be placed, which cascades into structural regressions
+                    # in the emitted code. The LLD copy-mode detection above is sufficient
+                    # for the switch variable resolution use case.
+                    # TODO: Re-enable when the emitter can handle the extra PHI nodes.
+
+                    if is_def:
                         var_info.def_blocks.add(block_id)
-                        # Capture type from the stored value
                         if var_info.value_type == opcodes.ResultType.UNKNOWN and inst.outputs:
                             var_info.value_type = inst.outputs[0].value_type
                     else:
-                        # LCP/LADR loads a value - this is a use
+                        # LCP/LADR (without ASGN) loads a value - this is a use
                         var_info.use_blocks.add(block_id)
-                        # For loads, capture type from the output (the loaded value)
-                        # LCP produces a typed output based on what was stored
                         if var_info.value_type == opcodes.ResultType.UNKNOWN and inst.outputs:
                             for out in inst.outputs:
                                 if out.value_type != opcodes.ResultType.UNKNOWN:
@@ -524,7 +553,98 @@ class HeritageOrchestrator:
                     out_val.producer_inst = ssa_inst
                 ssa_block.append(ssa_inst)
 
+                # Link frame reads to their defining version from rename pass
+                if self._rename_result:
+                    addr = lifted_inst.instruction.address
+                    read_key = (block_id, addr)
+                    if read_key in self._rename_result.read_links:
+                        version = self._rename_result.read_links[read_key]
+                        for out_val in ssa_outputs:
+                            out_val.metadata['frame_def_version'] = version
+
+                    # Create SSA values for frame write versions so they can be looked up
+                    write_key = (block_id, addr)
+                    if write_key in self._rename_result.write_versions:
+                        version = self._rename_result.write_versions[write_key]
+                        if version not in values:
+                            # For frame writes, trace back to what produced the stored value:
+                            # - LLD copy-mode: prev instruction is XCALL/CALL that returned value
+                            # - LADR+ASGN: the ASGN's first input is the stored value
+                            source_inst = ssa_inst
+                            source_addr = addr
+                            if mnemonic == "LLD" and len(ssa_block) >= 2:
+                                # LLD copy-mode: look at preceding instruction
+                                prev_ssa = ssa_block[-2]
+                                if prev_ssa.mnemonic in {"XCALL", "CALL"}:
+                                    source_inst = prev_ssa
+                                    source_addr = prev_ssa.address
+                            elif mnemonic == "LADR":
+                                # LADR+ASGN: find the ASGN and use its first input's producer
+                                for later_inst in lifted_insts[lifted_insts.index(lifted_inst)+1:]:
+                                    later_mn = self.resolver.get_mnemonic(later_inst.instruction.opcode)
+                                    if later_mn == "ASGN" and later_inst.inputs:
+                                        # ASGN inputs: [value_to_store, address]
+                                        stored_val = later_inst.inputs[0]
+                                        if stored_val.producer:
+                                            # Find the SSA inst for the stored value's producer
+                                            for prev_ssa in ssa_block:
+                                                if prev_ssa.address == stored_val.producer.address:
+                                                    source_inst = prev_ssa
+                                                    source_addr = prev_ssa.address
+                                                    break
+                                        break
+                                    if later_mn in {"JMP", "JZ", "JNZ", "CALL", "XCALL", "RET"}:
+                                        break
+                            write_val = SSAValue(
+                                name=version,
+                                value_type=opcodes.ResultType.UNKNOWN,
+                                producer=source_addr,
+                            )
+                            write_val.producer_inst = source_inst
+
+                            # Post-store global alias: if LLD copy-mode, scan ahead
+                            # for GADR+ASGN pattern (same XCALL return stored to global)
+                            if mnemonic == "LLD":
+                                lld_idx = lifted_insts.index(lifted_inst)
+                                for scan_idx in range(lld_idx + 1, min(lld_idx + 5, len(lifted_insts))):
+                                    scan_inst = lifted_insts[scan_idx]
+                                    scan_mn = self.resolver.get_mnemonic(scan_inst.instruction.opcode)
+                                    if scan_mn == "GADR":
+                                        global_offset = scan_inst.instruction.arg1
+                                        write_val.metadata['global_alias_offset'] = global_offset
+                                        break
+                                    if scan_mn in {"JMP", "JZ", "JNZ", "CALL", "XCALL", "RET", "LCP"}:
+                                        break
+
+                            values[version] = write_val
+
             instructions[block_id] = ssa_block
+
+        # Also create SSA values for PHI result versions from rename pass
+        if self._rename_result:
+            for (blk_id, var_name), sources in self._rename_result.phi_sources.items():
+                for phi in self._phi_nodes.get(blk_id, []):
+                    if phi.var_name == var_name and phi.result_name:
+                        if phi.result_name not in values:
+                            phi_val = SSAValue(
+                                name=phi.result_name,
+                                value_type=phi.value_type,
+                                phi_sources=sources,
+                            )
+                            # Propagate global_alias_offset from PHI inputs
+                            alias_offset = None
+                            for _, src_name in sources:
+                                if src_name in values:
+                                    src_alias = values[src_name].metadata.get('global_alias_offset')
+                                    if src_alias is not None:
+                                        if alias_offset is None:
+                                            alias_offset = src_alias
+                                        elif alias_offset != src_alias:
+                                            alias_offset = None  # conflicting aliases
+                                            break
+                            if alias_offset is not None:
+                                phi_val.metadata['global_alias_offset'] = alias_offset
+                            values[phi.result_name] = phi_val
 
         ssa_func = SSAFunction(
             cfg=self.cfg,
